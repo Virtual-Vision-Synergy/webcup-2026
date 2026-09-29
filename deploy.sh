@@ -20,6 +20,7 @@ echo "==> Base de données"
 $PHP artisan migrate --force
 
 echo "==> Optimisation"
+$PHP artisan storage:link || true
 $PHP artisan filament:assets
 $PHP artisan optimize
 

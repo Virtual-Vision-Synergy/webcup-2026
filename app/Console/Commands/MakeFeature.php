@@ -12,13 +12,13 @@ use Illuminate\Support\Str;
  * routes, entrée de menu, seeder et tests.
  *
  * Exemple :
- *   php artisan make:feature Signalement --fields="titre:string,description:text?,niveau:enum(faible|moyen|critique),photo:image?"
+ *   php artisan make:feature Signalement --fields="titre:string,description:text?,niveau:enum(faible/moyen/critique),photo:image?"
  */
 class MakeFeature extends Command
 {
     protected $signature = 'make:feature
         {name : Nom du modèle au singulier, en PascalCase (ex. Signalement)}
-        {--fields= : Champs "nom:type" séparés par des virgules. Types : string, text, integer, decimal, boolean, date, datetime, enum(a|b|c), image. Suffixe ? = facultatif}
+        {--fields= : Champs "nom:type" séparés par des virgules. Types : string, text, integer, decimal, boolean, date, datetime, enum(a/b/c) (ou a|b|c hors Windows), image. Suffixe ? = facultatif}
         {--label= : Libellé singulier affiché (ex. "Point de regroupement")}
         {--plural= : Libellé pluriel affiché (ex. "Points de regroupement")}
         {--icon=squares-2x2 : Icône Heroicons du menu}
@@ -130,7 +130,7 @@ class MakeFeature extends Command
             $options = [];
 
             if (preg_match('/^enum\((.+)\)$/', $type, $matches)) {
-                $options = array_values(array_filter(array_map('trim', explode('|', $matches[1]))));
+                $options = array_values(array_filter(array_map('trim', preg_split('#[|/]#', $matches[1]))));
                 $type = 'enum';
             }
 
@@ -147,13 +147,13 @@ class MakeFeature extends Command
             }
 
             if (! in_array($type, self::TYPES, true)) {
-                $this->components->error("Type inconnu : « {$type} ». Types : ".implode(', ', self::TYPES).', enum(a|b)');
+                $this->components->error("Type inconnu : « {$type} ». Types : ".implode(', ', self::TYPES).', enum(a/b)');
 
                 return false;
             }
 
             if ($type === 'enum' && $options === []) {
-                $this->components->error("Le champ enum « {$name} » n'a pas de valeurs : enum(a|b|c)");
+                $this->components->error("Le champ enum « {$name} » n'a pas de valeurs : enum(a/b/c)");
 
                 return false;
             }
@@ -182,7 +182,7 @@ class MakeFeature extends Command
     }
 
     /* ------------------------------------------------------------------ */
-    /* Back-end                                                            */
+    /* Back-end */
     /* ------------------------------------------------------------------ */
 
     private function migration(): string
@@ -405,7 +405,7 @@ class MakeFeature extends Command
     }
 
     /* ------------------------------------------------------------------ */
-    /* Front (Livewire 4 single-file + Flux)                               */
+    /* Front (Livewire 4 single-file + Flux) */
     /* ------------------------------------------------------------------ */
 
     private function indexPage(): string
@@ -829,7 +829,7 @@ class MakeFeature extends Command
     }
 
     /* ------------------------------------------------------------------ */
-    /* Tests, routes, menu, seeder                                         */
+    /* Tests, routes, menu, seeder */
     /* ------------------------------------------------------------------ */
 
     private function tests(): string
@@ -949,7 +949,7 @@ class MakeFeature extends Command
     }
 
     /* ------------------------------------------------------------------ */
-    /* Utilitaires                                                         */
+    /* Utilitaires */
     /* ------------------------------------------------------------------ */
 
     /**

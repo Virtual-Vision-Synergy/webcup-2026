@@ -964,41 +964,46 @@ Signalement::query()
 
 ## 17. Notifications et e-mails
 
-```bash
-php artisan make:notification SignalementCritique
-php artisan make:notifications-table && php artisan migrate      # notifications dans l'application
-```
+Le projet contient un **kit e-mail / notifications** générique (aucun lien avec un sujet). Il faut le réutiliser, pas le réécrire.
+
+| Élément | Fichier |
+|---|---|
+| Notification générique (application + e-mail) | `app/Notifications/Avis.php` |
+| Table `notifications` | `database/migrations/2026_09_30_080000_create_notifications_table.php` |
+| Cloche dans la sidebar (non lus, 10 dernières, « tout marquer comme lu ») | `resources/views/components/⚡cloche-notifications.blade.php` |
+| Commande de contrôle d'envoi | `php artisan app:test-mail adresse@exemple.com` |
+| E-mails Laravel en français (réinitialisation, vérification, « Bonjour ! », « Cordialement, »…) | `lang/fr.json` |
+| Tests | `tests/Feature/KitEmailTest.php` |
+
+**Envoyer un avis** (n'importe où : Policy, composant Livewire, commande) :
 
 ```php
-class SignalementCritique extends Notification
-{
-    public function __construct(public Signalement $signalement) {}
+use App\Notifications\Avis;
 
-    public function via(object $notifiable): array
-    {
-        return ['database', 'mail'];
-    }
+$user->notify(new Avis(
+    sujet: 'Signalement validé',
+    lignes: ['Votre signalement « '.$signalement->titre.' » a été publié.'],
+    libelle: 'Voir le signalement',                       // facultatif
+    url: route('signalements.show', $signalement),        // facultatif : sans URL, pas de bouton
+));
 
-    public function toArray(object $notifiable): array
-    {
-        return ['titre' => $this->signalement->titre, 'url' => route('signalements.show', $this->signalement)];
-    }
-
-    public function toMail(object $notifiable): MailMessage
-    {
-        return (new MailMessage)
-            ->subject('Nouveau signalement critique')
-            ->line($this->signalement->titre)
-            ->action('Voir', route('signalements.show', $this->signalement));
-    }
-}
+Notification::send(User::where('role', 'admin')->get(), new Avis('Nouveau signalement critique', [$s->titre]));
 ```
 
-Envoi : `Notification::send(User::where('role', 'admin')->get(), new SignalementCritique($s));` ou `$user->notify(...)`.
+Canaux : `database` (cloche) + `mail`. Le sujet et les lignes sont affichés avec `{{ }}` (échappés). Le lien n'est affiché que s'il commence par `http(s)://` ou `/`.
 
-Affichage (cloche) : `auth()->user()->unreadNotifications()->count()`, liste `auth()->user()->notifications()->latest()->take(10)->get()`, marquer lu : `$notification->markAsRead()`.
+**La cloche** est un composant Livewire (`<livewire:cloche-notifications />`, déjà dans la sidebar). Elle ne lit que `auth()->user()->notifications()` : les notifications d'un autre utilisateur ne sont jamais chargées, et `markAsRead` fait un `findOrFail` sur *ses* notifications (l'identifiant d'un autre donne une 404). Pour une notification propre à un sujet, créer une classe dédiée (`php artisan make:notification`) sur le même modèle.
 
-E-mails : en local `MAIL_MAILER=log` (les e-mails s'écrivent dans `storage/logs/laravel.log`) ; sur le serveur `MAIL_MAILER=sendmail` (testé jeudi).
+**Traductions** : Laravel envoie ses e-mails en anglais avec des chaînes du type `Reset Password Notification`. Les traductions vivent dans `lang/fr.json` (clé = texte anglais exact). Si un nouvel e-mail apparaît en anglais, chercher la chaîne dans `vendor/laravel/framework/src/Illuminate/{Auth,Notifications}` et l'ajouter au JSON. `APP_LOCALE=fr` doit être défini dans le `.env` du serveur.
+
+**Configuration**
+
+- Local : `MAIL_MAILER=log` → les e-mails s'écrivent dans `storage/logs/laravel.log`.
+- Production (cPanel Hodi) : `MAIL_MAILER=sendmail`, `MAIL_FROM_ADDRESS="noreply@virtualvisionsy.madagascar.webcup.hodi.cloud"`, `QUEUE_CONNECTION=sync` (pas de worker sur l'hébergement mutualisé : les envois partent immédiatement).
+- **Vérifier en production**, sans tinker : `cd ~/webcup-2026 && php84 artisan app:test-mail votre@adresse.com`, puis regarder la boîte de réception **et les spams**. En cas d'échec, la commande affiche l'erreur du transport ; sinon `tail -n 60 storage/logs/laravel.log`.
+- Après modification du `.env` du serveur : `php84 artisan config:clear`. Après ce kit : `php84 artisan migrate --force` (fait par `deploy.sh`).
+
+**Tests** : `Notification::fake()` + `Notification::assertSentTo($user, ResetPassword::class)` pour vérifier qu'un envoi a lieu ; `Mail::fake()` + `Mail::assertSent(...)` pour un Mailable ; `app()->setLocale('fr')` dans le test pour vérifier le texte français (le `phpunit.xml` force `en`).
 
 ## 18. Services externes : API de l'orga, IA
 

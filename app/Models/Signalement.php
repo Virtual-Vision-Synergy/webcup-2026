@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasCoordinates;
 use Database\Factories\SignalementFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,6 +15,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Fillable(['titre', 'description', 'niveau', 'zone', 'photo', 'date_incident', 'latitude', 'longitude'])]
 class Signalement extends Model
 {
+    /** Scopes geolocalises() et proches(), pointCarte() pour <x-carte>. */
+    use HasCoordinates;
+
     /** @use HasFactory<SignalementFactory> */
     use HasFactory;
 

@@ -18,7 +18,7 @@ class SignalementFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'titre' => ucfirst(fake('fr_FR')->words(3, true)),
+            'titre' => ucfirst(implode(' ', fake('fr_FR')->words(3))),
             'description' => fake('fr_FR')->paragraphs(2, true),
             'niveau' => fake()->randomElement(Signalement::NIVEAU_OPTIONS),
             'zone' => fake()->randomElement(['Analakely', 'Isoraka', 'Ankorondrano', 'Ivandry', 'Ambohijatovo', 'Behoririka', 'Andohalo']),

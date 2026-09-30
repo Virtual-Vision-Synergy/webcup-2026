@@ -134,3 +134,4 @@ cd ~/webcup-2026 && php84 artisan migrate:status
 - **Serveur** : toujours `cd ~/webcup-2026` avant `artisan`.
 - **`public/.htaccess`** contient le bloc qui active PHP 8.4 sur le serveur : ne jamais le supprimer.
 - **Filament** : sans `implements FilamentUser` sur `User`, l'admin est ouvert à tous en local et fermé à tous en production.
+- **PHPStan** : si `composer ci:check` plante sur la mémoire (128M par défaut), le script `types:check` utilise déjà `--memory-limit=1G`.

@@ -38,16 +38,16 @@ new class extends Component {
     }
 }; ?>
 
-<div>
-    <flux:dropdown position="right" align="start">
-        <flux:sidebar.item icon="bell" data-test="cloche-notifications">
+<div x-data="{ ouvert: false }" x-on:keydown.escape.window="ouvert = false">
+    <div>
+        <flux:sidebar.item icon="bell" x-on:click="ouvert = ! ouvert" data-test="cloche-notifications">
             {{ __('Notifications') }}
             @if ($this->unreadCount > 0)
                 <flux:badge size="sm" color="red" class="ms-1" data-test="cloche-compteur">{{ $this->unreadCount }}</flux:badge>
             @endif
         </flux:sidebar.item>
 
-        <flux:popover class="w-80 max-w-[calc(100vw-2rem)] space-y-2 p-0">
+        <div x-show="ouvert" x-cloak x-on:click.outside="ouvert = false" class="fixed bottom-20 start-3 z-50 w-80 max-w-[calc(100vw-1.5rem)] rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
             <div class="flex items-center justify-between gap-2 border-b border-zinc-200 px-3 py-2 dark:border-zinc-700">
                 <flux:heading size="sm">{{ __('Notifications') }}</flux:heading>
                 @if ($this->unreadCount > 0)
@@ -82,6 +82,6 @@ new class extends Component {
                     <flux:text class="px-3 py-4 text-center">{{ __('No notifications') }}</flux:text>
                 @endforelse
             </div>
-        </flux:popover>
-    </flux:dropdown>
+        </div>
+    </div>
 </div>

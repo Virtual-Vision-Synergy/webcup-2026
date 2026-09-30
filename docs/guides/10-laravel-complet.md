@@ -915,52 +915,90 @@ Plusieurs fichiers : `public array $photos = [];`, règle `'photos.*' => ['image
 
 ## 16. Carte et géolocalisation
 
-Fonctionnalité fréquente (points de regroupement, incidents, services proches). **Leaflet**, sans installation :
+Fonctionnalité fréquente (points de regroupement, incidents, services proches). Le projet a un **kit carte** prêt à l'emploi, basé sur **Leaflet** + tuiles **OpenStreetMap** (gratuit, sans clé API) :
+
+| Pièce | Rôle |
+|---|---|
+| `resources/js/carte.js` | Entrée Vite **séparée** : Leaflet + sa CSS, icônes de marqueurs corrigées pour Vite. Chargée **uniquement** sur les pages qui affichent `<x-carte>` (pas de poids en plus ailleurs, bon pour Lighthouse). |
+| `<x-carte>` (`app/View/Components/Carte.php` + `resources/views/components/carte.blade.php`) | Le composant Blade à poser dans une page. |
+| `App\Models\Concerns\HasCoordinates` | Trait de modèle : `geolocalises()`, `proches()`, `pointCarte()`. |
+
+> Une entité générée avec des champs `latitude` et `longitude` a déjà tout (chapitre 25) : ce chapitre sert à comprendre et à ajouter une carte ailleurs.
+
+### Afficher des points (mode lecture)
+
+```blade
+<x-carte :points="$this->points" label="Carte des signalements" />
+```
+
+Chaque point est un tableau `['lat' => -18.91, 'lng' => 47.52, 'titre' => 'Analakely', 'url' => route('signalements.show', $s)]` (`titre` et `url` facultatifs : la bulle affiche le titre et un lien « Voir le détail »). Le plus simple est de passer par le trait :
 
 ```php
 #[Computed]
 public function points(): array
 {
-    return Signalement::whereNotNull('latitude')
-        ->get(['id', 'titre', 'latitude', 'longitude'])
-        ->map(fn ($s) => ['lat' => (float) $s->latitude, 'lng' => (float) $s->longitude, 'titre' => $s->titre])
+    return Signalement::geolocalises()
+        ->latest()
+        ->limit(200)                       // jamais toute la table
+        ->get()
+        ->map(fn (Signalement $s) => $s->pointCarte($s->titre, route('signalements.show', $s)))
+        ->filter()                         // pointCarte() renvoie null sans position
+        ->values()
         ->all();
 }
 ```
 
-```blade
-@assets
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-@endassets
+Propriétés du composant :
 
-<div wire:ignore
-     x-data="{ points: @js($this->points) }"
-     x-init="
-        const map = L.map($el).setView([-18.91, 47.52], 13);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
-        points.forEach(p => {
-            const texte = document.createElement('span');
-            texte.textContent = p.titre;          // texte brut : aucune injection possible
-            L.marker([p.lat, p.lng]).addTo(map).bindPopup(texte);
-        });
-     "
-     class="h-96 w-full rounded-xl"></div>
+| Propriété | Défaut | Rôle |
+|---|---|---|
+| `points` | `[]` | Marqueurs. Avec plusieurs points, la carte cadre automatiquement sur eux. |
+| `mode` | `lecture` | `lecture` ou `choix` (voir plus bas). |
+| `centre` | `[-18.91, 47.52]` (Antananarivo) | Centre quand il n'y a aucun point. |
+| `zoom` | `13` | De 1 à 19. |
+| `hauteur` | `20rem` | Valeur CSS simple (`px`, `rem`, `vh`, `%`…) ; toute autre valeur est ignorée. |
+| `label` | `Carte` | `aria-label` de la carte (accessibilité : dites ce qu'elle montre). |
+| `champ-lat` / `champ-lng` | `latitude` / `longitude` | Propriétés Livewire remplies en mode choix. |
+
+### Choisir un emplacement (mode choix, formulaire)
+
+Dans un composant Livewire qui a `public string $latitude = ''` et `public string $longitude = ''` :
+
+```blade
+<flux:input wire:model="latitude" label="Latitude" type="number" step="any" />
+<flux:input wire:model="longitude" label="Longitude" type="number" step="any" />
+<x-carte mode="choix" label="Emplacement du signalement" />
 ```
 
-- `wire:ignore` : Livewire ne redessine pas la carte.
-- Centre par défaut : Antananarivo (`-18.91, 47.52`), à adapter.
+- Un **clic** sur la carte place le repère et remplit `latitude` / `longitude` (comme un `wire:model` : les champs se mettent à jour).
+- Le bouton **« Me localiser »** utilise `navigator.geolocation` ; si l'utilisateur refuse, un message clair lui dit de cliquer sur la carte. Nécessite HTTPS (le cas en ligne) ; autorisé par nos en-têtes (`Permissions-Policy: geolocation=(self)`).
+- En modification, le repère est placé sur la position enregistrée ; si on tape des coordonnées à la main, il suit.
+- Côté serveur, **toujours** valider : `'latitude' => ['nullable', 'numeric', 'between:-90,90']`, `'longitude' => ['nullable', 'numeric', 'between:-180,180']`.
 
-**« Autour de moi »** : dans le `x-init`, `navigator.geolocation.getCurrentPosition(pos => $wire.set('lat', pos.coords.latitude))` (idem `lng`). Autorisé par nos en-têtes (`geolocation=(self)`), nécessite HTTPS (le cas en ligne). Puis trier par distance (approximation suffisante à l'échelle d'une ville) :
+### « Autour de moi » : trier par distance
 
 ```php
-Signalement::query()
-    ->whereNotNull('latitude')
-    ->orderByRaw('(POW(latitude - ?, 2) + POW(longitude - ?, 2))', [$this->lat, $this->lng])
-    ->limit(5)->get();
+use App\Models\Concerns\HasCoordinates;
+
+class Signalement extends Model
+{
+    use HasCoordinates;
+}
+
+Signalement::proches($lat, $lng, 5)->get();   // les 5 plus proches, du plus proche au plus lointain
+Signalement::geolocalises()->count();         // seulement ceux qui ont une position
 ```
 
-**Choisir un point sur la carte** (formulaire) : `map.on('click', e => { $wire.set('latitude', e.latlng.lat); $wire.set('longitude', e.latlng.lng); })`.
+`proches()` trie par **distance au carré** (pas de racine ni de trigonométrie en SQL) : fonctionne à l'identique sur **SQLite** (local) et **MariaDB** (Hodi). L'écart de longitude est corrigé par `cos(latitude)`, calculé en PHP. Largement suffisant pour classer des lieux dans une ville ; pour afficher « à 1,2 km », calculer la distance en PHP sur les quelques résultats. Le trait suppose des colonnes nommées exactement `latitude` et `longitude`.
+
+### Sécurité et pièges
+
+- Les titres des bulles sont posés avec **`textContent`**, jamais `innerHTML` : un titre `<b>test</b>` s'affiche tel quel (testé dans `tests/Feature/CarteTest.php`).
+- Les liens des bulles ne sont gardés que s'ils sont relatifs (`/…`) ou en `http(s)://` : un `javascript:` est ignoré.
+- Le composant est en **`wire:ignore`** : Livewire ne redessine pas la carte. Quand les points changent (filtre de la liste), sa `wire:key` change et la carte est recréée proprement.
+- Une carte dans un bloc replié (`<details>`, modal) se redimensionne toute seule à l'ouverture.
+- Ne pas afficher la position **exacte** d'une personne (domicile…) sans règle de Policy dédiée (convention, règle 12).
+- Style ou carte absente en local : `composer run dev` doit tourner (ou `npm run build`), puis Ctrl+F5.
 
 ## 17. Notifications et e-mails
 
@@ -1318,7 +1356,7 @@ php artisan migrate
 | `string` | `string` | `flux:input` | `string`, `max:255` |
 | `text` | `text` | `flux:textarea` | `string`, `max:5000` |
 | `integer` | `integer` | `flux:input type=number` | `integer` |
-| `decimal` | `decimal(10,7)` si le nom contient latitude/longitude, sinon `decimal(12,2)` | `flux:input type=number step=any` | `numeric` |
+| `decimal` | `decimal(10,7)` si le champ s'appelle `latitude`/`longitude` (ou `lat`/`lng`/`lon`), sinon `decimal(12,2)` | `flux:input type=number step=any` | `numeric` (+ `between:-90,90` / `between:-180,180` pour les coordonnées) |
 | `boolean` | `boolean` | `flux:checkbox` | `boolean` |
 | `date` / `datetime` | `date` / `dateTime` | `flux:input type=date / datetime-local` | `date` |
 | `enum(a/b/c)` | `string` indexé + constante `X_OPTIONS` | `flux:select` + filtre dans la liste | `Rule::in` |
@@ -1327,6 +1365,15 @@ php artisan migrate
 Suffixe `?` = facultatif (colonne `nullable`, règle `nullable`).
 
 **Ce qu'il génère** : migration (avec `user_id`), modèle (`#[Fillable]` sans `user_id`, casts, constantes), factory (`fr_FR`, coordonnées à Antananarivo), policy (lecture/création pour tous les connectés, modification/suppression par le propriétaire ou un admin), 3 pages (liste avec recherche, filtres, « mes éléments », pagination, suppression ; formulaire avec validation et upload ; détail), routes, entrée de menu, ligne de seeder, 6 tests.
+
+**Entité géolocalisée** : si les champs s'appellent exactement `latitude` et `longitude` (type `decimal`), le générateur ajoute aussi automatiquement (chapitre 16) :
+
+- le trait `HasCoordinates` au modèle (`geolocalises()`, `proches()`, `pointCarte()`) ;
+- `<x-carte mode="choix">` dans le formulaire (clic sur la carte ou « Me localiser ») ;
+- `<x-carte>` sur la page détail (si la position est renseignée) ;
+- une carte **repliable** au-dessus de la liste, qui suit la recherche et les filtres (200 points au maximum).
+
+Sans ces deux champs, rien de tout cela n'est généré. La requête de recherche/filtres de la liste est dans une méthode `filteredQuery()`, réutilisée par la liste et par la carte.
 
 **Marqueurs** (ne jamais les supprimer) : `// make:feature:routes` (routes), `{{-- make:feature:nav --}}` (menu), `// make:feature:seeders` (seeder).
 

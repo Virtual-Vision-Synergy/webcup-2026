@@ -4,7 +4,6 @@ use App\Mail\TestMail;
 use App\Models\User;
 use App\Notifications\Avis;
 use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
@@ -23,16 +22,38 @@ test('la réinitialisation du mot de passe envoie une notification', function ()
 test('l\'e-mail de réinitialisation est en français', function () {
     $user = User::factory()->create();
 
-    $mail = (new ResetPassword('jeton-de-test'))->toMail($user);
-    $rendu = $mail->render()->toHtml();
+    $rendu = (new ResetPassword('jeton-de-test'))->toMail($user)->render()->toHtml();
 
-    expect($mail->subject)->toBe('Réinitialisation de votre mot de passe')
-        ->and($rendu)->toContain('Bonjour !')
-        ->and($rendu)->toContain('Réinitialiser le mot de passe')
+    expect($rendu)->toContain('Bonjour !')
         ->and($rendu)->toContain('Cordialement,')
         ->and($rendu)->toContain('Tous droits réservés.')
         ->and($rendu)->not->toContain('Regards,')
         ->and($rendu)->not->toContain('Hello!');
+});
+
+test('toutes les chaînes des e-mails Laravel installé sont traduites dans lang/fr.json', function () {
+    $fichiers = [
+        ...glob(base_path('vendor/laravel/framework/src/Illuminate/Auth/Notifications/*.php')),
+        ...glob(base_path('vendor/laravel/framework/src/Illuminate/Notifications/resources/views/*.blade.php')),
+        ...glob(base_path('vendor/laravel/framework/src/Illuminate/Mail/resources/views/*/*.blade.php')),
+    ];
+    $traductions = json_decode(file_get_contents(lang_path('fr.json')), true);
+    $manquantes = [];
+
+    foreach ($fichiers as $fichier) {
+        preg_match_all('/(?:Lang::get|__|@lang)\(\s*\'((?:[^\'\\\\]|\\\\.)*)\'/', file_get_contents($fichier), $resultats);
+
+        foreach ($resultats[1] as $chaine) {
+            $chaine = stripslashes($chaine);
+
+            if (! array_key_exists($chaine, $traductions)) {
+                $manquantes[$chaine] = basename($fichier);
+            }
+        }
+    }
+
+    expect($fichiers)->not->toBeEmpty()
+        ->and($manquantes)->toBe([]);
 });
 
 test('app:test-mail envoie un e-mail de test', function () {
@@ -110,9 +131,10 @@ test('un utilisateur ne peut pas marquer lue la notification d\'un autre', funct
     $autre->notify(new Avis('Secret de l\'autre'));
     $idAutre = $autre->notifications()->first()->id;
 
-    $cloche = Livewire::actingAs($user)->test('cloche-notifications');
-
-    expect(fn () => $cloche->call('markAsRead', $idAutre))->toThrow(ModelNotFoundException::class);
+    Livewire::actingAs($user)
+        ->test('cloche-notifications')
+        ->call('markAsRead', $idAutre)
+        ->assertNotFound();
 
     expect($autre->unreadNotifications()->count())->toBe(1);
 });

@@ -53,7 +53,7 @@ new #[Title('Signalement')] class extends Component {
             'zone' => ['required', 'string', 'max:255'],
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'date_incident' => ['required', 'date'],
-            'latitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ];
     }
@@ -132,6 +132,11 @@ new #[Title('Signalement')] class extends Component {
         <flux:input wire:model="latitude" label="Latitude" type="number" step="any" />
 
         <flux:input wire:model="longitude" label="Longitude" type="number" step="any" />
+
+        <div class="space-y-2">
+            <flux:heading size="sm">Emplacement sur la carte</flux:heading>
+            <x-carte mode="choix" :label="'Emplacement : Signalement'" />
+        </div>
 
         <div class="flex items-center gap-3">
             <flux:button type="submit" variant="primary">Enregistrer</flux:button>

@@ -87,4 +87,8 @@ new #[Title('Signalement')] class extends Component {
             </div>
         </dl>
     </flux:card>
+
+    @if ($record->latitude !== null && $record->longitude !== null)
+        <x-carte :points="[$record->pointCarte((string) $record->titre)]" hauteur="18rem" label="Emplacement sur la carte" />
+    @endif
 </section>

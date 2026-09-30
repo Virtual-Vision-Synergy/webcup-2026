@@ -1,0 +1,218 @@
+/**
+ * Kit carte (Leaflet + OpenStreetMap).
+ *
+ * Chargé uniquement par le composant Blade <x-carte> (entrée Vite séparée),
+ * pour ne pas alourdir les pages sans carte.
+ *
+ * Chaque élément [data-carte] contient sa configuration JSON :
+ * { points: [{lat, lng, titre, url}], centre: [lat, lng], zoom, mode: 'lecture'|'choix', champLat, champLng }
+ *
+ * Sécurité : les textes des bulles sont posés avec textContent (jamais innerHTML),
+ * et seules les URL http(s) ou relatives sont utilisées dans les liens.
+ */
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+
+// Vite renomme les images : on donne à Leaflet les bonnes URL des icônes de marqueurs.
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl });
+
+const cartes = new Map();
+
+function urlSure(url) {
+    if (typeof url !== 'string' || url === '') {
+        return null;
+    }
+
+    try {
+        const parsed = new URL(url, window.location.origin);
+
+        return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : null;
+    } catch {
+        return null;
+    }
+}
+
+function contenuBulle(point) {
+    const bloc = document.createElement('div');
+    const titre = document.createElement('strong');
+    titre.textContent = point.titre ?? '';
+    bloc.appendChild(titre);
+
+    const url = urlSure(point.url);
+    if (url) {
+        const lien = document.createElement('a');
+        lien.href = url;
+        lien.textContent = 'Voir le détail';
+        lien.className = 'mt-1 block';
+        bloc.appendChild(lien);
+    }
+
+    return bloc;
+}
+
+function nombre(valeur) {
+    const n = Number.parseFloat(valeur);
+
+    return Number.isFinite(n) ? n : null;
+}
+
+function composantLivewire(el) {
+    const racine = el.closest('[wire\\:id]');
+
+    return racine && window.Livewire ? window.Livewire.find(racine.getAttribute('wire:id')) : null;
+}
+
+function initialiser(el) {
+    if (cartes.has(el)) {
+        return;
+    }
+
+    let config;
+    try {
+        config = JSON.parse(el.dataset.carte || '{}');
+    } catch {
+        return;
+    }
+
+    const zone = el.querySelector('[data-carte-zone]');
+    const message = el.querySelector('[data-carte-message]');
+    const points = (config.points || []).filter((p) => nombre(p.lat) !== null && nombre(p.lng) !== null);
+
+    const carte = L.map(zone, { scrollWheelZoom: false }).setView(config.centre, config.zoom);
+    cartes.set(el, carte);
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(carte);
+
+    const marqueurs = points.map((p) => {
+        const marqueur = L.marker([nombre(p.lat), nombre(p.lng)], { title: p.titre ?? '', alt: p.titre ?? '' }).addTo(carte);
+        if (p.titre || p.url) {
+            marqueur.bindPopup(contenuBulle(p));
+        }
+
+        return marqueur;
+    });
+
+    if (marqueurs.length > 1 && config.mode === 'lecture') {
+        carte.fitBounds(L.featureGroup(marqueurs).getBounds(), { padding: [30, 30], maxZoom: 16 });
+    } else if (marqueurs.length === 1) {
+        carte.setView(marqueurs[0].getLatLng(), Math.max(config.zoom, 15));
+    }
+
+    // Une carte dans un bloc replié a une taille nulle : on la recalcule quand il s'ouvre.
+    new ResizeObserver(() => carte.invalidateSize()).observe(zone);
+
+    if (config.mode === 'choix') {
+        activerChoix(el, carte, config, marqueurs[0] ?? null, message);
+    }
+}
+
+function activerChoix(el, carte, config, marqueurInitial, message) {
+    let marqueur = marqueurInitial;
+    // Livewire peut démarrer après ce module : le composant est cherché au moment où on en a besoin.
+    const wire = () => composantLivewire(el);
+
+    const afficher = (texte) => {
+        if (message) {
+            message.textContent = texte;
+        }
+    };
+
+    const placer = (lat, lng, recentrer = false) => {
+        if (marqueur) {
+            marqueur.setLatLng([lat, lng]);
+        } else {
+            marqueur = L.marker([lat, lng], { title: 'Position choisie', alt: 'Position choisie' }).addTo(carte);
+        }
+        if (recentrer) {
+            carte.setView([lat, lng], Math.max(carte.getZoom(), 15));
+        }
+    };
+
+    const choisir = (lat, lng, recentrer = false) => {
+        placer(lat, lng, recentrer);
+        // Remplit les propriétés Livewire (comme un wire:model) : les champs du formulaire se mettent à jour.
+        wire()?.$set(config.champLat, lat.toFixed(7), false);
+        wire()?.$set(config.champLng, lng.toFixed(7));
+        afficher(`Position choisie : ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+    };
+
+    carte.on('click', (e) => choisir(e.latlng.lat, e.latlng.lng));
+
+    // Position déjà enregistrée (modification) ; puis le marqueur suit les champs saisis à la main.
+    const suivre = (recentrer = false) => {
+        const lat = nombre(wire()?.$get(config.champLat));
+        const lng = nombre(wire()?.$get(config.champLng));
+        if (lat !== null && lng !== null && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+            placer(lat, lng, recentrer);
+        }
+    };
+    const surveiller = () => {
+        suivre(true);
+        wire()?.$watch(config.champLat, () => suivre());
+        wire()?.$watch(config.champLng, () => suivre());
+    };
+    if (wire()) {
+        surveiller();
+    } else {
+        document.addEventListener('livewire:initialized', surveiller, { once: true });
+    }
+
+    el.querySelector('[data-carte-localiser]')?.addEventListener('click', () => {
+        if (!('geolocation' in navigator)) {
+            afficher("Votre navigateur ne permet pas la géolocalisation. Cliquez sur la carte pour choisir l'emplacement.");
+
+            return;
+        }
+
+        afficher('Localisation en cours…');
+        navigator.geolocation.getCurrentPosition(
+            (position) => choisir(position.coords.latitude, position.coords.longitude, true),
+            (erreur) => {
+                const textes = {
+                    1: "Accès à la position refusé. Autorisez la localisation dans votre navigateur, ou cliquez sur la carte pour choisir l'emplacement.",
+                    2: "Position introuvable pour le moment. Cliquez sur la carte pour choisir l'emplacement.",
+                    3: "La localisation a pris trop de temps. Réessayez ou cliquez sur la carte.",
+                };
+                afficher(textes[erreur.code] ?? "Impossible de vous localiser. Cliquez sur la carte pour choisir l'emplacement.");
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+        );
+    });
+}
+
+function nettoyer() {
+    for (const [el, carte] of cartes) {
+        if (!el.isConnected) {
+            carte.remove();
+            cartes.delete(el);
+        }
+    }
+}
+
+function toutInitialiser() {
+    nettoyer();
+    document.querySelectorAll('[data-carte]').forEach(initialiser);
+}
+
+// Pages chargées normalement, navigation wire:navigate et cartes ajoutées par Livewire.
+// Leaflet modifie beaucoup le DOM (tuiles) : on regroupe les vérifications, une par image.
+let planifie = false;
+const planifier = () => {
+    if (!planifie) {
+        planifie = true;
+        requestAnimationFrame(() => {
+            planifie = false;
+            toutInitialiser();
+        });
+    }
+};
+
+toutInitialiser();
+new MutationObserver(planifier).observe(document.documentElement, { childList: true, subtree: true });

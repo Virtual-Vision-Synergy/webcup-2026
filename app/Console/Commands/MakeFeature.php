@@ -272,12 +272,15 @@ class MakeFeature extends Command
             PHP;
         }
 
-        return <<<PHP
+        $coordinatesImport = $this->hasCoordinates() ? "use App\\Models\\Concerns\\HasCoordinates;\n" : '';
+        $coordinatesTrait = $this->hasCoordinates() ? "    /** Scopes geolocalises() et proches(), pointCarte() pour <x-carte>. */\n    use HasCoordinates;\n\n" : '';
+
+        $source = <<<PHP
         <?php
 
         namespace App\Models;
 
-        use Database\Factories\\{$this->model}Factory;
+        {$coordinatesImport}use Database\Factories\\{$this->model}Factory;
         use Illuminate\Database\Eloquent\Attributes\Fillable;
         use Illuminate\Database\Eloquent\Factories\HasFactory;
         use Illuminate\Database\Eloquent\Model;
@@ -289,7 +292,7 @@ class MakeFeature extends Command
         #[Fillable([{$fillable}])]
         class {$this->model} extends Model
         {
-            /** @use HasFactory<{$this->model}Factory> */
+        {$coordinatesTrait}    /** @use HasFactory<{$this->model}Factory> */
             use HasFactory;
 
         {$constants}
@@ -303,6 +306,9 @@ class MakeFeature extends Command
         {$castsMethod}}
 
         PHP;
+
+        // Sans constante d'options, le gabarit laisse deux lignes vides d'affilée.
+        return (string) preg_replace("/\n{3,}/", "\n\n", $source);
     }
 
     private function factory(): string
@@ -471,12 +477,51 @@ class MakeFeature extends Command
         $pluralPhp = $this->php($this->plural);
         $deletedPhp = $this->php($this->label.' supprimé(e).');
 
+        $pointsMethod = '';
+        $mapBlock = '';
+        if ($this->hasCoordinates()) {
+            $pointTitle = $titleField ? "(string) \$item->{$titleField}" : $this->php($this->label.' #').'.$item->id';
+            $pointsMethod = "\n    /**\n"
+                ."     * Points de la carte : mêmes filtres que la liste, 200 au maximum.\n"
+                ."     *\n"
+                ."     * @return array<int, array{lat: float, lng: float, titre: string, url: string|null}>\n"
+                ."     */\n"
+                ."    #[Computed]\n"
+                ."    public function points(): array\n"
+                ."    {\n"
+                ."        return \$this->filteredQuery()\n"
+                ."            ->geolocalises()\n"
+                ."            ->latest()\n"
+                ."            ->limit(200)\n"
+                ."            ->get()\n"
+                ."            ->map(fn ({$m} \$item) => \$item->pointCarte({$pointTitle}, route('{$s}.show', \$item)))\n"
+                ."            ->filter()\n"
+                ."            ->values()\n"
+                ."            ->all();\n"
+                ."    }\n";
+            $mapTitle = $this->php(str_replace('"', '', "Carte : {$this->plural}"));
+            $mapBlock = "\n    <details wire:ignore.self class=\"rounded-xl border border-zinc-200 dark:border-zinc-700\">\n"
+                ."        <summary class=\"flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-medium\">\n"
+                ."            <flux:icon.map class=\"size-4\" />\n"
+                ."            Voir la carte ({{ count(\$this->points) }} emplacement(s))\n"
+                ."        </summary>\n"
+                ."        <div class=\"px-3 pb-3\">\n"
+                ."            @if (\$this->points === [])\n"
+                ."                <flux:text>Aucun emplacement à afficher avec ces filtres.</flux:text>\n"
+                ."            @else\n"
+                ."                <x-carte :points=\"\$this->points\" :label=\"{$mapTitle}\" />\n"
+                ."            @endif\n"
+                ."        </div>\n"
+                ."    </details>\n";
+        }
+
         return <<<BLADE
         <?php
 
         use App\Models\\{$m};
         use Flux\Flux;
         use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+        use Illuminate\Database\Eloquent\Builder;
         use Illuminate\Support\Facades\Storage;
         use Livewire\Attributes\Computed;
         use Livewire\Attributes\Title;
@@ -500,16 +545,26 @@ class MakeFeature extends Command
             }
 
         {$resetHooks}
+            /**
+             * Recherche et filtres, partagés par la liste (et la carte si l'entité a des coordonnées).
+             *
+             * @return Builder<{$m}>
+             */
+            protected function filteredQuery(): Builder
+            {
+                return {$m}::query(){$searchQuery}
+                    ->when(\$this->mine, fn (\$query) => \$query->whereBelongsTo(auth()->user())){$filterQuery};
+            }
+
             #[Computed]
             public function items(): LengthAwarePaginator
             {
-                return {$m}::query()
-                    ->with('user'){$searchQuery}
-                    ->when(\$this->mine, fn (\$query) => \$query->whereBelongsTo(auth()->user())){$filterQuery}
+                return \$this->filteredQuery()
+                    ->with('user')
                     ->latest()
                     ->paginate(10);
             }
-
+        {$pointsMethod}
             public function delete(int \$id): void
             {
                 \$record = {$m}::findOrFail(\$id);
@@ -540,7 +595,7 @@ class MakeFeature extends Command
         {$filterInputs}
                 <flux:checkbox wire:model.live="mine" label="Mes éléments uniquement" />
             </div>
-
+        {$mapBlock}
             @if (\$this->items->isEmpty())
                 <flux:card class="py-12 text-center">
                     <flux:heading>Aucun élément pour le moment</flux:heading>
@@ -613,9 +668,11 @@ class MakeFeature extends Command
                 'string' => "[{$presence}, 'string', 'max:255']",
                 'text' => "[{$presence}, 'string', 'max:5000']",
                 'integer' => "[{$presence}, 'integer']",
-                'decimal' => $this->isCoordinate($f['name'])
-                    ? "[{$presence}, 'numeric', 'between:-180,180']"
-                    : "[{$presence}, 'numeric']",
+                'decimal' => match (true) {
+                    in_array($f['name'], ['lat', 'latitude'], true) => "[{$presence}, 'numeric', 'between:-90,90']",
+                    $this->isCoordinate($f['name']) => "[{$presence}, 'numeric', 'between:-180,180']",
+                    default => "[{$presence}, 'numeric']",
+                },
                 'boolean' => "['boolean']",
                 'date', 'datetime' => "[{$presence}, 'date']",
                 'enum' => "[{$presence}, Rule::in({$m}::".$this->enumConst($f['name']).')]',
@@ -652,6 +709,14 @@ class MakeFeature extends Command
         })->implode('');
 
         $inputs = collect($this->fields)->map(fn ($f) => $this->formInput($f))->implode("\n\n");
+
+        if ($this->hasCoordinates()) {
+            $mapLabel = $this->php(str_replace('"', '', "Emplacement : {$this->label}"));
+            $inputs .= "\n\n        <div class=\"space-y-2\">\n"
+                ."            <flux:heading size=\"sm\">Emplacement sur la carte</flux:heading>\n"
+                ."            <x-carte mode=\"choix\" :label=\"{$mapLabel}\" />\n"
+                .'        </div>';
+        }
 
         $uses = $hasImage ? "use Livewire\\WithFileUploads;\n" : '';
         $traits = $hasImage ? "    use WithFileUploads;\n\n" : '';
@@ -767,6 +832,14 @@ class MakeFeature extends Command
         $labelPhp = $this->php($this->label);
         $deletedPhp = $this->php($this->label.' supprimé(e).');
 
+        $map = '';
+        if ($this->hasCoordinates()) {
+            $pointTitle = $titleField ? "(string) \$record->{$titleField}" : $this->php($this->label);
+            $map = "\n\n    @if (\$record->latitude !== null && \$record->longitude !== null)\n"
+                ."        <x-carte :points=\"[\$record->pointCarte({$pointTitle})]\" hauteur=\"18rem\" label=\"Emplacement sur la carte\" />\n"
+                .'    @endif';
+        }
+
         return <<<BLADE
         <?php
 
@@ -825,7 +898,7 @@ class MakeFeature extends Command
                 <dl class="divide-y divide-zinc-200 dark:divide-zinc-700">
         {$rows}
                 </dl>
-            </flux:card>
+            </flux:card>{$map}
         </section>
 
         BLADE;
@@ -1035,6 +1108,16 @@ class MakeFeature extends Command
     private function enumConst(string $name): string
     {
         return Str::upper($name).'_OPTIONS';
+    }
+
+    /**
+     * L'entité a une position (champs latitude et longitude) : trait HasCoordinates et cartes.
+     */
+    private function hasCoordinates(): bool
+    {
+        $names = collect($this->fields)->where('type', 'decimal')->pluck('name');
+
+        return $names->contains('latitude') && $names->contains('longitude');
     }
 
     private function isCoordinate(string $name): bool

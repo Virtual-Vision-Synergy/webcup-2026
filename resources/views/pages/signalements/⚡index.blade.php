@@ -3,6 +3,7 @@
 use App\Models\Signalement;
 use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
@@ -42,19 +43,48 @@ new #[Title('Signalements')] class extends Component {
         $this->resetPage();
     }
 
-    #[Computed]
-    public function items(): LengthAwarePaginator
+    /**
+     * Recherche et filtres, partagés par la liste (et la carte si l'entité a des coordonnées).
+     *
+     * @return Builder<Signalement>
+     */
+    protected function filteredQuery(): Builder
     {
         return Signalement::query()
-            ->with('user')
             ->when($this->search !== '', function ($query) {
                 $term = '%'.$this->search.'%';
                 $query->where(fn ($q) => $q->where('titre', 'like', $term)->orWhere('description', 'like', $term)->orWhere('zone', 'like', $term));
             })
             ->when($this->mine, fn ($query) => $query->whereBelongsTo(auth()->user()))
-            ->when($this->filterNiveau !== '', fn ($query) => $query->where('niveau', $this->filterNiveau))
+            ->when($this->filterNiveau !== '', fn ($query) => $query->where('niveau', $this->filterNiveau));
+    }
+
+    #[Computed]
+    public function items(): LengthAwarePaginator
+    {
+        return $this->filteredQuery()
+            ->with('user')
             ->latest()
             ->paginate(10);
+    }
+
+    /**
+     * Points de la carte : mêmes filtres que la liste, 200 au maximum.
+     *
+     * @return array<int, array{lat: float, lng: float, titre: string, url: string|null}>
+     */
+    #[Computed]
+    public function points(): array
+    {
+        return $this->filteredQuery()
+            ->geolocalises()
+            ->latest()
+            ->limit(200)
+            ->get()
+            ->map(fn (Signalement $item) => $item->pointCarte((string) $item->titre, route('signalements.show', $item)))
+            ->filter()
+            ->values()
+            ->all();
     }
 
     public function delete(int $id): void
@@ -94,6 +124,20 @@ new #[Title('Signalements')] class extends Component {
         </flux:select>
         <flux:checkbox wire:model.live="mine" label="Mes éléments uniquement" />
     </div>
+
+    <details wire:ignore.self class="rounded-xl border border-zinc-200 dark:border-zinc-700">
+        <summary class="flex cursor-pointer items-center gap-2 px-4 py-3 text-sm font-medium">
+            <flux:icon.map class="size-4" />
+            Voir la carte ({{ count($this->points) }} emplacement(s))
+        </summary>
+        <div class="px-3 pb-3">
+            @if ($this->points === [])
+                <flux:text>Aucun emplacement à afficher avec ces filtres.</flux:text>
+            @else
+                <x-carte :points="$this->points" :label="'Carte : Signalements'" />
+            @endif
+        </div>
+    </details>
 
     @if ($this->items->isEmpty())
         <flux:card class="py-12 text-center">

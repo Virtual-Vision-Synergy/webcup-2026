@@ -28,6 +28,7 @@ class EditUser extends EditRecord
      */
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
+        /** @var User $record */
         $role = $data['role'] ?? null;
         unset($data['role']);
 

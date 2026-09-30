@@ -130,7 +130,7 @@ class MakeFeature extends Command
             $options = [];
 
             if (preg_match('/^enum\((.+)\)$/', $type, $matches)) {
-                $options = array_values(array_filter(array_map('trim', preg_split('#[|/]#', $matches[1]))));
+                $options = array_values(array_filter(array_map('trim', preg_split('#[|/]#', $matches[1]) ?: [])));
                 $type = 'enum';
             }
 
@@ -198,6 +198,7 @@ class MakeFeature extends Command
                 'date' => "\$table->date('{$n}')",
                 'datetime' => "\$table->dateTime('{$n}')",
                 'enum' => "\$table->string('{$n}', 50)->index()",
+                default => throw new \InvalidArgumentException("Type de champ inconnu : {$f['type']}"),
             };
 
             if ($f['type'] !== 'boolean' && $f['nullable']) {
@@ -322,6 +323,7 @@ class MakeFeature extends Command
                 'datetime' => "fake()->dateTimeBetween('-1 month', 'now')",
                 'enum' => "fake()->randomElement({$this->model}::".$this->enumConst($n).')',
                 'image' => 'null',
+                default => throw new \InvalidArgumentException("Type de champ inconnu : {$f['type']}"),
             };
 
             return "            '{$n}' => {$value},";
@@ -620,6 +622,7 @@ class MakeFeature extends Command
                 'image' => $f['required']
                     ? "[\$this->record ? 'nullable' : 'required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048']"
                     : "['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048']",
+                default => throw new \InvalidArgumentException("Type de champ inconnu : {$f['type']}"),
             };
 
             return "            '{$f['name']}' => {$rule},";
@@ -983,6 +986,7 @@ class MakeFeature extends Command
                 ."                <img src=\"{{ Storage::url(\$record->{$n}) }}\" alt=\"{$label}\" class=\"h-40 rounded-lg object-cover\" />\n"
                 ."            @endif\n"
                 .'        </div>',
+            default => throw new \InvalidArgumentException("Type de champ inconnu : {$f['type']}"),
         };
     }
 
@@ -1019,7 +1023,7 @@ class MakeFeature extends Command
             str_contains($name, 'adresse') || str_contains($name, 'address') => "fake('fr_FR')->streetAddress()",
             str_contains($name, 'zone') || str_contains($name, 'quartier') => "fake()->randomElement(['Analakely', 'Isoraka', 'Ankorondrano', 'Ivandry', 'Ambohijatovo', 'Behoririka', 'Andohalo'])",
             in_array($name, ['nom', 'name', 'prenom'], true) => "fake('fr_FR')->name()",
-            default => "ucfirst(fake('fr_FR')->words(3, true))",
+            default => "rtrim(fake('fr_FR')->sentence(3), '.')",
         };
     }
 

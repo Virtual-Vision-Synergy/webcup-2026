@@ -1023,7 +1023,7 @@ class MakeFeature extends Command
             str_contains($name, 'adresse') || str_contains($name, 'address') => "fake('fr_FR')->streetAddress()",
             str_contains($name, 'zone') || str_contains($name, 'quartier') => "fake()->randomElement(['Analakely', 'Isoraka', 'Ankorondrano', 'Ivandry', 'Ambohijatovo', 'Behoririka', 'Andohalo'])",
             in_array($name, ['nom', 'name', 'prenom'], true) => "fake('fr_FR')->name()",
-            default => "ucfirst(implode(' ', fake('fr_FR')->words(3)))",
+            default => "rtrim(fake('fr_FR')->sentence(3), '.')",
         };
     }
 

@@ -21,9 +21,9 @@ $Project = 17
 # Identifiants GitHub des membres. Laisser '' si inconnu : l'issue sera créée sans responsable.
 $Comptes = @{
     'Randy'       = 'And-matia'
-    'Judicael'    = ''
-    'Tsoa'        = ''
-    'Njaraniaina' = ''
+    'Judicael'    = 'ManaJudy'
+    'Tsoa'        = 'Andriantsoa94'
+    'Njaraniaina' = 'Njara-Niaina '
 }
 
 # ---------------------------------------------------------------------------

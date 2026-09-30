@@ -1,0 +1,10 @@
+{
+  "mode": "php",
+  "runtime": "php:8.4",
+  "docroot": "public",
+  "build": "npm run build",
+  "keepReleases": 10,
+  "previews": false,
+  "autodeploy": true,
+  "forceHttps": true
+}

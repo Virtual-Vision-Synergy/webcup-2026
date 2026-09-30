@@ -1,4 +1,4 @@
-# Crée le backlog de préparation Webcup 2026 dans GitHub (issues + projet #17).
+﻿# Crée le backlog de préparation Webcup 2026 dans GitHub (issues + projet #17).
 #
 # Prérequis (une seule fois) :
 #   winget install GitHub.cli        (ou https://cli.github.com)
@@ -37,9 +37,9 @@ $Taches = @(
     @{ T='[Mer] Page d''accueil et identité visuelle'; Qui='Randy'; P='P1'; D='Mer 30/09 18 h'
        Fin='PR mergée, déployée, testée sur téléphone'
        Det="Session cloud (prompt « Session A » de la discussion). Couleur d'accent centralisée dans resources/css/app.css, textes dans un seul tableau." },
-    @{ T='[Mer] deploy.sh : sauvegarde de la base, contrôle de santé, journal'; Qui='Randy'; P='P0'; D='Mer 30/09 20 h'
-       Fin='Un déploiement réussi qui produit une sauvegarde et un OK de santé'
-       Det="mysqldump avant migrate --force, curl sur l'URL à la fin (échec = message clair), journal horodaté dans ~/deploy.log." },
+    @{ T='[Mer] Tester le nouveau deploy.sh (sauvegarde + contrôle de santé)'; Qui='Randy'; P='P0'; D='Mer 30/09 20 h'
+       Fin='Un déploiement réussi : fichier dans ~/backups et « /up -> 200 OK »'
+       Det="Le script écrit aussi un journal dans ~/deploy.log. Vérifier que mysqldump fonctionne sur Hodi." },
     @{ T='[Mer] Cron schedule:run sur cPanel'; Qui='Randy'; P='P1'; D='Mer 30/09 20 h'
        Fin='Une tâche planifiée de test s''exécute en ligne'
        Det="cPanel > Tâches Cron, chaque minute : cd ~/webcup-2026 && /opt/cpanel/ea-php84/root/usr/bin/php artisan schedule:run >> /dev/null 2>&1" },
@@ -56,6 +56,18 @@ $Taches = @(
        Fin='PR mergée par Randy, CI verte'
        Det="Exemple : corriger un texte, ajouter une ligne au README. But : branche > commit > push > PR > CI > merge." },
 
+    @{ T='[Mer] Kit e-mail et notifications (session cloud)'; Qui='Randy'; P='P0'; D='Mer 30/09 22 h'
+       Fin='PR mergée ; « mot de passe oublié » reçu en français dans une vraie boîte, depuis le site en ligne'
+       Det="Prompt « Session 1 » du 30/09. En production : MAIL_MAILER=sendmail, MAIL_FROM_ADDRESS=noreply@virtualvisionsy.madagascar.webcup.hodi.cloud, QUEUE_CONNECTION=sync. Test : php84 artisan app:test-mail <adresse>." },
+    @{ T='[Mer] Kit carte GPS (session cloud)'; Qui='Judicael'; P='P1'; D='Jeu 01/10 12 h'
+       Fin='PR mergée ; carte, choix d''un point et « me localiser » testés sur téléphone en ligne'
+       Det="Prompt « Session 2 » du 30/09 : composant <x-carte>, trait HasCoordinates, intégration au générateur quand latitude/longitude existent." },
+    @{ T='[Mer] Bascule du déploiement sur Hodifly'; Qui='Randy'; P='P0'; D='Mer 30/09 23 h'
+       Fin='Un push sur main se déploie seul ; un retour arrière testé ; site OK'
+       Det="hodifly.json est dans le repo. Variables d'environnement à saisir dans le projet Hodifly (DB_*, APP_KEY actuelle du serveur, APP_LOCALE=fr, MAIL_*, QUEUE_CONNECTION=sync, OPENROUTER_*). Aperçus de PR désactivés (ils partagent la base de production). deploy.sh reste en secours." },
+    @{ T='[Mer] CI : tests aussi sur MariaDB 10.11'; Qui='Randy'; P='P1'; D='Mer 30/09 23 h'
+       Fin='Les deux jobs (ci, mariadb) sont verts sur une PR'
+       Det="Déplacer docs/github-templates/tests.yml vers .github/workflows/tests.yml." },
     # Jeudi 01/10
     @{ T='[Jeu] Lire le tome 1 (Laravel) et son guide de rôle'; Qui='Randy,Judicael,Tsoa,Njaraniaina'; P='P0'; D='Jeu 01/10 18 h'
        Fin='Exercices du tome 1 faits'
@@ -88,6 +100,12 @@ $Taches = @(
        Fin='Plus aucun nouveau module après minuit'
        Det="Tout module non fini et non testé est retiré." },
 
+    @{ T='[Jeu] Crédit OpenRouter (1000 requêtes/jour pendant l''évaluation)'; Qui='Judicael'; P='P1'; D='Ven 02/10'
+       Fin='Quota à 1000/jour confirmé sur openrouter.ai'
+       Det="Le jury testera l'IA pendant 5 jours : 50 requêtes/jour ne suffisent pas." },
+    @{ T='[Ven] Surveillance du site (UptimeRobot)'; Qui='Njaraniaina'; P='P2'; D='Ven 02/10'
+       Fin='Alerte e-mail reçue lors d''un test'
+       Det="Moniteur HTTP(S) gratuit sur l'URL du site et sur /up, toutes les 5 min, alerte à l'équipe." },
     # Vendredi 02/10
     @{ T='[Ven] Retirer l''exemple Signalement'; Qui='Randy'; P='P0'; D='Ven 02/10 18 h'
        Fin='Déployé ; le repo ne contient aucune entité métier'

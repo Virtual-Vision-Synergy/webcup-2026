@@ -1,8 +1,11 @@
 # Convention de développement — Webcup 2026 (mode compétition)
 
 > Objectif : livrer vite **des fonctionnalités qui marchent, sécurisées et cohérentes**.
-> Le jury vérifie chaque fonctionnalité déclarée, teste la sécurité et peut lire ce repo.
+> Le jury vérifie chaque fonctionnalité déclarée, attaque la sécurité et peut lire ce repo.
 > En cas de doute : **simple, sûr, déployé** > ambitieux, fragile, en local.
+>
+> Organisation, rôles et déroulé du week-end : `docs/guides/20-playbook-competition.md`.
+> Cours Laravel avec exemples : `docs/guides/10-laravel-complet.md`.
 
 ---
 
@@ -10,128 +13,144 @@
 
 | Quoi | Où |
 |---|---|
-| Laravel 13 + Livewire 4 (composants single-file) + UI Flux | tout le projet |
-| Routes des pages utilisateur | `routes/web.php` |
-| Modèles, relations, casts | `app/Models/` |
-| Règles d'accès (qui peut voir / modifier quoi) | `app/Policies/` |
+| Laravel 13 (PHP 8.4) + Livewire 4 (composants single-file) + Flux + Tailwind 4 | tout le projet |
+| Pages des fonctionnalités (logique + vue dans un fichier) | `resources/views/pages/<entite>/⚡index|⚡form|⚡show.blade.php` |
+| Routes des fonctionnalités (groupe `auth`) | `routes/features.php` |
+| Routes du socle (accueil, tableau de bord, paramètres) | `routes/web.php`, `routes/settings.php` |
+| Modèles, relations, casts, constantes d'options | `app/Models/` |
+| Règles d'accès | `app/Policies/` |
 | Migrations, factories, seeders | `database/` |
-| Espace admin (Filament 5) | `app/Filament/` → `/admin` |
+| Espace admin (Filament 5) | `app/Filament/` → `/admin` (admins uniquement) |
+| Services externes (IA, API de l'orga) | `app/Services/` + `config/services.php` |
+| Traductions françaises | `lang/fr.json`, `lang/fr/*.php` |
 | Tests (Pest) | `tests/Feature/` |
-| Déploiement | `deploy.sh` (sur le serveur) |
+| Générateur | `app/Console/Commands/MakeFeature.php` |
+| Déploiement | `deploy.sh` (lancé sur le serveur) |
 
-- **Local** : SQLite, `http://webcup-2026.test` (Herd).
+- **Local** : SQLite, `http://webcup-2026.test` (Herd, Chrome).
 - **Production** : MariaDB, https://virtualvisionsy.madagascar.webcup.hodi.cloud
+- **Sessions cloud Claude** : préparées automatiquement (`.claude/settings.json` → `scripts/cloud-setup.sh`).
 
 ---
 
-## 2. Recette : ajouter une fonctionnalité (~15 à 30 min)
+## 2. Recette : ajouter une entité (5 à 30 min)
 
-Exemple avec une entité `Signalement` appartenant à un utilisateur.
-
-1. **Modèle + migration + factory + seeder + policy**
+1. **Générer** (jamais de CRUD écrit à la main) :
    ```bash
-   php artisan make:model Signalement -mfs --policy
+   php artisan make:feature PointRegroupement --fields="nom:string,capacite:integer,ouvert:boolean,latitude:decimal?,longitude:decimal?" --label="Point de regroupement" --plural="Points de regroupement" --icon=map-pin
+   php artisan migrate
    ```
-2. **Migration** : colonnes métier + propriétaire si la donnée appartient à quelqu'un
-   ```php
-   $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-   ```
-3. **Modèle** : `$fillable` explicite (jamais `user_id`, `role`, `status` sensibles venant du formulaire), `casts`, relations.
-4. **Policy** : propriétaire ou admin
-   ```php
-   public function update(User $user, Signalement $signalement): bool
-   {
-       return $user->id === $signalement->user_id || $user->isAdmin();
-   }
-   ```
-5. **Admin (si utile)** : `php artisan make:filament-resource Signalement --generate`
-6. **Page utilisateur** : composant Livewire (single-file) + route dans le groupe `auth`.
-   Dans chaque action : `$this->authorize('update', $signalement);`
-7. **Données de démo** : compléter la factory (Faker `fr_FR`) + le seeder.
-8. **Test** : au minimum « le propriétaire peut » et « un autre utilisateur reçoit 403 ».
-9. `vendor/bin/pint` → `php artisan test` → commit → push → PR.
-
-> Un générateur `make:feature` automatisera les étapes 1 à 8 (à venir).
+   Types : `string`, `text`, `integer`, `decimal`, `boolean`, `date`, `datetime`, `enum(a/b/c)`, `image`. Suffixe `?` = facultatif. Sous PowerShell, séparer les valeurs d'enum par `/`.
+2. **Relire** la migration (index, `nullable`), le modèle (relations, casts), la factory (données crédibles), la policy (règles du sujet).
+3. **Adapter** : relations, filtres, statut réservé à l'admin, textes, icônes.
+4. **Admin** si utile : `php artisan make:filament-resource PointRegroupement --generate`, puis enums en `Select`, colonnes en badges, actions de modération.
+5. **Tester** : les 6 tests générés + un test par règle métier.
+6. `vendor/bin/pint` → `php artisan test` → commit → push → PR.
 
 ---
 
 ## 3. Sécurité — règles NON négociables
 
-1. **Tout est protégé par défaut** : toute route est dans le groupe `auth`, sauf exceptions publiques explicites.
-2. **Chaque action vérifie les droits** (`authorize` / Policy). Jamais « le bouton est caché donc c'est protégé ».
-3. **Jamais faire confiance à un ID venant du client** : toujours passer par la Policy, ou filtrer par propriétaire
-   (`auth()->user()->signalements()->findOrFail($id)`).
-4. **Assignation de masse** : `$fillable` explicite. `role`, `user_id`, `is_admin`, `status` sensibles → assignés dans le code, jamais depuis la requête.
-5. **Validation côté serveur systématique** (règles Livewire / FormRequest), même si le front valide déjà.
-6. **Affichage** : toujours `{{ }}`. Jamais `{!! !!}` avec une donnée saisie par un utilisateur.
-7. **Uploads** : `image` + `mimes:jpg,jpeg,png,webp` + `max:2048`, stockés avec un nom aléatoire.
-8. **Secrets** : uniquement dans `.env` (jamais commité). Clés API (OpenRouter…) **uniquement côté serveur**.
-9. **Production** : `APP_DEBUG=false`, toujours.
-10. **Messages d'erreur** : génériques pour l'utilisateur (pas de trace, pas de « cet email n'existe pas »).
+1. **Tout est protégé par défaut** : routes métier dans le groupe `auth` de `routes/features.php`. Une page publique est une **décision** notée dans l'issue.
+2. **Chaque méthode publique** d'un composant Livewire vérifie les droits : `$this->authorize('update', $record)`. Jamais « le bouton est caché donc c'est protégé ».
+3. **Jamais confiance à un ID venant du navigateur** : `findOrFail($id)` puis `authorize`, ou filtrer par propriétaire.
+4. **Enregistrement du composant verrouillé** : `#[Locked] public ?Modele $record = null;`
+5. **Assignation de masse** : `#[Fillable([...])]` explicite. `user_id`, `role`, `statut` réservés **jamais dedans** : assignés dans le code (`$x->user()->associate(auth()->user())`).
+6. **Validation serveur** de chaque champ (`rules()`), `Rule::in(Modele::X_OPTIONS)` pour les listes.
+7. **Affichage** : toujours `{{ }}`. Jamais `{!! !!}` avec une donnée saisie. Texte injecté en JS : `textContent`, jamais `innerHTML`.
+8. **Uploads** : `image` + `mimes:jpg,jpeg,png,webp` + `max:2048`, stockage `->store('dossier', 'public')`.
+9. **Actions sensibles limitées** (envoi, IA, signalement) : `RateLimiter` par utilisateur.
+10. **Secrets** uniquement dans `.env` (jamais commité), lus via `config()`. `APP_DEBUG=false` en production.
+11. **Messages d'erreur** génériques (pas de trace, pas de « cet e-mail n'existe pas »).
+12. **Données personnelles** d'autrui (e-mail, téléphone) jamais affichées sans règle de Policy dédiée.
 
 ---
 
-## 4. Git
+## 4. Code
 
-- **Branches** : `feat/nom-court`, `fix/nom-court`. Petites, fusionnées vite.
-- **Commits** : `feat: …`, `fix: …`, `style: …`, `test: …`, `chore: …`, `docs: …` (en français, clair).
-- **Avant chaque push** : `vendor/bin/pint` puis `php artisan test`. La CI refuse le code mal formaté.
-- **PR** : écrire `Refs #12`, **jamais** `Closes #12` (sinon l'issue saute l'étape « À tester sur Hodi »).
-- **Merge et déploiement** : le chef d'équipe ou son adjoint uniquement.
+- Nommage métier **en français** (comme le sujet) : `Signalement`, `titre`, `niveau`. Code technique Laravel en anglais (`index`, `store`, `user`).
+- Typer paramètres, retours et propriétés. Propriétés de formulaire Livewire en `string` + validation + cast dans le modèle. Pas de `declare(strict_types=1)`.
+- Une constante par liste d'options : `public const NIVEAU_OPTIONS = ['faible', 'moyen', 'critique'];`
+- Requêtes de liste : `with([...])` pour éviter le N+1, `paginate(10)`.
+- Pas de logique métier dans les vues Blade ; pas de requête dans une boucle.
+- `dd()` / `dump()` retirés avant commit.
+- La CI lance **Pint + PHPStan + tests** : elle doit rester verte.
+
+---
+
+## 5. Git
+
+- **Branches** : `feat/nom-court`, `fix/nom-court`, depuis `main` à jour. Une branche = une issue.
+- **Commits** : `feat: …`, `fix: …`, `style: …`, `test: …`, `chore: …`, `docs: …` (en français, clair, petit).
+- **Avant chaque push** : `vendor/bin/pint` puis `php artisan test`.
+- **PR** : titre clair, `Refs #12` (**jamais** `Closes #12`), section « Comment tester ».
+- **Merge et déploiement** : Randy, ou Judicaël quand Randy dort. Personne ne merge sa propre PR (sauf correctif urgent du chef).
+- **Conflits** dans `routes/features.php`, la sidebar ou le seeder : garder **les deux** blocs.
 - **Jamais** de `.env`, de mot de passe ou de clé dans un commit.
+- **Sessions cloud** : branche dédiée, PR, jamais de push sur `main`.
 
 ---
 
-## 5. Définition de « terminé »
+## 6. Définition de « terminé »
 
-Une fonctionnalité est terminée seulement si :
-
-- [ ] elle est **déployée sur Hodi** ;
-- [ ] elle a été **testée en ligne** avec un compte jury (user **et** admin si concerné) ;
-- [ ] elle fonctionne **sur mobile** ;
-- [ ] les droits sont vérifiés (un autre utilisateur ne peut pas y toucher) ;
-- [ ] elle est **ajoutée au récap** → l'issue est fermée (colonne « Fait & dans le récap »).
+- [ ] Mergé dans `main`, CI verte
+- [ ] **Déployé sur Hodi**
+- [ ] **Testé en ligne par Njaraniaina** avec le compte jury user (et admin si concerné)
+- [ ] Un autre utilisateur ne peut ni voir ni modifier ce qui ne le concerne pas
+- [ ] Utilisable **sur téléphone**
+- [ ] Ligne ajoutée à `docs/recap.md` → issue fermée (« Fait & dans le récap »)
 
 Pas terminé = pas déclaré au jury.
 
 ---
 
-## 6. UI / UX
+## 7. UI / UX
 
-- Composants **Flux** en priorité, pas de CSS maison sauf nécessité.
+- Composants **Flux** en priorité, Tailwind pour la mise en page, pas de CSS maison sauf nécessité.
+- Couleur d'accent **uniquement** dans le bloc `@theme` de `resources/css/app.css` (et `Color::` dans le panneau Filament).
 - **Mobile d'abord** : tester chaque écran en largeur téléphone.
-- Toujours prévoir : **état vide**, **chargement**, **erreur**, **message de succès**.
-- Textes en **français**, clairs, cohérents avec le thème du sujet.
-- Des **données de démo réalistes** partout (une app vide paraît inachevée).
+- Chaque écran : **état vide** (message + action), **chargement** (`wire:loading`), **erreur** (validation en français), **succès** (`Flux::toast`).
+- Textes en **français**, cohérents avec le thème. Images avec `alt`.
+- **Données de démo réalistes** partout.
 
 ---
 
-## 7. Board et priorités (jour J)
+## 8. Board et priorités
 
-- Colonnes : À faire → En cours → À tester sur Hodi → Fait & dans le récap.
-- Priorité : **P0** base obligatoire → **P1** forte valeur jury → **P2** si on a le temps.
-- Chaque annonce de l'orga → **triage de 10 min** par le chef d'équipe (ou l'adjoint si le chef dort).
-- Déploiement toutes les **2-3 h minimum**. **Gel des nouvelles fonctionnalités vers H+21.**
+- Colonnes : **À faire → En cours → À tester sur Hodi → Fait & dans le récap**.
+- Priorité : **P0** base obligatoire → **P1** forte valeur jury → **P2** si le temps le permet.
+- Labels : `base`, `progressive`, `sécu`, `prépa`, `bug`.
+- Une seule carte « En cours » par personne.
+- Triage d'une annonce : **10 min** par Randy (Judicaël s'il est de service).
+- Déploiement toutes les **2-3 h**. **Gel à H+21 (6 h)**. Dernier déploiement **8 h 30**.
 
 ---
 
-## 8. Commandes utiles
+## 9. Commandes utiles
 
 ```bash
 # Local
-composer run dev                  # lance le serveur de dev (Vite)
-php artisan migrate:fresh --seed  # repart d'une base propre avec données de démo
-vendor/bin/pint                   # formatage
-php artisan test                  # tests
+composer run dev                          # serveur de dev (laisser tourner)
+php artisan make:feature ...              # générer une entité
+php artisan migrate                       # appliquer les migrations
+php artisan migrate:fresh --seed          # base propre + démo (LOCAL uniquement)
+vendor/bin/pint                           # formatage
+php artisan test                          # tests
+php artisan route:list --path=xxx         # routes
+php artisan optimize:clear                # vider les caches
 
 # Serveur (Terminal cPanel)
-bash ~/webcup-2026/deploy.sh      # déploiement complet
+bash ~/webcup-2026/deploy.sh              # déploiement complet
 cd ~/webcup-2026 && php84 artisan migrate:status
+tail -n 60 ~/webcup-2026/storage/logs/laravel.log
 ```
 
 ### Pièges connus
-- **PowerShell + Herd** : écrire les contraintes Composer avec `~` et non `^` (ex. `"vendor/package:~5.0"`).
-- **Serveur** : toujours `cd ~/webcup-2026` avant `artisan`.
-- **`public/.htaccess`** contient le bloc qui active PHP 8.4 sur le serveur : ne jamais le supprimer.
-- **Filament** : sans `implements FilamentUser` sur `User`, l'admin est ouvert à tous en local et fermé à tous en production.
+- **PowerShell** : `~` au lieu de `^` dans les contraintes Composer ; `/` au lieu de `|` dans les enums de `make:feature`.
+- **Herd** : utiliser Chrome (le VPN / DoH de Firefox casse les `.test`) ; IIS arrêté.
+- **Style cassé** : `composer run dev` doit tourner, sinon `npm run build`, puis Ctrl+F5.
+- **Serveur** : toujours `cd ~/webcup-2026` avant `artisan` ; `php84` = PHP 8.4 (le `php` par défaut est 8.1).
+- **`public/.htaccess`** contient le bloc `AddHandler … ea-php84` : ne jamais le supprimer.
+- **Filament** : `User implements FilamentUser` + `canAccessPanel()` sinon l'admin est ouvert à tous en local.
+- **Production** : jamais `migrate:fresh`, `db:seed` ni `key:generate`.
 - **PHPStan** : si `composer ci:check` plante sur la mémoire (128M par défaut), le script `types:check` utilise déjà `--memory-limit=1G`.

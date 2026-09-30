@@ -29,3 +29,17 @@
   AddHandler application/x-httpd-ea-php84___lsphp .php .php8 .phtml
 </IfModule>
 # php -- END cPanel-generated handler, do not edit
+
+# Performance -- Cache long des fichiers compilés par Vite, uniquement dans /build/
+# (leur nom contient un hash qui change à chaque build ; les autres fichiers gardent le cache par défaut)
+<IfModule mod_setenvif.c>
+    SetEnvIf Request_URI "^/build/" VITE_BUILD_ASSET
+</IfModule>
+<IfModule mod_headers.c>
+    Header set Cache-Control "public, max-age=31536000, immutable" env=VITE_BUILD_ASSET
+</IfModule>
+
+# Performance -- Compression des réponses texte
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/plain application/javascript application/json image/svg+xml
+</IfModule>

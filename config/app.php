@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'description' => env('APP_DESCRIPTION', 'Application réalisée par Virtual Vision Synergie pour le 24h by Webcup 2026.'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

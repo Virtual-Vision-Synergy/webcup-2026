@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Signalement;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -37,6 +38,8 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $users = User::all();
+
+        Signalement::factory(20)->recycle($users)->create();
 
         // make:feature:seeders
     }

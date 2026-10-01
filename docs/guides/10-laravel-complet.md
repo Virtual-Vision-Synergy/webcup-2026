@@ -712,18 +712,25 @@ $signalement->statut = 'en_attente';
 $signalement->save();
 ```
 
-**Limiter une action sensible** (envoi, signalement, appel IA) :
+**Limiter une action sensible** (envoi, signalement, appel IA, export) : le trait `App\Concerns\ThrottlesPerUser` (par utilisateur connecté, par IP à défaut) :
 
 ```php
-use Illuminate\Support\Facades\RateLimiter;
+use App\Concerns\ThrottlesPerUser;
 
-$cle = 'signalement:'.auth()->id();
-if (RateLimiter::tooManyAttempts($cle, 10)) {
-    $this->addError('titre', 'Trop de signalements. Réessayez dans une minute.');
-    return;
+new class extends Component
+{
+    use ThrottlesPerUser;
+
+    public function envoyer(): void
+    {
+        $this->authorize('create', Signalement::class);
+        $this->throttlePerUser('signalement', maxAttempts: 10, decaySeconds: 60);   // ValidationException au-delà
+        // ...
+    }
 }
-RateLimiter::hit($cle, 60);
 ```
+
+Au-delà de la limite, une `ValidationException` est levée sur la clé `throttle` : `@error('throttle') <flux:text class="text-red-600">{{ $message }}</flux:text> @enderror`. Chaque action (`'signalement'`, `'ia'`…) a son propre compteur. Test : `tests/Feature/Toolbox/ThrottlesPerUserTest.php`.
 
 **Injection SQL** : Eloquent protège automatiquement. Seul danger : `whereRaw` / `DB::raw` avec une valeur utilisateur concaténée. Toujours des paramètres : `->whereRaw('LOWER(titre) LIKE ?', ['%'.$s.'%'])`.
 
@@ -741,36 +748,18 @@ RateLimiter::hit($cle, 60);
 | « Limiter le spam » | `RateLimiter` (15 min) |
 | « Masquer les données sensibles » | Policy `view` restrictive + masquage dans les vues |
 
-**Journal des actions** (exemple complet) :
+**Journal des actions** : modèle `App\Models\ActionLog` (table `action_logs`) et ressource Filament en lecture seule (`/admin/action-logs`, « Journal des actions »).
 
 ```php
-// migration
-$table->id();
-$table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
-$table->string('action', 50);              // created, updated, deleted, login…
-$table->string('subject_type')->nullable();
-$table->unsignedBigInteger('subject_id')->nullable();
-$table->string('ip', 45)->nullable();
-$table->timestamps();
-
-// app/Models/ActionLog.php
-#[Fillable(['user_id', 'action', 'subject_type', 'subject_id', 'ip'])]
-class ActionLog extends Model
-{
-    public static function record(string $action, ?Model $subject = null): void
-    {
-        static::create([
-            'user_id' => auth()->id(),
-            'action' => $action,
-            'subject_type' => $subject ? class_basename($subject) : null,
-            'subject_id' => $subject?->getKey(),
-            'ip' => request()->ip(),
-        ]);
-    }
-}
+ActionLog::record('deleted', $signalement);   // qui, quoi, quand, depuis quelle IP
+ActionLog::record('login');                   // sans objet
 ```
 
-Appel : `ActionLog::record('deleted', $signalement);`. Ici `user_id` est remplissable car il ne vient **jamais** d'un formulaire.
+- Actions connues (libellés français dans `ActionLog::ACTION_LABELS`) : `created`, `updated`, `deleted`, `login`, `logout`, `export`. Une autre valeur s'affiche telle quelle : ajouter son libellé dans la constante.
+- `user_id` est **hors `#[Fillable]`** : `record()` l'assigne depuis `auth()->id()`, jamais depuis un formulaire.
+- `record()` ne fait jamais échouer l'action journalisée (erreur → `report()`).
+- Supprimer un utilisateur conserve ses lignes (`user_id` devient `null`).
+- Où l'appeler : dans la méthode Livewire, après `authorize` et l'action réussie (ex. `delete()` → `ActionLog::record('deleted', $signalement)` avant ou après `$signalement->delete()`).
 
 ## 14. Filament : l'espace admin
 
@@ -851,7 +840,21 @@ return $table
 
 **Libellés en français** dans la ressource : `protected static ?string $modelLabel = 'signalement';`, `protected static ?string $pluralModelLabel = 'signalements';`, icône `protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedExclamationTriangle;`.
 
-**Ressource en lecture seule** (journal) : `public static function canCreate(): bool { return false; }` et pas d'`EditAction`.
+**Ressource en lecture seule** : modèle = `ActionLogResource` (`app/Filament/Resources/ActionLogs/`). Une seule page `index`, pas de `form()`, et les droits coupés :
+
+```php
+public static function canCreate(): bool { return false; }
+public static function canEdit(Model $record): bool { return false; }
+public static function canDelete(Model $record): bool { return false; }
+public static function canDeleteAny(): bool { return false; }
+
+public static function getPages(): array
+{
+    return ['index' => ListActionLogs::route('/')];   // pas de create ni edit : routes inexistantes (404)
+}
+```
+
+Colonnes en français, action en badge coloré (`formatStateUsing` + `ActionLog::ACTION_LABELS`), filtre `SelectFilter` sur l'action, tri par date décroissante, état vide expliqué. Pas d'`EditAction` ni de `DeleteBulkAction` dans le tableau.
 
 **Statistiques sur le tableau de bord admin**
 
@@ -871,6 +874,8 @@ protected function getStats(): array
     ];
 }
 ```
+
+Déjà en place : `App\Filament\Widgets\UsersStatsOverview` (inscrits, administrateurs, nouveaux des 7 derniers jours). Les widgets de `app/Filament/Widgets/` sont découverts automatiquement par `AdminPanelProvider` ; `canView()` le réserve aux admins. Pour un nouveau widget, copier-le et changer `getStats()`.
 
 Graphique : `php artisan make:filament-widget SignalementsParJour --chart` puis `getType()` → `'line'` et `getData()` → `['datasets' => [['label' => 'Signalements', 'data' => $valeurs]], 'labels' => $jours]`.
 
@@ -1061,64 +1066,48 @@ OPENROUTER_MODEL=nom-du-modele:free
 'openrouter' => ['key' => env('OPENROUTER_API_KEY'), 'model' => env('OPENROUTER_MODEL')],
 ```
 
-**Client de l'API de l'orga** (cache, délai, nouvel essai, repli) :
+**Sans clé, rien ne casse** : si une variable manque dans `.env`, les services renvoient `null` (IA) ou `[]` (API de l'orga) sans appeler le réseau ni lever d'exception. Les pages affichent alors « Service indisponible ». `isConfigured()` permet de masquer un bouton.
+
+**Client de l'API de l'orga** — `App\Services\OrgaApi`, générique (aucun lien avec un sujet) : délai 10 s, 2 essais (pause 500 ms), cache 5 min par chemin + paramètres, repli `[]`. Seules les réponses réussies sont mises en cache.
 
 ```php
-// app/Services/OrgaApi.php
-class OrgaApi
-{
-    /** @return array<int, array<string, mixed>> */
-    public function alertes(): array
-    {
-        try {
-            return Cache::remember('orga:alertes', now()->addMinutes(5), fn () => Http::baseUrl(config('services.orga.url'))
-                ->withToken(config('services.orga.token'))
-                ->acceptJson()
-                ->timeout(10)
-                ->retry(2, 500)
-                ->get('/alertes')
-                ->throw()
-                ->json('data', []));
-        } catch (\Throwable $e) {
-            report($e);
-            return [];            // la page affiche « Données momentanément indisponibles »
-        }
-    }
+use App\Services\OrgaApi;
+
+$alertes = app(OrgaApi::class)->get('/alertes', ['page' => 1]);          // cache 5 min
+$stats   = app(OrgaApi::class)->get('/stats', ttlSeconds: 60);           // cache 1 min
+
+if ($alertes === []) {
+    // afficher « Données momentanément indisponibles » (liste vide ou API en panne)
 }
 ```
 
-Utilisation : `app(OrgaApi::class)->alertes()`. Importer en base : une commande `php artisan make:command SyncAlertes` avec `Alerte::updateOrCreate(['external_id' => $d['id']], [...])`, planifiée (chapitre 19).
+`get()` renvoie le contenu de la clé `data` de la réponse JSON si elle existe, sinon le JSON complet. Importer en base : une commande `php artisan make:command SyncAlertes` avec `Alerte::updateOrCreate(['external_id' => $d['id']], [...])`, planifiée (chapitre 19). Tests : `tests/Feature/Toolbox/OrgaApiTest.php` (`Http::fake` + `Sleep::fake()` pour ne pas attendre entre les essais).
 
-**IA (OpenRouter)** — la clé ne quitte jamais le serveur :
+**IA (OpenRouter)** — `App\Services\Ai`, la clé ne quitte jamais le serveur : délai 25 s, cache 1 h (clé = modèle + système + question), repli `null` sur absence de clé/modèle, erreur HTTP, délai dépassé ou réponse vide. Un échec n'est jamais mis en cache.
 
 ```php
-// app/Services/Ai.php
-class Ai
+use App\Concerns\ThrottlesPerUser;
+use App\Services\Ai;
+
+new class extends Component
 {
-    public function ask(string $system, string $prompt): ?string
+    use ThrottlesPerUser;
+
+    public string $question = '';
+    public ?string $reponse = null;
+
+    public function demander(Ai $ai): void
     {
-        if (! config('services.openrouter.key')) {
-            return null;
-        }
+        $this->validate(['question' => ['required', 'string', 'max:500']]);
+        $this->throttlePerUser('ia', maxAttempts: 5, decaySeconds: 60);   // 5 demandes/minute/utilisateur
 
-        return Cache::remember('ai:'.md5($system.$prompt), now()->addHour(), function () use ($system, $prompt) {
-            $response = Http::withToken(config('services.openrouter.key'))
-                ->timeout(25)
-                ->post('https://openrouter.ai/api/v1/chat/completions', [
-                    'model' => config('services.openrouter.model'),
-                    'messages' => [
-                        ['role' => 'system', 'content' => $system],
-                        ['role' => 'user', 'content' => $prompt],
-                    ],
-                ]);
-
-            return $response->successful() ? $response->json('choices.0.message.content') : null;
-        });
+        $this->reponse = $ai->ask('Tu réponds en français, en deux phrases.', $this->question)
+            ?? 'Service indisponible, réessayez dans un instant.';
     }
-}
+};
 ```
 
-Dans le composant : **limiter par utilisateur** (chapitre 13, 5 demandes/minute), afficher « Service indisponible, réessayez » si `null`, et afficher la réponse avec `{{ }}` (jamais comme du HTML). Limites OpenRouter : 20 requêtes/minute, 50/jour (1000 après un premier crédit). Le cache évite de consommer le quota deux fois pour la même question.
+Afficher la réponse avec `{{ }}` (jamais comme du HTML). Limites OpenRouter : 20 requêtes/minute, 50/jour (1000 après un premier crédit) : le cache évite de consommer le quota deux fois pour la même question. Tests : `tests/Feature/Toolbox/AiTest.php` (`Http::fake`, jamais de vrai appel).
 
 ## 19. Cache, tâches planifiées, file d'attente
 
@@ -1162,28 +1151,36 @@ Page de tableau de bord utilisateur : des `<x-stat>` (chapitre 9) dans une grill
 @endforeach
 ```
 
-**Export CSV** depuis un composant Livewire :
+**Export CSV** : le trait `App\Concerns\ExportsCsv` fait tout le travail (BOM UTF-8 pour les accents dans Excel, séparateur `;`, lecture par paquets de 200 avec `chunkById`, nom de fichier daté). **L'autorisation est obligatoire** : la Policy est le premier argument, sans elle pas de fichier (403).
 
 ```php
-public function export()
-{
-    $this->authorize('viewAny', Signalement::class);
+use App\Concerns\ExportsCsv;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
-    return response()->streamDownload(function () {
-        $out = fopen('php://output', 'w');
-        fwrite($out, "\xEF\xBB\xBF");                                // accents lisibles dans Excel
-        fputcsv($out, ['Titre', 'Niveau', 'Auteur', 'Date'], ';');
-        Signalement::with('user')->latest()->chunk(200, function ($lignes) use ($out) {
-            foreach ($lignes as $s) {
-                fputcsv($out, [$s->titre, $s->niveau, $s->user?->name, $s->created_at->format('d/m/Y')], ';');
-            }
-        });
-        fclose($out);
-    }, 'signalements-'.now()->format('Ymd').'.csv');
-}
+new class extends Component
+{
+    use ExportsCsv;
+
+    public function export(): StreamedResponse
+    {
+        return $this->streamCsv('viewAny', Signalement::class, Signalement::with('user'), [
+            'Titre' => fn (Signalement $s) => $s->titre,
+            'Niveau' => fn (Signalement $s) => $s->niveau,
+            'Auteur' => fn (Signalement $s) => $s->user?->name,
+            'Date' => fn (Signalement $s) => $s->created_at,          // formatée en jj/mm/aaaa hh:mm
+        ], 'signalements');                                            // → signalements-20261004.csv
+    }
+};
 ```
 
 Bouton : `<flux:button wire:click="export" icon="arrow-down-tray">Exporter</flux:button>`.
+
+À savoir :
+- les colonnes sont des fonctions : `null` → cellule vide, booléen → Oui/Non, date → `d/m/Y H:i` ;
+- ne pas mettre d'`orderBy` dans la requête (`chunkById` trie par `id`) ; charger les relations avec `with()` (pas de N+1) ;
+- les textes qui commencent par `=`, `+`, `-` ou `@` sont préfixés d'une apostrophe : sans cela, Excel les exécute comme une formule (injection CSV, un classique de l'audit) ;
+- à combiner avec `throttlePerUser('export', 3, 60)` (chapitre 13) et `ActionLog::record('export')` si l'export contient des données sensibles ;
+- tests : `tests/Feature/Toolbox/ExportsCsvTest.php`.
 
 ## 21. Données de démo : factories et seeders
 

@@ -11,3 +11,11 @@ parameters:
         - routes/
 
     level: 7
+
+    ignoreErrors:
+        # Traits réutilisables, utilisés par les composants des fonctionnalités (et par les tests)
+        -
+            identifier: trait.unused
+            paths:
+                - app/Concerns/ExportsCsv.php
+                - app/Concerns/ThrottlesPerUser.php

@@ -9,7 +9,7 @@ _Pour les 4 membres. C'est **le** document de référence du week-end : règles,
 3. Le jury **teste lui-même** l'application en ligne, les jours suivants, sans nous. Il vérifie chaque fonctionnalité déclarée et **attaque la sécurité**.
 4. Ce qui n'est pas **en ligne sur Hodi** n'existe pas. Ce qui n'est pas **dans le récap** ne sera pas cherché.
 5. Mieux vaut **8 fonctionnalités finies, belles et sûres** que 15 à moitié.
-6. **Socle en ligne à H+6**, déploiement toutes les **2-3 h**, **gel à H+21** (6 h du matin).
+6. **Socle en ligne à H+6**, déploiement **automatique à chaque merge** (Hodifly), **gel à H+21** (6 h du matin).
 7. Une personne décide (**Randy**, ou **Judicaël** quand Randy dort). Triage d'une annonce : **10 minutes maximum**.
 8. Rien n'est « terminé » tant que **Njaraniaina** ne l'a pas testé **en ligne** avec les comptes jury.
 9. On dort **par roulement** : jamais le chef et l'adjoint en même temps.
@@ -151,7 +151,7 @@ Annonce ──► Triage (10 min) ──► Issue + priorité ──► Branche 
 | 5. Vérifier en local | Dev | `pint`, `php artisan test`, test à la main (compte user + compte « autre ») | 5 min |
 | 6. PR | Dev | `git push -u origin feat/xxx` ; PR avec `Refs #n` et « Comment tester » | 3 min |
 | 7. Merge | Randy (Judicaël) | CI verte + relecture 2 min (auth, authorize, test 403) → merge | 5 min |
-| 8. Déployer | Randy (Judicaël) | `bash ~/webcup-2026/deploy.sh` (regrouper plusieurs merges) | 5 min |
+| 8. Déployer | Automatique (Hodifly) | Le merge part en ligne en 1-2 min ; Randy (Judicaël) vérifie le site, ou **Restaurer** si ça casse | 2 min |
 | 9. Recette | Njaraniaina | Checklist §7 sur l'URL en ligne, navigation privée, téléphone | 5-10 min |
 | 10. Récap | Njaraniaina | Ligne dans `docs/recap.md` → ferme l'issue | 2 min |
 
@@ -240,7 +240,7 @@ Les **5 attaques du jury** (à refaire sur toute l'app à H+21) : changer l'ID d
 |---|---|---|---|---|
 | 9 h 40 → 15 h (→ H+6) | Intègre, merge, 1ᵉʳ déploiement vers 13 h, pilote Claude | Base difficile (relations, rôles, sécu) | Base (entités, pages, identité visuelle) | Board, issues, recette, comptes jury, récap |
 | **15 h (H+6)** | **Socle en ligne obligatoire** | | | Recette complète |
-| 15 h → 21 h | Triage, merges, déploiement toutes les 2-3 h | Progressives difficiles | Progressives | Recette après chaque déploiement |
+| 15 h → 21 h | Triage, merges (déployés automatiquement), vérification en ligne | Progressives difficiles | Progressives | Recette après chaque déploiement |
 | 21 h → 22 h 30 | Chef | Progressives | **Dort (21 h → 0 h 30)** | Recette |
 | 22 h 30 → 0 h 30 | Chef | **Dort (22 h 30 → 2 h)** | *dort* | Recette |
 | 0 h 30 → 2 h | Chef | *dort* | Progressives | **Dort (0 h 30 → 4 h)** |
@@ -267,6 +267,18 @@ Les **5 attaques du jury** (à refaire sur toute l'app à H+21) : changer l'ID d
 | 15 h → 16 h | Montage simple, export MP4, mise en ligne (YouTube non répertorié ou Drive public) | Njaraniaina |
 | 16 h → 17 h | Formulaire Webcup rempli, relu par Judicaël | Randy |
 | **18 h** | **Tout est envoyé** (marge jusqu'à lundi 11 h) | Randy |
+
+### 8.5 Après 9 h : mise sous cloche et surveillance
+
+L'application doit rester **utilisable par le jury pendant toute la semaine d'évaluation**, sans qu'on touche au code.
+
+| Quand | Quoi | Qui |
+|---|---|---|
+| 8 h 45 | Désactiver le **déploiement automatique** dans Hodifly (Modifier → décocher « Déploiement auto au push ») et **protéger `main`** sur GitHub (Settings → Branches → aucun push) | Randy |
+| 8 h 50 | **Sauvegarde finale** : `bash ~/app/scripts/sauvegarde-base.sh rendu` + export phpMyAdmin gardé hors du serveur | Randy |
+| Avant 9 h | Crédit OpenRouter actif (1000 requêtes/jour au lieu de 50) | Judicaël |
+| Avant 9 h | Surveillance gratuite (UptimeRobot) qui envoie un e-mail si le site ne répond plus | Njaraniaina |
+| Toute la semaine | Si le site tombe : `tail -n 60 ~/app/storage/logs/laravel.log`, `cd ~/app && php84 artisan optimize:clear && php84 artisan optimize`. **Aucun push de code.** Prévenir l'orga sur Discord. | Randy, Judicaël |
 
 ## 9. Les livrables en détail
 
@@ -296,8 +308,8 @@ Tournée sur l'URL **en ligne**, pas en local. Outil : OBS Studio (testé jeudi)
 
 | Situation | Réflexe |
 |---|---|
-| **Production cassée (500)** | `tail -n 60 storage/logs/laravel.log` ; `php84 artisan optimize:clear && php84 artisan optimize`. Si une fonctionnalité en est la cause : `git revert <sha>` en local, push, redéploiement. Pas de `reset --hard` sur le serveur. |
-| **Page sans style** | `deploy.sh` a raté `npm run build` : relancer, lire l'erreur. Ctrl+F5. |
+| **Production cassée (500)** | `tail -n 60 storage/logs/laravel.log` ; `php84 artisan optimize:clear && php84 artisan optimize`. Si une fonctionnalité en est la cause : Hodifly → **Restaurer** la version précédente, puis `git revert <sha>` en local et push. Pas de `reset --hard` sur le serveur. |
+| **Déploiement en échec** | Hodifly → Journaux. L'ancienne version reste en ligne : corriger en local, re-merger. |
 | **Migration qui échoue en ligne** | Différence SQLite/MariaDB. Corriger en local, **nouvelle** migration, redéployer. Ne jamais modifier une migration déjà passée. |
 | **Conflit Git** | `routes/features.php`, sidebar, seeder : garder **les deux** blocs. Ailleurs : l'auteur de la PR résout, aidé de Judicaël. |
 | **Un membre bloqué > 20 min** | Il le dit ; Judicaël ou Claude aide ; si toujours bloqué à 40 min, Randy change la priorité. |
@@ -317,8 +329,8 @@ Toutes ces tâches sont des issues du board (label `prépa`), créées par `scri
 |---|---|---|
 | Question Discord : code générique préparé autorisé ? + fuseau horaire, push après 9 h, app en ligne pendant l'évaluation | Randy | Réponse notée dans l'issue |
 | Page d'accueil + identité visuelle (session cloud) | Randy | PR mergée, déployée |
-| Tester le nouveau `deploy.sh` (sauvegarde de la base, contrôle de santé, journal) | Randy | Fichier dans `~/backups` et « /up -> 200 OK » |
-| Cron `schedule:run` installé et vérifié sur cPanel | Randy | Tâche test exécutée en ligne |
+| Bascule sur Hodifly (déploiement auto, aperçus des PR désactivés) | Randy | Fait jeudi matin : site, `/up`, `/admin` OK |
+| Cron de sauvegarde `scripts/sauvegarde-base.sh` toutes les 30 min | Randy | Fichiers dans `~/backups` |
 | `APP_LOCALE=fr` en production + déploiement | Randy | Site en français en ligne |
 | Guides, playbook, installation (Claude) | Randy | PDF dans `docs/guides/` |
 | Réunion d'équipe 21 h (30 min) | Njaraniaina | Décisions notées |
@@ -331,7 +343,7 @@ Toutes ces tâches sont des issues du board (label `prépa`), créées par `scri
 |---|---|---|
 | Lecture tome 1 (Laravel) + son guide de rôle | Tous | Exercices faits |
 | Générateur : options `--belongs-to`, `--statut`, `--public`, ressource Filament | Judicaël (+ Claude) | Tests verts, doc à jour |
-| Compte OpenRouter, clé en `.env` serveur, modèle de secours noté | Judicaël | Appel test réussi en ligne |
+| Compte OpenRouter, clé dans les variables Hodifly, modèle de secours noté | Judicaël | Appel test réussi en ligne |
 | Envoi d'e-mail testé sur le serveur | Judicaël | Mail reçu |
 | Lighthouse mobile ≥ 90 sur accueil et une liste | Tsoa | Scores notés |
 | Comptes jury créés en production | Randy | Connexion OK |
@@ -347,7 +359,7 @@ Toutes ces tâches sont des issues du board (label `prépa`), créées par `scri
 | Retrait de l'exemple Signalement (+ migration de suppression) | Randy | Déployé, repo sans entité métier |
 | PDF des guides régénérés | Randy (Claude) | Dans `docs/guides/` |
 | Logistique : lieu, repas, eau, café, rallonges, 4G, chargeurs | Njaraniaina | Liste cochée |
-| Test à vide : `deploy.sh`, site, `/admin`, CI | Randy | Tout vert |
+| Test à vide : petite PR → merge → déploiement Hodifly → site, `/admin` ; puis **Restaurer** testé | Randy | Tout vert |
 | Dormir tôt | Tous | 22 h |
 
 ## 12. Annexes
@@ -382,9 +394,9 @@ php artisan migrate
 vendor/bin/pint && php artisan test
 git push -u origin feat/xxx
 
-# Serveur
-bash ~/webcup-2026/deploy.sh
-tail -n 60 ~/webcup-2026/storage/logs/laravel.log
+# Serveur (le déploiement est automatique au merge)
+tail -n 60 ~/app/storage/logs/laravel.log
+bash ~/app/scripts/sauvegarde-base.sh avant-pr12
 ```
 
 ### 12.3 Ce qu'on ne fait jamais

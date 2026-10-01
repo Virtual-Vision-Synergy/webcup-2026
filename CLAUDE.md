@@ -76,7 +76,8 @@ Comptes de démo locaux : `admin@example.com` / `user@example.com`, mot de passe
 - Ne fais **pas** de commit, push ou merge toi-même : propose les commandes, l'équipe les lance.
 - Messages de commit : `feat: …`, `fix: …`, `test: …`, `style: …`, `docs: …` (en français).
 - PR : `Refs #12`, jamais `Closes #12`.
-- Déploiement (fait par le chef d'équipe) : `bash ~/webcup-2026/deploy.sh` sur le serveur.
+- Déploiement : **automatique**. Chaque merge sur `main` est compilé et mis en ligne par Hodifly (cPanel) en 1 à 2 minutes : ce qui est mergé part en ligne, donc jamais de merge sans CI verte.
+- Les variables de production se changent dans Hodifly (Modifier → Variables), jamais dans un `.env` du serveur (réécrit à chaque déploiement). Sur le serveur, l'application en ligne est `~/app`.
 - Ne jamais modifier le bloc `AddHandler … ea-php84` de `public/.htaccess` (il active PHP 8.4 sur le serveur).
 
 ## Style de travail attendu

@@ -911,7 +911,7 @@ if ($this->photo) {
 
 Plusieurs fichiers : `public array $photos = [];`, règle `'photos.*' => ['image', 'max:2048']`, `<flux:input type="file" wire:model="photos" multiple />`.
 
-`php artisan storage:link` (une fois, fait par `deploy.sh` en ligne) : sans lui, les images sont invisibles. Toujours un `alt`, toujours `object-cover`.
+`php artisan storage:link` (une fois en local ; en ligne, Hodifly le fait à chaque déploiement) : sans lui, les images sont invisibles. Toujours un `alt`, toujours `object-cover`.
 
 ## 16. Carte et géolocalisation
 
@@ -1038,8 +1038,8 @@ Canaux : `database` (cloche) + `mail`. Le sujet et les lignes sont affichés ave
 
 - Local : `MAIL_MAILER=log` → les e-mails s'écrivent dans `storage/logs/laravel.log`.
 - Production (cPanel Hodi) : `MAIL_MAILER=sendmail`, `MAIL_FROM_ADDRESS="noreply@virtualvisionsy.madagascar.webcup.hodi.cloud"`, `QUEUE_CONNECTION=sync` (pas de worker sur l'hébergement mutualisé : les envois partent immédiatement).
-- **Vérifier en production**, sans tinker : `cd ~/webcup-2026 && php84 artisan app:test-mail votre@adresse.com`, puis regarder la boîte de réception **et les spams**. En cas d'échec, la commande affiche l'erreur du transport ; sinon `tail -n 60 storage/logs/laravel.log`.
-- Après modification du `.env` du serveur : `php84 artisan config:clear`. Après ce kit : `php84 artisan migrate --force` (fait par `deploy.sh`).
+- **Vérifier en production**, sans tinker : `cd ~/app && php84 artisan app:test-mail votre@adresse.com`, puis regarder la boîte de réception **et les spams**. En cas d'échec, la commande affiche l'erreur du transport ; sinon `tail -n 60 storage/logs/laravel.log`.
+- Les variables de production se changent dans Hodifly (Modifier → Variables), puis **Déployer**. Les migrations passent toutes seules au déploiement.
 
 **Tests** : `Notification::fake()` + `Notification::assertSentTo($user, ResetPassword::class)` pour vérifier qu'un envoi a lieu ; `Mail::fake()` + `Mail::assertSent(...)` pour un Mailable ; `app()->setLocale('fr')` dans le test pour vérifier le texte français (le `phpunit.xml` force `en`).
 
@@ -1133,11 +1133,7 @@ Schedule::command('app:sync-alertes')->everyFiveMinutes();
 Schedule::call(fn () => Signalement::where('statut', 'en_attente')->where('created_at', '<', now()->subDays(7))->update(['statut' => 'expire']))->daily();
 ```
 
-Sur le serveur, une tâche cron cPanel lance le planificateur chaque minute :
-
-```
-* * * * * cd ~/webcup-2026 && /opt/cpanel/ea-php84/root/usr/bin/php artisan schedule:run >> /dev/null 2>&1
-```
+En ligne, **Hodifly ajoute lui-même** la tâche cron `schedule:run` (chaque minute) dès que `routes/console.php` planifie quelque chose. Elle est visible dans cPanel → Tâches Cron ; rien à faire à la main.
 
 En local : `php artisan schedule:work` (ou `schedule:run` pour un passage). Liste : `php artisan schedule:list`.
 
@@ -1307,43 +1303,58 @@ Storage::fake('public');
 
 Outils : `php artisan tinker` (console PHP sur l'application : `Signalement::latest()->first()`), `php artisan about` (état général). Avec Claude Code : coller **l'erreur exacte** et les 20 dernières lignes du log, jamais « ça ne marche pas ». Retirer tous les `dd()` avant de commiter.
 
-## 24. Déployer
+## 24. Déployer (Hodifly)
 
-**`deploy.sh`** (lancé par Randy ou Judicaël dans le Terminal cPanel) :
+**Le principe** : chaque merge sur `main` est déployé **automatiquement** par Hodifly (outil de cPanel Hodi relié au dépôt GitHub). Réglages dans `hodifly.json` (PHP 8.4, `npm run build`, racine `public`, 10 versions gardées, pas d'aperçu des PR).
 
-```bash
-bash ~/webcup-2026/deploy.sh
-```
+À chaque déploiement, Hodifly :
 
-1. `git pull` de `main` ;
-2. `composer install --no-dev` ;
-3. `npm ci` + `npm run build` ;
-4. **sauvegarde de la base** (`~/backups`, 10 dernières) ;
-5. `migrate --force` ;
-6. `storage:link`, `filament:assets`, `optimize` ;
-7. **contrôle de santé** (`/up` doit répondre 200).
+1. récupère `main` dans un nouveau dossier de version (`releases/…`) ;
+2. écrit le `.env` à partir des **variables du projet** (hors du site public) ;
+3. `composer install --no-dev`, puis `npm run build` ;
+4. `migrate --force` ;
+5. met en cache configuration et routes, relie `storage/` (persistant entre les versions) et `public/storage` ;
+6. **bascule** le site sur la nouvelle version. Si une étape échoue, l'ancienne version reste en ligne.
 
-Journal : `~/deploy.log`. Le script s'arrête à la première erreur.
+Durée : 1 à 2 minutes. Journal complet : cPanel → Hodifly → **Journaux**. E-mail en cas d'échec.
 
-**Le `.env` du serveur** (jamais dans Git) doit contenir notamment :
+**Les variables** (Hodifly → Modifier → Variables d'environnement), jamais dans Git :
 
 ```
 APP_ENV=production
 APP_DEBUG=false
 APP_URL=https://virtualvisionsy.madagascar.webcup.hodi.cloud
+APP_KEY=base64:...            (ne jamais la changer : sessions et 2FA en dépendent)
 APP_LOCALE=fr
 APP_FAKER_LOCALE=fr_FR
-DB_CONNECTION=mariadb        (ou mysql)
+DB_CONNECTION, DB_DATABASE, DB_USERNAME, DB_PASSWORD
+SESSION_DRIVER=database
+CACHE_STORE=database
 QUEUE_CONNECTION=sync
 MAIL_MAILER=sendmail
+MAIL_FROM_ADDRESS=noreply@virtualvisionsy.madagascar.webcup.hodi.cloud
 OPENROUTER_API_KEY=...
 ```
 
-Après une modification du `.env` : `php84 artisan optimize`.
+Une variable modifiée n'est prise en compte qu'au déploiement suivant : bouton **Déployer**. Le fichier `.env` du serveur est **réécrit** à chaque déploiement : le modifier à la main ne sert à rien.
 
-**Ce qu'on ne fait jamais en production** : `migrate:fresh`, `db:seed`, `key:generate`, `APP_DEBUG=true`, `git reset --hard`, modifier du code directement sur le serveur, supprimer le bloc `AddHandler` de `public/.htaccess`.
+**Sur le serveur** (Terminal cPanel), `~/app` pointe toujours vers la version en ligne :
 
-**Revenir en arrière** : en local `git revert <sha>`, push, `deploy.sh`. En dernier recours, restaurer la base : `gunzip -c <sauvegarde>.sql.gz | mysql -u <utilisateur> -p <base>`.
+```bash
+cd ~/app
+php84 artisan migrate:status
+tail -n 60 storage/logs/laravel.log
+bash scripts/sauvegarde-base.sh avant-pr12     # sauvegarde manuelle avant une migration risquée
+```
+
+**Sauvegardes de la base** : `scripts/sauvegarde-base.sh` tourne toutes les 30 minutes (cron cPanel) et garde les 48 dernières dans `~/backups` ; JetBackup (cPanel) garde en plus des copies quotidiennes.
+
+**Ce qu'on ne fait jamais en production** : `migrate:fresh`, `db:seed`, `key:generate`, `APP_DEBUG=true`, modifier du code ou le `.env` directement sur le serveur, supprimer le bloc `AddHandler` de `public/.htaccess`, merger une PR dont la CI est rouge.
+
+**Revenir en arrière**
+
+- Le code : Hodifly → **Restaurer** → version précédente (instantané), puis `git revert <sha>` en local et push pour que `main` corresponde.
+- La base (dernier recours) : `gunzip -c ~/backups/<fichier>.sql.gz | mysql -u <utilisateur> -p <base>`.
 
 ## 25. Le générateur `make:feature`
 

@@ -55,7 +55,7 @@ test('l\'export produit un CSV avec BOM UTF-8, séparateur point-virgule et tout
     $csv = contenu($response);
 
     expect($csv)->toStartWith("\xEF\xBB\xBF".'Nom;E-mail;Admin;Identifiant'."\n")
-        ->and($csv)->toContain('Rakoto Éloïse;eloise@example.com;Oui;'.$admin->id)
+        ->and($csv)->toContain('"Rakoto Éloïse";eloise@example.com;Oui;'.$admin->id)
         ->and(substr_count($csv, "\n"))->toBe(6) // en-tête + 5 lignes, malgré des paquets de 2
         ->and($response->headers->get('Content-Type'))->toContain('text/csv')
         ->and($response->headers->get('Content-Disposition'))->toContain('utilisateurs-du-jury-'.now()->format('Ymd').'.csv');

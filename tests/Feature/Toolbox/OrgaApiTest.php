@@ -33,7 +33,7 @@ test('OrgaApi appelle l\'URL configurée avec le jeton et renvoie la clé data',
 
     Http::assertSent(fn (Request $request) => str_starts_with($request->url(), 'https://orga.test/api/alertes')
         && $request->hasHeader('Authorization', 'Bearer jeton-de-test')
-        && $request['page'] === '2');
+        && str_contains($request->url(), 'page=2'));
 });
 
 test('OrgaApi renvoie le JSON complet quand il n\'y a pas de clé data', function () {

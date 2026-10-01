@@ -47,13 +47,14 @@ class ActionLog extends Model
     public static function record(string $action, ?Model $subject = null): void
     {
         try {
-            $log = new static([
+            $log = new self([
                 'action' => Str::limit($action, 50, ''),
                 'subject_type' => $subject ? class_basename($subject) : null,
                 'subject_id' => $subject?->getKey(),
                 'ip' => request()->ip(),
             ]);
-            $log->user_id = auth()->id();
+            $userId = auth()->id();
+            $log->user_id = $userId === null ? null : (int) $userId;
             $log->save();
         } catch (Throwable $e) {
             report($e);

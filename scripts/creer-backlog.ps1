@@ -23,7 +23,7 @@ $Comptes = @{
     'Randy'       = 'And-matia'
     'Judicael'    = 'ManaJudy'
     'Tsoa'        = 'Andriantsoa94'
-    'Njaraniaina' = 'Njara-Niaina '
+    'Njaraniaina' = 'Njara-Niaina'
 }
 
 # ---------------------------------------------------------------------------

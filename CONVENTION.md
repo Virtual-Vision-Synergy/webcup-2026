@@ -25,7 +25,8 @@
 | Traductions françaises | `lang/fr.json`, `lang/fr/*.php` |
 | Tests (Pest) | `tests/Feature/` |
 | Générateur | `app/Console/Commands/MakeFeature.php` |
-| Déploiement | `deploy.sh` (lancé sur le serveur) |
+| Déploiement | Hodifly (cPanel), automatique à chaque merge sur `main` ; réglages dans `hodifly.json` |
+| Sauvegarde de la base | `scripts/sauvegarde-base.sh` (cron cPanel toutes les 30 min) |
 
 - **Local** : SQLite, `http://webcup-2026.test` (Herd, Chrome).
 - **Production** : MariaDB, https://virtualvisionsy.madagascar.webcup.hodi.cloud
@@ -139,17 +140,18 @@ php artisan test                          # tests
 php artisan route:list --path=xxx         # routes
 php artisan optimize:clear                # vider les caches
 
-# Serveur (Terminal cPanel)
-bash ~/webcup-2026/deploy.sh              # déploiement complet
-cd ~/webcup-2026 && php84 artisan migrate:status
-tail -n 60 ~/webcup-2026/storage/logs/laravel.log
+# Serveur (Terminal cPanel) : ~/app = la version en ligne
+cd ~/app && php84 artisan migrate:status
+tail -n 60 ~/app/storage/logs/laravel.log
+bash ~/app/scripts/sauvegarde-base.sh avant-pr12   # avant de merger une migration risquée
 ```
 
 ### Pièges connus
 - **PowerShell** : `~` au lieu de `^` dans les contraintes Composer ; `/` au lieu de `|` dans les enums de `make:feature`.
 - **Herd** : utiliser Chrome (le VPN / DoH de Firefox casse les `.test`) ; IIS arrêté.
 - **Style cassé** : `composer run dev` doit tourner, sinon `npm run build`, puis Ctrl+F5.
-- **Serveur** : toujours `cd ~/webcup-2026` avant `artisan` ; `php84` = PHP 8.4 (le `php` par défaut est 8.1).
+- **Serveur** : toujours `cd ~/app` avant `artisan` ; `php84` = PHP 8.4 (le `php` par défaut est 8.1). Ne jamais modifier un fichier sur le serveur : il est remplacé au déploiement suivant.
+- **Hodifly** : un merge sur `main` = un déploiement. Échec (build ou migration) = l'ancienne version reste en ligne, e-mail à Randy, détail dans Hodifly → Journaux.
 - **`public/.htaccess`** contient le bloc `AddHandler … ea-php84` : ne jamais le supprimer.
 - **Filament** : `User implements FilamentUser` + `canAccessPanel()` sinon l'admin est ouvert à tous en local.
 - **Production** : jamais `migrate:fresh`, `db:seed` ni `key:generate`.

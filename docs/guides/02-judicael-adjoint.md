@@ -81,14 +81,15 @@ Un point manquant = commentaire sur la PR + prévenir Randy. **Pas de merge sans
 Plus : 6 mauvais mots de passe sur `/login` → blocage ; `APP_DEBUG` à `false` (une URL inexistante affiche une page 404 propre, sans trace).
 
 ```bash
-grep -E '^(APP_ENV|APP_DEBUG)=' ~/webcup-2026/.env      # production / false
+grep -E '^(APP_ENV|APP_DEBUG)=' ~/app/.env      # production / false
 curl -sI https://virtualvisionsy.madagascar.webcup.hodi.cloud | grep -iE 'x-frame|x-content|strict-transport'
 ```
 
 ## 6. Chef par intérim (2 h → 5 h 30)
 
 - Passation de Randy à 2 h (5 min) : déployé, en PR, annonces, sessions cloud, point d'attention.
-- Tu tries les annonces (playbook §6), tu merges, tu déploies (`bash ~/webcup-2026/deploy.sh`), tu préviens Njaraniaina (à partir de 4 h).
+- Tu tries les annonces (playbook §6), tu merges (le merge déploie tout seul via Hodifly), tu vérifies le site 2 minutes après, tu préviens Njaraniaina (à partir de 4 h).
+- Si le site casse après un merge : Hodifly → **Restaurer** la version précédente (cPanel ouvert par Randy avant de dormir), puis `git revert` en local.
 - Tu ne lances **pas** de chantier risqué (migration lourde, refonte) sans nécessité.
 - À 5 h 30, passation à Randy. Le gel à 6 h est le sien.
 

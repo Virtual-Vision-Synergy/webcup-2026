@@ -10,7 +10,7 @@ _Ta mission n'est pas de coder le plus : c'est que **l'équipe livre au jury des
 |---|---|
 | **Les décisions** | Triage de chaque annonce (≤ 10 min), priorités P0/P1/P2, « non » assumés |
 | **L'intégration** | Relire et merger les PR, garder `main` toujours déployable |
-| **Le déploiement** | `deploy.sh` toutes les 2-3 h, vérifier le site après chaque déploiement |
+| **Le déploiement** | Automatique à chaque merge (Hodifly) : vérifier le site après chaque déploiement, revenir en arrière si besoin |
 | **Claude** | Lancer et suivre les sessions cloud, relire leurs PR comme celles des autres |
 | **Les livrables** | README, formulaire Webcup, vidéo (voix) |
 | **Le calme** | Une seule voix qui tranche ; pas de débat de plus de 2 minutes |
@@ -40,25 +40,28 @@ Pour décider vite, demande-toi : *le jury va-t-il voir la différence ?* et *es
     - pas de `user_id` / `role` / `statut` dans `#[Fillable]` ;
     - au moins un test « autre utilisateur → 403 ».
 3. Si la fonctionnalité est visible : `git fetch && git checkout feat/xxx`, `php artisan migrate`, 2 minutes de test en local.
-4. **Merge** (bouton *Squash and merge* ou *Merge*), puis `git checkout main && git pull`.
+4. **Merge** (bouton *Squash and merge* ou *Merge*), puis `git checkout main && git pull`. Le merge **déclenche le déploiement** : voir §5.
 
 **Conflit** dans `routes/features.php`, la sidebar ou le seeder : garder **les deux** blocs. Ailleurs : l'auteur résout, Judicaël aide.
 
-## 5. Déployer
+## 5. Déployer (Hodifly)
 
-```bash
-bash ~/webcup-2026/deploy.sh
-```
+Il n'y a plus de commande à lancer : **chaque merge sur `main` déclenche un déploiement** (cPanel → Hodifly). Hodifly fait `composer install --no-dev`, `npm run build`, écrit le `.env` depuis ses variables, lance `migrate --force`, met les caches, puis bascule le site sur la nouvelle version. Si une étape échoue (même une migration), **l'ancienne version reste en ligne** et tu reçois un e-mail.
 
-Le script fait : `git pull`, `composer install`, `npm ci` + `npm run build`, sauvegarde de la base, `migrate --force`, `storage:link`, `filament:assets`, `optimize`, contrôle de santé. Il s'arrête à la première erreur.
-
-Après chaque déploiement :
+Après chaque déploiement (statut « en ligne » dans Hodifly, 1 à 2 minutes) :
 
 1. Ouvrir le site en navigation privée, Ctrl+F5.
 2. Se connecter avec le compte jury user, puis admin : rien de cassé.
 3. Prévenir Njaraniaina : « Déployé : #12, #14. » Elle fait la recette.
 
-**Rythme** : toutes les 2-3 h, en regroupant les merges. Jamais « on déploiera à la fin ».
+**Règles**
+
+- On ne merge **que des PR à CI verte** : ce qui est mergé part en ligne.
+- Migration risquée (suppression de colonne, transformation de données) : d'abord `bash ~/app/scripts/sauvegarde-base.sh avant-pr12` dans le Terminal cPanel, puis merger. Une sauvegarde automatique tourne aussi toutes les 30 minutes (`~/backups`).
+- Changer une variable (`OPENROUTER_API_KEY`, `MAIL_…`) : Hodifly → **Modifier** → Variables → enregistrer → **Déployer**. Jamais dans le `.env` du serveur : il est réécrit à chaque déploiement.
+- **Revenir en arrière** : Hodifly → **Restaurer** → la version précédente (instantané). Cela restaure le **code**, pas la base.
+- Déploiement bloqué : Hodifly → **Journaux**, corriger en local, re-merger (ou bouton **Déployer** pour relancer).
+- Sur le serveur, `~/app` pointe toujours vers la version en ligne.
 
 ## 6. Piloter Claude (sessions cloud)
 
@@ -72,7 +75,7 @@ Après chaque déploiement :
 ## 7. Quand ça casse en production
 
 ```bash
-cd ~/webcup-2026
+cd ~/app
 tail -n 60 storage/logs/laravel.log
 php84 artisan about
 php84 artisan migrate:status
@@ -81,12 +84,12 @@ php84 artisan optimize:clear && php84 artisan optimize
 
 | Symptôme | Cause probable | Action |
 |---|---|---|
-| Erreur 500 partout | Cache de config, `.env` | `optimize:clear` puis `optimize` |
+| Erreur 500 partout | Cache de config, variable manquante | `optimize:clear` puis `optimize` ; vérifier les variables dans Hodifly |
 | « PHP version >= 8.x » | Bloc `AddHandler` absent de `public/.htaccess` | Le remettre (voir CLAUDE.md) |
-| Page sans style | `npm run build` raté | Relancer `deploy.sh`, lire l'erreur |
+| Déploiement en échec | Build ou migration raté | Hodifly → Journaux ; l'ancienne version est toujours en ligne ; corriger, re-merger |
 | Photos invisibles | Lien `storage` absent | `php84 artisan storage:link` |
 | Migration qui échoue | SQLite ≠ MariaDB | Corriger en local, **nouvelle** migration |
-| Une fonctionnalité casse tout | — | En local : `git revert <sha>`, push, `deploy.sh` |
+| Une fonctionnalité casse tout | — | Hodifly → **Restaurer** la version précédente, puis `git revert <sha>` en local et push |
 
 Jamais de `git reset --hard`, `migrate:fresh` ni `db:seed` sur le serveur.
 

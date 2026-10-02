@@ -8,7 +8,7 @@ use Illuminate\Notifications\Notification;
 /**
  * Notification générique (application + e-mail), sans lien avec un sujet.
  *
- * Exemple : $user->notify(new Avis('Signalement validé', ['Votre signalement a été publié.'], 'Voir', route('signalements.show', $s)));
+ * Exemple : $user->notify(new Avis('Incident validé', ['Votre incident a été publié.'], 'Voir', route('incidents.show', $s)));
  */
 class Avis extends Notification
 {

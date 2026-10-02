@@ -76,3 +76,46 @@ test('Ai renvoie null si la connexion échoue ou dépasse le délai', function (
 
     expect(app(Ai::class)->ask('Système', 'Question'))->toBeNull();
 });
+
+test('Ai bascule sur le modèle de secours après une 429, une seule fois', function () {
+    config()->set('services.openrouter.fallback_model', 'secours-test:free');
+    Http::fake(fn (Request $request) => $request['model'] === 'modele-test:free'
+        ? Http::response(['error' => 'rate limit'], 429)
+        : Http::response(reponseIa('Via le secours')));
+
+    expect(app(Ai::class)->ask('Système', 'Question'))->toBe('Via le secours');
+
+    Http::assertSentCount(2);
+    Http::assertSent(fn (Request $request) => $request['model'] === 'secours-test:free');
+});
+
+test('Ai renvoie null quand le modèle principal et le secours échouent, sans exception', function () {
+    config()->set('services.openrouter.fallback_model', 'secours-test:free');
+    $appels = 0;
+    Http::fake(function (Request $request) use (&$appels) {
+        $appels++;
+
+        return $request['model'] === 'modele-test:free'
+            ? Http::response('erreur', 503)
+            : throw new ConnectionException('cURL error 28: timeout');
+    });
+
+    expect(app(Ai::class)->ask('Système', 'Question'))->toBeNull()
+        ->and($appels)->toBe(2);
+});
+
+test('Ai ne rappelle pas le même modèle quand le secours est vide ou identique', function () {
+    Http::fake([Ai::ENDPOINT => Http::response('erreur', 500)]);
+
+    config()->set('services.openrouter.fallback_model', null);
+    expect(app(Ai::class)->ask('Système', 'Q1'))->toBeNull();
+
+    config()->set('services.openrouter.fallback_model', 'modele-test:free');
+    expect(app(Ai::class)->ask('Système', 'Q2'))->toBeNull();
+
+    Http::assertSentCount(2);
+});
+
+test('Ai applique un délai maximum de 20 secondes', function () {
+    expect(Ai::TIMEOUT_SECONDS)->toBeLessThanOrEqual(20);
+});

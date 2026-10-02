@@ -35,12 +35,12 @@ Consignes officielles Laravel Boost (versions, skills, outils) : @AGENTS.md
   dans `resources/views/pages/<slug>/` + routes dans `routes/features.php` (groupe `auth`) + tests Pest.
 - **Pour créer une fonctionnalité CRUD, utilise d'abord le générateur**, puis adapte le résultat :
   ```
-  php artisan make:feature Signalement --fields="titre:string,description:text?,niveau:enum(faible/moyen/critique),photo:image?,latitude:decimal?,longitude:decimal?" --icon=exclamation-triangle
+  php artisan make:feature Incident --fields="titre:string,description:text?,niveau:enum(faible/moyen/critique),photo:image?,latitude:decimal?,longitude:decimal?" --icon=exclamation-triangle
   ```
   Types : string, text, integer, decimal, boolean, date, datetime, enum(a/b/c), image. `?` = facultatif.
   Sous PowerShell, séparer les valeurs d'enum par `/` (le `|` est intercepté).
   Ensuite : `php artisan migrate`, éventuellement `php artisan make:filament-resource Nom --generate`.
-- Exemple de référence déjà généré : `Signalement` (modèle, policy, pages, tests). Copie son style.
+- Aucun exemple n'est livré dans le dépôt : génère-en un avec `make:feature` et relis-le avant d'adapter.
 - Marqueurs utilisés par le générateur (ne pas les supprimer) :
   `// make:feature:routes` (routes/features.php), `{{-- make:feature:nav --}}` (sidebar),
   `// make:feature:seeders` (DatabaseSeeder).
@@ -72,6 +72,16 @@ php artisan test                    # tests
 ```
 Comptes de démo locaux : `admin@example.com` / `user@example.com`, mot de passe `password`.
 
+## Migrations en production (règles strictes)
+
+MariaDB 10.11 uniquement (pas de PostgreSQL). Les migrations tournent **automatiquement** à chaque déploiement sur `main`, et « Restaurer » ne ramène que le code, **jamais la base**.
+
+- Pendant la compétition : **migrations additives uniquement** (nouvelle table, ou colonne `nullable` ou avec valeur par défaut).
+- **Interdit** sur une table ou colonne existante : `drop`, `rename`, `change()` de type. Pour remplacer une table ou une colonne : créer la nouvelle, copier les données, **garder l'ancienne**.
+- **Une seule modification de schéma par migration** (MariaDB n'annule pas un DDL à moitié fait).
+- **Ne jamais modifier une migration déjà mergée sur `main`** : corriger avec une nouvelle migration.
+- Le job CI **« mariadb »** doit être vert avant tout merge contenant une migration.
+- **Jamais** `migrate:fresh`, `db:wipe`, `db:seed` ni `migrate:rollback` en production.
 ## Git et livraison
 
 - Ne fais **pas** de commit, push ou merge toi-même : propose les commandes, l'équipe les lance.

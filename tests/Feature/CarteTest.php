@@ -1,8 +1,11 @@
 <?php
 
-use App\Models\Signalement;
+use App\Models\Concerns\HasCoordinates;
 use App\View\Components\Carte;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Lit la configuration JSON transmise à resources/js/carte.js.
@@ -18,7 +21,7 @@ function configCarte(string $html): array
 
 test('le composant carte en lecture affiche ses points, centrés par défaut sur Antananarivo', function () {
     $html = Blade::render('<x-carte :points="$points" label="Carte des points" hauteur="15rem" />', [
-        'points' => [['lat' => -18.91, 'lng' => 47.52, 'titre' => 'Analakely', 'url' => '/signalements/1']],
+        'points' => [['lat' => -18.91, 'lng' => 47.52, 'titre' => 'Analakely', 'url' => '/points/1']],
     ]);
 
     expect($html)
@@ -30,7 +33,7 @@ test('le composant carte en lecture affiche ses points, centrés par défaut sur
     expect(configCarte($html))->toMatchArray([
         'mode' => 'lecture',
         'centre' => [-18.91, 47.52],
-        'points' => [['lat' => -18.91, 'lng' => 47.52, 'titre' => 'Analakely', 'url' => '/signalements/1']],
+        'points' => [['lat' => -18.91, 'lng' => 47.52, 'titre' => 'Analakely', 'url' => '/points/1']],
     ]);
 });
 
@@ -69,28 +72,47 @@ test('le composant carte refuse un mode inconnu', function () {
     new Carte(mode: 'edition');
 })->throws(InvalidArgumentException::class);
 
-test('le scope proches trie du plus proche au plus lointain et respecte la limite', function () {
-    $loin = Signalement::factory()->create(['latitude' => -18.80, 'longitude' => 47.60]);
-    $proche = Signalement::factory()->create(['latitude' => -18.911, 'longitude' => 47.521]);
-    $moyen = Signalement::factory()->create(['latitude' => -18.95, 'longitude' => 47.50]);
-    Signalement::factory()->create(['latitude' => null, 'longitude' => null]);
+/**
+ * Modèle jetable (table créée à la volée) pour tester le trait HasCoordinates sans dépendre d'une fonctionnalité.
+ */
+function pointDeTest(?float $latitude, ?float $longitude): Model
+{
+    if (! Schema::hasTable('points_de_test')) {
+        Schema::create('points_de_test', function (Blueprint $table) {
+            $table->id();
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
+        });
+    }
 
-    expect(Signalement::proches(-18.91, 47.52, 10)->pluck('id')->all())->toBe([$proche->id, $moyen->id, $loin->id])
-        ->and(Signalement::proches(-18.91, 47.52, 2)->pluck('id')->all())->toBe([$proche->id, $moyen->id]);
+    $modele = new class extends Model
+    {
+        use HasCoordinates;
+
+        protected $table = 'points_de_test';
+
+        public $timestamps = false;
+
+        protected $guarded = [];
+    };
+
+    return $modele->newQuery()->create(['latitude' => $latitude, 'longitude' => $longitude]);
+}
+
+test('le scope proches trie du plus proche au plus lointain et respecte la limite', function () {
+    $loin = pointDeTest(-18.80, 47.60);
+    $proche = pointDeTest(-18.911, 47.521);
+    $moyen = pointDeTest(-18.95, 47.50);
+    pointDeTest(null, null);
+
+    expect($loin::proches(-18.91, 47.52, 10)->pluck('id')->all())->toBe([$proche->id, $moyen->id, $loin->id])
+        ->and($loin::proches(-18.91, 47.52, 2)->pluck('id')->all())->toBe([$proche->id, $moyen->id]);
 });
 
 test('le scope geolocalises exclut les enregistrements sans position', function () {
-    Signalement::factory()->create();
-    Signalement::factory()->create(['latitude' => null]);
-    Signalement::factory()->create(['longitude' => null]);
+    $complet = pointDeTest(-18.9, 47.5);
+    pointDeTest(null, 47.5);
+    pointDeTest(-18.9, null);
 
-    expect(Signalement::geolocalises()->count())->toBe(1);
-});
-
-test('la page détail d\'un signalement affiche sa carte', function () {
-    $signalement = Signalement::factory()->create(['titre' => 'Inondation <b>Isoraka</b>']);
-
-    $response = $this->actingAs($signalement->user)->get(route('signalements.show', $signalement));
-
-    $response->assertOk()->assertSee('data-carte', false)->assertDontSee('<b>Isoraka</b>', false);
+    expect($complet::geolocalises()->count())->toBe(1);
 });

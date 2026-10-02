@@ -473,7 +473,7 @@ public function delete(int $id): void
 | Cibler une action | `wire:loading wire:target="save"` |
 | Désactiver pendant l'envoi | `wire:loading.attr="disabled"` |
 | Navigation sans rechargement | `wire:navigate` sur les liens |
-| Rafraîchir toutes les 10 s | `<div wire:poll.10s>` |
+| Rafraîchir toutes les 10 s (onglet visible seulement ; jamais moins de 5 s) | `<div wire:poll.10s.visible>` |
 | Clé de ligne dans une boucle | `wire:key="row-{{ $item->id }}"` |
 | Ne pas toucher à une zone (carte, graphique JS) | `wire:ignore` |
 

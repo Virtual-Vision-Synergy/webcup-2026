@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * Journal des actions. Écriture uniquement par le code : ActionLog::record('deleted', $signalement).
+ * Journal des actions. Écriture uniquement par le code : ActionLog::record('deleted', $incident).
  * user_id n'est volontairement PAS remplissable : il est assigné dans record().
  *
  * @property int $id

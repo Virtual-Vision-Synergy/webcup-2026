@@ -72,6 +72,16 @@ php artisan test                    # tests
 ```
 Comptes de démo locaux : `admin@example.com` / `user@example.com`, mot de passe `password`.
 
+## Migrations en production (règles strictes)
+
+MariaDB 10.11 uniquement (pas de PostgreSQL). Les migrations tournent **automatiquement** à chaque déploiement sur `main`, et « Restaurer » ne ramène que le code, **jamais la base**.
+
+- Pendant la compétition : **migrations additives uniquement** (nouvelle table, ou colonne `nullable` ou avec valeur par défaut).
+- **Interdit** sur une table ou colonne existante : `drop`, `rename`, `change()` de type. Pour remplacer une table ou une colonne : créer la nouvelle, copier les données, **garder l'ancienne**.
+- **Une seule modification de schéma par migration** (MariaDB n'annule pas un DDL à moitié fait).
+- **Ne jamais modifier une migration déjà mergée sur `main`** : corriger avec une nouvelle migration.
+- Le job CI **« mariadb »** doit être vert avant tout merge contenant une migration.
+- **Jamais** `migrate:fresh`, `db:wipe`, `db:seed` ni `migrate:rollback` en production.
 ## Git et livraison
 
 - Ne fais **pas** de commit, push ou merge toi-même : propose les commandes, l'équipe les lance.

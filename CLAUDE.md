@@ -5,6 +5,7 @@ un hackathon où l'on construit en 24 h une **application web** sur un sujet ré
 Réponds en **français**. L'équipe découvre Laravel : explique brièvement ce que tu fais et pourquoi.
 
 Règles et conventions détaillées : @CONVENTION.md
+État actuel du projet et du serveur (à lire en premier) : @docs/PASSATION.md
 Organisation du week-end (rôles, workflow, board, déroulé) : `docs/guides/20-playbook-competition.md`. Cours Laravel du projet : `docs/guides/10-laravel-complet.md`. Rôles : Randy chef/intégration/déploiement, Manakasina Judicaël adjoint touche-à-tout, Tsoa (Voa-hary) exécuteur, Njaraniaina scrum master et testeuse.
 Consignes officielles Laravel Boost (versions, skills, outils) : @AGENTS.md
 

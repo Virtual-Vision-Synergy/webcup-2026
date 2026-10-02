@@ -49,6 +49,23 @@ Puis PR sur GitHub : titre clair, `Refs #12`, section « Comment tester » (URL,
 
 Types de champs : `string`, `text`, `integer`, `decimal`, `boolean`, `date`, `datetime`, `enum(a/b/c)`, `image`. Suffixe `?` = facultatif. **Sous PowerShell : `/` entre les valeurs d'enum.**
 
+**Options du générateur** (combinables, détail au chapitre 25 du tome 1) :
+
+| Option | Quand l'utiliser |
+|---|---|
+| `--belongs-to=Zone` (répétable, `Zone?` = facultatif) | La fiche appartient à un autre modèle **déjà généré** (zone, catégorie…) : liste déroulante, filtre, nom affiché |
+| `--statut=en_attente/valide/refuse` | La fiche doit être modérée : badge, filtre, bouton réservé à l'admin (le premier statut est la valeur par défaut) |
+| `--public` | Liste et détail visibles sans compte (lecture seule) |
+| `--filament` | L'admin doit gérer la fiche dans `/admin` |
+
+```powershell
+php artisan make:feature Zone --fields="nom:string" --icon=map
+php artisan make:feature Incident --fields="titre:string,description:text?,photo:image?" --belongs-to=Zone --statut=en_attente/valide/refuse --public --filament --icon=exclamation-triangle
+php artisan migrate
+```
+
+Génère d'abord le modèle lié (`Zone`), puis la fiche. Après génération, relire la migration, la policy et la factory, puis lancer `vendor/bin/pint` et `php artisan test`.
+
 ## 4. Les règles d'interface (le jury les voit en premier)
 
 - Composants **Flux** : `flux:heading`, `flux:button`, `flux:input`, `flux:select`, `flux:table`, `flux:card`, `flux:badge`, `flux:modal` (tome 1 §11).

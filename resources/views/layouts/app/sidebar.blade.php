@@ -16,10 +16,6 @@
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
 
-                    <flux:sidebar.item icon="exclamation-triangle" :href="route('signalements.index')" :current="request()->routeIs('signalements.*')" wire:navigate>
-                        Signalements
-                    </flux:sidebar.item>
-
                     {{-- make:feature:nav --}}
                 </flux:sidebar.group>
             </flux:sidebar.nav>

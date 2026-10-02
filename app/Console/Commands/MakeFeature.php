@@ -24,13 +24,13 @@ use Illuminate\Support\Str;
  *   --label, --plural, --icon, --force
  *
  * Exemple :
- *   php artisan make:feature Signalement --fields="titre:string,description:text?,niveau:enum(faible/moyen/critique),photo:image?"
+ *   php artisan make:feature Incident --fields="titre:string,description:text?,niveau:enum(faible/moyen/critique),photo:image?"
  *   php artisan make:feature Incident --fields="titre:string,description:text?" --belongs-to=Zone --statut=en_attente/valide/refuse --public --filament
  */
 class MakeFeature extends Command
 {
     protected $signature = 'make:feature
-        {name : Nom du modèle au singulier, en PascalCase (ex. Signalement)}
+        {name : Nom du modèle au singulier, en PascalCase (ex. Incident)}
         {--fields= : Champs "nom:type" séparés par des virgules. Types : string, text, integer, decimal, boolean, date, datetime, enum(a/b/c) (ou a|b|c hors Windows), image. Suffixe ? = facultatif}
         {--label= : Libellé singulier affiché (ex. "Point de regroupement")}
         {--plural= : Libellé pluriel affiché (ex. "Points de regroupement")}

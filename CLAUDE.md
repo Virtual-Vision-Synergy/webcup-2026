@@ -35,12 +35,12 @@ Consignes officielles Laravel Boost (versions, skills, outils) : @AGENTS.md
   dans `resources/views/pages/<slug>/` + routes dans `routes/features.php` (groupe `auth`) + tests Pest.
 - **Pour créer une fonctionnalité CRUD, utilise d'abord le générateur**, puis adapte le résultat :
   ```
-  php artisan make:feature Signalement --fields="titre:string,description:text?,niveau:enum(faible/moyen/critique),photo:image?,latitude:decimal?,longitude:decimal?" --icon=exclamation-triangle
+  php artisan make:feature Incident --fields="titre:string,description:text?,niveau:enum(faible/moyen/critique),photo:image?,latitude:decimal?,longitude:decimal?" --icon=exclamation-triangle
   ```
   Types : string, text, integer, decimal, boolean, date, datetime, enum(a/b/c), image. `?` = facultatif.
   Sous PowerShell, séparer les valeurs d'enum par `/` (le `|` est intercepté).
   Ensuite : `php artisan migrate`, éventuellement `php artisan make:filament-resource Nom --generate`.
-- Exemple de référence déjà généré : `Signalement` (modèle, policy, pages, tests). Copie son style.
+- Aucun exemple n'est livré dans le dépôt : génère-en un avec `make:feature` et relis-le avant d'adapter.
 - Marqueurs utilisés par le générateur (ne pas les supprimer) :
   `// make:feature:routes` (routes/features.php), `{{-- make:feature:nav --}}` (sidebar),
   `// make:feature:seeders` (DatabaseSeeder).

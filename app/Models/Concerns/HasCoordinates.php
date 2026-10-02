@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Builder;
 /**
  * Pour les modèles qui ont des colonnes latitude et longitude (décimales, facultatives).
  *
- *   Signalement::geolocalises()->get();
- *   Signalement::proches(-18.91, 47.52, 5)->get();   // les 5 plus proches, du plus proche au plus loin
- *   $signalement->pointCarte($signalement->titre, route('signalements.show', $signalement));
+ *   Incident::geolocalises()->get();
+ *   Incident::proches(-18.91, 47.52, 5)->get();   // les 5 plus proches, du plus proche au plus loin
+ *   $incident->pointCarte($incident->titre, route('incidents.show', $incident));
  */
 trait HasCoordinates
 {

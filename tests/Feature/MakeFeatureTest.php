@@ -281,7 +281,7 @@ test('--filament génère la ressource sans champs sensibles éditables', functi
     expect(File::get("{$dir}/Schemas/GenTestFicheForm.php"))
         ->not->toContain("'user_id'")
         ->not->toContain("'statut'");
-    expect(File::get("{$dir}/Pages/CreateGenTestFiche.php"))->toContain('$record->user_id = (int) auth()->id();');
+    expect(File::get("{$dir}/Pages/CreateGenTestFiche.php"))->toContain('$record->user_id = max(0, (int) auth()->id());');
     expect(File::get("{$dir}/Tables/GenTestFichesTable.php"))
         ->toContain("Action::make('valider')")
         ->toContain("Action::make('changerStatut')")

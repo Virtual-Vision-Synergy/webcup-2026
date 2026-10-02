@@ -2,6 +2,8 @@
 
 _Pour les 4 membres. Ce cours part de zéro et s'appuie uniquement sur **notre** repo : chaque exemple existe (ou a existé) dans `webcup-2026`. Chaque chapitre suit le même plan : **à quoi ça sert**, **comment on l'écrit chez nous**, **les erreurs fréquentes**. Les exercices sont au chapitre 26 : faites-les avant samedi, c'est là que se gagne la vitesse._
 
+**Si vous n'avez jamais écrit de PHP ni de Laravel**, lisez d'abord le **tome 0** (`09-fondations.md`) : il explique la mécanique (le voyage d'une requête, le protocole Livewire et les règles de sécurité qui en découlent) que ce tome 1 suppose connue.
+
 **Ordre de lecture conseillé** : tout le monde lit les chapitres 1 à 12 et 25. Ensuite, selon le rôle : Judicaël 13, 14, 18, 22 ; Tsoa 11, 15, 16, 21 ; Njaraniaina 13 et 22 ; Randy 23 et 24.
 
 | # | Chapitre | # | Chapitre |

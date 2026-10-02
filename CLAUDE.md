@@ -1,101 +1,75 @@
-# Webcup 2026 — contexte projet pour Claude Code
+# CLAUDE.md
 
-Tu travailles avec l'équipe **Virtual Vision Synergie** (4 développeurs, Madagascar) sur le **24h by Webcup 2026** :
-un hackathon où l'on construit en 24 h une **application web** sur un sujet révélé au départ.
-Réponds en **français**. L'équipe découvre Laravel : explique brièvement ce que tu fais et pourquoi.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Règles et conventions détaillées : @CONVENTION.md
-État actuel du projet et du serveur (à lire en premier) : @docs/PASSATION.md
-Organisation du week-end (rôles, workflow, board, déroulé) : `docs/guides/20-playbook-competition.md`. Cours Laravel du projet : `docs/guides/10-laravel-complet.md`. Rôles : Randy chef/intégration/déploiement, Manakasina Judicaël adjoint touche-à-tout, Tsoa (Voa-hary) exécuteur, Njaraniaina scrum master et testeuse.
-Consignes officielles Laravel Boost (versions, skills, outils) : @AGENTS.md
+Réponds en **français** : l'équipe (Virtual Vision Synergie, 4 développeurs, 24h by Webcup 2026) découvre Laravel.
 
-## La compétition (ce qui guide toutes les décisions)
+## À lire avant de coder
 
-- Samedi 3 oct. 9h → dimanche 4 oct. 9h. ~7 fonctionnalités de base au départ, puis des fonctionnalités
-  « progressives » annoncées toutes les 2-3 h. Impossible de tout faire : **la priorisation est évaluée**.
-- Le jury **vérifie chaque fonctionnalité déclarée** et **teste la sécurité** (authentification, contrôle d'accès,
-  validation des entrées, endpoints protégés, fuite de données, brute force, rôles). Il peut lire le code (repo public).
-- Critères : fonctionnalités réellement livrées, qualité technique, design/UX, cohérence ambition/exécution.
-- Conséquence : **une fonctionnalité sûre et finie vaut mieux que deux à moitié**. Ne jamais laisser une page cassée.
+| Fichier | Contenu |
+|---|---|
+| @CONTEXT.md | Contexte compétition, rôles, règles de sécurité non négociables, règles Git (**pas de commit/merge toi-même**), consignes des sessions cloud |
+| @CONVENTION.md | Convention détaillée : recette d'ajout d'entité, sécurité, UI/UX, board, pièges connus |
+| @docs/PASSATION.md | État réel du projet et du serveur (mis à jour le 2/10/2026) |
+| @AGENTS.md | Consignes Laravel Boost (versions, skills, outils MCP) |
+| `docs/guides/09-fondations.md` | Tome 0 : la mécanique du projet depuis zéro (cycle de vie d'une requête, protocole Livewire et sécurité qui en découle) |
+| `docs/guides/10-laravel-complet.md` | Cours Laravel du projet, avec le chapitre sur le générateur |
 
-## Stack (versions installées — ne pas en supposer d'autres)
-
-- Laravel 13, PHP 8.4, Livewire 4 (composants **single-file** `resources/views/pages/**/⚡nom.blade.php`),
-  UI **Flux** (version gratuite : button, input, select, textarea, checkbox, table, card, badge, modal, pagination,
-  heading, text, link, sidebar…), Tailwind 4, Vite.
-- Auth : starter kit Livewire + Fortify (inscription, 2FA, confirmation de mot de passe).
-- Admin : **Filament 5** sur `/admin`, réservé aux `role = 'admin'` (`User::canAccessPanel()`).
-- Tests : **Pest**. Formatage : **Pint**.
-- Base : SQLite en local, **MariaDB 10.11** en production (hébergement mutualisé cPanel Hodi, 2 Go RAM).
-- Pas de nouvelle dépendance Composer/npm sans demander à l'équipe.
-
-## Architecture
-
-- Une fonctionnalité métier = modèle + migration + factory + **policy** + 3 pages Livewire (`index`, `form`, `show`)
-  dans `resources/views/pages/<slug>/` + routes dans `routes/features.php` (groupe `auth`) + tests Pest.
-- **Pour créer une fonctionnalité CRUD, utilise d'abord le générateur**, puis adapte le résultat :
-  ```
-  php artisan make:feature Signalement --fields="titre:string,description:text?,niveau:enum(faible/moyen/critique),photo:image?,latitude:decimal?,longitude:decimal?" --icon=exclamation-triangle
-  ```
-  Types : string, text, integer, decimal, boolean, date, datetime, enum(a/b/c), image. `?` = facultatif.
-  Sous PowerShell, séparer les valeurs d'enum par `/` (le `|` est intercepté).
-  Ensuite : `php artisan migrate`, éventuellement `php artisan make:filament-resource Nom --generate`.
-- Exemple de référence déjà généré : `Signalement` (modèle, policy, pages, tests). Copie son style.
-- Marqueurs utilisés par le générateur (ne pas les supprimer) :
-  `// make:feature:routes` (routes/features.php), `{{-- make:feature:nav --}}` (sidebar),
-  `// make:feature:seeders` (DatabaseSeeder).
-
-## Règles de sécurité non négociables
-
-1. Toute route métier est dans le groupe `auth` de `routes/features.php`, sauf exception publique explicite.
-2. Chaque action Livewire qui lit/modifie/supprime une ressource appelle `$this->authorize(...)` (Policy).
-3. Jamais d'ID venant du client sans vérification : Policy ou filtrage par propriétaire.
-4. `role`, `user_id` et tout champ sensible ne sont **jamais** dans `#[Fillable]` : ils sont assignés dans le code.
-5. Validation serveur systématique (`rules()` Livewire). Uploads : `image`, `mimes:jpg,jpeg,png,webp`, `max:2048`.
-6. Blade : toujours `{{ }}`, jamais `{!! !!}` sur une donnée utilisateur.
-7. Secrets uniquement dans `.env`. Clés API (OpenRouter…) utilisées **côté serveur seulement**.
-8. Chaque nouvelle fonctionnalité a au minimum un test « le propriétaire peut » et un test « un autre utilisateur → 403 ».
-
-## Typage
-
-- Typer paramètres, retours de méthode et propriétés de classe.
-- Propriétés de **formulaire** Livewire en `string` (les champs HTML envoient du texte), contrôlées par la validation,
-  converties par les `casts` du modèle. Pas de `declare(strict_types=1)`.
+Note : le hook `SessionStart` de `.claude/settings.json` renvoie vers « CLAUDE.md (section Sessions cloud) » — cette section vit en fait dans `CONTEXT.md`.
 
 ## Commandes
 
+```bash
+composer run dev                  # serve + queue:listen + vite (à laisser tourner)
+composer test                     # = config:clear + pint --test + phpstan + artisan test  → ce que lance la CI
+composer lint                     # pint --parallel (corrige)
+composer types:check              # phpstan --memory-limit=1G (128M ne suffit pas)
+php artisan test --compact        # tests seuls
+vendor/bin/pest --filter="nom du test"
+vendor/bin/pest tests/Feature/SignalementTest.php
+npm run build                     # vite-plus (`vp`), pas vite directement
 ```
-composer run dev                    # serveur de dev + Vite
-php artisan migrate:fresh --seed    # base locale propre + données de démo (JAMAIS en production)
-vendor/bin/pint                     # formatage (obligatoire avant push, sinon la CI échoue)
-php artisan test                    # tests
-```
-Comptes de démo locaux : `admin@example.com` / `user@example.com`, mot de passe `password`.
 
-## Git et livraison
+`php artisan test` seul **ne suffit pas** avant un push : la CI échoue aussi sur Pint et PHPStan. Elle rejoue
+en plus toute la suite sur MariaDB 10.11 (la base du serveur) en complément de SQLite.
 
-- Ne fais **pas** de commit, push ou merge toi-même : propose les commandes, l'équipe les lance.
-- Messages de commit : `feat: …`, `fix: …`, `test: …`, `style: …`, `docs: …` (en français).
-- PR : `Refs #12`, jamais `Closes #12`.
-- Déploiement : **automatique**. Chaque merge sur `main` est compilé et mis en ligne par Hodifly (cPanel) en 1 à 2 minutes : ce qui est mergé part en ligne, donc jamais de merge sans CI verte.
-- Les variables de production se changent dans Hodifly (Modifier → Variables), jamais dans un `.env` du serveur (réécrit à chaque déploiement). Sur le serveur, l'application en ligne est `~/app`.
-- Ne jamais modifier le bloc `AddHandler … ea-php84` de `public/.htaccess` (il active PHP 8.4 sur le serveur).
+## Architecture
 
-## Style de travail attendu
+**Une fonctionnalité = une entité générée, pas du CRUD écrit à la main.**
+`php artisan make:feature Nom --fields="..."` (`app/Console/Commands/MakeFeature.php`, ~1150 lignes) écrit en une
+passe : migration, modèle, factory, seeder, policy, les 3 pages Livewire, 6 tests Pest — puis **insère** ses blocs
+aux marqueurs `// make:feature:routes` (`routes/features.php`), `{{-- make:feature:nav --}}`
+(`resources/views/layouts/app/sidebar.blade.php`) et `// make:feature:seeders` (`DatabaseSeeder`). Ne jamais
+supprimer ces marqueurs ni éditer ces trois endroits à la main (conflits entre sessions parallèles).
+`Signalement` est l'exemple de référence : copier son style.
 
-- Avant de coder : reformule la fonctionnalité en 2-3 lignes, liste les fichiers touchés, puis code.
-- Après avoir codé : lance `vendor/bin/pint` et `php artisan test`, puis indique comment tester à la main
-  (URL, compte à utiliser, ce qu'on doit voir).
-- Interface en français, responsive mobile, avec états vide / chargement / erreur / succès.
-- Données de démo réalistes (factory + seeder) pour chaque nouvelle entité.
+**Livewire 4 en composants single-file.** Pas de classes dans `app/Livewire` : la logique et la vue sont dans
+`resources/views/pages/<slug>/⚡index|⚡form|⚡show.blade.php` (`new #[Title('…')] class extends Component {}` en
+tête de fichier). Les routes les montent par leur chemin de vue : `Route::livewire('signalements', 'pages::signalements.index')`.
+Les noms de fichiers contiennent un `⚡` : les citer dans le shell.
 
-## Sessions cloud (prioritaire sur la règle « pas de commit » ci-dessus)
+**Trois fichiers de routes** : `routes/web.php` (accueil, dashboard, et `require` des deux autres),
+`routes/settings.php` (profil / apparence / sécurité, Fortify), `routes/features.php` (tout le métier, groupe `auth`).
 
-Si tu tournes dans une session cloud (et non sur le PC de Randy) :
+**Couches de sécurité**, dans cet ordre : groupe `auth` → `$this->authorize()` dans **chaque** méthode publique du
+composant (pas seulement `mount`) → Policy (`app/Policies/`) → `#[Locked] public ?Modele $record` → `rules()` serveur →
+`#[Fillable([...])]`. Les modèles utilisent l'attribut PHP `#[Fillable]`/`#[Hidden]` de Laravel 13, pas les propriétés
+`$fillable`/`$hidden` ; `user_id`, `role`, `statut` n'y figurent jamais et sont assignés dans le code.
+`App\Http\Middleware\SecurityHeaders` est appliqué globalement dans `bootstrap/app.php`.
 
-1. Au démarrage, lance `bash scripts/cloud-setup.sh`. Si `composer install` échoue à cause du réseau, dis-le tout de suite et continue sans lancer les tests (la CI GitHub les lancera).
-2. Travaille sur une branche `feat/<sujet>` créée depuis `main`. Ne touche jamais à `main` et ne merge jamais.
-3. Petits commits en français, format `type: description`.
-4. Avant de pousser : `vendor/bin/pint` puis `php artisan test`. Si tu ne peux pas les lancer, écris-le dans la PR.
-5. Ouvre une PR avec `Refs #<numéro d'issue>` (jamais `Closes`) et liste dans la description : ce qui a été fait, comment tester à la main, risques.
-6. Une session = une fonctionnalité. Ne modifie pas `routes/features.php`, la sidebar ou le seeder à la main : passe par `make:feature` (marqueurs), pour éviter les conflits entre sessions parallèles.
+**Admin Filament 5** sur `/admin`, réservé par `User::canAccessPanel()` → `isAdmin()` (`role === 'admin'`).
+Un resource = un dossier `app/Filament/Resources/<Pluriel>/` avec `Pages/`, `Schemas/` (formulaires) et `Tables/`.
+
+**Boîte à outils réutilisable** (PR #34) — préférer ces briques à du code neuf :
+`app/Concerns/ExportsCsv` (`streamCsv()`, autorisation obligatoire), `ThrottlesPerUser` (`throttlePerUser('ia', 5, 60)`
+pour toute action sensible), `app/Services/Ai` (OpenRouter, renvoie `null` au lieu de lever, cache 1 h),
+`app/Services/OrgaApi` (renvoie `[]` en cas d'échec), `ActionLog::record('deleted', $modele)`,
+`app/Models/Concerns/HasCoordinates` + `<x-carte>` (Leaflet, modes `lecture` / `choix`).
+Ces services dégradent silencieusement quand ils ne sont pas configurés : la page doit afficher un état de repli.
+
+**Tests** : Pest, `tests/Feature/` uniquement, `RefreshDatabase` appliqué automatiquement par `tests/Pest.php`
+(ne pas le réimporter). `Tests\TestCase::skipUnlessFortifyHas()` sert aux tests qui dépendent d'une option Fortify.
+Minimum par fonctionnalité : « le propriétaire peut » **et** « un autre utilisateur → 403 ».
+
+**Couleur d'accent** : uniquement dans le bloc `@theme` de `resources/css/app.css` (et `Color::` dans
+`AdminPanelProvider`). Elle est en `amber` provisoire, à changer le jour J selon le sujet.

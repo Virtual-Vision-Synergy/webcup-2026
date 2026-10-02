@@ -785,15 +785,15 @@ class MakeFeature extends Command
                 .'        </flux:select>';
         });
 
-        $relationInputs = collect($this->relations)->map(fn (array $r) => "        <flux:select wire:model.live=\"".$this->filterProp($r['fk'])."\" class=\"sm:max-w-52\">\n"
+        $relationInputs = collect($this->relations)->map(fn (array $r) => '        <flux:select wire:model.live="'.$this->filterProp($r['fk'])."\" class=\"sm:max-w-52\">\n"
             ."            <flux:select.option value=\"\">{$r['label']} : tous</flux:select.option>\n"
             ."            @foreach (\$this->{$r['relation']}Options as \$option)\n"
-            ."                <flux:select.option :value=\"\$option->id\">{{ ".$this->optionLabel($r, '$option')." }}</flux:select.option>\n"
+            .'                <flux:select.option :value="$option->id">{{ '.$this->optionLabel($r, '$option')." }}</flux:select.option>\n"
             ."            @endforeach\n"
             .'        </flux:select>');
 
         $statutInput = $this->statuts === [] ? collect() : collect([
-            "        <flux:select wire:model.live=\"".$this->filterProp('statut')."\" class=\"sm:max-w-52\">\n"
+            '        <flux:select wire:model.live="'.$this->filterProp('statut')."\" class=\"sm:max-w-52\">\n"
             ."            <flux:select.option value=\"\">Statut : tous</flux:select.option>\n"
             ."            @foreach (\\App\\Models\\{$m}::STATUT_OPTIONS as \$option)\n"
             ."                <flux:select.option :value=\"\$option\">{{ \\App\\Models\\{$m}::libelleStatut(\$option) }}</flux:select.option>\n"
@@ -2144,7 +2144,7 @@ class MakeFeature extends Command
         return "        <flux:select wire:model=\"{$r['fk']}\" label=\"{$r['label']}\"{$required}>\n"
             .$empty
             ."            @foreach (\$this->{$r['relation']}Options as \$option)\n"
-            ."                <flux:select.option :value=\"\$option->id\">{{ ".$this->optionLabel($r, '$option')." }}</flux:select.option>\n"
+            .'                <flux:select.option :value="$option->id">{{ '.$this->optionLabel($r, '$option')." }}</flux:select.option>\n"
             ."            @endforeach\n"
             .'        </flux:select>';
     }

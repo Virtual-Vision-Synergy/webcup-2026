@@ -2060,7 +2060,7 @@ class MakeFeature extends Command
             protected function handleRecordCreation(array \$data): Model
             {
                 \$record = new {$m}(\$data);
-                \$record->user_id = (int) auth()->id();
+                \$record->user_id = max(0, (int) auth()->id());
                 \$record->save();
 
                 return \$record;

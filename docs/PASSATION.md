@@ -10,7 +10,7 @@ _Mis à jour le vendredi 2 octobre 2026. À lire en premier (humains et Claude).
 
 ## Stack
 
-Laravel 13 / PHP 8.4, Livewire 4 (composants ⚡), Flux (gratuit), Tailwind 4, Filament 5 (`/admin`), Fortify, Pest / Pint / PHPStan. Local : SQLite (Herd). Production : MariaDB 10.11, sessions et cache en base, `QUEUE_CONNECTION=sync`, e-mails par `sendmail`. Pas de Redis ni de worker ; temps réel par `wire:poll`.
+Laravel 13 / PHP 8.4, Livewire 4 (composants ⚡), Flux (gratuit), Tailwind 4, Filament 5 (`/admin`), Fortify, Pest / Pint / PHPStan. Local : SQLite (Herd). Production : MariaDB 10.11, sessions et cache en base, `QUEUE_CONNECTION=sync` (à passer à `database` dans Hodifly), e-mails par `sendmail`. Pas de WebSockets ; temps réel par `wire:poll.10s.visible` (jamais sous 5 s). File d'attente : `sync` en local, `database` + worker en production (voir « Le serveur »).
 
 ## Ce qui est prêt dans le dépôt
 
@@ -31,10 +31,20 @@ Laravel 13 / PHP 8.4, Livewire 4 (composants ⚡), Flux (gratuit), Tailwind 4, F
 
 Site : https://virtualvisionsy.madagascar.webcup.hodi.cloud
 
+## Le serveur (Hodi)
+
+- **RAM** : 2 Go. **Processus d'entrée** : 20 requêtes simultanées maximum sur le compte, donc des `wire:poll` espacés (≥ 5 s, `.visible`) et pas de requête lourde.
+- **Base** : MariaDB 10.11.18.
+- **Workers** : 2 workers supervisord disponibles (`queue:work`). Pour les utiliser : variable Hodifly `QUEUE_CONNECTION=database` (les tables `jobs`, `job_batches`, `failed_jobs` ont leurs migrations) + worker déclaré dans cPanel.
+- **Pas de WebSockets** (pas de Reverb, Pusher ni Echo temps réel) : temps réel = `wire:poll`.
+- **Redis** : disponible mais **non activé** ; on reste sur sessions et cache en base.
+- **Node, Python, Ruby** : disponibles sur le serveur mais **non utilisés** (le build Vite se fait au déploiement).
+- **Migrations automatiques** à chaque déploiement sur `main`, et **« Restaurer » ne restaure pas la base** : le code revient en arrière, pas le schéma. Donc des migrations **additives et réversibles** (colonne nullable ou avec défaut, `down()` qui défait vraiment), pas de suppression ni de renommage de colonne en un seul pas ; sauvegarde (`scripts/sauvegarde-base.sh`) avant une migration risquée.
+
 ## Reste à faire avant samedi
 
 - Chacun : projet installé (`INSTALLATION.md`), une petite PR mergée, Claude Code connecté avec **son propre compte**.
-- Randy : comptes jury en production (user par `/register`, admin par `tinker`), identifiants notés hors Git ; retirer l'exemple Signalement ; test à vide (petite PR → déploiement → Restaurer).
+- Randy : comptes jury en production (user par `/register`, admin par `tinker`), identifiants notés hors Git ; test à vide (petite PR → déploiement → Restaurer).
 - Judicaël : clé OpenRouter dans les variables Hodifly, options du générateur. Tsoa : Lighthouse mobile. Njaraniaina : modèles récap/vidéo, OBS, logistique.
 - Questions Discord en attente : code générique préparé autorisé ? fuseau horaire ?
 

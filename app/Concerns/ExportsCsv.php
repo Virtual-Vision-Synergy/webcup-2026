@@ -18,10 +18,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  *
  *   public function export(): StreamedResponse
  *   {
- *       return $this->streamCsv('viewAny', Signalement::class, Signalement::with('user'), [
- *           'Titre' => fn (Signalement $s) => $s->titre,
- *           'Auteur' => fn (Signalement $s) => $s->user?->name,
- *       ], 'signalements');
+ *       return $this->streamCsv('viewAny', Incident::class, Incident::with('user'), [
+ *           'Titre' => fn (Incident $s) => $s->titre,
+ *           'Auteur' => fn (Incident $s) => $s->user?->name,
+ *       ], 'incidents');
  *   }
  *
  * La requête est lue par paquets (chunkById) : ne pas y mettre d'orderBy.

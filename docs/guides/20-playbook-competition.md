@@ -342,7 +342,7 @@ Toutes ces tâches sont des issues du board (label `prépa`), créées par `scri
 | Tâche | Qui | Fin quand |
 |---|---|---|
 | Lecture tome 1 (Laravel) + son guide de rôle | Tous | Exercices faits |
-| Générateur : options `--belongs-to`, `--statut`, `--public`, ressource Filament | Judicaël (+ Claude) | Tests verts, doc à jour |
+| Générateur : options `--belongs-to`, `--statut`, `--public`, `--filament` | Judicaël (+ Claude) | **Fait** (PR `feat/generateur-options`) : tests verts, doc au chapitre 25 du tome 1 |
 | Compte OpenRouter, clé dans les variables Hodifly, modèle de secours noté | Judicaël | Appel test réussi en ligne |
 | Envoi d'e-mail testé sur le serveur | Judicaël | Mail reçu |
 | Lighthouse mobile ≥ 90 sur accueil et une liste | Tsoa | Scores notés |

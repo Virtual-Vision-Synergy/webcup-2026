@@ -1388,9 +1388,71 @@ Suffixe `?` = facultatif (colonne `nullable`, règle `nullable`).
 
 Sans ces deux champs, rien de tout cela n'est généré. La requête de recherche/filtres de la liste est dans une méthode `filteredQuery()`, réutilisée par la liste et par la carte.
 
-**Marqueurs** (ne jamais les supprimer) : `// make:feature:routes` (routes), `{{-- make:feature:nav --}}` (menu), `// make:feature:seeders` (seeder).
+**Marqueurs** (ne jamais les supprimer) : `// make:feature:routes` (routes protégées), `// make:feature:routes-public` (routes publiques, `--public`), `{{-- make:feature:nav --}}` (menu), `// make:feature:seeders` (seeder).
 
-**Après génération, toujours** : relire la migration, adapter la policy au sujet, rendre la factory crédible, ajuster textes et colonnes, puis `make:filament-resource ... --generate` si l'admin doit gérer l'entité (et corriger le formulaire, chapitre 14). `--force` régénère en écrasant (perte des adaptations).
+### Les options
+
+Toutes se combinent entre elles et avec `--fields`. **Sans aucune de ces options, le résultat est identique à celui décrit plus haut.**
+
+| Option | Effet en bref |
+|---|---|
+| `--belongs-to=Zone` | Relation vers un modèle **existant**. Répétable : `--belongs-to=Zone --belongs-to=Categorie`. `Zone?` = facultative. |
+| `--statut=a/b/c` | Colonne `statut` (au moins 2 valeurs, la première est la valeur par défaut), badge, filtre, changement réservé à l'admin. |
+| `--public` | Liste et détail accessibles sans connexion, en lecture seule. |
+| `--filament` | Ressource Filament complète dans `/admin/<slug>` (liste, création, vue, modification). |
+
+Sous PowerShell, on garde le `/` entre les valeurs de `--statut` (comme pour `enum`), jamais le `|`.
+
+**Exemple complet** (génère d'abord le modèle lié, puis la fiche) :
+
+```bash
+php artisan make:feature Zone --fields="nom:string" --icon=map
+php artisan make:feature Incident \
+  --fields="titre:string,description:text?,niveau:enum(faible/moyen/critique),photo:image?,latitude:decimal?,longitude:decimal?" \
+  --belongs-to=Zone --statut=en_attente/valide/refuse --public --filament --icon=exclamation-triangle
+php artisan migrate
+```
+
+**`--belongs-to=Zone`**
+
+- Migration : `foreignId('zone_id')->constrained()->cascadeOnDelete()` (avec `->nullable()` pour `Zone?`). La table du modèle lié doit être créée avant : le générateur date la migration après les existantes.
+- Modèle : relation `zone()` (`belongsTo`) et `zone_id` dans `#[Fillable]` (jamais `user_id`).
+- Formulaire : `flux:select` alimenté par le modèle lié (seules les colonnes `id` et `nom`/`titre`/`name`/`libelle`/`label` sont lues ; à défaut, `#id`). Règle `Rule::exists(Zone::class, 'id')` : une valeur inventée est refusée côté serveur.
+- Liste : filtre par relation, colonne, `with(['user', 'zone'])` (pas de N+1 : un test active `Model::preventLazyLoading()`). Détail : nom lié affiché. Factory : `Zone::factory()`.
+- Si le modèle n'existe pas (`app/Models/Zone.php`), le générateur s'arrête avec un message en français et n'écrit rien. `User` est refusé (le propriétaire `user_id` est déjà géré).
+
+**`--statut=en_attente/valide/refuse`**
+
+- Colonne `statut` indexée avec valeur par défaut, constante `STATUT_OPTIONS`, couleurs `STATUT_COLORS` (déduites du sens du mot : valide → vert, refus → rouge, attente → orange…).
+- `statut` n'est **jamais** dans `#[Fillable]` ni dans le formulaire : seul `changerStatut()` le modifie, après `authorize('changerStatut', $record)` (policy : admin uniquement). Une valeur hors liste donne une erreur 422.
+- Badge coloré dans la liste et le détail, filtre dans la liste, boutons de transition visibles par l'admin sur le détail.
+- Test fourni : « un utilisateur ne peut pas changer le statut de sa propre fiche ».
+
+**`--public`**
+
+- `index` et `show` sont dans le groupe public de `routes/features.php` (l'identifiant doit être numérique) ; `create` et `edit` restent dans le groupe `auth`. La policy accepte les invités pour `viewAny` et `view` (`?User`), mais refuse `create`, `update` et `delete`.
+- Les pages utilisent le gabarit `layouts::public` : menu habituel si connecté, simple en-tête avec « Connexion » pour un invité.
+- Un invité ne voit ni le nom de l'auteur, ni « Modifier », « Supprimer », « Ajouter » ni la case « Mes éléments ». La pagination est conservée.
+- **Avec `--statut`**, un invité ne voit pas les fiches au statut par défaut (en attente) : liste filtrée et détail refusé (403). Les utilisateurs connectés voient tout, comme avant.
+
+**`--filament`**
+
+- Crée `app/Filament/Resources/<Pluriel>/` : ressource (slug explicite, libellés français, icône du menu si elle existe chez Filament), `Schemas/…Form`, `Tables/…Table`, pages liste, création, vue, modification. Pas d'appel à `make:filament-resource`.
+- `user_id` n'est pas dans le formulaire : il est assigné dans `Pages/Create…` (l'admin crée la fiche à son nom). `statut` n'est pas non plus dans le formulaire : actions « Valider » (passe au 2ᵉ statut) et « Changer le statut », protégées par `authorize('changerStatut')`.
+- Les droits viennent de la policy ; la ressource est dans `/admin`, donc réservée aux admins. Un test vérifie qu'un non-admin reçoit 403.
+
+**Ce que le générateur ne fait pas** : il ne modifie pas le modèle lié, ne crée pas la table des zones et ne filtre pas les valeurs du select par propriétaire. Pour ajouter `--filament` à une entité déjà générée, il faut relancer avec `--force` (qui écrase les adaptations) ou copier les fichiers de la ressource.
+
+**Après génération, toujours** :
+
+1. Relire la **migration** (index, `nullable`, `cascadeOnDelete` : supprimer une zone supprime ses fiches), le **modèle**, la **factory** (textes crédibles) et la **policy** (règles du sujet, surtout avec `--public`).
+2. Avec `--statut` : vérifier la valeur par défaut, les couleurs et qui peut valider.
+3. Avec `--public` : ouvrir la liste et le détail **sans être connecté**, et vérifier qu'aucune donnée personnelle n'apparaît.
+4. Avec `--filament` : ouvrir `/admin/<slug>` avec le compte admin, essayer création, vue, modification et l'action de statut (chapitre 14 pour les ajustements).
+5. Sans `--filament` mais avec besoin admin : `make:filament-resource ... --generate`, puis corriger le formulaire (chapitre 14).
+6. `vendor/bin/pint` puis `php artisan test`, et un tour sur téléphone.
+
+`--force` régénère en écrasant (perte des adaptations).
 
 ## 26. Exercices
 

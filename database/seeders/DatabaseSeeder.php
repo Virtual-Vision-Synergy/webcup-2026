@@ -162,6 +162,9 @@ class DatabaseSeeder extends Seeder
             Signalement::factory(2)->for($citoyen)->create();
         }
 
+        // F75 : groupes de signalements qui décrivent le même problème (regroupement côté agent).
+        $this->call(SignalementsSimilairesSeeder::class);
+
         // Soutiens d'habitants aux demandes encore ouvertes (F52) : chaque citoyen soutient au plus une fois.
         $citoyens = $users->filter(fn (User $user): bool => $user->isCitoyen());
         Signalement::query()->whereIn('statut', Signalement::STATUTS_OUVERTS)->get()

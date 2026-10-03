@@ -29,42 +29,49 @@ new #[Title('Service')] class extends Component {
     }
 }; ?>
 
-<section class="w-full max-w-3xl space-y-6">
-    <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-            <flux:link :href="route('services.index')" wire:navigate class="text-sm">&larr; Services</flux:link>
-            <flux:heading size="xl" level="1" class="mt-2">{{ $record->nom }}</flux:heading>
-            <flux:text class="mt-1">
-                Par {{ $record->user?->name }} · {{ $record->created_at->format('d/m/Y à H:i') }}
-            </flux:text>
-        </div>
-
-        <div class="flex gap-2">
+<section class="mx-auto w-full max-w-5xl space-y-6">
+    <x-tn.page-header
+        label="Service municipal"
+        :title="$record->nom"
+        :breadcrumb="['Services' => route('services.index'), $record->nom => null]"
+    >
+        <x-slot:actions>
+            @if (Route::has('messages.create'))
+                <flux:button variant="primary" icon="mail" :href="route('messages.create')" class="tn-cta" wire:navigate>Écrire au service</flux:button>
+            @endif
             @can('update', $record)
                 <flux:button icon="pencil-square" :href="route('services.edit', $record)" wire:navigate>Modifier</flux:button>
             @endcan
             @can('delete', $record)
-                <flux:button variant="danger" icon="trash" wire:click="delete" wire:confirm="Supprimer définitivement cet élément ?">Supprimer</flux:button>
+                <flux:button variant="danger" icon="trash" wire:click="delete" wire:confirm="Supprimer définitivement ce service ?">Supprimer</flux:button>
             @endcan
-        </div>
+        </x-slot:actions>
+    </x-tn.page-header>
+
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <x-tn.surface>
+            <x-tn.section-label as="h2" class="mb-3">Missions</x-tn.section-label>
+            <p class="whitespace-pre-line leading-relaxed text-ink">{{ $record->description ?? 'Description à venir.' }}</p>
+        </x-tn.surface>
+
+        <x-tn.panel label="Infos pratiques" padding="p-5 md:p-6">
+            <dl>
+                @if ($record->horaires)
+                    <x-tn.field label="Horaires"><p class="whitespace-pre-line font-mono text-sm leading-6">{{ $record->horaires }}</p></x-tn.field>
+                @endif
+                @if ($record->telephone)
+                    <x-tn.field label="Téléphone"><a href="tel:{{ preg_replace('/[^0-9+]/', '', $record->telephone) }}" class="font-mono text-sm text-cyan hover:underline">{{ $record->telephone }}</a></x-tn.field>
+                @endif
+                @if ($record->email)
+                    <x-tn.field label="E-mail"><a href="mailto:{{ $record->email }}" class="break-all text-sm text-cyan hover:underline">{{ $record->email }}</a></x-tn.field>
+                @endif
+                @if ($record->adresse)
+                    <x-tn.field label="Adresse"><p class="whitespace-pre-line text-sm">{{ $record->adresse }}</p></x-tn.field>
+                @endif
+            </dl>
+            @if (! $record->horaires && ! $record->telephone && ! $record->email && ! $record->adresse)
+                <p class="text-ink-2">Les informations pratiques seront publiées prochainement.</p>
+            @endif
+        </x-tn.panel>
     </div>
-
-
-
-    <flux:card>
-        <dl class="divide-y divide-zinc-200 dark:divide-zinc-700">
-            <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Nom</dt>
-                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">{{ $record->nom ?? '—' }}</dd>
-            </div>
-            <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Description</dt>
-                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0"><p class="whitespace-pre-line">{{ $record->description ?? '—' }}</p></dd>
-            </div>
-            <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Icone</dt>
-                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">{{ $record->icone ?? '—' }}</dd>
-            </div>
-        </dl>
-    </flux:card>
 </section>

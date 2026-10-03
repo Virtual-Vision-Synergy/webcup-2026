@@ -33,8 +33,19 @@ test('le composant carte en lecture affiche ses points, centrés par défaut sur
     expect(configCarte($html))->toMatchArray([
         'mode' => 'lecture',
         'centre' => [-18.91, 47.52],
-        'points' => [['lat' => -18.91, 'lng' => 47.52, 'titre' => 'Analakely', 'url' => '/points/1']],
+        'points' => [['lat' => -18.91, 'lng' => 47.52, 'titre' => 'Analakely', 'url' => '/points/1', 'etat' => null]],
     ]);
+});
+
+test('le composant carte ne garde que les états de marqueur connus', function () {
+    $html = Blade::render('<x-carte :points="$points" />', [
+        'points' => [
+            ['lat' => -18.9, 'lng' => 47.5, 'titre' => 'A', 'etat' => 'alerte'],
+            ['lat' => -18.8, 'lng' => 47.4, 'titre' => 'B', 'etat' => '<script>'],
+        ],
+    ]);
+
+    expect(array_column(configCarte($html)['points'], 'etat'))->toBe(['alerte', null]);
 });
 
 test('le composant carte en mode choix propose « Me localiser » et cible latitude / longitude', function () {

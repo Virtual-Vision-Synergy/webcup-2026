@@ -86,7 +86,6 @@ new #[Title('Mes démarches')] class extends Component {
     {
         return $this->filteredQuery()
             ->with(['user', 'service'])
-            ->avecTraduction()
             ->latest()
             ->paginate(10);
     }
@@ -116,10 +115,10 @@ new #[Title('Mes démarches')] class extends Component {
 
 <section class="mx-auto w-full max-w-6xl space-y-6">
     <x-tn.page-header
-        label="Démarches"
-        title="Mes démarches"
+        :label="__('Démarches')"
+        :title="__('Mes démarches')"
         :subtitle="$this->items->total().' démarche(s)'.($this->voitToutesLesDemarches ? ' au total' : '')"
-        :breadcrumb="['Mon espace' => route('dashboard'), 'Démarches' => null]"
+        :breadcrumb="[__('Mon espace') => route('dashboard'), __('Démarches') => null]"
     >
         <x-slot:actions>
             @can('create', Demarche::class)
@@ -148,7 +147,7 @@ new #[Title('Mes démarches')] class extends Component {
         @if ($this->voitToutesLesDemarches)
             <flux:checkbox wire:model.live="mine" label="Mes démarches uniquement" />
         @endif
-        <span wire:loading class="font-mono text-[11px] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
     </div>
 
     @if ($this->items->isEmpty())
@@ -161,8 +160,8 @@ new #[Title('Mes démarches')] class extends Component {
             @foreach ($this->items as $item)
                 <li wire:key="m-{{ $item->id }}">
                     <x-tn.list-row icon="file-text" :href="route('demarches.show', $item)" :stack="true">
-                        <span class="block truncate font-medium text-ink">{{ $item->traduit('titre') }}</span>
-                        <span class="block truncate text-sm text-ink-2">{{ $item->service?->traduit('nom') ?? 'Service non précisé' }} · <span class="font-mono text-xs">{{ $item->created_at->format('d.m.Y') }}</span></span>
+                        <span class="block truncate font-medium text-ink">{{ $item->titre }}</span>
+                        <span class="block truncate text-sm text-ink-2">{{ $item->service?->nom ?? 'Service non précisé' }} · <span class="font-mono text-xs">{{ $item->created_at->format('d.m.Y') }}</span></span>
                         <x-slot:aside>
                             <x-tn.status-badge :etat="$item->etatStatut()">{{ Demarche::libelleStatut($item->statut) }}</x-tn.status-badge>
                         </x-slot:aside>
@@ -189,8 +188,8 @@ new #[Title('Mes démarches')] class extends Component {
                 <flux:table.rows>
                     @foreach ($this->items as $item)
                         <flux:table.row wire:key="row-{{ $item->id }}">
-                            <flux:table.cell><a href="{{ route('demarches.show', $item) }}" wire:navigate class="font-medium text-ink hover:text-cyan">{{ $item->traduit('titre') }}</a></flux:table.cell>
-                            <flux:table.cell>{{ $item->service?->traduit('nom') ?? '—' }}</flux:table.cell>
+                            <flux:table.cell><a href="{{ route('demarches.show', $item) }}" wire:navigate class="font-medium text-ink hover:text-cyan">{{ $item->titre }}</a></flux:table.cell>
+                            <flux:table.cell>{{ $item->service?->nom ?? '—' }}</flux:table.cell>
                             <flux:table.cell><x-tn.status-badge :etat="$item->etatStatut()">{{ Demarche::libelleStatut($item->statut) }}</x-tn.status-badge></flux:table.cell>
                             @if ($this->voitToutesLesDemarches)
                                 <flux:table.cell>{{ $item->user?->name }}</flux:table.cell>

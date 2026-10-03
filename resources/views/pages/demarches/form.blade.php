@@ -1,8 +1,8 @@
 <?php
 
-use App\Concerns\GereTraductions;
 use App\Models\Demarche;
 use App\Models\Service;
+use App\Services\OnboardingProgress;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -13,8 +13,6 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Démarche')] class extends Component {
-    use GereTraductions;
-
     #[Locked]
     public ?Demarche $record = null;
 
@@ -30,10 +28,14 @@ new #[Title('Démarche')] class extends Component {
             $this->titre = (string) ($demarche->titre ?? '');
             $this->description = (string) ($demarche->description ?? '');
             $this->service_id = (string) ($demarche->service_id ?? '');
-            $this->chargerTraductions($demarche->loadMissing('traductions'));
         } else {
             $this->authorize('create', Demarche::class);
-            $this->chargerTraductions();
+
+            // Pré-sélection du service (lien « Commencer une démarche » du parcours de prise en main, D12).
+            $serviceId = request()->integer('service');
+            if ($serviceId > 0 && Service::query()->whereKey($serviceId)->exists()) {
+                $this->service_id = (string) $serviceId;
+            }
         }
     }
 
@@ -46,7 +48,6 @@ new #[Title('Démarche')] class extends Component {
             'titre' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:5000'],
             'service_id' => ['nullable', Rule::exists(Service::class, 'id')],
-            ...$this->reglesTraductions(),
         ];
     }
 
@@ -68,13 +69,14 @@ new #[Title('Démarche')] class extends Component {
             : $this->authorize('create', Demarche::class);
 
         $validated = $this->validate();
-        unset($validated['traductions']);
 
         foreach (['service_id'] as $field) {
             if (($validated[$field] ?? null) === '') {
                 $validated[$field] = null;
             }
         }
+
+        $depuisParcours = ! $this->record && OnboardingProgress::pour(auth()->user())->doitRevenirAuParcours();
 
         if ($this->record) {
             $this->record->update($validated);
@@ -85,9 +87,14 @@ new #[Title('Démarche')] class extends Component {
             $record->save();
         }
 
-        $this->enregistrerTraductions($record);
-
         Flux::toast(variant: 'success', text: 'Démarche enregistrée.');
+
+        // Parcours de prise en main (D12) : la première démarche termine le parcours, on affiche les félicitations.
+        if ($depuisParcours) {
+            $this->redirectRoute('onboarding.show', navigate: true);
+
+            return;
+        }
 
         $this->redirectRoute('demarches.show', $record, navigate: true);
     }
@@ -112,7 +119,9 @@ new #[Title('Démarche')] class extends Component {
     <x-tn.page-header
         label="Démarches"
         :title="$record ? 'Modifier la démarche' : 'Nouvelle démarche'"
-        :breadcrumb="['Démarches' => route('demarches.index'), ($record ? 'Modifier' : 'Nouvelle') => null]"
+        :breadcrumb="$record
+            ? ['Mon espace' => route('dashboard'), 'Démarches' => route('demarches.index'), ($record->titre ?: 'Démarche') => route('demarches.show', $record), 'Modifier' => null]
+            : ['Mon espace' => route('dashboard'), 'Démarches' => route('demarches.index'), 'Nouvelle' => null]"
     />
 
     <x-tn.stepper :steps="$etapes" current="etape" />
@@ -147,7 +156,6 @@ new #[Title('Démarche')] class extends Component {
                 </div>
                 <flux:input wire:model="titre" label="Objet de la démarche" placeholder="Ex. Demande d'acte de naissance" required />
                 <flux:textarea wire:model="description" label="Détails" placeholder="Précisez votre demande (personnes concernées, dates, pièces disponibles…)" rows="6" required />
-                <x-tn.traductions />
             </div>
 
             {{-- ÉTAPE 3 : RÉCAPITULATIF --}}

@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\Concerns\HasTraductions;
+use App\Models\Concerns\Auditable;
 use Database\Factories\DemarcheFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,11 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Demarche extends Model
 {
     /** @use HasFactory<DemarcheFactory> */
-    use HasFactory;
-    use HasTraductions;
-
-    /** Champs traduisibles : colonne de la démarche => colonne de la traduction. */
-    public const TRADUCTION_CHAMPS = ['titre' => 'titre', 'description' => 'description'];
+    use Auditable, HasFactory;
 
     public const STATUT_OPTIONS = ['deposee', 'en_cours', 'traitee', 'refusee'];
 

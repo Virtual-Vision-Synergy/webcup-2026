@@ -22,7 +22,7 @@ class DefinirLangue
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        $langue = $request->session()->get('langue') ?? $user?->langue ?? $request->cookie(self::COOKIE);
+        $langue = $request->session()->get('langue') ?? $user->langue ?? $request->cookie(self::COOKIE);
 
         if (is_string($langue) && array_key_exists($langue, self::LANGUES)) {
             app()->setLocale($langue);

@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Service;
+use App\Models\Message;
 use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,7 +11,7 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new #[Title('Services')] class extends Component {
+new #[Title('Messages')] class extends Component {
     use WithPagination;
 
     #[Url(except: '')]
@@ -23,7 +23,7 @@ new #[Title('Services')] class extends Component {
 
     public function mount(): void
     {
-        $this->authorize('viewAny', Service::class);
+        $this->authorize('viewAny', Message::class);
     }
 
     public function updatedSearch(): void
@@ -39,14 +39,14 @@ new #[Title('Services')] class extends Component {
     /**
      * Recherche et filtres, partagés par la liste (et la carte si l'entité a des coordonnées).
      *
-     * @return Builder<Service>
+     * @return Builder<Message>
      */
     protected function filteredQuery(): Builder
     {
-        return Service::query()
+        return Message::query()
             ->when($this->search !== '', function ($query) {
                 $term = '%'.$this->search.'%';
-                $query->where(fn ($q) => $q->where('nom', 'like', $term)->orWhere('description', 'like', $term)->orWhere('icone', 'like', $term));
+                $query->where(fn ($q) => $q->where('nom', 'like', $term)->orWhere('email', 'like', $term)->orWhere('sujet', 'like', $term)->orWhere('message', 'like', $term));
             })
             ->when($this->mine, fn ($query) => $query->whereBelongsTo(auth()->user()));
     }
@@ -62,24 +62,24 @@ new #[Title('Services')] class extends Component {
 
     public function delete(int $id): void
     {
-        $record = Service::findOrFail($id);
+        $record = Message::findOrFail($id);
         $this->authorize('delete', $record);
 
         $record->delete();
 
-        Flux::toast(variant: 'success', text: 'Service supprimé(e).');
+        Flux::toast(variant: 'success', text: 'Message supprimé(e).');
     }
 }; ?>
 
 <section class="w-full space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
-            <flux:heading size="xl" level="1">Services</flux:heading>
+            <flux:heading size="xl" level="1">Messages</flux:heading>
             <flux:text class="mt-1">{{ $this->items->total() }} élément(s)</flux:text>
         </div>
 
-        @can('create', \App\Models\Service::class)
-            <flux:button variant="primary" icon="plus" :href="route('services.create')" wire:navigate>
+        @can('create', \App\Models\Message::class)
+            <flux:button variant="primary" icon="plus" :href="route('messages.create')" wire:navigate>
                 Ajouter
             </flux:button>
         @endcan
@@ -100,7 +100,8 @@ new #[Title('Services')] class extends Component {
         <flux:table :paginate="$this->items">
             <flux:table.columns>
                 <flux:table.column>Nom</flux:table.column>
-                <flux:table.column>Icone</flux:table.column>
+                <flux:table.column>Email</flux:table.column>
+                <flux:table.column>Sujet</flux:table.column>
                 <flux:table.column>Auteur</flux:table.column>
                 <flux:table.column>Créé le</flux:table.column>
                 <flux:table.column></flux:table.column>
@@ -109,15 +110,16 @@ new #[Title('Services')] class extends Component {
             <flux:table.rows>
                 @foreach ($this->items as $item)
                     <flux:table.row wire:key="row-{{ $item->id }}">
-                        <flux:table.cell><flux:link :href="route('services.show', $item)" wire:navigate class="font-medium">{{ $item->nom }}</flux:link></flux:table.cell>
-                        <flux:table.cell>{{ $item->icone ?? '—' }}</flux:table.cell>
+                        <flux:table.cell><flux:link :href="route('messages.show', $item)" wire:navigate class="font-medium">{{ $item->nom }}</flux:link></flux:table.cell>
+                        <flux:table.cell>{{ $item->email ?? '—' }}</flux:table.cell>
+                        <flux:table.cell>{{ $item->sujet ?? '—' }}</flux:table.cell>
                         <flux:table.cell>{{ $item->user?->name }}</flux:table.cell>
                         <flux:table.cell>{{ $item->created_at->format('d/m/Y') }}</flux:table.cell>
                         <flux:table.cell>
                             <div class="flex justify-end gap-1">
-                                <flux:button size="sm" variant="ghost" icon="eye" :href="route('services.show', $item)" wire:navigate />
+                                <flux:button size="sm" variant="ghost" icon="eye" :href="route('messages.show', $item)" wire:navigate />
                                 @can('update', $item)
-                                    <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('services.edit', $item)" wire:navigate />
+                                    <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('messages.edit', $item)" wire:navigate />
                                 @endcan
                                 @can('delete', $item)
                                     <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer cet élément ?" />

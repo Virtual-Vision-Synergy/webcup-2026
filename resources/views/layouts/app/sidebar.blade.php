@@ -16,15 +16,17 @@
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
 
-                    <flux:sidebar.item icon="building-library" :href="route('services.index')" :current="request()->routeIs('services.*')" wire:navigate>
-                        Services municipaux
+                    <flux:sidebar.item icon="briefcase" :href="route('services.index')" :current="request()->routeIs('services.*')" wire:navigate>
+                        Services
                     </flux:sidebar.item>
 
-                    @can('viewAny', \App\Models\Role::class)
-                        <flux:sidebar.item icon="shield-check" :href="route('roles.index')" :current="request()->routeIs('roles.*')" wire:navigate>
-                            Rôles
-                        </flux:sidebar.item>
-                    @endcan
+                    <flux:sidebar.item icon="newspaper" :href="route('actualites.index')" :current="request()->routeIs('actualites.*')" wire:navigate>
+                        Actualites
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="envelope" :href="route('messages.index')" :current="request()->routeIs('messages.*')" wire:navigate>
+                        Messages
+                    </flux:sidebar.item>
 
                     {{-- make:feature:nav --}}
                 </flux:sidebar.group>
@@ -79,7 +81,6 @@
                                 <div class="grid flex-1 text-start text-sm leading-tight">
                                     <flux:heading class="truncate">{{ auth()->user()->name }}</flux:heading>
                                     <flux:text class="truncate">{{ auth()->user()->email }}</flux:text>
-                                    <flux:badge size="sm" class="mt-1 w-fit">{{ auth()->user()->role->label }}</flux:badge>
                                 </div>
                             </div>
                         </div>

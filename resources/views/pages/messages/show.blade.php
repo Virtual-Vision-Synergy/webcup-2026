@@ -1,20 +1,20 @@
 <?php
 
-use App\Models\Service;
+use App\Models\Message;
 use Flux\Flux;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Title('Service')] class extends Component {
+new #[Title('Message')] class extends Component {
     #[Locked]
-    public Service $record;
+    public Message $record;
 
-    public function mount(Service $service): void
+    public function mount(Message $message): void
     {
-        $this->authorize('view', $service);
-        $this->record = $service;
+        $this->authorize('view', $message);
+        $this->record = $message;
     }
 
     public function delete(): void
@@ -23,16 +23,16 @@ new #[Title('Service')] class extends Component {
 
         $this->record->delete();
 
-        Flux::toast(variant: 'success', text: 'Service supprimé(e).');
+        Flux::toast(variant: 'success', text: 'Message supprimé(e).');
 
-        $this->redirectRoute('services.index', navigate: true);
+        $this->redirectRoute('messages.index', navigate: true);
     }
 }; ?>
 
 <section class="w-full max-w-3xl space-y-6">
     <div class="flex flex-wrap items-start justify-between gap-4">
         <div>
-            <flux:link :href="route('services.index')" wire:navigate class="text-sm">&larr; Services</flux:link>
+            <flux:link :href="route('messages.index')" wire:navigate class="text-sm">&larr; Messages</flux:link>
             <flux:heading size="xl" level="1" class="mt-2">{{ $record->nom }}</flux:heading>
             <flux:text class="mt-1">
                 Par {{ $record->user?->name }} · {{ $record->created_at->format('d/m/Y à H:i') }}
@@ -41,7 +41,7 @@ new #[Title('Service')] class extends Component {
 
         <div class="flex gap-2">
             @can('update', $record)
-                <flux:button icon="pencil-square" :href="route('services.edit', $record)" wire:navigate>Modifier</flux:button>
+                <flux:button icon="pencil-square" :href="route('messages.edit', $record)" wire:navigate>Modifier</flux:button>
             @endcan
             @can('delete', $record)
                 <flux:button variant="danger" icon="trash" wire:click="delete" wire:confirm="Supprimer définitivement cet élément ?">Supprimer</flux:button>
@@ -58,12 +58,16 @@ new #[Title('Service')] class extends Component {
                 <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">{{ $record->nom ?? '—' }}</dd>
             </div>
             <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Description</dt>
-                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0"><p class="whitespace-pre-line">{{ $record->description ?? '—' }}</p></dd>
+                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Email</dt>
+                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">{{ $record->email ?? '—' }}</dd>
             </div>
             <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Icone</dt>
-                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">{{ $record->icone ?? '—' }}</dd>
+                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Sujet</dt>
+                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">{{ $record->sujet ?? '—' }}</dd>
+            </div>
+            <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
+                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Message</dt>
+                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0"><p class="whitespace-pre-line">{{ $record->message ?? '—' }}</p></dd>
             </div>
         </dl>
     </flux:card>

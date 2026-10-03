@@ -25,6 +25,9 @@ const cartes = new Map();
 // États reconnus : la couleur du marqueur indique un état (voir app/View/Components/Carte.php).
 const ETATS = ['normal', 'perturbe', 'alerte', 'info'];
 
+// F43 : l'état n'est jamais porté par la seule couleur : symbole dans le marqueur (CSS) + libellé dans le titre.
+const LIBELLES_ETATS = { normal: 'normal', perturbe: 'perturbé', alerte: 'alerte', info: 'information' };
+
 function urlTuiles() {
     const style = document.documentElement.classList.contains('dark') ? 'dark_all' : 'light_all';
 
@@ -107,7 +110,10 @@ function initialiser(el) {
     const marqueurs = points.map((p) => {
         const options = { title: p.titre ?? '', alt: p.titre ?? '' };
         if (ETATS.includes(p.etat)) {
-            options.icon = L.divIcon({ className: `tn-marqueur tn-marqueur-${p.etat}`, iconSize: [18, 18], iconAnchor: [9, 9], popupAnchor: [0, -10] });
+            const titre = [p.titre, `état : ${LIBELLES_ETATS[p.etat]}`].filter(Boolean).join(' — ');
+            options.title = titre;
+            options.alt = titre;
+            options.icon = L.divIcon({ className: `tn-marqueur tn-marqueur-${p.etat}`, iconSize: [22, 22], iconAnchor: [11, 11], popupAnchor: [0, -12] });
         }
         const marqueur = L.marker([nombre(p.lat), nombre(p.lng)], options).addTo(carte);
         if (p.titre || p.url) {

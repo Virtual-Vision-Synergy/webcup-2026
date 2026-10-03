@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
 use App\Models\Concerns\HasConfidentialFields;
+use App\Models\Concerns\PrevientDuChangementDeStatut;
 use App\Services\ParOuCommencer;
 use Database\Factories\DemarcheFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -26,7 +27,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Demarche extends Model
 {
     /** @use HasFactory<DemarcheFactory> */
-    use Auditable, HasAuditHistory, HasConfidentialFields, HasFactory;
+    use Auditable, HasAuditHistory, HasConfidentialFields, HasFactory, PrevientDuChangementDeStatut;
 
     public const STATUT_OPTIONS = ['deposee', 'en_cours', 'traitee', 'refusee'];
 
@@ -125,6 +126,7 @@ class Demarche extends Model
 
     /**
      * Seul point de passage pour modifier le statut (réservé aux agents et admins : policy changerStatut).
+     * Si l'état change vraiment, le propriétaire est prévenu (F49).
      */
     public function changerStatut(string $statut): void
     {
@@ -132,7 +134,11 @@ class Demarche extends Model
             throw new \InvalidArgumentException("Statut inconnu : {$statut}");
         }
 
+        $statutAvant = (string) $this->statut;
+
         $this->statut = $statut;
         $this->save();
+
+        $this->prevenirProprietaire($statutAvant);
     }
 }

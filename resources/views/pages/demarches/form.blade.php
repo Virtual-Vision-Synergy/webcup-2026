@@ -103,7 +103,9 @@ new #[Title('Démarche')] class extends Component {
     <x-tn.page-header
         label="Démarches"
         :title="$record ? 'Modifier la démarche' : 'Nouvelle démarche'"
-        :breadcrumb="['Démarches' => route('demarches.index'), ($record ? 'Modifier' : 'Nouvelle') => null]"
+        :breadcrumb="$record
+            ? ['Mon espace' => route('dashboard'), 'Démarches' => route('demarches.index'), ($record->titre ?: 'Démarche') => route('demarches.show', $record), 'Modifier' => null]
+            : ['Mon espace' => route('dashboard'), 'Démarches' => route('demarches.index'), 'Nouvelle' => null]"
     />
 
     <x-tn.stepper :steps="$etapes" current="etape" />

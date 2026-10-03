@@ -67,6 +67,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('notifications/{notification}/lire', [NotificationController::class, 'lire'])->whereUuid('notification')->name('notifications.read');
     Route::get('notifications/{notification}/ouvrir', [NotificationController::class, 'ouvrir'])->whereUuid('notification')->name('notifications.open');
 
+    // D11 : « Mes demandes » de l'habitant connecté (requête filtrée sur l'auteur ; détail : SignalementPolicy::viewOwn → 403 pour autrui).
+    Route::livewire('mes-demandes', 'pages::mes-demandes.index')->name('mes-demandes.index');
+    Route::livewire('mes-demandes/{signalement}', 'pages::mes-demandes.show')->name('mes-demandes.show');
+
     // F67 : création et mise à jour des projets de la ville (ProjetPolicy : agents et admins).
     Route::livewire('projets/create', 'pages::projets.form')->name('projets.create');
     Route::livewire('projets/{projet}/edit', 'pages::projets.form')->name('projets.edit');

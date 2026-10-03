@@ -3,9 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\Actualite;
+use App\Models\Annonce;
 use App\Models\Demarche;
 use App\Models\Message;
 use App\Models\Onboarding;
+use App\Models\Role;
 use App\Models\Service;
 use App\Models\Signalement;
 use App\Models\User;
@@ -118,6 +120,24 @@ class DatabaseSeeder extends Seeder
             // Quelques démarches pour le compte citoyen de démo : son espace personnel n'est pas vide.
             Demarche::factory(4)->recycle($services)->for(User::where('email', 'user@example.com')->firstOrFail())->create();
         }
+
+        // Messages généraux (D18) : un en cours, un programmé, un expiré, publiés par un agent.
+        $auteur = User::where('role_id', Role::idFor(Role::AGENT))->first() ?? $users->first();
+        Annonce::factory()->active()->for($auteur)->create([
+            'titre' => 'Coupure d’eau à Ambohijanahary',
+            'contenu' => 'Travaux sur le réseau : l’eau sera coupée dans le quartier Ambohijanahary aujourd’hui de 9 h à 16 h. Faites une réserve et évitez les lessives ; un camion-citerne stationne place des Pionniers.',
+            'niveau' => 'important',
+        ]);
+        Annonce::factory()->programmee()->for($auteur)->create([
+            'titre' => 'Alerte météo : vents violents demain',
+            'contenu' => 'Rafales jusqu’à 110 km/h attendues. Rentrez le mobilier extérieur, limitez vos déplacements et suivez les consignes du Haut Conseil sur cette plateforme.',
+            'niveau' => 'urgent',
+        ]);
+        Annonce::factory()->expiree()->for($auteur)->create([
+            'titre' => 'Fermeture exceptionnelle de la mairie annexe',
+            'contenu' => 'La mairie annexe du secteur Nord était fermée pour inventaire. Les démarches restaient possibles en ligne.',
+            'niveau' => 'information',
+        ]);
 
         Signalement::factory(15)->recycle($users)->create();
         Signalement::factory(5)->nouveau()->recycle($users)->create();

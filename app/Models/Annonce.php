@@ -79,19 +79,23 @@ class Annonce extends Model
      *
      * Le cache (court, invalidé à chaque création, modification ou suppression) contient les messages non expirés ;
      * le filtre sur les dates est refait à chaque affichage pour qu'un message programmé apparaisse pile à l'heure.
+     * On met en cache des tableaux bruts, pas des objets : config/cache.php interdit de désérialiser des classes
+     * (serializable_classes = false), les modèles sont donc reconstruits avec hydrate().
      *
      * @return Collection<int, Annonce>
      */
     public static function enDiffusion(): Collection
     {
-        /** @var Collection<int, Annonce> $nonExpirees */
-        $nonExpirees = Cache::remember(self::CACHE_KEY, 60, fn () => self::query()
+        /** @var list<array<string, mixed>> $lignes */
+        $lignes = Cache::remember(self::CACHE_KEY, 60, fn (): array => self::query()
             ->where('fin', '>', now())
-            ->get(['id', 'titre', 'contenu', 'niveau', 'debut', 'fin', 'updated_at']));
+            ->get(['id', 'titre', 'contenu', 'niveau', 'debut', 'fin', 'updated_at'])
+            ->map(fn (Annonce $annonce): array => $annonce->getAttributes())
+            ->all());
 
         $maintenant = now();
 
-        return $nonExpirees
+        return self::hydrate($lignes)
             ->filter(fn (Annonce $annonce): bool => $annonce->debut->lte($maintenant) && $annonce->fin->gt($maintenant))
             ->sortBy([
                 fn (Annonce $a, Annonce $b): int => $b->gravite() <=> $a->gravite(),

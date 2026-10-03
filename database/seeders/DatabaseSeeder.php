@@ -115,7 +115,7 @@ class DatabaseSeeder extends Seeder
         Message::factory(20)->recycle($users)->create();
 
         $services = Service::all();
-        Demarche::factory(20)->recycle($users)->recycle($services)->create();
+        Demarche::factory(20)->recente()->recycle($users)->recycle($services)->create();
 
         if (! app()->isProduction()) {
             // Quelques démarches pour le compte citoyen de démo : son espace personnel n'est pas vide.
@@ -142,6 +142,11 @@ class DatabaseSeeder extends Seeder
 
         // Alerte ciblée F29 « Montée des eaux — quartier sud » + habitants sud@example.com et nord@example.com.
         $this->call(AlerteMonteeDesEauxSeeder::class);
+
+        if (! app()->isProduction()) {
+            // F30 : notifications lues et non lues pour user@example.com + annonce « Danger » programmée dans 5 min.
+            $this->call(NotificationsAnnoncesSeeder::class);
+        }
 
         Signalement::factory(15)->recycle($users)->create();
         Signalement::factory(5)->nouveau()->recycle($users)->create();

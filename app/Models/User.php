@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\HasAuditHistory;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -37,6 +38,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
  * @property Carbon|null $deactivated_at
+ * @property bool $notifier_par_email Préférence de l'habitant (F30) : annonces urgentes par e-mail.
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
@@ -44,12 +46,12 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * (inscription, admin, deactivate()/reactivate()).
  * L'ancienne colonne texte « role » existe encore en base mais n'est plus utilisée.
  */
-#[Fillable(['name', 'email', 'password', 'telephone', 'quartier', 'quartier_id'])]
+#[Fillable(['name', 'email', 'password', 'telephone', 'quartier', 'quartier_id', 'notifier_par_email'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use Auditable, HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use Auditable, HasAuditHistory, HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * Get the attributes that should be cast.
@@ -63,6 +65,7 @@ class User extends Authenticatable implements FilamentUser
             'password' => 'hashed',
             'quartier_id' => 'integer',
             'deactivated_at' => 'datetime',
+            'notifier_par_email' => 'boolean',
         ];
     }
 

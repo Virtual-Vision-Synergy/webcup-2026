@@ -46,13 +46,15 @@ new #[Title('Ligne de transport')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    <x-audit-history :subject="$record" variant="resume" />
+
     @if ($record->estPerturbee())
         <div role="alert" @class([
             'flex items-start gap-3 rounded-md border p-4',
             'border-amber/40 bg-amber/8 text-amber' => $record->etat === 'perturbe',
             'border-magenta/40 bg-magenta/8 text-magenta' => $record->etat === 'interrompu',
         ])>
-            <flux:icon name="exclamation-triangle" class="mt-0.5 size-5 shrink-0" />
+            <flux:icon :name="$record->etat === 'interrompu' ? 'x-circle' : 'exclamation-triangle'" class="mt-0.5 size-5 shrink-0" aria-hidden="true" />
             <div>
                 <p class="font-semibold">{{ $record->etatLabel() }}</p>
                 <p class="mt-1 whitespace-pre-line text-sm">{{ $record->perturbation ?? 'Perturbation signalée, informations à venir.' }}</p>
@@ -89,4 +91,6 @@ new #[Title('Ligne de transport')] class extends Component {
             @endif
         </x-tn.surface>
     </div>
+
+    <x-audit-history :subject="$record" />
 </section>

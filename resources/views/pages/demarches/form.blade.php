@@ -3,6 +3,7 @@
 use App\Models\Demarche;
 use App\Models\Service;
 use App\Services\OnboardingProgress;
+use Closure;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -33,7 +34,7 @@ new #[Title('Démarche')] class extends Component {
 
             // Pré-sélection du service (lien « Commencer une démarche » du parcours de prise en main, D12).
             $serviceId = request()->integer('service');
-            if ($serviceId > 0 && Service::query()->whereKey($serviceId)->exists()) {
+            if ($serviceId > 0 && Service::query()->disponibles()->whereKey($serviceId)->exists()) {
                 $this->service_id = (string) $serviceId;
             }
         }
@@ -47,7 +48,18 @@ new #[Title('Démarche')] class extends Component {
         return [
             'titre' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:5000'],
-            'service_id' => ['nullable', Rule::exists(Service::class, 'id')],
+            // F63 : un service rendu indisponible par un administrateur n'accepte plus de démarche (contrôle serveur).
+            'service_id' => [
+                'nullable',
+                Rule::exists(Service::class, 'id'),
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    $service = filled($value) ? Service::query()->find($value) : null;
+
+                    if ($service?->estIndisponible()) {
+                        $fail(__('Le service « :nom » est momentanément indisponible : choisissez un autre service ou « Je ne sais pas », la mairie orientera votre demande.', ['nom' => $service->nom]));
+                    }
+                },
+            ],
         ];
     }
 
@@ -59,7 +71,7 @@ new #[Title('Démarche')] class extends Component {
     #[Computed]
     public function serviceOptions(): Collection
     {
-        return Service::query()->orderBy('nom')->get(['id', 'nom']);
+        return Service::query()->orderBy('nom')->get(['id', 'nom', 'indisponible_depuis', 'motif_indisponibilite', 'retour_prevu_le']);
     }
 
     public function save(): void
@@ -139,10 +151,22 @@ new #[Title('Démarche')] class extends Component {
                         <span class="font-medium text-ink">Je ne sais pas</span>
                     </label>
                     @foreach ($this->serviceOptions as $option)
-                        <label wire:key="service-{{ $option->id }}" class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
-                            <input type="radio" wire:model="service_id" value="{{ $option->id }}" class="size-4 accent-[var(--color-cyan)]">
-                            <span class="font-medium text-ink">{{ $option->nom }}</span>
-                        </label>
+                        @if ($option->estIndisponible())
+                            <div wire:key="service-{{ $option->id }}" class="flex min-h-14 items-start gap-3 rounded-md border border-dashed border-line bg-surface px-4 py-3 opacity-75">
+                                <input type="radio" disabled aria-describedby="service-{{ $option->id }}-indispo" class="mt-1 size-4">
+                                <span class="min-w-0">
+                                    <span class="block font-medium text-ink-2">{{ $option->nom }}</span>
+                                    <span id="service-{{ $option->id }}-indispo" class="block text-xs text-magenta">
+                                        Indisponible{{ $option->retour_prevu_le ? ' · retour prévu le '.$option->retour_prevu_le->translatedFormat('j F') : '' }}
+                                    </span>
+                                </span>
+                            </div>
+                        @else
+                            <label wire:key="service-{{ $option->id }}" class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
+                                <input type="radio" wire:model="service_id" value="{{ $option->id }}" class="size-4 accent-[var(--color-cyan)]">
+                                <span class="font-medium text-ink">{{ $option->nom }}</span>
+                            </label>
+                        @endif
                     @endforeach
                 </div>
                 <flux:error name="service_id" />

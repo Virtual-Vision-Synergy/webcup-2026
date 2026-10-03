@@ -44,6 +44,8 @@ class ActionLog extends Model
         'rendez_vous_reserve' => 'Rendez-vous réservé',
         'rendez_vous_annule' => 'Rendez-vous annulé',
         'rendez_vous_statut' => 'Statut de rendez-vous modifié',
+        'service_indisponible' => 'Service rendu indisponible',
+        'service_retabli' => 'Service rétabli',
     ];
 
     /**

@@ -134,6 +134,10 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
         :breadcrumb="['Espace agent' => route('agent.index'), 'Messages généraux' => route('agent.annonces.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
     />
 
+    @if ($record)
+        <x-audit-history :subject="$record" variant="resume" />
+    @endif
+
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
         <flux:input wire:model.live.debounce.400ms="titre" label="Titre" maxlength="120" required
             placeholder="Ex. Coupure d’eau à Ambohijanahary" />
@@ -187,4 +191,8 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             <div wire:loading wire:target="save"><flux:text>Enregistrement…</flux:text></div>
         </div>
     </form>
+
+    @if ($record)
+        <x-audit-history :subject="$record" />
+    @endif
 </section>

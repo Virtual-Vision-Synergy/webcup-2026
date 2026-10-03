@@ -5,7 +5,7 @@
     $user = auth()->user();
     // Compteur limité aux démarches de l'utilisateur connecté.
     $demarchesEnCours = $user ? $user->demarches()->whereIn('statut', ['deposee', 'en_cours'])->count() : 0;
-    $ligne = 'flex min-h-12 w-full items-center gap-3 rounded-sm px-3 text-[15px] font-medium text-ink hover:bg-cyan/6';
+    $ligne = 'flex min-h-12 w-full items-center gap-3 rounded-sm px-3 text-[0.9375rem] font-medium text-ink hover:bg-cyan/6';
 @endphp
 
 {{-- Menu mobile en feuille (bottom sheet) : piège du focus, Échap, tap sur le fond, glisser vers le bas. --}}
@@ -90,7 +90,7 @@
                                 <span class="flex size-9 items-center justify-center rounded-sm border border-cyan/18 bg-cyan/8 text-cyan" aria-hidden="true">
                                     <flux:icon :name="$rubrique['icon']" class="size-[18px]" />
                                 </span>
-                                <span class="mt-2 text-[15px] font-medium text-ink">{{ $rubrique['label'] }}</span>
+                                <span class="mt-2 text-[0.9375rem] font-medium text-ink">{{ $rubrique['label'] }}</span>
                             </a>
                         </li>
                     @endforeach
@@ -128,7 +128,7 @@
                     @endif
                 @endauth
                 <li class="flex min-h-12 items-center justify-between gap-3 px-3">
-                    <span class="flex items-center gap-3 text-[15px] font-medium text-ink">
+                    <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
                         <flux:icon name="moon" class="size-5 text-ink-2" />Apparence
                     </span>
                     <x-tn.theme-toggle class="-me-2" />

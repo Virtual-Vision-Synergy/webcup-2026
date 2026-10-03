@@ -55,6 +55,14 @@
     --chamfer: 18px;
 }
 
+/*
+ * TAILLE DU TEXTE (A / A+ / A++) : tout est en rem, on agrandit donc la base de <html>.
+ * Les longs mots et blocs flex ne doivent jamais déborder ni se chevaucher.
+ */
+html[data-text-size='lg'] { font-size: 125%; }
+html[data-text-size='xl'] { font-size: 150%; }
+body { overflow-wrap: anywhere; }
+
 @layer theme {
     .dark {
         --color-night: #050A16;
@@ -133,14 +141,14 @@
         font-family: var(--font-display);
         font-stretch: 112%;
         font-weight: 700;
-        font-size: 38px;
+        font-size: 2.375rem;
         line-height: 1.02;
         letter-spacing: -0.01em;
     }
 
     @media (min-width: 768px) {
         .tn-h1 {
-            font-size: 64px;
+            font-size: 4rem;
         }
     }
 
@@ -148,19 +156,19 @@
         font-family: var(--font-display);
         font-stretch: 112%;
         font-weight: 600;
-        font-size: 26px;
+        font-size: 1.625rem;
         line-height: 1.1;
     }
 
     @media (min-width: 768px) {
         .tn-h2 {
-            font-size: 32px;
+            font-size: 2rem;
         }
     }
 
     .tn-label {
         font-family: var(--font-display);
-        font-size: 13px;
+        font-size: 0.8125rem;
         font-weight: 600;
         letter-spacing: .16em;
         text-transform: uppercase;

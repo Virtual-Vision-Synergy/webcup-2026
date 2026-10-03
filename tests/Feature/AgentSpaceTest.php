@@ -173,7 +173,7 @@ test('API en erreur sans cache : page 200 et message en français', function () 
     $this->actingAs(User::factory()->agent()->create())
         ->get(route('agent.index'))
         ->assertOk()
-        ->assertSee('L\'API Nova Terra ne répond pas.', false)
+        ->assertSee('L\'API Nova Terra ne répond pas.')
         ->assertSee('data-test="api-unavailable"', false)
         ->assertDontSee('D01');
 });

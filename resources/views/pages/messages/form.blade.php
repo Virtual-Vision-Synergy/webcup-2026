@@ -60,7 +60,7 @@ new #[Title('Contacter la mairie')] class extends Component {
     {
         return [
             'nom' => 'nom',
-            'email' => 'adresse e-mail',
+            'email' => __('adresse e-mail'),
             'sujet' => 'sujet',
             'message' => 'message',
         ];
@@ -77,7 +77,7 @@ new #[Title('Contacter la mairie')] class extends Component {
         if ($this->record) {
             $this->record->update($validated);
 
-            Flux::toast(variant: 'success', text: 'Message modifié.');
+            Flux::toast(variant: 'success', text: __('Message modifié.'));
 
             $this->redirectRoute('messages.show', $this->record, navigate: true);
 
@@ -93,7 +93,7 @@ new #[Title('Contacter la mairie')] class extends Component {
         $this->envoyeId = $record->id;
         $this->reset('sujet', 'message');
 
-        Flux::toast(variant: 'success', text: 'Votre message a bien été envoyé à la mairie.');
+        Flux::toast(variant: 'success', text: __('Votre message a bien été envoyé à la mairie.'));
     }
 
     public function nouveau(): void
@@ -106,9 +106,9 @@ new #[Title('Contacter la mairie')] class extends Component {
 
 <section class="mx-auto w-full max-w-2xl space-y-6">
     <x-tn.page-header
-        label="Contact"
-        :title="$record ? 'Modifier le message' : 'Contacter la mairie'"
-        :subtitle="$record ? null : 'Le Service des Relations Citoyennes vous répondra dans les meilleurs délais.'"
+        label="{{ __('Contact') }}"
+        :title="$record ? __('Modifier le message') : __('Contacter la mairie')"
+        :subtitle="$record ? null : __('Le Service des Relations Citoyennes vous répondra dans les meilleurs délais.')"
         :breadcrumb="$record
             ? ['Mon espace' => route('dashboard'), 'Messages' => route('messages.index'), ($record->sujet ?: 'Message') => route('messages.show', $record), 'Modifier' => null]
             : ['Mon espace' => route('dashboard'), 'Messages' => route('messages.index'), 'Nouveau' => null]"
@@ -117,33 +117,33 @@ new #[Title('Contacter la mairie')] class extends Component {
     @if ($envoyeId)
         <div role="status" class="space-y-4 rounded-md border border-line bg-surface p-5 md:p-6">
             <flux:callout variant="success" icon="check-circle">
-                <flux:callout.heading>Message envoyé à la mairie</flux:callout.heading>
-                <flux:callout.text>Merci ! Votre message a bien été transmis au Service des Relations Citoyennes. Un agent le traitera prochainement.</flux:callout.text>
+                <flux:callout.heading>{{ __('Message envoyé à la mairie') }}</flux:callout.heading>
+                <flux:callout.text>{{ __('Merci ! Votre message a bien été transmis au Service des Relations Citoyennes. Un agent le traitera prochainement.') }}</flux:callout.text>
             </flux:callout>
 
             <div class="flex flex-wrap items-center gap-3">
-                <flux:button variant="primary" :href="route('messages.show', $envoyeId)" wire:navigate>Voir mon message</flux:button>
-                <flux:button variant="ghost" wire:click="nouveau">Écrire un autre message</flux:button>
+                <flux:button variant="primary" :href="route('messages.show', $envoyeId)" wire:navigate>{{ __('Voir mon message') }}</flux:button>
+                <flux:button variant="ghost" wire:click="nouveau">{{ __('Écrire un autre message') }}</flux:button>
             </div>
         </div>
     @else
         <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6" novalidate>
-            <flux:input wire:model="nom" label="Nom" required />
+            <flux:input wire:model="nom" label="{{ __('Nom') }}" required />
 
-            <flux:input wire:model="email" type="email" label="Adresse e-mail" required />
+            <flux:input wire:model="email" type="email" label="{{ __('Adresse e-mail') }}" required />
 
-            <flux:input wire:model="sujet" label="Sujet" required />
+            <flux:input wire:model="sujet" label="{{ __('Sujet') }}" required />
 
-            <flux:textarea wire:model="message" label="Message" rows="5" required />
+            <flux:textarea wire:model="message" label="{{ __('Message') }}" rows="5" required />
 
             <flux:error name="throttle" />
 
             <div class="flex items-center gap-3">
                 <flux:button type="submit" variant="primary">
-                    <span wire:loading.remove wire:target="save">{{ $record ? 'Enregistrer' : 'Envoyer à la mairie' }}</span>
-                    <span wire:loading wire:target="save">Envoi…</span>
+                    <span wire:loading.remove wire:target="save">{{ $record ? __('Enregistrer') : __('Envoyer à la mairie') }}</span>
+                    <span wire:loading wire:target="save">{{ __('Envoi…') }}</span>
                 </flux:button>
-                <flux:button :href="route('messages.index')" wire:navigate variant="ghost">Annuler</flux:button>
+                <flux:button :href="route('messages.index')" wire:navigate variant="ghost">{{ __('Annuler') }}</flux:button>
             </div>
         </form>
     @endif

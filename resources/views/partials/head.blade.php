@@ -1,6 +1,6 @@
 @php
-    $pageTitle = filled($title ?? null) ? $title.' · Terra Nova' : 'Terra Nova · Réseau civique officiel';
-    $pageDescription = $description ?? 'Plateforme civique de la Mairie de Nova Terra : démarches, actualités du Haut Conseil, services municipaux et contact, au même endroit.';
+    $pageTitle = filled($title ?? null) ? __($title).' · Terra Nova' : 'Terra Nova · '.__('Réseau civique officiel');
+    $pageDescription = $description ?? __('Plateforme civique de la Mairie de Nova Terra : démarches, actualités du Haut Conseil, services municipaux et contact, au même endroit.');
 @endphp
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />

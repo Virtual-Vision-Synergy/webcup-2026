@@ -64,6 +64,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('notifications/{notification}/lire', [NotificationController::class, 'lire'])->whereUuid('notification')->name('notifications.read');
     Route::get('notifications/{notification}/ouvrir', [NotificationController::class, 'ouvrir'])->whereUuid('notification')->name('notifications.open');
 
+    // F67 : création et mise à jour des projets de la ville (ProjetPolicy : agents et admins).
+    Route::livewire('projets/create', 'pages::projets.form')->name('projets.create');
+    Route::livewire('projets/{projet}/edit', 'pages::projets.form')->name('projets.edit');
+
     // make:feature:routes
 });
 
@@ -74,6 +78,10 @@ Route::middleware(['auth'])->group(function () {
 Route::group([], function () {
     // F29 : page d'une alerte en cours, consultable sans compte (lien partageable) ; 404 hors période (AnnoncePolicy::view).
     Route::livewire('alertes/{annonce}', 'pages::alertes.show')->name('alertes.show');
+
+    // F67 : projets de la ville consultables sans compte (décision assumée : information citoyenne).
+    Route::livewire('projets', 'pages::projets.index')->name('projets.index');
+    Route::livewire('projets/{projet}', 'pages::projets.show')->name('projets.show');
 
     // make:feature:routes-public
 });

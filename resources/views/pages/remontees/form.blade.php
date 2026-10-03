@@ -90,7 +90,9 @@ new #[Title('Faire remonter une inquiétude')] class extends Component {
 
     <x-tn.surface>
         <form wire:submit="save" class="space-y-6">
-            <flux:select wire:model="categorie" label="Sujet">
+            <x-tn.mention-obligatoire />
+
+            <flux:select wire:model="categorie" label="Sujet" required>
                 @foreach (Remontee::CATEGORIE_LABELS as $valeur => $libelle)
                     <flux:select.option :value="$valeur">{{ $libelle }}</flux:select.option>
                 @endforeach
@@ -108,7 +110,7 @@ new #[Title('Faire remonter une inquiétude')] class extends Component {
             />
 
             @error('throttle')
-                <flux:callout variant="danger" icon="exclamation-triangle" :heading="$message" />
+                <flux:callout variant="danger" icon="exclamation-triangle" :heading="$message" role="alert" />
             @enderror
 
             <div class="flex flex-wrap items-center gap-3">

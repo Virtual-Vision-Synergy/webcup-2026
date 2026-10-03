@@ -60,6 +60,22 @@ class UserPolicy
         };
     }
 
+    /**
+     * F70 : révéler le téléphone ou l'e-mail d'un compte (motif obligatoire, consultation journalisée).
+     */
+    public function viewConfidential(User $user, User $model): bool
+    {
+        return $this->viewAccount($user, $model);
+    }
+
+    /**
+     * F70 : rattacher un agent à des services. Réservé à l'admin ; jamais un citoyen ni un admin.
+     */
+    public function assignServices(User $user, User $model): bool
+    {
+        return $user->isAdmin() && $model->isAgent();
+    }
+
     public function deactivate(User $user, User $model): bool
     {
         return $this->viewAccount($user, $model) && ! $user->is($model) && $model->isActive();
@@ -85,5 +101,15 @@ class UserPolicy
     {
         return $this->viewAccount($user, $model) && $model->isCitoyen() && ! $model->aUnEmail()
             && ! $user->is($model) && $model->isActive();
+    }
+
+    /*
+    | F55 : téléchargement de ses données personnelles. Uniquement les siennes, quel que soit le rôle
+    | (même un admin ne télécharge pas l'export d'un autre habitant par cette voie).
+    */
+
+    public function exportPersonalData(User $user, User $model): bool
+    {
+        return $user->is($model);
     }
 }

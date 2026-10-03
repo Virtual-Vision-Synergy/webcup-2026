@@ -166,6 +166,8 @@ new #[Title('Projet de la ville')] class extends Component {
     />
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
+        <x-tn.mention-obligatoire />
+
         <flux:input wire:model="titre" label="{{ __('Titre') }}" placeholder="{{ __('Réfection de la rue des Palmiers') }}" required />
 
         <div class="grid gap-4 sm:grid-cols-2">

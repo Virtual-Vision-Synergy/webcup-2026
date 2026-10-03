@@ -67,6 +67,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('notifications/{notification}/lire', [NotificationController::class, 'lire'])->whereUuid('notification')->name('notifications.read');
     Route::get('notifications/{notification}/ouvrir', [NotificationController::class, 'ouvrir'])->whereUuid('notification')->name('notifications.open');
 
+    // F67 : création et mise à jour des projets de la ville (ProjetPolicy : agents et admins).
+    Route::livewire('projets/create', 'pages::projets.form')->name('projets.create');
+    Route::livewire('projets/{projet}/edit', 'pages::projets.form')->name('projets.edit');
+
     // F51 : remontées d'inquiétudes sur les données (RemonteePolicy : l'auteur seul, sinon 403 ; traitement dans routes/agent.php).
     Route::livewire('mes-remontees', 'pages::remontees.index')->name('concerns.index');
     Route::livewire('mes-remontees/nouvelle', 'pages::remontees.form')->name('concerns.create');
@@ -97,6 +101,10 @@ Route::middleware(['signed', 'throttle:10,1'])->group(function () {
 Route::group([], function () {
     // F29 : page d'une alerte en cours, consultable sans compte (lien partageable) ; 404 hors période (AnnoncePolicy::view).
     Route::livewire('alertes/{annonce}', 'pages::alertes.show')->name('alertes.show');
+
+    // F67 : projets de la ville consultables sans compte (décision assumée : information citoyenne).
+    Route::livewire('projets', 'pages::projets.index')->name('projets.index');
+    Route::livewire('projets/{projet}', 'pages::projets.show')->name('projets.show');
 
     // F46 : urgences et santé, consultable sans compte (numéros d'urgence, hôpitaux) ; lecture seule, aucune action.
     Route::livewire('urgences', 'pages::urgences.index')->name('urgences.index');

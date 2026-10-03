@@ -159,6 +159,9 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
 <section class="w-full space-y-6">
     <x-tn.breadcrumb :items="['Espace agent' => null]" />
 
+    {{-- D17 : charge de travail en un coup d'œil --}}
+    <livewire:compteur-demandes-attente />
+
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
             <flux:heading size="xl" level="1">{{ __('Demandes Nova Terra') }}</flux:heading>

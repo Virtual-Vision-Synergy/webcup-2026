@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Annonce;
+use App\Models\RendezVous;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,13 +36,22 @@ class NotificationController extends Controller
     }
 
     /**
-     * Ouvre la notification : la marque comme lue puis mène à l'annonce (ou à la liste si elle n'est plus en ligne).
+     * Ouvre la notification : la marque comme lue puis mène à l'annonce (ou à la liste si elle n'est plus en ligne),
+     * ou à la fiche du rendez-vous pour un rappel (F40).
      */
     public function ouvrir(DatabaseNotification $notification): RedirectResponse
     {
         Gate::authorize('update', $notification);
 
         $notification->markAsRead();
+
+        // F40 : rappel de rendez-vous → sa fiche (RendezVousPolicy::view y est vérifiée).
+        $rendezVousId = $notification->data['rendez_vous_id'] ?? null;
+        if (is_int($rendezVousId)) {
+            return RendezVous::query()->whereKey($rendezVousId)->exists()
+                ? redirect()->route('appointments.show', $rendezVousId)
+                : redirect()->route('notifications.index')->with('status', 'Ce rendez-vous n’existe plus.');
+        }
 
         $annonceId = $notification->data['annonce_id'] ?? null;
         $annonce = is_int($annonceId) ? Annonce::query()->find($annonceId) : null;

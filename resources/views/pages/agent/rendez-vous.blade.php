@@ -4,6 +4,7 @@ use App\Models\ActionLog;
 use App\Models\CreneauRendezVous;
 use App\Models\RendezVous;
 use App\Models\Service;
+use App\Services\AuditLogger;
 use Carbon\CarbonImmutable;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
@@ -74,7 +75,9 @@ new #[Layout('layouts::agent'), Title('Espace agent — Rendez-vous du jour')] c
 
         $debut = $this->jour->utc();
 
+        // F70 : uniquement les rendez-vous des services de l'agent (tous pour l'admin).
         return RendezVous::query()
+            ->visibleTo(auth()->user())
             ->entre($debut, $debut->addDay())
             ->when(! $this->avecAnnules, fn ($query) => $query->where('statut', '!=', 'annule'))
             ->when(ctype_digit($this->filterServiceId), fn ($query) => $query->where('service_id', (int) $this->filterServiceId))
@@ -91,7 +94,13 @@ new #[Layout('layouts::agent'), Title('Espace agent — Rendez-vous du jour')] c
     #[Computed]
     public function serviceOptions(): Collection
     {
-        return Service::query()->prendRendezVous()->orderBy('nom')->get(['id', 'nom']);
+        $user = auth()->user();
+
+        return Service::query()
+            ->prendRendezVous()
+            ->when(! $user->isAdmin(), fn ($query) => $query->whereKey($user->serviceIds()))
+            ->orderBy('nom')
+            ->get(['id', 'nom']);
     }
 
     /**
@@ -100,7 +109,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Rendez-vous du jour')] c
     public function changerStatut(int $id, string $statut): void
     {
         $rendezVous = RendezVous::findOrFail($id);
-        $this->authorize('changerStatut', $rendezVous);
+        AuditLogger::autoriser('changerStatut', $rendezVous);
         abort_unless(in_array($statut, RendezVous::STATUTS_AGENT, true), 422);
 
         $rendezVous->changerStatut($statut);
@@ -153,7 +162,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Rendez-vous du jour')] c
                             <flux:table.cell class="whitespace-nowrap font-mono text-sm">{{ $item->creneau->libelleHeureDebut() }} – {{ $item->creneau->libelleHeureFin() }}</flux:table.cell>
                             <flux:table.cell>{{ $item->service->nom }}</flux:table.cell>
                             <flux:table.cell>{{ $item->user->name }}</flux:table.cell>
-                            <flux:table.cell class="max-w-xs whitespace-normal text-sm">{{ $item->motif ?? '—' }}</flux:table.cell>
+                            <flux:table.cell class="max-w-xs whitespace-normal text-sm">@if ($item->motif)<livewire:donnee-confidentielle :subject="$item" champ="motif" wire:key="motif-{{ $item->id }}" />@else — @endif</flux:table.cell>
                             <flux:table.cell><x-tn.status-badge :etat="$item->etatStatut()">{{ RendezVous::libelleStatut($item->statut) }}</x-tn.status-badge></flux:table.cell>
                             <flux:table.cell>
                                 @can('changerStatut', $item)

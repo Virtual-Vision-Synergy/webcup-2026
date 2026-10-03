@@ -5,8 +5,11 @@ namespace App\Services;
 use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -27,10 +30,13 @@ class AuditLogger
 
     private static bool $enabled = true;
 
+    /** Attribut de requête : le refus de cette requête est déjà au journal (F70). */
+    public const REFUS_JOURNALISE = 'audit.refus_journalise';
+
     /**
      * @param  array<string, array{avant: mixed, apres: mixed}>  $changes
      */
-    public static function log(string $action, Model $subject, array $changes = []): void
+    public static function log(string $action, Model $subject, array $changes = [], ?string $subjectType = null, ?string $subjectLabel = null): void
     {
         if (! self::$enabled) {
             return;
@@ -38,6 +44,15 @@ class AuditLogger
 
         try {
             $entry = self::buildEntry($action, $subject, $changes);
+
+            if ($subjectType !== null) {
+                $entry['subject_type'] = $subjectType;
+                $entry['subject_id'] = null;
+            }
+
+            if ($subjectLabel !== null) {
+                $entry['subject_label'] = $subjectLabel;
+            }
         } catch (Throwable $e) {
             report($e);
 
@@ -51,6 +66,56 @@ class AuditLogger
                 report($e);
             }
         });
+    }
+
+    /**
+     * F70 : vérifie un droit sur un élément ; en cas de refus, journalise la tentative (avec l'élément) puis lève le 403
+     * dont le message vient de la policy (Response::deny). À utiliser dans les actions sensibles à la place de authorize().
+     *
+     * @throws AuthorizationException
+     */
+    public static function autoriser(string $ability, Model $subject): void
+    {
+        $reponse = Gate::inspect($ability, $subject);
+
+        if ($reponse->denied()) {
+            self::logRefus((string) $reponse->message(), $subject);
+            $reponse->authorize();
+        }
+    }
+
+    /**
+     * F70 : journalise un accès refusé (403) : qui, quand, quelle page, quel élément, motif, IP.
+     * Une seule entrée par requête (le gestionnaire d'exceptions ne double pas une entrée déjà écrite ici).
+     */
+    public static function logRefus(string $motif, ?Model $subject = null, ?Request $request = null): void
+    {
+        $request ??= request();
+
+        if ($request->attributes->get(self::REFUS_JOURNALISE) === true) {
+            return;
+        }
+
+        $request->attributes->set(self::REFUS_JOURNALISE, true);
+
+        // Pour une action Livewire, la page d'origine est plus parlante que /livewire/update.
+        $page = $request->is('livewire*/update') ? (string) $request->headers->get('referer', $request->fullUrl()) : $request->fullUrl();
+        $chemin = '/'.ltrim((string) parse_url($page, PHP_URL_PATH), '/');
+
+        $changes = [
+            'route' => ['avant' => null, 'apres' => $request->route()?->getName() ?? $chemin],
+            'url' => ['avant' => null, 'apres' => $chemin],
+            'motif' => ['avant' => null, 'apres' => $motif !== '' ? $motif : 'Droits insuffisants'],
+        ];
+
+        if ($subject !== null) {
+            self::log('access_denied', $subject, $changes);
+
+            return;
+        }
+
+        $sujet = new AuditLog;
+        self::log('access_denied', $sujet, $changes, AuditLog::SUJET_ACCES, Str::limit('Page : '.$chemin, 250));
     }
 
     /**

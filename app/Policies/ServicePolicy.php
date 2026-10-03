@@ -53,4 +53,12 @@ class ServicePolicy
     {
         return $user->isAdmin() || $user->isAgent();
     }
+
+    /**
+     * Rendre un service indisponible ou le rétablir (F63) : administrateurs uniquement.
+     */
+    public function toggleAvailability(User $user, Service $service): bool
+    {
+        return $user->isAdmin();
+    }
 }

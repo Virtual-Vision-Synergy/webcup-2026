@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\Actualite;
+use App\Services\OptimiseurImage;
 use Flux\Flux;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -21,7 +21,7 @@ new #[Title('Actualite')] class extends Component {
     {
         $this->authorize('delete', $this->record);
         if ($this->record->image) {
-            Storage::disk('public')->delete($this->record->image);
+            app(OptimiseurImage::class)->supprimer($this->record->image);
         }
         $this->record->delete();
 
@@ -57,7 +57,7 @@ new #[Title('Actualite')] class extends Component {
     </x-tn.page-header>
 
     @if ($record->image)
-        <img src="{{ Storage::url($record->image) }}" alt="Illustration de l'annonce : {{ $record->titre }}" class="max-h-[420px] w-full rounded-md border border-line object-cover" />
+        <x-tn.image :chemin="$record->image" :alt="'Illustration de l\'annonce : '.$record->titre" :prioritaire="true" class="h-auto max-h-[420px] w-full rounded-md border border-line object-cover" />
     @endif
 
     <div class="text-[1.0625rem] leading-[1.7] text-ink">

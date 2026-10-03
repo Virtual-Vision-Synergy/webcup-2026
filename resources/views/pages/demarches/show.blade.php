@@ -39,58 +39,74 @@ new #[Title('Démarche')] class extends Component {
     }
 }; ?>
 
-<section class="w-full max-w-3xl space-y-6">
-    <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-            <flux:link :href="route('demarches.index')" wire:navigate class="text-sm">&larr; Mes démarches</flux:link>
-            <flux:heading size="xl" level="1" class="mt-2">{{ $record->titre }}</flux:heading>
-            <flux:text class="mt-1">
-                Par {{ $record->user?->name }} · {{ $record->created_at->format('d/m/Y à H:i') }}
-            </flux:text>
-            <div class="mt-2"><flux:badge size="sm" :color="$record->couleurStatut()">{{ \App\Models\Demarche::libelleStatut($record->statut) }}</flux:badge></div>
-        </div>
+@php
+    $statut = $record->statut;
+    $avance = in_array($statut, ['en_cours', 'traitee', 'refusee'], true);
+    $termine = in_array($statut, ['traitee', 'refusee'], true);
+    // Chronologie : seules les dates réellement connues sont affichées (dépôt, dernière mise à jour).
+    $chronologie = [
+        ['label' => 'Démarche déposée', 'date' => $record->created_at, 'etat' => 'info', 'fait' => true],
+        ['label' => 'Prise en charge par le service', 'date' => $statut === 'en_cours' ? $record->updated_at : null, 'etat' => 'info', 'fait' => $avance, 'texte' => $avance ? null : 'En attente d’un agent municipal.'],
+        [
+            'label' => $termine ? 'Décision : '.Demarche::libelleStatut($statut) : 'Décision',
+            'date' => $termine ? $record->updated_at : null,
+            'etat' => $record->etatStatut(),
+            'fait' => $termine,
+            'texte' => $termine ? null : 'La décision apparaîtra ici.',
+        ],
+    ];
+@endphp
 
-        <div class="flex gap-2">
+<section class="mx-auto w-full max-w-5xl space-y-6">
+    <x-tn.page-header
+        label="Démarche"
+        :title="$record->titre"
+        :breadcrumb="['Démarches' => route('demarches.index'), $record->titre => null]"
+    >
+        <x-slot:meta>
+            <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink-2">
+                <x-tn.status-badge :etat="$record->etatStatut()">{{ Demarche::libelleStatut($statut) }}</x-tn.status-badge>
+                <span>Par {{ $record->user?->name }}</span>
+                <span class="font-mono text-xs">{{ $record->created_at->format('d.m.Y · H:i') }}</span>
+            </div>
+        </x-slot:meta>
+        <x-slot:actions>
             @can('update', $record)
                 <flux:button icon="pencil-square" :href="route('demarches.edit', $record)" wire:navigate>Modifier</flux:button>
             @endcan
             @can('delete', $record)
                 <flux:button variant="danger" icon="trash" wire:click="delete" wire:confirm="Supprimer définitivement cette démarche ?">Supprimer</flux:button>
             @endcan
+        </x-slot:actions>
+    </x-tn.page-header>
+
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <x-tn.surface>
+            <x-tn.section-label as="h2" class="mb-2">Détails</x-tn.section-label>
+            <dl>
+                <x-tn.field label="Objet">{{ $record->titre ?? '—' }}</x-tn.field>
+                <x-tn.field label="Service">{{ $record->service?->nom ?? 'Non précisé' }}</x-tn.field>
+                <x-tn.field label="Description"><p class="whitespace-pre-line leading-relaxed">{{ $record->description ?? '—' }}</p></x-tn.field>
+            </dl>
+        </x-tn.surface>
+
+        <div class="flex flex-col gap-6">
+            <x-tn.panel label="Suivi" padding="p-5 md:p-6">
+                <x-tn.timeline :items="$chronologie" />
+            </x-tn.panel>
+
+            @can('changerStatut', $record)
+                <x-tn.surface>
+                    <x-tn.section-label as="h2" class="mb-3">Changer le statut</x-tn.section-label>
+                    <div class="grid grid-cols-2 gap-2">
+                        @foreach (Demarche::STATUT_OPTIONS as $option)
+                            <flux:button size="sm" wire:click="changerStatut('{{ $option }}')" :disabled="$option === $statut" :variant="$option === $statut ? 'primary' : 'outline'">
+                                {{ Demarche::libelleStatut($option) }}
+                            </flux:button>
+                        @endforeach
+                    </div>
+                </x-tn.surface>
+            @endcan
         </div>
     </div>
-
-
-
-    <flux:card>
-        <dl class="divide-y divide-zinc-200 dark:divide-zinc-700">
-            <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Titre</dt>
-                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">{{ $record->titre ?? '—' }}</dd>
-            </div>
-            <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Description</dt>
-                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0"><p class="whitespace-pre-line">{{ $record->description ?? '—' }}</p></dd>
-            </div>
-            <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Service</dt>
-                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">{{ $record->service?->nom ?? '—' }}</dd>
-            </div>
-            <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Statut</dt>
-                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0"><flux:badge size="sm" :color="$record->couleurStatut()">{{ \App\Models\Demarche::libelleStatut($record->statut) }}</flux:badge></dd>
-            </div>
-        </dl>
-    </flux:card>
-
-    @can('changerStatut', $record)
-        <flux:card class="space-y-3">
-            <flux:heading size="sm">Changer le statut</flux:heading>
-            <div class="flex flex-wrap gap-2">
-                @foreach (\App\Models\Demarche::STATUT_OPTIONS as $option)
-                    <flux:button size="sm" wire:click="changerStatut('{{ $option }}')" :disabled="$option === $record->statut">{{ \App\Models\Demarche::libelleStatut($option) }}</flux:button>
-                @endforeach
-            </div>
-        </flux:card>
-    @endcan
 </section>

@@ -61,19 +61,21 @@ new #[Title('Rôles')] class extends Component {
     }
 }; ?>
 
-<section class="w-full space-y-6">
-    <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-            <flux:heading size="xl" level="1">Rôles</flux:heading>
-            <flux:text class="mt-1">{{ $this->items->total() }} élément(s)</flux:text>
-        </div>
-
-        @can('create', \App\Models\Role::class)
-            <flux:button variant="primary" icon="plus" :href="route('roles.create')" wire:navigate>
-                Ajouter
-            </flux:button>
-        @endcan
-    </div>
+<section class="mx-auto w-full max-w-6xl space-y-6">
+    <x-tn.page-header
+        label="Administration"
+        title="Rôles"
+        :subtitle="$this->items->total().' élément(s)'"
+        :breadcrumb="['Mon espace' => route('dashboard'), 'Rôles' => null]"
+    >
+        <x-slot:actions>
+            @can('create', \App\Models\Role::class)
+                <flux:button variant="primary" icon="plus" :href="route('roles.create')" wire:navigate>
+                    Ajouter
+                </flux:button>
+            @endcan
+        </x-slot:actions>
+    </x-tn.page-header>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher…" class="sm:max-w-xs" />

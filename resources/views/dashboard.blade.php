@@ -1,80 +1,132 @@
 @php
+    use App\Models\Demarche;
+    use Illuminate\Support\Facades\Route;
+
     $user = auth()->user();
     // Uniquement les démarches de l'utilisateur connecté (jamais d'ID venant du navigateur).
     $demarches = $user->demarches()->with('service')->latest()->limit(5)->get();
     $totalDemarches = $user->demarches()->count();
+    $parStatut = $user->demarches()->selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut');
+    // Alertes : démarches traitées ou refusées dans les 7 derniers jours.
+    $alertes = $user->demarches()
+        ->whereIn('statut', ['traitee', 'refusee'])
+        ->where('updated_at', '>=', now()->subDays(7))
+        ->latest('updated_at')
+        ->limit(3)
+        ->get();
+    $rubriques = array_filter(config('navigation.rubriques'), fn (array $r): bool => Route::has($r['route']));
 @endphp
 
 <x-layouts::app :title="__('Dashboard')">
-    <div class="flex h-full w-full flex-1 flex-col gap-6">
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <flux:heading size="xl" level="1">Bonjour {{ $user->name }}</flux:heading>
-                <flux:text class="mt-1">Bienvenue dans votre espace personnel.</flux:text>
-            </div>
-            <flux:badge color="lime" icon="user">{{ $user->role->label }}</flux:badge>
-        </div>
+    <div class="mx-auto flex w-full max-w-6xl flex-col gap-8">
+        <x-tn.page-header label="Mon espace" :title="'Bonjour '.$user->name" subtitle="Vos démarches et l'activité de la ville, en un coup d'œil.">
+            <x-slot:actions>
+                <span class="inline-flex items-center gap-2 rounded-xs border border-line px-2.5 py-1 font-mono text-[11px] uppercase tracking-[.06em] text-ink-2">
+                    <flux:icon name="users-round" class="size-3.5" /> {{ $user->role->label }}
+                </span>
+                @can('create', Demarche::class)
+                    <flux:button variant="primary" icon="plus" :href="route('demarches.create')" class="tn-cta" wire:navigate>Nouvelle démarche</flux:button>
+                @endcan
+            </x-slot:actions>
+        </x-tn.page-header>
 
-        <div class="grid gap-4 md:grid-cols-3">
-            <flux:card class="flex flex-col gap-3">
-                <flux:heading size="lg">Mon compte</flux:heading>
-                <div>
-                    <flux:text>Nom</flux:text>
-                    <flux:text variant="strong">{{ $user->name }}</flux:text>
-                </div>
-                <div>
-                    <flux:text>Adresse e-mail</flux:text>
-                    <flux:text variant="strong" class="break-all">{{ $user->email }}</flux:text>
-                </div>
-                <div>
-                    <flux:text>Membre depuis le</flux:text>
-                    <flux:text variant="strong">{{ $user->created_at?->translatedFormat('d F Y') }}</flux:text>
-                </div>
-                <flux:button :href="route('profile.edit')" icon="cog-6-tooth" size="sm" class="mt-auto" wire:navigate>
-                    Modifier mon profil
-                </flux:button>
-            </flux:card>
+        {{-- ALERTES --}}
+        @if ($alertes->isNotEmpty())
+            <section aria-labelledby="titre-alertes" class="flex flex-col gap-2">
+                <h2 id="titre-alertes" class="sr-only">Alertes</h2>
+                @foreach ($alertes as $alerte)
+                    @php $refusee = $alerte->statut === 'refusee'; @endphp
+                    <a href="{{ route('demarches.show', $alerte) }}" wire:navigate @class([
+                        'flex items-center gap-3 rounded-md border px-4 py-3 transition-colors',
+                        'border-magenta/35 bg-magenta/8 hover:bg-magenta/12' => $refusee,
+                        'border-green/35 bg-green/8 hover:bg-green/12' => ! $refusee,
+                    ])>
+                        <flux:icon :name="$refusee ? 'megaphone' : 'activity'" @class(['size-5 shrink-0', 'text-magenta' => $refusee, 'text-green' => ! $refusee]) />
+                        <span class="min-w-0 flex-1 text-ink">
+                            <span class="font-medium">{{ $alerte->titre }}</span>
+                            <span class="text-ink-2"> · {{ $refusee ? 'refusée' : 'traitée' }} {{ $alerte->updated_at->diffForHumans() }}</span>
+                        </span>
+                        <x-tn.status-badge :etat="$alerte->etatStatut()">{{ Demarche::libelleStatut($alerte->statut) }}</x-tn.status-badge>
+                    </a>
+                @endforeach
+            </section>
+        @endif
 
-            @if ($demarches->isEmpty())
-                <flux:card class="flex flex-col items-center justify-center gap-2 text-center md:col-span-2">
-                    <flux:icon.inbox class="size-10 text-zinc-400" />
-                    <flux:heading size="lg">Aucune démarche pour le moment</flux:heading>
-                    <flux:text>Vos démarches et leur suivi apparaîtront ici.</flux:text>
-                    <flux:button variant="primary" icon="plus" :href="route('demarches.create')" size="sm" class="mt-2" wire:navigate>
-                        Déposer une démarche
-                    </flux:button>
-                </flux:card>
-            @else
-                <flux:card class="flex flex-col gap-4 md:col-span-2">
-                    <div class="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                            <flux:heading size="lg">Mes démarches</flux:heading>
-                            <flux:text>{{ $totalDemarches }} démarche(s) déposée(s)</flux:text>
-                        </div>
-                        <flux:button variant="primary" icon="plus" :href="route('demarches.create')" size="sm" wire:navigate>
-                            Nouvelle démarche
-                        </flux:button>
+        <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+            {{-- MES DÉMARCHES --}}
+            <x-tn.panel padding="p-5 md:p-6">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <x-tn.section-label as="h2" class="text-ink!">Mes démarches</x-tn.section-label>
+                        <p class="mt-1 text-sm text-ink-2">{{ $totalDemarches }} démarche(s) déposée(s)</p>
                     </div>
+                    @if ($totalDemarches > 0)
+                        <a href="{{ route('demarches.index') }}" wire:navigate class="inline-flex min-h-11 items-center text-sm font-medium text-cyan hover:underline">Tout voir</a>
+                    @endif
+                </div>
 
-                    <ul class="divide-y divide-zinc-200 dark:divide-zinc-700">
+                {{-- Compteurs par statut --}}
+                <dl class="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-line bg-line sm:grid-cols-4">
+                    @foreach (Demarche::STATUT_OPTIONS as $statut)
+                        <div class="bg-surface/90 px-3 py-3 dark:bg-night/70">
+                            <dt class="flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[.06em] text-ink-2">{{ Demarche::libelleStatut($statut) }}</dt>
+                            <dd class="tn-display mt-1 text-2xl font-semibold tabular-nums text-ink">{{ sprintf('%02d', $parStatut[$statut] ?? 0) }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+
+                @if ($demarches->isEmpty())
+                    <x-tn.empty icon="file-text" title="Aucune démarche pour le moment" text="Vos démarches et leur suivi apparaîtront ici." class="mt-5 py-10">
+                        <flux:button variant="primary" icon="plus" :href="route('demarches.create')" wire:navigate>Déposer une démarche</flux:button>
+                    </x-tn.empty>
+                @else
+                    <ul class="mt-4">
                         @foreach ($demarches as $demarche)
-                            <li wire:key="demarche-{{ $demarche->id }}" class="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-                                <div class="min-w-0">
-                                    <flux:link :href="route('demarches.show', $demarche)" class="font-medium" wire:navigate>{{ $demarche->titre }}</flux:link>
-                                    <flux:text class="truncate">
-                                        {{ $demarche->service?->nom ?? 'Service non précisé' }} · {{ $demarche->created_at->format('d/m/Y') }}
-                                    </flux:text>
-                                </div>
-                                <flux:badge size="sm" :color="$demarche->couleurStatut()" class="self-start sm:self-center">
-                                    {{ \App\Models\Demarche::libelleStatut($demarche->statut) }}
-                                </flux:badge>
+                            <li wire:key="demarche-{{ $demarche->id }}">
+                                <x-tn.list-row icon="file-text" :href="route('demarches.show', $demarche)" :stack="true">
+                                    <span class="block truncate font-medium text-ink group-hover:text-cyan">{{ $demarche->titre }}</span>
+                                    <span class="block truncate text-sm text-ink-2">{{ $demarche->service?->nom ?? 'Service non précisé' }} · <span class="font-mono text-xs">{{ $demarche->created_at->format('d.m.Y') }}</span></span>
+                                    <x-slot:aside>
+                                        <x-tn.status-badge :etat="$demarche->etatStatut()">{{ Demarche::libelleStatut($demarche->statut) }}</x-tn.status-badge>
+                                    </x-slot:aside>
+                                </x-tn.list-row>
                             </li>
                         @endforeach
                     </ul>
+                @endif
+            </x-tn.panel>
 
-                    <flux:link :href="route('demarches.index')" class="text-sm" wire:navigate>Voir toutes mes démarches &rarr;</flux:link>
-                </flux:card>
-            @endif
+            <div class="flex flex-col gap-6">
+                {{-- RACCOURCIS --}}
+                <section aria-labelledby="titre-raccourcis">
+                    <x-tn.section-label as="h2" id="titre-raccourcis" class="mb-3">Accès rapide</x-tn.section-label>
+                    <ul class="grid grid-cols-2 gap-2">
+                        @foreach ($rubriques as $rubrique)
+                            <li>
+                                <a href="{{ route($rubrique['route']) }}" wire:navigate class="group flex min-h-[92px] flex-col justify-between rounded-md border border-line bg-surface p-3 transition-colors hover:border-cyan/40">
+                                    <span class="flex size-9 items-center justify-center rounded-sm border border-cyan/18 bg-cyan/8 text-cyan" aria-hidden="true">
+                                        <flux:icon :name="$rubrique['icon']" class="size-[18px]" />
+                                    </span>
+                                    <span class="mt-2 font-medium text-ink group-hover:text-cyan">{{ $rubrique['label'] }}</span>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
+
+                {{-- MON COMPTE --}}
+                <x-tn.surface>
+                    <x-tn.section-label as="h2" class="mb-2">Mon compte</x-tn.section-label>
+                    <dl>
+                        <x-tn.field label="Nom">{{ $user->name }}</x-tn.field>
+                        <x-tn.field label="E-mail"><span class="break-all">{{ $user->email }}</span></x-tn.field>
+                        <x-tn.field label="Membre depuis">{{ $user->created_at?->translatedFormat('d F Y') }}</x-tn.field>
+                    </dl>
+                    <a href="{{ route('profile.edit') }}" wire:navigate class="tn-btn-secondary mt-4 w-full">
+                        <flux:icon name="settings" class="size-4" /> Modifier mon profil
+                    </a>
+                </x-tn.surface>
+            </div>
         </div>
     </div>
 </x-layouts::app>

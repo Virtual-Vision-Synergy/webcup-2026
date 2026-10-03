@@ -64,15 +64,14 @@ new #[Title('Service')] class extends Component {
     }
 }; ?>
 
-<section class="w-full max-w-2xl space-y-6">
-    <div>
-        <flux:link :href="route('services.index')" wire:navigate class="text-sm">&larr; Services</flux:link>
-        <flux:heading size="xl" level="1" class="mt-2">
-            {{ $record ? 'Modifier' : 'Ajouter' }} : Service
-        </flux:heading>
-    </div>
+<section class="mx-auto w-full max-w-2xl space-y-6">
+    <x-tn.page-header
+        label="Annuaire"
+        :title="$record ? 'Modifier le service' : 'Ajouter un service'"
+        :breadcrumb="['Services' => route('services.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
+    />
 
-    <form wire:submit="save" class="space-y-6">
+    <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
         <flux:input wire:model="nom" label="Nom" required />
 
         <flux:textarea wire:model="description" label="Description" rows="5" required />

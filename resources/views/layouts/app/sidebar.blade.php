@@ -1,122 +1,102 @@
+{{--
+    Gabarit de l'espace connecté Terra Nova.
+    Desktop (≥ lg) : rail latéral Flux + header vitré. Mobile : header minimal, barre d'onglets en bas, menu en feuille.
+    Les rubriques ajoutées par `make:feature` (marqueur ci-dessous) apparaissent dans le rail ET dans le menu mobile.
+--}}
+@section('tn-feature-nav')
+                    {{-- make:feature:nav --}}
+@endsection
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+<html lang="fr">
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:sidebar.header>
-                <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
-                <flux:sidebar.collapse class="lg:hidden" />
-            </flux:sidebar.header>
+    <body class="min-h-screen bg-black antialiased" x-data>
+        <a href="#contenu" class="sr-only z-[60] rounded-sm bg-cyan px-4 py-2 text-on-cyan focus:not-sr-only focus:fixed focus:start-4 focus:top-4">Aller au contenu</a>
 
-            <flux:sidebar.nav>
-                <flux:sidebar.group :heading="__('Platform')" class="grid">
-                    <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                        {{ __('Dashboard') }}
-                    </flux:sidebar.item>
+        <div
+            id="tn-page"
+            class="tn-page min-h-screen bg-night text-ink lg:flex"
+            x-bind:class="$store.menu?.ouvert && 'tn-page-recule'"
+        >
+            <flux:sidebar sticky class="border-e max-lg:hidden!">
+                <flux:sidebar.header>
+                    <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
+                </flux:sidebar.header>
 
-                    <flux:sidebar.item icon="briefcase" :href="route('services.index')" :current="request()->routeIs('services.*')" wire:navigate>
-                        Services
-                    </flux:sidebar.item>
-
-                    <flux:sidebar.item icon="newspaper" :href="route('actualites.index')" :current="request()->routeIs('actualites.*')" wire:navigate>
-                        Actualites
-                    </flux:sidebar.item>
-
-                    <flux:sidebar.item icon="envelope" :href="route('messages.index')" :current="request()->routeIs('messages.*')" wire:navigate>
-                        Messages
-                    </flux:sidebar.item>
-
-                    <flux:sidebar.item icon="document-text" :href="route('demarches.index')" :current="request()->routeIs('demarches.*')" wire:navigate>
-                        Mes démarches
-                    </flux:sidebar.item>
-
-                    {{-- make:feature:nav --}}
-                </flux:sidebar.group>
-
-                @can('viewAgentSpace')
-                    <flux:sidebar.group heading="Espace agent" class="grid">
-                        <flux:sidebar.item icon="briefcase" :href="route('agent.index')" data-test="agent-space-link">
-                            Espace agent
+                <flux:sidebar.nav>
+                    <flux:sidebar.group heading="Espace citoyen" class="grid">
+                        <flux:sidebar.item icon="house" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
+                            Mon espace
                         </flux:sidebar.item>
+
+                        <flux:sidebar.item icon="landmark" :href="route('services.index')" :current="request()->routeIs('services.*')" wire:navigate>
+                            Services
+                        </flux:sidebar.item>
+
+                        <flux:sidebar.item icon="newspaper" :href="route('actualites.index')" :current="request()->routeIs('actualites.*')" wire:navigate>
+                            Actualités
+                        </flux:sidebar.item>
+
+                        <flux:sidebar.item icon="mail" :href="route('messages.index')" :current="request()->routeIs('messages.*')" wire:navigate>
+                            Messages
+                        </flux:sidebar.item>
+
+                        <flux:sidebar.item icon="file-text" :href="route('demarches.index')" :current="request()->routeIs('demarches.*')" wire:navigate>
+                            Mes démarches
+                        </flux:sidebar.item>
+
+                        @yield('tn-feature-nav')
                     </flux:sidebar.group>
-                @endcan
-            </flux:sidebar.nav>
 
-            <flux:spacer />
+                    @can('viewAgentSpace')
+                        <flux:sidebar.group heading="Espace agent" class="grid">
+                            <flux:sidebar.item icon="briefcase" :href="route('agent.index')" data-test="agent-space-link">
+                                Espace agent
+                            </flux:sidebar.item>
+                        </flux:sidebar.group>
+                    @endcan
+                </flux:sidebar.nav>
 
-            <flux:sidebar.nav>
-                <livewire:cloche-notifications />
+                <flux:spacer />
 
-                <flux:sidebar.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                    {{ __('Repository') }}
-                </flux:sidebar.item>
+                <flux:sidebar.nav>
+                    <livewire:cloche-notifications />
+                </flux:sidebar.nav>
 
-                <flux:sidebar.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                    {{ __('Documentation') }}
-                </flux:sidebar.item>
-            </flux:sidebar.nav>
+                <x-desktop-user-menu :name="auth()->user()->name" />
+            </flux:sidebar>
 
-            <x-desktop-user-menu class="hidden lg:block" :name="auth()->user()->name" />
-        </flux:sidebar>
+            <div class="flex min-w-0 flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
+                <header class="tn-glass sticky top-0 z-30 border-b">
+                    <div class="flex h-16 items-center gap-3 px-4 lg:h-[72px] lg:px-8">
+                        <x-app-logo href="{{ route('dashboard') }}" class="lg:hidden" wire:navigate />
 
-        <!-- Mobile User Menu -->
-        <flux:header class="lg:hidden">
-            <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
-
-            <flux:spacer />
-
-            <flux:dropdown position="top" align="end">
-                <flux:profile
-                    :initials="auth()->user()->initials()"
-                    icon-trailing="chevron-down"
-                />
-
-                <flux:menu>
-                    <flux:menu.radio.group>
-                        <div class="p-0 text-sm font-normal">
-                            <div class="flex items-center gap-2 px-1 py-1.5 text-start text-sm">
-                                <flux:avatar
-                                    :name="auth()->user()->name"
-                                    :initials="auth()->user()->initials()"
-                                />
-
-                                <div class="grid flex-1 text-start text-sm leading-tight">
-                                    <flux:heading class="truncate">{{ auth()->user()->name }}</flux:heading>
-                                    <flux:text class="truncate">{{ auth()->user()->email }}</flux:text>
-                                </div>
-                            </div>
+                        <div class="ms-auto flex items-center gap-2">
+                            <x-tn.api-status class="max-sm:hidden" />
+                            <x-tn.theme-toggle class="max-lg:hidden" />
+                            <a href="{{ route('profile.edit') }}" class="flex size-11 items-center justify-center lg:hidden" wire:navigate>
+                                <flux:avatar size="sm" :name="auth()->user()->name" :initials="auth()->user()->initials()" />
+                                <span class="sr-only">Mon compte : {{ auth()->user()->name }}</span>
+                            </a>
                         </div>
-                    </flux:menu.radio.group>
+                    </div>
+                </header>
 
-                    <flux:menu.separator />
+                <div id="contenu" class="flex flex-1 flex-col">
+                    {{ $slot }}
+                </div>
+            </div>
+        </div>
 
-                    <flux:menu.radio.group>
-                        <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>
-                            {{ __('Settings') }}
-                        </flux:menu.item>
-                    </flux:menu.radio.group>
-
-                    <flux:menu.separator />
-
-                    <form method="POST" action="{{ route('logout') }}" class="w-full">
-                        @csrf
-                        <flux:menu.item
-                            as="button"
-                            type="submit"
-                            icon="arrow-right-start-on-rectangle"
-                            class="w-full cursor-pointer"
-                            data-test="logout-button"
-                        >
-                            {{ __('Log out') }}
-                        </flux:menu.item>
-                    </form>
-                </flux:menu>
-            </flux:dropdown>
-        </flux:header>
-
-        {{ $slot }}
+        <x-tn.bottom-nav />
+        <x-tn.menu-sheet>
+            <x-slot:autres>
+                <div class="grid">
+                    @yield('tn-feature-nav')
+                </div>
+            </x-slot:autres>
+        </x-tn.menu-sheet>
 
         @persist('toast')
             <flux:toast.group>

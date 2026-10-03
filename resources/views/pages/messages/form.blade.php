@@ -67,15 +67,14 @@ new #[Title('Message')] class extends Component {
     }
 }; ?>
 
-<section class="w-full max-w-2xl space-y-6">
-    <div>
-        <flux:link :href="route('messages.index')" wire:navigate class="text-sm">&larr; Messages</flux:link>
-        <flux:heading size="xl" level="1" class="mt-2">
-            {{ $record ? 'Modifier' : 'Ajouter' }} : Message
-        </flux:heading>
-    </div>
+<section class="mx-auto w-full max-w-2xl space-y-6">
+    <x-tn.page-header
+        label="Contact"
+        :title="$record ? 'Modifier le message' : 'Écrire à un service'"
+        :breadcrumb="['Messages' => route('messages.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
+    />
 
-    <form wire:submit="save" class="space-y-6">
+    <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
         <flux:input wire:model="nom" label="Nom" required />
 
         <flux:input wire:model="email" label="Email" required />

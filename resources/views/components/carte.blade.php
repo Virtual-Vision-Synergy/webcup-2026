@@ -18,9 +18,9 @@
         data-carte-zone
         role="region"
         aria-label="{{ $label }}"
-        class="z-0 w-full overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800"
+        class="z-0 w-full overflow-hidden rounded-md border border-line bg-surface-2"
         style="height: {{ $hauteur }}"
     ></div>
 
-    <p data-carte-message aria-live="polite" class="text-sm text-zinc-600 dark:text-zinc-400"></p>
+    <p data-carte-message aria-live="polite" class="text-sm text-ink-2"></p>
 </div>

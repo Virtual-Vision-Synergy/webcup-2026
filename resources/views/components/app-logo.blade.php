@@ -1,17 +1,14 @@
 @props([
     'sidebar' => false,
+    'compact' => false,
 ])
 
-@if($sidebar)
-    <flux:sidebar.brand :name="config('app.name', 'Laravel')" {{ $attributes }}>
-        <x-slot name="logo" class="flex aspect-square size-8 items-center justify-center rounded-md bg-accent-content text-accent-foreground">
-            <x-app-logo-icon class="size-5 fill-current text-white dark:text-black" />
-        </x-slot>
-    </flux:sidebar.brand>
-@else
-    <flux:brand :name="config('app.name', 'Laravel')" {{ $attributes }}>
-        <x-slot name="logo" class="flex aspect-square size-8 items-center justify-center rounded-md bg-accent-content text-accent-foreground">
-            <x-app-logo-icon class="size-5 fill-current text-white dark:text-black" />
-        </x-slot>
-    </flux:brand>
-@endif
+{{-- Logo Terra Nova : anneau + « TERRA NOVA » (Saira élargie) + sous-titre mono. --}}
+<a {{ $attributes->class('group flex min-h-11 items-center gap-2.5 rounded-sm text-ink') }}>
+    <x-app-logo-icon class="size-[26px] shrink-0" />
+    <span @class(['flex flex-col leading-none', 'max-sm:hidden' => $compact, 'in-data-flux-sidebar-collapsed-desktop:hidden' => $sidebar])>
+        <span class="font-display text-[15px] font-semibold tracking-[.16em]" style="font-stretch: 118%">TERRA NOVA</span>
+        <span class="mt-1 font-mono text-[9.5px] tracking-[.08em] text-ink-2">RÉSEAU CIVIQUE OFFICIEL</span>
+    </span>
+    <span class="sr-only"> · accueil</span>
+</a>

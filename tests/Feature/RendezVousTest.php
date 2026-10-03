@@ -276,17 +276,18 @@ test('un citoyen reçoit un 403 sur l’agenda agent', function () {
 test('un agent ne voit que les rendez-vous du jour, triés par heure', function () {
     // Aujourd'hui en heure locale : 5 octobre ; 21:30 UTC le 4 = 00 h 30 le 5 à Nova Terra.
     $tot = RendezVous::factory()->create(['creneau_id' => creneauDe($this->etatCivil, '2026-10-04 21:30:00')->id, 'motif' => 'Tout premier']);
-    RendezVous::factory()->create(['creneau_id' => creneauDe($this->etatCivil, '2026-10-05 12:00:00')->id, 'motif' => 'Après-midi']);
-    RendezVous::factory()->create(['creneau_id' => creneauDe($this->etatCivil, '2026-10-05 21:00:00')->id, 'motif' => 'Demain minuit']);
-    RendezVous::factory()->create(['creneau_id' => creneauDe($this->etatCivil, '2026-10-04 20:30:00')->id, 'motif' => 'Hier soir']);
+    $apresMidi = RendezVous::factory()->create(['creneau_id' => creneauDe($this->etatCivil, '2026-10-05 12:00:00')->id, 'motif' => 'Après-midi']);
+    $demain = RendezVous::factory()->create(['creneau_id' => creneauDe($this->etatCivil, '2026-10-05 21:00:00')->id, 'motif' => 'Demain minuit']);
+    $hier = RendezVous::factory()->create(['creneau_id' => creneauDe($this->etatCivil, '2026-10-04 20:30:00')->id, 'motif' => 'Hier soir']);
 
-    $this->actingAs(User::factory()->agent()->create())
+    // F70 : le motif saisi par l'habitant est confidentiel (masqué jusqu'à « Afficher »).
+    $this->actingAs(User::factory()->agentDe($this->etatCivil)->create())
         ->get(route('agent.appointments.index'))
         ->assertOk()
-        ->assertSeeInOrder(['00 h 30', 'Tout premier', '15 h 00', 'Après-midi'])
-        ->assertSee($tot->user->name)
-        ->assertDontSee('Demain minuit')
-        ->assertDontSee('Hier soir');
+        ->assertSeeInOrder(['00 h 30', $tot->user->name, '15 h 00', $apresMidi->user->name])
+        ->assertDontSee('Tout premier')
+        ->assertDontSee($demain->user->name)
+        ->assertDontSee($hier->user->name);
 });
 
 test('un agent marque un rendez-vous honoré, pas un citoyen', function () {
@@ -296,7 +297,7 @@ test('un agent marque un rendez-vous honoré, pas un citoyen', function () {
         ->test('pages::agent.rendez-vous')
         ->assertForbidden();
 
-    Livewire::actingAs(User::factory()->agent()->create())
+    Livewire::actingAs(User::factory()->agentDe($this->etatCivil)->create())
         ->test('pages::agent.rendez-vous')
         ->call('changerStatut', $rendezVous->id, 'honore')
         ->assertHasNoErrors();

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Demarche;
+use App\Services\AuditLogger;
 use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -60,7 +61,9 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
      */
     protected function filteredQuery(): Builder
     {
+        // F70 : uniquement les démarches des services de l'agent (toutes pour l'admin).
         return Demarche::query()
+            ->visibleTo(auth()->user())
             ->when($this->search !== '', function ($query) {
                 $term = '%'.$this->search.'%';
                 $query->where(fn ($q) => $q->where('titre', 'like', $term)->orWhere('description', 'like', $term));
@@ -91,7 +94,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
     {
         Gate::authorize('viewAgentSpace');
 
-        $parStatut = Demarche::query()->selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut');
+        $parStatut = Demarche::query()->visibleTo(auth()->user())->selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut');
 
         return collect(Demarche::STATUT_OPTIONS)->mapWithKeys(fn (string $statut): array => [$statut => (int) ($parStatut[$statut] ?? 0)])->all();
     }
@@ -99,7 +102,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
     public function changerStatut(int $id, string $statut): void
     {
         $record = Demarche::findOrFail($id);
-        $this->authorize('changerStatut', $record);
+        AuditLogger::autoriser('changerStatut', $record);
         abort_unless(in_array($statut, Demarche::STATUT_OPTIONS, true), 422);
 
         $record->changerStatut($statut);
@@ -158,7 +161,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
     </div>
 
     @if ($this->items->isEmpty())
-        <x-tn.empty icon="inbox" title="Aucune demande à afficher" :text="($search !== '' || $filterStatut !== '' || $enAttente) ? 'Aucune demande ne correspond aux filtres choisis.' : 'Les habitants n’ont encore déposé aucune demande.'" />
+        <x-tn.empty icon="inbox" title="Aucune demande à afficher" :text="($search !== '' || $filterStatut !== '' || $enAttente) ? 'Aucune demande ne correspond aux filtres choisis.' : 'Aucune demande pour les services auxquels vous êtes rattaché.'" />
     @else
         <ul class="space-y-3">
             @foreach ($this->items as $item)

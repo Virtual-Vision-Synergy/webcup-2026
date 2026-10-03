@@ -35,6 +35,9 @@
                 <flux:navbar.item icon="clipboard-document-list" :href="route('agent.demandes')" :current="request()->routeIs('agent.demandes')">
                     Demandes des habitants
                 </flux:navbar.item>
+                <flux:navbar.item icon="squares-2x2" :href="route('agent.signalements.similaires')" :current="request()->routeIs('agent.signalements.similaires')">
+                    Similaires
+                </flux:navbar.item>
                 @php($remonteesEnAttente = \App\Models\Remontee::query()->enAttente()->count())
                 <flux:navbar.item icon="chat-bubble-left-ellipsis" :href="route('agent.concerns.index')" :current="request()->routeIs('agent.concerns.*')" :badge="$remonteesEnAttente ?: null" :aria-label="'Remontées sur les données, '.$remonteesEnAttente.' en attente'">
                     Remontées données
@@ -80,6 +83,7 @@
                     <flux:menu.item icon="users" :href="route('agent.citizens.index')" class="md:hidden">Comptes citoyens</flux:menu.item>
                     <flux:menu.item icon="megaphone" :href="route('agent.annonces.index')" class="md:hidden">Messages généraux</flux:menu.item>
                     <flux:menu.item icon="clipboard-document-list" :href="route('agent.demandes')" class="md:hidden">Demandes des habitants</flux:menu.item>
+                    <flux:menu.item icon="squares-2x2" :href="route('agent.signalements.similaires')" class="md:hidden">Demandes similaires</flux:menu.item>
                     <flux:menu.item icon="chat-bubble-left-ellipsis" :href="route('agent.concerns.index')" class="md:hidden">Remontées sur les données</flux:menu.item>
                     <flux:menu.item icon="calendar-days" :href="route('agent.appointments.index')" class="md:hidden">Rendez-vous du jour</flux:menu.item>
                     <flux:menu.item icon="building-office-2" :href="route('projets.index')" class="md:hidden">Projets de la ville</flux:menu.item>

@@ -162,6 +162,9 @@ class DatabaseSeeder extends Seeder
             Signalement::factory(2)->for($citoyen)->create();
         }
 
+        // F75 : groupes de signalements qui décrivent le même problème (regroupement côté agent).
+        $this->call(SignalementsSimilairesSeeder::class);
+
         // Soutiens d'habitants aux demandes encore ouvertes (F52) : chaque citoyen soutient au plus une fois.
         $citoyens = $users->filter(fn (User $user): bool => $user->isCitoyen());
         Signalement::query()->whereIn('statut', Signalement::STATUTS_OUVERTS)->get()
@@ -199,6 +202,9 @@ class DatabaseSeeder extends Seeder
 
         // F40 : rendez-vous de démo rappelé automatiquement ~10 min après le seed (hors production).
         $this->call(RappelRendezVousSeeder::class);
+
+        // F70 : agents rattachés à leurs services (État civil, Action sociale) et dossiers aux données confidentielles.
+        $this->call(PermissionsServicesSeeder::class);
 
         // make:feature:seeders
     }

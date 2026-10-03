@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\ActionLog;
+use App\Models\AuditLog;
 use App\Models\User;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
@@ -25,7 +25,6 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
         $this->authorize('deactivate', $this->account);
 
         $this->account->deactivate();
-        ActionLog::record('account_deactivated', $this->account);
 
         Flux::modal('confirmer-desactivation')->close();
         Flux::toast(variant: 'success', text: 'Compte désactivé : '.$this->account->name.' ne peut plus se connecter.');
@@ -36,26 +35,24 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
         $this->authorize('reactivate', $this->account);
 
         $this->account->reactivate();
-        ActionLog::record('account_reactivated', $this->account);
 
         Flux::toast(variant: 'success', text: 'Compte réactivé : '.$this->account->name.' peut de nouveau se connecter.');
     }
 
     /**
-     * Historique des désactivations / réactivations de ce compte (qui, quand).
+     * Historique des désactivations / réactivations de ce compte (qui, quand), lu dans le journal d'audit (F47).
      *
-     * @return Collection<int, ActionLog>
+     * @return Collection<int, AuditLog>
      */
     #[Computed]
     public function journal(): Collection
     {
         $this->authorize('viewAccount', $this->account);
 
-        return ActionLog::query()
-            ->with('user:id,name')
+        return AuditLog::query()
             ->where('subject_type', class_basename(User::class))
             ->where('subject_id', $this->account->id)
-            ->whereIn('action', ['account_deactivated', 'account_reactivated'])
+            ->whereIn('action', ['deactivated', 'reactivated'])
             ->latest('id')
             ->limit(20)
             ->get();
@@ -116,10 +113,10 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
                 @foreach ($this->journal as $entree)
                     <li wire:key="journal-{{ $entree->id }}" class="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
                         <span>
-                            <x-tn.status-badge :etat="$entree->action === 'account_deactivated' ? 'alerte' : 'normal'">{{ $entree->libelle() }}</x-tn.status-badge>
-                            <span class="ms-2 text-ink-2">par {{ $entree->user?->name ?? 'compte supprimé' }}</span>
+                            <x-tn.status-badge :etat="$entree->etatAction()">{{ $entree->libelleAction() }}</x-tn.status-badge>
+                            <span class="ms-2 text-ink-2">par {{ $entree->actor_name }}</span>
                         </span>
-                        <span class="font-mono text-xs text-ink-2">{{ $entree->created_at?->format('d/m/Y à H:i') }}</span>
+                        <span class="font-mono text-xs text-ink-2">{{ $entree->dateLocale('d/m/Y à H:i') }}</span>
                     </li>
                 @endforeach
             </ul>

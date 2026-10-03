@@ -18,4 +18,8 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     Route::livewire('/citoyens', 'pages::agent.citizens.index')->name('citizens.index');
     Route::livewire('/citoyens/{user}', 'pages::agent.citizens.show')->name('citizens.show');
     Route::livewire('demandes', 'pages::agent.demandes')->name('demandes');
+
+    // F47 : journal d'audit en LECTURE SEULE (aucune route de création, modification ni suppression).
+    Route::livewire('journal', 'pages::agent.audit.index')->name('audit.index');
+    Route::livewire('journal/{auditLog}', 'pages::agent.audit.show')->name('audit.show');
 });

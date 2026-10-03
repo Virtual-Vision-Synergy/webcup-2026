@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
 use App\Models\Concerns\HasCoordinates;
+use Carbon\CarbonInterface;
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -26,6 +27,13 @@ use Illuminate\Support\Str;
  * mis_en_avant n'est pas remplissable non plus : réservé aux agents et admins (ServicePolicy::feature).
  * indisponible_depuis, motif_indisponibilite et retour_prevu_le ne sont pas remplissables :
  * réservés aux admins via rendreIndisponible() / retablir() (ServicePolicy::toggleAvailability, F63).
+ * F64 : perturbe_depuis, alternative_texte, alternative_url et etat_mis_a_jour_le non plus : l'état complet
+ * passe uniquement par mettreAJourEtat() (ServicePolicy::updateStatus : agent du service ou admin).
+ *
+ * @property CarbonInterface|null $indisponible_depuis
+ * @property CarbonInterface|null $perturbe_depuis
+ * @property CarbonInterface|null $retour_prevu_le
+ * @property CarbonInterface|null $etat_mis_a_jour_le
  */
 #[Fillable(['nom', 'categorie', 'description', 'horaires', 'telephone', 'email', 'adresse', 'lieu_rendez_vous', 'pieces_a_fournir', 'duree_rendez_vous', 'latitude', 'longitude'])]
 class Service extends Model
@@ -109,6 +117,21 @@ class Service extends Model
         ],
     ];
 
+    /** F64 : état actuel du service, déduit des dates (indisponible_depuis, perturbe_depuis). */
+    public const ETAT_DISPONIBLE = 'disponible';
+
+    public const ETAT_PERTURBE = 'perturbe';
+
+    public const ETAT_INDISPONIBLE = 'indisponible';
+
+    public const ETAT_OPTIONS = [self::ETAT_DISPONIBLE, self::ETAT_PERTURBE, self::ETAT_INDISPONIBLE];
+
+    public const ETAT_LABELS = [
+        self::ETAT_DISPONIBLE => 'Disponible',
+        self::ETAT_PERTURBE => 'Perturbé',
+        self::ETAT_INDISPONIBLE => 'Indisponible',
+    ];
+
     /** Slugs qui entreraient en conflit avec les routes /services/... */
     private const RESERVED_SLUGS = ['create'];
 
@@ -121,6 +144,8 @@ class Service extends Model
             'mis_en_avant' => 'boolean',
             'duree_rendez_vous' => 'integer',
             'indisponible_depuis' => 'datetime',
+            'perturbe_depuis' => 'datetime',
+            'etat_mis_a_jour_le' => 'datetime',
             'retour_prevu_le' => 'date',
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
@@ -149,9 +174,101 @@ class Service extends Model
         $query->whereNull('indisponible_depuis');
     }
 
+    /**
+     * F64 : services pleinement disponibles (ni perturbés ni indisponibles), pour le filtre du catalogue.
+     *
+     * @param  Builder<Service>  $query
+     */
+    #[Scope]
+    protected function pleinementDisponibles(Builder $query): void
+    {
+        $query->whereNull('indisponible_depuis')->whereNull('perturbe_depuis');
+    }
+
     public function estIndisponible(): bool
     {
         return $this->indisponible_depuis !== null;
+    }
+
+    public function estPerturbe(): bool
+    {
+        return ! $this->estIndisponible() && $this->perturbe_depuis !== null;
+    }
+
+    /**
+     * F64 : disponible, perturbe ou indisponible.
+     */
+    public function etat(): string
+    {
+        return match (true) {
+            $this->estIndisponible() => self::ETAT_INDISPONIBLE,
+            $this->estPerturbe() => self::ETAT_PERTURBE,
+            default => self::ETAT_DISPONIBLE,
+        };
+    }
+
+    public function libelleEtat(): string
+    {
+        return self::ETAT_LABELS[$this->etat()];
+    }
+
+    /**
+     * Date de retour prévue dépassée : l'état ne change pas tout seul, on prévient l'habitant.
+     */
+    public function retourPrevuDepasse(): bool
+    {
+        return $this->etat() !== self::ETAT_DISPONIBLE
+            && $this->retour_prevu_le !== null
+            && $this->retour_prevu_le->toDateString() < now(CreneauRendezVous::fuseau())->toDateString();
+    }
+
+    public function etatMisAJourLe(): ?CarbonInterface
+    {
+        return $this->etat_mis_a_jour_le ?? $this->indisponible_depuis ?? $this->perturbe_depuis;
+    }
+
+    /**
+     * « Retour prévu le lundi 12 octobre 2026 » ou « Date de retour non connue ».
+     */
+    public function libelleRetourPrevu(): string
+    {
+        return $this->retour_prevu_le
+            ? 'Retour prévu le '.$this->retour_prevu_le->locale('fr')->translatedFormat('l j F Y')
+            : 'Date de retour non connue';
+    }
+
+    /**
+     * Message du refus d'une démarche ou d'un rendez-vous sur un service indisponible.
+     */
+    public function messageIndisponibilite(): string
+    {
+        $message = 'Ce service est actuellement indisponible : '
+            .rtrim($this->motif_indisponibilite ?: 'interruption en cours', '. ').'. '
+            .$this->libelleRetourPrevu().'.';
+
+        if (filled($this->alternative_texte) || filled($this->alternative_url)) {
+            $message .= ' Vous pouvez : '.rtrim((string) ($this->alternative_texte ?: $this->alternative_url), '. ').'.';
+        }
+
+        return $message;
+    }
+
+    /**
+     * F64 : change l'état du service (motif, retour prévu, alternative). Appeler après l'autorisation
+     * (ServicePolicy::updateStatus). Modification au journal d'audit (Auditable) et au journal d'actions.
+     */
+    public function mettreAJourEtat(string $etat, ?string $motif = null, ?CarbonInterface $retourPrevuLe = null, ?string $alternativeTexte = null, ?string $alternativeUrl = null): void
+    {
+        $disponible = $etat === self::ETAT_DISPONIBLE;
+
+        $this->indisponible_depuis = $etat === self::ETAT_INDISPONIBLE ? ($this->indisponible_depuis ?? now()) : null;
+        $this->perturbe_depuis = $etat === self::ETAT_PERTURBE ? ($this->perturbe_depuis ?? now()) : null;
+        $this->motif_indisponibilite = $disponible ? null : (trim((string) $motif) ?: null);
+        $this->retour_prevu_le = $disponible ? null : $retourPrevuLe;
+        $this->alternative_texte = $disponible ? null : (trim((string) $alternativeTexte) ?: null);
+        $this->alternative_url = $disponible ? null : (trim((string) $alternativeUrl) ?: null);
+        $this->etat_mis_a_jour_le = now();
+        $this->save();
     }
 
     /**
@@ -160,10 +277,7 @@ class Service extends Model
      */
     public function rendreIndisponible(string $motif, ?Carbon $retourPrevuLe = null): void
     {
-        $this->indisponible_depuis = now();
-        $this->motif_indisponibilite = trim($motif);
-        $this->retour_prevu_le = $retourPrevuLe;
-        $this->save();
+        $this->mettreAJourEtat(self::ETAT_INDISPONIBLE, $motif, $retourPrevuLe, $this->alternative_texte, $this->alternative_url);
 
         ActionLog::record('service_indisponible', $this);
     }
@@ -173,10 +287,7 @@ class Service extends Model
      */
     public function retablir(): void
     {
-        $this->indisponible_depuis = null;
-        $this->motif_indisponibilite = null;
-        $this->retour_prevu_le = null;
-        $this->save();
+        $this->mettreAJourEtat(self::ETAT_DISPONIBLE);
 
         ActionLog::record('service_retabli', $this);
     }

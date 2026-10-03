@@ -206,6 +206,9 @@ class DatabaseSeeder extends Seeder
         // F70 : agents rattachés à leurs services (État civil, Action sociale) et dossiers aux données confidentielles.
         $this->call(PermissionsServicesSeeder::class);
 
+        // F64 : un service perturbé (État civil) et un indisponible (Médiathèque) pour la démonstration.
+        $this->call(EtatServicesSeeder::class);
+
         // make:feature:seeders
     }
 }

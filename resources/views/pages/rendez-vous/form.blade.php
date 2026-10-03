@@ -40,6 +40,10 @@ new #[Title('Prendre rendez-vous')] class extends Component {
     {
         $this->authorize('create', RendezVous::class);
 
+        if ($this->refuserSiServiceIndisponible($this->serviceSlug)) {
+            return;
+        }
+
         if ($this->serviceSlug !== '' && $this->service === null) {
             $this->serviceSlug = '';
             $this->creneauId = '';
@@ -203,6 +207,10 @@ new #[Title('Prendre rendez-vous')] class extends Component {
     {
         $this->authorize('create', RendezVous::class);
 
+        if ($this->refuserSiServiceIndisponible($slug)) {
+            return;
+        }
+
         $this->serviceSlug = $slug;
         $this->creneauId = '';
         $this->erreurCreneau = '';
@@ -255,6 +263,10 @@ new #[Title('Prendre rendez-vous')] class extends Component {
 
         $service = $this->service;
 
+        if ($this->refuserSiServiceIndisponible($this->serviceSlug)) {
+            return;
+        }
+
         if ($service === null || ! ctype_digit($this->creneauId)) {
             $this->retourServices();
 
@@ -274,6 +286,24 @@ new #[Title('Prendre rendez-vous')] class extends Component {
         session()->flash('rendez-vous-confirme', true);
 
         $this->redirectRoute('appointments.show', $rendezVous, navigate: true);
+    }
+
+    /**
+     * F64 : un service indisponible ne prend pas de rendez-vous (lien direct, choix ou confirmation) :
+     * retour sur sa fiche avec le motif, la date de retour prévue et l'alternative.
+     */
+    private function refuserSiServiceIndisponible(string $slug): bool
+    {
+        $service = $slug === '' ? null : Service::query()->where('slug', $slug)->whereNotNull('indisponible_depuis')->first();
+
+        if ($service === null) {
+            return false;
+        }
+
+        session()->flash('service-indisponible', $service->messageIndisponibilite());
+        $this->redirectRoute('services.show', $service, navigate: true);
+
+        return true;
     }
 
     /**

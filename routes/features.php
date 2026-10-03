@@ -34,6 +34,11 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('demarches/{demarche}', 'pages::demarches.show')->name('demarches.show');
     Route::livewire('demarches/{demarche}/edit', 'pages::demarches.form')->name('demarches.edit');
 
+    Route::livewire('transports', 'pages::transports.index')->name('transports.index');
+    Route::livewire('transports/create', 'pages::transports.form')->name('transports.create');
+    Route::livewire('transports/{ligneTransport}', 'pages::transports.show')->name('transports.show');
+    Route::livewire('transports/{ligneTransport}/edit', 'pages::transports.form')->name('transports.edit');
+
     // make:feature:routes
 });
 

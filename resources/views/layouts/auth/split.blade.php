@@ -15,10 +15,11 @@
             {{-- Côté visuel : ciel, planète, grille --}}
             <div class="tn-sky relative hidden overflow-hidden lg:flex lg:flex-col lg:p-10">
                 @if ($illustrationNuit)
-                    <img src="{{ $illustrationNuit }}" alt="" class="absolute inset-0 hidden size-full object-cover dark:block" fetchpriority="high">
+                    {{-- F60 : loading="lazy" = seule l'illustration du thème affiché est téléchargée. --}}
+                    <img src="{{ $illustrationNuit }}" alt="" class="absolute inset-0 hidden size-full object-cover dark:block" loading="lazy" decoding="async">
                 @endif
                 @if ($illustrationJour)
-                    <img src="{{ $illustrationJour }}" alt="" class="absolute inset-0 size-full object-cover dark:hidden">
+                    <img src="{{ $illustrationJour }}" alt="" class="absolute inset-0 size-full object-cover dark:hidden" loading="lazy" decoding="async">
                 @endif
                 <div class="tn-planet -top-24 -right-24 size-[420px]" aria-hidden="true"></div>
                 <div class="tn-grid" aria-hidden="true"></div>

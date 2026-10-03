@@ -49,7 +49,8 @@
     {{-- HERO --}}
     <section class="tn-sky relative overflow-hidden" aria-labelledby="titre-hero">
         @if ($illustration)
-            <img src="{{ $illustration }}" alt="" class="absolute inset-0 hidden size-full object-cover opacity-60 dark:block" fetchpriority="high">
+            {{-- F60 : loading="lazy" sur une image masquée (display:none) évite son téléchargement en thème clair. --}}
+            <img src="{{ $illustration }}" alt="" class="absolute inset-0 hidden size-full object-cover opacity-60 dark:block" loading="lazy" decoding="async">
         @endif
         <div class="tn-planet -top-32 -right-40 size-[340px] md:-top-40 md:-right-24 md:size-[520px]" aria-hidden="true"></div>
         <div class="tn-grid" aria-hidden="true"></div>

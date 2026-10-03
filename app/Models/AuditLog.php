@@ -99,6 +99,7 @@ class AuditLog extends Model
         'Signalement' => ['classe' => Signalement::class, 'libelle' => 'Signalement', 'article' => 'le signalement', 'route' => 'signalements.show', 'droit' => 'view'],
         'Message' => ['classe' => Message::class, 'libelle' => 'Message', 'article' => 'le message', 'route' => 'messages.show', 'droit' => 'view'],
         'LigneTransport' => ['classe' => LigneTransport::class, 'libelle' => 'Ligne de transport', 'article' => 'la ligne', 'route' => 'transports.show', 'droit' => 'view'],
+        'Remontee' => ['classe' => Remontee::class, 'libelle' => 'Remontée', 'article' => 'la remontée', 'route' => 'agent.concerns.show', 'droit' => 'traiter'],
         'AuditLog' => ['classe' => AuditLog::class, 'libelle' => 'Journal', 'article' => 'le journal', 'route' => null, 'droit' => 'viewAny'],
     ];
 
@@ -151,6 +152,15 @@ class AuditLog extends Model
         'frequence' => 'Fréquence',
         'etat' => 'État du trafic',
         'perturbation' => 'Perturbation',
+        'reference' => 'Numéro de suivi',
+        'objet' => 'Objet',
+        'envoyee_le' => 'Envoyée le',
+        'prise_en_compte_le' => 'Prise en compte le',
+        'pris_en_charge_par' => 'Prise en compte par (n°)',
+        'reponse' => 'Réponse',
+        'repondue_le' => 'Répondue le',
+        'repondue_par' => 'Répondue par (n°)',
+        'cloturee_le' => 'Clôturée le',
         'appareil' => 'Appareil',
     ];
 
@@ -170,6 +180,7 @@ class AuditLog extends Model
         'signalement' => 'Signalement',
         'message' => 'Message',
         'transport' => 'LigneTransport',
+        'remontee' => 'Remontee',
     ];
 
     /** Valeur affichée pour un champ vide dans l'historique d'un élément. */

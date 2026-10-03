@@ -169,6 +169,8 @@ class AuditLog extends Model
         'frequence' => 'Fréquence',
         'etat' => 'État du trafic',
         'perturbation' => 'Perturbation',
+        'disponibilite' => 'Disponibilité',
+        'interruption' => 'Interruption (motif)',
         'reference' => 'Numéro de suivi',
         'objet' => 'Objet',
         'envoyee_le' => 'Envoyée le',

@@ -7,6 +7,11 @@
 
         <x-auth-session-status class="text-center" :status="session('status')" />
 
+        {{-- F54 : après « Ce n'était pas moi », expliquer pourquoi on demande le mot de passe. --}}
+        @if (session('appareil_signale'))
+            <flux:callout variant="warning" icon="shield-exclamation" :heading="session('appareil_signale')" />
+        @endif
+
 
         <form method="POST" action="{{ route('password.confirm.store') }}" class="flex flex-col gap-6">
             @csrf

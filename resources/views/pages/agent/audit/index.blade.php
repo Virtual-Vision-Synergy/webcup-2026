@@ -82,6 +82,7 @@ new #[Layout('layouts::agent'), Title('Journal')] class extends Component {
         $this->authorize('viewAny', AuditLog::class);
 
         return AuditLog::query()
+            ->visibleTo(auth()->user())
             ->whereNotNull('actor_id')
             ->selectRaw('actor_id, MAX(actor_name) as actor_name')
             ->groupBy('actor_id')
@@ -123,6 +124,7 @@ new #[Layout('layouts::agent'), Title('Journal')] class extends Component {
         $au = $this->parseDate($this->au)?->endOfDay()->utc();
 
         return AuditLog::query()
+            ->visibleTo(auth()->user())
             ->when(array_key_exists($this->action, AuditLog::ACTION_LABELS), fn (Builder $q) => $q->where('action', $this->action))
             ->when(array_key_exists($this->element, AuditLog::SUBJECTS), fn (Builder $q) => $q->where('subject_type', $this->element))
             ->when($this->auteur === self::AUTEUR_SYSTEME, fn (Builder $q) => $q->whereNull('actor_id'))

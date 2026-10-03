@@ -68,10 +68,17 @@ new #[Layout('layouts::agent'), Title('Comptes citoyens')] class extends Compone
         title="{{ __('Comptes citoyens') }}"
         :subtitle="__(':n compte(s)', ['n' => $this->items->total()])"
         :breadcrumb="['Espace agent' => route('agent.index'), 'Comptes citoyens' => null]"
-    />
+    >
+        @can('createResidentAccounts', \App\Models\User::class)
+            <x-slot:actions>
+                <flux:button icon="arrow-up-tray" :href="route('agent.citizens.import')" wire:navigate>{{ __('Import CSV') }}</flux:button>
+                <flux:button variant="primary" icon="user-plus" :href="route('agent.citizens.create')" wire:navigate>{{ __('Compte sans e-mail') }}</flux:button>
+            </x-slot:actions>
+        @endcan
+    </x-tn.page-header>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" label="{{ __('Rechercher') }}" placeholder="{{ __('Nom ou e-mail…') }}" class="sm:max-w-xs" />
+        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" label="{{ __('Rechercher') }}" placeholder="{{ __('Nom, e-mail, téléphone ou identifiant…') }}" class="sm:max-w-xs" />
 
         <flux:select wire:model.live="statut" label="{{ __('Statut') }}" class="sm:max-w-44">
             <flux:select.option value="">{{ __('Tous') }}</flux:select.option>
@@ -104,7 +111,7 @@ new #[Layout('layouts::agent'), Title('Comptes citoyens')] class extends Compone
             <flux:table :paginate="$this->items">
                 <flux:table.columns>
                     <flux:table.column>{{ __('Nom') }}</flux:table.column>
-                    <flux:table.column>{{ __('E-mail') }}</flux:table.column>
+                    <flux:table.column>{{ __('E-mail ou identifiant') }}</flux:table.column>
                     @if (auth()->user()->isAdmin())
                         <flux:table.column>{{ __('Profil') }}</flux:table.column>
                     @endif
@@ -119,7 +126,16 @@ new #[Layout('layouts::agent'), Title('Comptes citoyens')] class extends Compone
                             <flux:table.cell>
                                 <flux:link :href="route('agent.citizens.show', $item)" wire:navigate class="font-medium">{{ $item->name }}</flux:link>
                             </flux:table.cell>
-                            <flux:table.cell>{{ $item->email }}</flux:table.cell>
+                            <flux:table.cell>
+                                @if ($item->aUnEmail())
+                                    {{ $item->email }}
+                                @else
+                                    <span class="font-mono">{{ $item->identifiant }}</span>
+                                    @if ($item->aActiverCompte())
+                                        <flux:badge size="sm" color="amber" class="ms-1">{{ __('À activer') }}</flux:badge>
+                                    @endif
+                                @endif
+                            </flux:table.cell>
                             @if (auth()->user()->isAdmin())
                                 <flux:table.cell>{{ $item->role?->label }}</flux:table.cell>
                             @endif

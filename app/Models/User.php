@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
+use App\Models\Concerns\HasConfidentialFields;
+use App\Services\AuditLogger;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -12,6 +14,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -39,6 +42,9 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $remember_token
  * @property Carbon|null $deactivated_at
  * @property bool $notifier_par_email Préférence de l'habitant (F30) : annonces urgentes par e-mail.
+ * @property string|null $identifiant Identifiant d'habitant (F71) pour se connecter sans e-mail.
+ * @property string|null $code_activation Empreinte du code d'activation à usage unique (F71).
+ * @property string|null $langue Langue mémorisée (F71).
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
@@ -47,11 +53,33 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * L'ancienne colonne texte « role » existe encore en base mais n'est plus utilisée.
  */
 #[Fillable(['name', 'email', 'password', 'telephone', 'quartier', 'quartier_id', 'notifier_par_email'])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'code_activation'])]
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use Auditable, HasAuditHistory, HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use Auditable, HasAuditHistory, HasConfidentialFields, HasFactory, Notifiable, TwoFactorAuthenticatable;
+
+    /** F71 : domaine réservé (RFC 2606) des adresses techniques des comptes sans e-mail ; aucun message n'y part. */
+    public const DOMAINE_SANS_EMAIL = 'sans-email.invalid';
+
+    /** @var list<string> Champs non journalisés (F47) : l'empreinte du code d'activation reste hors du journal. */
+    protected array $auditIgnore = ['code_activation'];
+
+    /** F70 : champs jamais affichés en clair dans le journal (F47/F48), remplacés par « [masqué] ». */
+    public const CHAMPS_CONFIDENTIELS = ['telephone', 'email'];
+
+    /**
+     * F70 : coordonnées d'un habitant, masquées par défaut sur sa fiche dans l'espace agent (F34).
+     *
+     * @return array<string, array{label: string, valeur: \Closure(): (string|null)}>
+     */
+    public function confidentialFields(): array
+    {
+        return [
+            'telephone' => ['label' => 'Téléphone', 'valeur' => fn (): ?string => $this->telephone],
+            'email' => ['label' => 'E-mail', 'valeur' => fn (): ?string => $this->emailAffichable()],
+        ];
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -79,6 +107,84 @@ class User extends Authenticatable implements FilamentUser
         return Str::length($initials) > 1
             ? Str::substr($initials, 0, 1).Str::substr($initials, -1)
             : $initials;
+    }
+
+    /**
+     * F71 : vrai si l'habitant a une vraie adresse e-mail (et non l'adresse technique d'un compte sans e-mail).
+     */
+    public function aUnEmail(): bool
+    {
+        return ! str_ends_with($this->email, '@'.self::DOMAINE_SANS_EMAIL);
+    }
+
+    /**
+     * Adresse affichable : null pour un compte sans e-mail.
+     */
+    public function emailAffichable(): ?string
+    {
+        return $this->aUnEmail() ? $this->email : null;
+    }
+
+    /**
+     * Aucun e-mail n'est envoyé à un compte sans adresse (le canal mail est alors ignoré par Laravel).
+     */
+    public function routeNotificationForMail(): ?string
+    {
+        return $this->emailAffichable();
+    }
+
+    public function aActiverCompte(): bool
+    {
+        return $this->code_activation !== null;
+    }
+
+    /**
+     * F71 : retrouve un compte à partir de ce que l'habitant saisit à la connexion :
+     * adresse e-mail, identifiant d'habitant (HAB-XXXXXX) ou numéro de téléphone (s'il n'appartient qu'à un seul compte).
+     */
+    public static function trouverPourConnexion(string $saisie): ?self
+    {
+        $saisie = trim($saisie);
+
+        if ($saisie === '') {
+            return null;
+        }
+
+        if (str_contains($saisie, '@')) {
+            return self::where('email', mb_strtolower($saisie))->first();
+        }
+
+        if (preg_match('/^hab-?[a-z0-9]{4,12}$/i', $saisie) === 1) {
+            return self::where('identifiant', self::normaliserIdentifiant($saisie))->first();
+        }
+
+        $telephone = self::normaliserTelephone($saisie);
+
+        if ($telephone === null) {
+            return null;
+        }
+
+        $comptes = self::where('telephone', $telephone)->limit(2)->get();
+
+        return $comptes->count() === 1 ? $comptes->first() : null;
+    }
+
+    public static function normaliserIdentifiant(string $identifiant): string
+    {
+        $brut = strtoupper((string) preg_replace('/[^a-z0-9]/i', '', $identifiant));
+
+        return 'HAB-'.substr($brut, 3);
+    }
+
+    /**
+     * Téléphone réduit aux chiffres (et au « + » initial) : « 034 12 345 67 » → « 0341234567 ».
+     */
+    public static function normaliserTelephone(?string $telephone): ?string
+    {
+        $telephone = trim((string) $telephone);
+        $chiffres = (str_starts_with($telephone, '+') ? '+' : '').preg_replace('/\D/', '', $telephone);
+
+        return strlen(ltrim($chiffres, '+')) >= 6 ? $chiffres : null;
     }
 
     public function canAccessPanel(Panel $panel): bool
@@ -131,6 +237,77 @@ class User extends Authenticatable implements FilamentUser
     public function onboarding(): HasOne
     {
         return $this->hasOne(Onboarding::class);
+    }
+
+    /**
+     * Appareils depuis lesquels l'utilisateur s'est connecté (F54). Écrits uniquement par DeviceRecognizer.
+     *
+     * @return HasMany<KnownDevice, $this>
+     */
+    public function knownDevices(): HasMany
+    {
+        return $this->hasMany(KnownDevice::class);
+    }
+
+    /**
+     * F70 : services couverts par un agent. Affectation réservée à l'admin (UserPolicy::assignServices).
+     *
+     * @return BelongsToMany<Service, $this>
+     */
+    public function services(): BelongsToMany
+    {
+        return $this->belongsToMany(Service::class)->withTimestamps();
+    }
+
+    /** @var list<int>|null Ids des services couverts, mis en cache pour la durée de la requête. */
+    private ?array $serviceIdsEnCache = null;
+
+    /**
+     * Ids des services couverts par l'agent (vide pour un citoyen).
+     *
+     * @return list<int>
+     */
+    public function serviceIds(): array
+    {
+        if (! $this->isAgent()) {
+            return [];
+        }
+
+        return $this->serviceIdsEnCache ??= array_values(array_map(intval(...), $this->services()->pluck('services.id')->all()));
+    }
+
+    /**
+     * Change les services couverts (à appeler après l'autorisation) et le note au journal (F47).
+     *
+     * @param  list<int>  $serviceIds
+     */
+    public function affecterServices(array $serviceIds): void
+    {
+        $avant = $this->services()->orderBy('nom')->pluck('nom')->implode(', ');
+
+        $this->services()->sync(Service::query()->whereKey($serviceIds)->pluck('id')->all());
+        $this->serviceIdsEnCache = null;
+
+        $apres = $this->services()->orderBy('nom')->pluck('nom')->implode(', ');
+
+        if ($avant !== $apres) {
+            AuditLogger::log('services_changed', $this, ['services' => ['avant' => $avant ?: null, 'apres' => $apres ?: null]]);
+        }
+    }
+
+    /**
+     * F70 : l'utilisateur peut-il traiter les données de ce service ? Admin : tout ; agent : ses services ;
+     * une donnée sans service est réservée à l'admin ; citoyen : jamais (côté agent).
+     */
+    public function canAccessService(Service|int|null $service): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        $serviceId = $service instanceof Service ? $service->id : $service;
+
+        return $serviceId !== null && in_array((int) $serviceId, $this->serviceIds(), true);
     }
 
     public function hasRole(string $code): bool
@@ -210,7 +387,10 @@ class User extends Authenticatable implements FilamentUser
         }
 
         $like = '%'.addcslashes($term, '%_\\').'%';
-        $query->where(fn (Builder $q) => $q->where('name', 'like', $like)->orWhere('email', 'like', $like));
+        $query->where(fn (Builder $q) => $q->where('name', 'like', $like)
+            ->orWhere('email', 'like', $like)
+            ->orWhere('identifiant', 'like', $like)
+            ->orWhere('telephone', 'like', $like));
     }
 
     /**

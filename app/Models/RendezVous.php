@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasConfidentialFields;
 use Carbon\CarbonImmutable;
 use Database\Factories\RendezVousFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -14,7 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Rendez-vous d'un habitant avec un agent (F39).
  *
  * Seul le motif saisi par l'habitant est remplissable : user_id, service_id, creneau_id, statut et annule_le
- * sont assignés dans le code (PriseDeRendezVous, changerStatut).
+ * sont assignés dans le code (PriseDeRendezVous, changerStatut). reminder_sent_at n'est renseigné que par
+ * la commande appointments:send-reminders (F40).
  *
  * @property int $id
  * @property int $user_id
@@ -23,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $motif
  * @property string $statut
  * @property CarbonImmutable|null $annule_le
+ * @property CarbonImmutable|null $reminder_sent_at
  * @property CarbonImmutable|null $created_at
  * @property-read User $user
  * @property-read Service $service
@@ -32,7 +35,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class RendezVous extends Model
 {
     /** @use HasFactory<RendezVousFactory> */
-    use HasFactory;
+    use HasConfidentialFields, HasFactory;
 
     protected $table = 'rendez_vous';
 
@@ -65,6 +68,7 @@ class RendezVous extends Model
     {
         return [
             'annule_le' => 'datetime',
+            'reminder_sent_at' => 'datetime',
         ];
     }
 
@@ -90,6 +94,32 @@ class RendezVous extends Model
     public function creneau(): BelongsTo
     {
         return $this->belongsTo(CreneauRendezVous::class, 'creneau_id');
+    }
+
+    /**
+     * F70 : rendez-vous visibles par l'utilisateur. Admin : tous ; agent : ceux de ses services ; habitant : les siens.
+     *
+     * @param  Builder<RendezVous>  $query
+     */
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        match (true) {
+            $user->isAdmin() => null,
+            $user->isAgent() => $query->whereIn('service_id', $user->serviceIds()),
+            default => $query->where('user_id', $user->id),
+        };
+    }
+
+    /**
+     * F70 : le motif saisi par l'habitant peut contenir des informations personnelles.
+     *
+     * @return array<string, array{label: string, valeur: \Closure(): (string|null)}>
+     */
+    public function confidentialFields(): array
+    {
+        return [
+            'motif' => ['label' => 'Motif du rendez-vous', 'valeur' => fn (): ?string => $this->motif],
+        ];
     }
 
     /**

@@ -19,4 +19,3 @@ parameters:
             paths:
                 - app/Concerns/ExportsCsv.php
                 - app/Concerns/ThrottlesPerUser.php
-                - app/Models/Concerns/HasCoordinates.php

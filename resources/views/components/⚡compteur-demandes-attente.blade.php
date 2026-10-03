@@ -9,6 +9,7 @@ use Livewire\Component;
 /*
 | D17 : nombre de demandes des habitants en attente de prise en charge (tableau de bord agent).
 | Calculé en base à chaque rendu (pas de cache) : il suit chaque changement d'état.
+| F70 : limité aux services de l'agent (tous pour l'admin).
 */
 new class extends Component {
     public function mount(): void
@@ -21,7 +22,7 @@ new class extends Component {
     {
         Gate::authorize('viewAgentSpace');
 
-        return Demarche::query()->awaitingHandling()->count();
+        return Demarche::query()->visibleTo(auth()->user())->awaitingHandling()->count();
     }
 
     /**
@@ -32,7 +33,7 @@ new class extends Component {
     {
         Gate::authorize('viewAgentSpace');
 
-        $date = Demarche::query()->awaitingHandling()->min('created_at');
+        $date = Demarche::query()->visibleTo(auth()->user())->awaitingHandling()->min('created_at');
 
         return $date ? Carbon::parse($date) : null;
     }

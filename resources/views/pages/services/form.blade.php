@@ -16,6 +16,9 @@ new #[Title('Service')] class extends Component {
     public string $nom = '';
     public string $description = '';
     public string $categorie = '';
+    public string $lieu_rendez_vous = '';
+    public string $duree_rendez_vous = '';
+    public string $pieces_a_fournir = '';
     public bool $mis_en_avant = false;
 
     public function mount(?Service $service = null): void
@@ -27,6 +30,9 @@ new #[Title('Service')] class extends Component {
             $this->description = (string) ($service->description ?? '');
             $this->categorie = (string) ($service->categorie ?? '');
             $this->mis_en_avant = (bool) $service->mis_en_avant;
+            $this->lieu_rendez_vous = (string) ($service->lieu_rendez_vous ?? '');
+            $this->duree_rendez_vous = (string) ($service->duree_rendez_vous ?? '');
+            $this->pieces_a_fournir = (string) ($service->pieces_a_fournir ?? '');
         } else {
             $this->authorize('create', Service::class);
         }
@@ -41,6 +47,9 @@ new #[Title('Service')] class extends Component {
             'nom' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:5000'],
             'categorie' => ['required', Rule::in(Service::CATEGORIE_OPTIONS)],
+            'lieu_rendez_vous' => ['nullable', 'string', 'max:255'],
+            'duree_rendez_vous' => ['nullable', 'integer', 'min:5', 'max:240'],
+            'pieces_a_fournir' => ['nullable', 'string', 'max:2000'],
             'mis_en_avant' => ['boolean'],
         ];
     }
@@ -54,6 +63,12 @@ new #[Title('Service')] class extends Component {
         $validated = $this->validate();
         $miseEnAvant = (bool) ($validated['mis_en_avant'] ?? false);
         unset($validated['mis_en_avant']);
+
+        foreach (['lieu_rendez_vous', 'duree_rendez_vous', 'pieces_a_fournir'] as $field) {
+            if (($validated[$field] ?? null) === '') {
+                $validated[$field] = null;
+            }
+        }
 
         $record = $this->record ?? new Service;
         $record->fill($validated);
@@ -96,6 +111,17 @@ new #[Title('Service')] class extends Component {
                 <flux:select.option value="{{ $valeur }}">{{ __($label) }}</flux:select.option>
             @endforeach
         </flux:select>
+
+        <fieldset class="space-y-4">
+            <flux:heading size="sm">Prise de rendez-vous</flux:heading>
+            <flux:text>Laissez la durée vide si le service ne prend pas de rendez-vous en ligne.</flux:text>
+
+            <flux:input wire:model="duree_rendez_vous" type="number" min="5" max="240" label="Durée d'un rendez-vous (minutes)" />
+
+            <flux:input wire:model="lieu_rendez_vous" label="Lieu du rendez-vous" placeholder="Bâtiment, étage, guichet" />
+
+            <flux:textarea wire:model="pieces_a_fournir" label="Pièces à apporter (une par ligne)" rows="4" />
+        </fieldset>
 
         @can('feature', $record ?? Service::class)
             <flux:checkbox wire:model="mis_en_avant" label="{{ __('Mettre en avant') }}" description="{{ __('Le service apparaît en tête du catalogue et sur la page d\'accueil.') }}" />

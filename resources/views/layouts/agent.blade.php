@@ -10,27 +10,31 @@
     <body class="min-h-screen bg-night text-ink antialiased">
         {{-- Bandeau « poste agent » : même système Terra Nova, repérable par l'intitulé et le trait cyan. --}}
         <flux:header container class="tn-glass sticky top-0 z-40 h-[72px]! border-b border-t-2 border-t-cyan">
-            <a href="{{ route('agent.index') }}" class="flex items-center gap-3" aria-label="{{ __('Espace agent : demandes Nova Terra') }}">
+            <a href="{{ route('agent.index') }}" class="flex items-center gap-3" aria-label="Espace agent : demandes Nova Terra">
                 <x-app-logo-icon class="size-[26px] shrink-0" />
                 <span class="tn-display text-[0.9375rem] font-semibold tracking-[.16em] max-sm:hidden" style="font-stretch: 118%">TERRA NOVA</span>
-                <x-tn.status-badge etat="info">{{ __('Espace agent') }}</x-tn.status-badge>
+                <x-tn.status-badge etat="info">Espace agent</x-tn.status-badge>
             </a>
 
             <flux:navbar class="ms-6 max-md:hidden">
                 <flux:navbar.item icon="inbox-stack" :href="route('agent.index')" :current="request()->routeIs('agent.index')">
-                    {{ __('Demandes Nova Terra') }}
+                    Demandes Nova Terra
                 </flux:navbar.item>
-                <flux:navbar.item icon="megaphone" :href="route('agent.annonces.index')" :current="request()->routeIs('agent.annonces.*')">
-                    {{ __('Messages généraux') }}
+                @php($annoncesEnCours = \App\Models\Annonce::query()->active()->count())
+                <flux:navbar.item icon="megaphone" :href="route('agent.annonces.index')" :current="request()->routeIs('agent.annonces.*')" :badge="$annoncesEnCours ?: null" :aria-label="'Messages généraux, '.$annoncesEnCours.' en cours'">
+                    Messages généraux
                 </flux:navbar.item>
                 <flux:navbar.item icon="users" :href="route('agent.citizens.index')" :current="request()->routeIs('agent.citizens.*')">
-                    {{ __('Comptes citoyens') }}
+                    Comptes citoyens
                 </flux:navbar.item>
                 <flux:navbar.item icon="clipboard-document-list" :href="route('agent.demandes')" :current="request()->routeIs('agent.demandes')">
-                    {{ __('Demandes des habitants') }}
+                    Demandes des habitants
+                </flux:navbar.item>
+                <flux:navbar.item icon="calendar-days" :href="route('agent.appointments.index')" :current="request()->routeIs('agent.appointments.*')">
+                    Rendez-vous
                 </flux:navbar.item>
                 <flux:navbar.item icon="document-text" :href="route('agent.audit.index')" :current="request()->routeIs('agent.audit.*')">
-                    {{ __('Journal') }}
+                    Journal
                 </flux:navbar.item>
             </flux:navbar>
 
@@ -39,7 +43,7 @@
             <x-tn.contrast-toggle class="max-md:hidden" />
             <x-tn.theme-toggle class="max-md:hidden" />
             <flux:button :href="route('dashboard')" variant="ghost" size="sm" icon="arrow-uturn-left" class="max-md:hidden">
-                {{ __('Espace citoyen') }}
+                Espace citoyen
             </flux:button>
             <flux:dropdown position="bottom" align="end">
                 <flux:profile :initials="auth()->user()->initials()" icon-trailing="chevron-down" class="ms-2" />
@@ -56,12 +60,13 @@
 
                     <flux:menu.separator />
 
-                    <flux:menu.item icon="inbox-stack" :href="route('agent.index')" class="md:hidden">{{ __('Demandes Nova Terra') }}</flux:menu.item>
-                    <flux:menu.item icon="users" :href="route('agent.citizens.index')" class="md:hidden">{{ __('Comptes citoyens') }}</flux:menu.item>
-                    <flux:menu.item icon="megaphone" :href="route('agent.annonces.index')" class="md:hidden">{{ __('Messages généraux') }}</flux:menu.item>
-                    <flux:menu.item icon="clipboard-document-list" :href="route('agent.demandes')" class="md:hidden">{{ __('Demandes des habitants') }}</flux:menu.item>
-                    <flux:menu.item icon="document-text" :href="route('agent.audit.index')" class="md:hidden">{{ __('Journal') }}</flux:menu.item>
-                    <flux:menu.item icon="arrow-uturn-left" :href="route('dashboard')">{{ __('Retour à l\'espace citoyen') }}</flux:menu.item>
+                    <flux:menu.item icon="inbox-stack" :href="route('agent.index')" class="md:hidden">Demandes Nova Terra</flux:menu.item>
+                    <flux:menu.item icon="users" :href="route('agent.citizens.index')" class="md:hidden">Comptes citoyens</flux:menu.item>
+                    <flux:menu.item icon="megaphone" :href="route('agent.annonces.index')" class="md:hidden">Messages généraux</flux:menu.item>
+                    <flux:menu.item icon="clipboard-document-list" :href="route('agent.demandes')" class="md:hidden">Demandes des habitants</flux:menu.item>
+                    <flux:menu.item icon="calendar-days" :href="route('agent.appointments.index')" class="md:hidden">Rendez-vous du jour</flux:menu.item>
+                    <flux:menu.item icon="document-text" :href="route('agent.audit.index')" class="md:hidden">Journal</flux:menu.item>
+                    <flux:menu.item icon="arrow-uturn-left" :href="route('dashboard')">Retour à l'espace citoyen</flux:menu.item>
                     <flux:menu.item icon="cog" :href="route('profile.edit')">{{ __('Settings') }}</flux:menu.item>
 
                     <flux:menu.separator />

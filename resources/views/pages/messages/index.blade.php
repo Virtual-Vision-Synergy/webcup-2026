@@ -91,7 +91,7 @@ new #[Title('Messages')] class extends Component {
         @can('viewAll', Message::class)
             <flux:checkbox wire:model.live="mine" label="Mes messages uniquement" />
         @endcan
-        <span wire:loading class="font-mono text-[11px] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
     </div>
 
     @if ($this->items->isEmpty())

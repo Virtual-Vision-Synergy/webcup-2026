@@ -11,7 +11,7 @@
     </head>
     <body class="min-h-screen bg-night text-ink antialiased">
         <x-tn.bandeau-annonces />
-        <div class="grid min-h-dvh lg:grid-cols-2">
+        <div class="grid min-h-dvh grid-cols-1 lg:grid-cols-2">
             {{-- Côté visuel : ciel, planète, grille --}}
             <div class="tn-sky relative hidden overflow-hidden lg:flex lg:flex-col lg:p-10">
                 @if ($illustrationNuit)
@@ -34,7 +34,7 @@
 
             {{-- Côté formulaire --}}
             <div class="relative flex flex-col px-4 py-6 sm:px-8 lg:p-10">
-                <div class="flex items-center justify-between lg:justify-end">
+                <div class="flex flex-wrap items-center justify-between gap-2 lg:justify-end">
                     <x-app-logo href="{{ route('home') }}" class="lg:hidden" />
                     <div class="flex items-center"><x-tn.contrast-toggle /><x-tn.theme-toggle /></div>
                 </div>

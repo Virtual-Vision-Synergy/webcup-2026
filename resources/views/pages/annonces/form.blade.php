@@ -170,7 +170,7 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             </flux:select>
         </div>
 
-        <div class="grid gap-4 sm:grid-cols-2">
+        <div class="grid gap-4 md:grid-cols-2">
             <flux:input wire:model="debut" label="Début de diffusion" type="datetime-local" required />
             <flux:input wire:model="fin" label="Fin de diffusion" type="datetime-local" required />
         </div>

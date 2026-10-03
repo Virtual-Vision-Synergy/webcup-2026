@@ -27,10 +27,8 @@ use Illuminate\Support\Carbon;
 #[Fillable(['categorie', 'description', 'lieu', 'photo'])]
 class Signalement extends Model
 {
-    use Auditable, HasAuditHistory, HasFactory, PrevientDuChangementDeStatut;
-
     /** @use HasFactory<SignalementFactory> */
-    use Auditable, HasAuditHistory, HasFactory, Soutenable;
+    use Auditable, HasAuditHistory, HasFactory, PrevientDuChangementDeStatut, Soutenable;
 
     public const CATEGORIE_OPTIONS = ['eclairage', 'voirie', 'proprete', 'eau', 'espaces_verts', 'mobilier', 'autre'];
 

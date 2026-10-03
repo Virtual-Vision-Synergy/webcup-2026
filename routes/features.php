@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\KnownDeviceController;
 use App\Http\Controllers\NotificationController;
 use App\Models\Onboarding;
 use Illuminate\Support\Facades\Route;
@@ -66,7 +67,21 @@ Route::middleware(['auth'])->group(function () {
     Route::post('notifications/{notification}/lire', [NotificationController::class, 'lire'])->whereUuid('notification')->name('notifications.read');
     Route::get('notifications/{notification}/ouvrir', [NotificationController::class, 'ouvrir'])->whereUuid('notification')->name('notifications.open');
 
+    // F54 : mes appareils et connexions récentes ; « Ce n'était pas moi » (droits dans KnownDevicePolicy : 403 pour l'appareil d'un autre).
+    Route::livewire('profil/appareils', 'pages::profile.devices')->name('profile.devices.index');
+    Route::get('profil/appareils/{knownDevice}/pas-moi', [KnownDeviceController::class, 'confirm'])->name('profile.devices.confirm');
+    Route::post('profil/appareils/{knownDevice}/pas-moi', [KnownDeviceController::class, 'notMe'])->name('profile.devices.not-me');
+
     // make:feature:routes
+});
+
+/*
+| F54 : lien « Ce n'était pas moi » de l'e-mail d'alerte. Route publique DÉCIDÉE (la personne peut ne plus avoir
+| accès à sa session) : URL signée 24 h liée à l'appareil et à son propriétaire ; GET = confirmation, POST = action.
+*/
+Route::middleware(['signed', 'throttle:10,1'])->group(function () {
+    Route::get('appareils/{knownDevice}/signaler', [KnownDeviceController::class, 'showSigned'])->name('profile.devices.report');
+    Route::post('appareils/{knownDevice}/signaler', [KnownDeviceController::class, 'reportSigned'])->name('profile.devices.report.store');
 });
 
 /*

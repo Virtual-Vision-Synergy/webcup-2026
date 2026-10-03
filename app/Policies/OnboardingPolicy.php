@@ -19,4 +19,12 @@ class OnboardingPolicy
     {
         return $user->isCitoyen();
     }
+
+    /**
+     * « Par où commencer ? » (F72) : réservé aux habitants, toujours sur LEUR propre situation.
+     */
+    public function parOuCommencer(User $user): bool
+    {
+        return $user->isCitoyen();
+    }
 }

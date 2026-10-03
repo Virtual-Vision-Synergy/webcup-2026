@@ -108,7 +108,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Remontée')] class exten
     </x-tn.page-header>
 
     @error('transition')
-        <flux:callout variant="danger" icon="exclamation-triangle" :heading="$message" />
+        <flux:callout variant="danger" icon="exclamation-triangle" :heading="$message" role="alert" />
     @enderror
 
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">

@@ -34,6 +34,10 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('demarches/{demarche}', 'pages::demarches.show')->name('demarches.show');
     Route::livewire('demarches/{demarche}/edit', 'pages::demarches.form')->name('demarches.edit');
 
+    Route::livewire('alertes-canicule', 'pages::alertes-canicule.index')->name('alertes-canicule.index');
+    Route::livewire('alertes-canicule/create', 'pages::alertes-canicule.form')->name('alertes-canicule.create');
+    Route::livewire('alertes-canicule/{alerte_canicule}/edit', 'pages::alertes-canicule.form')->name('alertes-canicule.edit');
+
     // make:feature:routes
 });
 

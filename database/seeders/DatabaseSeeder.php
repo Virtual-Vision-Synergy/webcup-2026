@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Actualite;
+use App\Models\AlerteCanicule;
 use App\Models\Demarche;
 use App\Models\Message;
 use App\Models\Service;
@@ -71,6 +72,8 @@ class DatabaseSeeder extends Seeder
             // Quelques démarches pour le compte citoyen de démo : son espace personnel n'est pas vide.
             Demarche::factory(4)->recycle($services)->for(User::where('email', 'user@example.com')->firstOrFail())->create();
         }
+
+        AlerteCanicule::factory(4)->recycle($users)->create();
 
         // make:feature:seeders
     }

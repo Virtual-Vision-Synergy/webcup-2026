@@ -4,6 +4,9 @@
     Les rubriques ajoutées par `make:feature` (marqueur ci-dessous) apparaissent dans le rail ET dans le menu mobile.
 --}}
 @section('tn-feature-nav')
+                    <flux:sidebar.item icon="sun" :href="route('alertes-canicule.index')" :current="request()->routeIs('alertes-canicule.*')" wire:navigate>
+                        Alertes canicule
+                    </flux:sidebar.item>
                     {{-- make:feature:nav --}}
 @endsection
 <!DOCTYPE html>

@@ -16,6 +16,11 @@
                     <flux:sidebar.item icon="heart" :href="route('urgences.index')" :current="request()->routeIs('urgences.*')" wire:navigate>
                         Urgences / Santé
                     </flux:sidebar.item>
+                    @can('parOuCommencer', \App\Models\Onboarding::class)
+                        <flux:sidebar.item icon="sparkles" :href="route('onboarding.par-ou-commencer')" :current="request()->routeIs('onboarding.par-ou-commencer')" wire:navigate>
+                            Par où commencer ?
+                        </flux:sidebar.item>
+                    @endcan
 
                     <flux:sidebar.item icon="chat-bubble-left-ellipsis" :href="route('concerns.index')" :current="request()->routeIs('concerns.*')" wire:navigate>
                         Mes remontées

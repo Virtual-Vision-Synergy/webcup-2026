@@ -66,7 +66,7 @@
 
                     @can('viewAgentSpace')
                         <flux:sidebar.group heading="Espace agent" class="grid">
-                            <flux:sidebar.item icon="briefcase" :href="route('agent.index')" data-test="agent-space-link">
+                            <flux:sidebar.item icon="briefcase" :href="route('agent.tableau-de-bord')" data-test="agent-space-link">
                                 Espace agent
                             </flux:sidebar.item>
                         </flux:sidebar.group>

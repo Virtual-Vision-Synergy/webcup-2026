@@ -118,7 +118,7 @@
                         </li>
                     @endif
                     @can('viewAgentSpace')
-                        <li><a href="{{ route('agent.index') }}" class="{{ $ligne }}"><flux:icon name="briefcase" class="size-5 text-ink-2" />Espace agent</a></li>
+                        <li><a href="{{ route('agent.tableau-de-bord') }}" class="{{ $ligne }}"><flux:icon name="briefcase" class="size-5 text-ink-2" />Espace agent</a></li>
                     @endcan
                     <li><a href="{{ route('profile.edit') }}" class="{{ $ligne }}"><flux:icon name="settings" class="size-5 text-ink-2" />Paramètres</a></li>
                 @else

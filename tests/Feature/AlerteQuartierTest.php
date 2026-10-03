@@ -122,13 +122,17 @@ test('l’alerte grave du quartier se replie mais ne se ferme pas ; une alerte d
     $information = alerteSud(['titre' => 'Information du quartier sud', 'niveau' => 'information']);
     $habitantSud = User::factory()->citoyen()->quartier('sud')->create();
 
-    $this->actingAs($habitantSud)->get(route('home'))
+    $html = $this->actingAs($habitantSud)->get(route('home'))
         ->assertSee('Replier')
-        ->assertDontSee('aria-label="Fermer le message : '.$alerte->titre.'"', false)
-        ->assertSee('aria-label="Fermer le message : '.$information->titre.'"', false);
+        ->assertSee($alerte->titre)
+        ->assertSee($information->titre)
+        ->getContent();
+
+    // Un seul bouton « Fermer » : celui de l'information ; l'alerte grave n'a que « Replier ».
+    expect(substr_count($html, 'aria-label="Fermer ce message"'))->toBe(1);
 });
 
-test('un habitant d’un autre quartier voit la version compacte, après les messages de toute la ville', function () {
+test('un habitant d’un autre quartier voit la version compacte, repliée après les messages de toute la ville', function () {
     Annonce::factory()->active()->create(['titre' => 'Message pour toute la ville', 'niveau' => 'information']);
     $alerte = alerteSud();
     $habitantNord = User::factory()->citoyen()->quartier('nord')->create();
@@ -142,8 +146,10 @@ test('un habitant d’un autre quartier voit la version compacte, après les mes
         ->assertDontSee('Éloignez-vous des berges.')
         ->getContent();
 
-    // Gravité d'abord pour qui n'est pas concerné : l'alerte (plus grave) passe avant l'information, mais en compact.
-    expect(variantesAffichees($html))->toBe(['compact', 'standard']);
+    // Le message de toute la ville est affiché ; l'alerte d'un autre quartier est repliée derrière le bouton.
+    expect(variantesAffichees($html))->toBe(['standard', 'compact'])
+        ->and($html)->toContain('id="tn-autres-annonces"')
+        ->and($html)->toContain('Voir l’autre message');
 });
 
 test('un visiteur voit la version compacte avec le lien vers les consignes', function () {
@@ -155,14 +161,18 @@ test('un visiteur voit la version compacte avec le lien vers les consignes', fun
         ->assertDontSee('Concerne votre quartier');
 });
 
-test('un citoyen sans quartier voit l’alerte en version standard avec une invitation à renseigner son quartier', function () {
+test('un citoyen sans quartier ne voit pas le détail des alertes ciblées, mais une invitation à renseigner son quartier', function () {
     alerteSud();
     $citoyen = User::factory()->citoyen()->create(['quartier_id' => null]);
 
-    $this->actingAs($citoyen)->get(route('home'))
-        ->assertSee('Éloignez-vous des berges.')
+    $html = $this->actingAs($citoyen)->get(route('home'))
+        ->assertDontSee('Éloignez-vous des berges.')
+        ->assertSee('Voir les alertes des autres quartiers (1)')
         ->assertSee('Indiquez votre quartier pour recevoir les alertes qui vous concernent')
-        ->assertDontSee('Concerne votre quartier');
+        ->assertDontSee('Concerne votre quartier')
+        ->getContent();
+
+    expect(variantesAffichees($html))->toBe(['compact']);
 });
 
 test('la gravité est affichée en texte, avec role="alert" pour Alerte et Danger', function (string $niveau, string $libelle, string $role) {
@@ -275,7 +285,9 @@ test('un agent met à jour la situation : une ligne horodatée est ajoutée sans
     expect(Annonce::count())->toBe(1)
         ->and($alerte->fresh()->contenu)->toEndWith("\nMise à jour 14 h 30 : Le niveau se stabilise.");
 
-    $this->get(route('home'))->assertSee('Mise à jour 14 h 30 : Le niveau se stabilise.');
+    $this->actingAs(User::factory()->citoyen()->quartier('sud')->create())
+        ->get(route('home'))
+        ->assertSee('Mise à jour 14 h 30 : Le niveau se stabilise.');
 });
 
 test('le nombre de messages en cours apparaît dans la navigation de l’espace agent', function () {

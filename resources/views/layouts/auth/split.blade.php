@@ -10,6 +10,7 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-night text-ink antialiased">
+        <a href="#contenu" class="sr-only z-[60] rounded-sm bg-cyan px-4 py-2 text-on-cyan focus:not-sr-only focus:fixed focus:start-4 focus:top-4">{{ __('Aller au contenu') }}</a>
         <x-tn.bandeau-annonces />
         <div class="grid min-h-dvh grid-cols-1 lg:grid-cols-2">
             {{-- Côté visuel : ciel, planète, grille --}}
@@ -40,7 +41,7 @@
                     <div class="flex items-center"><x-tn.contrast-toggle /><x-tn.theme-toggle /></div>
                 </div>
 
-                <main id="contenu" class="flex flex-1 items-center justify-center py-8">
+                <main id="contenu" tabindex="-1" class="flex flex-1 items-center justify-center py-8">
                     <x-tn.panel class="w-full max-w-[420px]" padding="p-6 sm:p-8">
                         <div class="flex flex-col gap-6">
                             {{ $slot }}

@@ -92,6 +92,74 @@ class CreneauRendezVous extends Model
         return (string) config('rendez_vous.fuseau', 'UTC');
     }
 
+    /**
+     * Crée les créneaux libres des prochains jours ouvrés d'un service, selon les plages de
+     * config/rendez_vous.php (heure locale) et la durée du service. Idempotent : un créneau déjà
+     * présent (même service, même début) est ignoré grâce à l'index unique.
+     *
+     * @return int Nombre de créneaux créés.
+     */
+    public static function genererPour(Service $service, int $jours): int
+    {
+        $duree = (int) $service->duree_rendez_vous;
+
+        if ($duree <= 0 || $jours < 1) {
+            return 0;
+        }
+
+        $fuseau = self::fuseau();
+        /** @var array<int, int> $joursOuvres */
+        $joursOuvres = config('rendez_vous.jours_ouvres', [1, 2, 3, 4, 5]);
+        /** @var array<int, array{0: string, 1: string}> $plages */
+        $plages = config('rendez_vous.plages', []);
+
+        if ($joursOuvres === [] || $plages === []) {
+            return 0;
+        }
+
+        $dates = [];
+        $jour = CarbonImmutable::now($fuseau)->startOfDay();
+        while (count($dates) < $jours) {
+            if (in_array($jour->dayOfWeekIso, $joursOuvres, true)) {
+                $dates[] = $jour;
+            }
+            $jour = $jour->addDay();
+        }
+
+        $maintenant = now();
+        $lignes = [];
+
+        foreach ($dates as $date) {
+            foreach ($plages as [$ouverture, $fermeture]) {
+                $debut = CarbonImmutable::parse($date->format('Y-m-d').' '.$ouverture, $fuseau);
+                $limite = CarbonImmutable::parse($date->format('Y-m-d').' '.$fermeture, $fuseau);
+
+                while ($debut->addMinutes($duree)->lessThanOrEqualTo($limite)) {
+                    $fin = $debut->addMinutes($duree);
+
+                    if ($debut->greaterThan($maintenant)) {
+                        $lignes[] = [
+                            'service_id' => $service->id,
+                            'debut' => $debut->utc()->format('Y-m-d H:i:s'),
+                            'fin' => $fin->utc()->format('Y-m-d H:i:s'),
+                            'created_at' => $maintenant,
+                            'updated_at' => $maintenant,
+                        ];
+                    }
+
+                    $debut = $fin;
+                }
+            }
+        }
+
+        $crees = 0;
+        foreach (array_chunk($lignes, 200) as $lot) {
+            $crees += self::query()->insertOrIgnore($lot);
+        }
+
+        return $crees;
+    }
+
     public function estLibre(): bool
     {
         return $this->rendez_vous_id === null;

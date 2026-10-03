@@ -33,7 +33,7 @@
 
         <div class="min-w-0 flex-1">
             <p class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span class="rounded-xs border border-current px-1.5 font-mono text-[10.5px] font-semibold uppercase leading-5 tracking-[.06em]">{{ $libelle }}</span>
+                <span class="rounded-xs border border-current px-1.5 font-mono text-[0.65625rem] font-semibold uppercase leading-5 tracking-[.06em]">{{ $libelle }}</span>
                 <span class="font-semibold text-ink">{{ $titre }}</span>
             </p>
             <p class="mt-1 text-sm text-ink-2">{{ $contenu }}</p>

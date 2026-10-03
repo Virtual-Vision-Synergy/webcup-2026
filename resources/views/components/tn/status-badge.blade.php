@@ -13,7 +13,7 @@
     };
 @endphp
 
-<span {{ $attributes->class(['inline-flex shrink-0 items-center gap-1.5 rounded-xs border px-2 py-0.5 font-mono text-[10.5px] font-medium uppercase leading-5 tracking-[.06em]', $couleur]) }}>
+<span {{ $attributes->class(['inline-flex shrink-0 items-center gap-1.5 rounded-xs border px-2 py-0.5 font-mono text-[0.65625rem] font-medium uppercase leading-5 tracking-[.06em]', $couleur]) }}>
     @if ($live)
         <x-tn.live-dot />
     @endif

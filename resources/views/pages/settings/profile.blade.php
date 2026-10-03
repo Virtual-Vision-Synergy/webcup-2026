@@ -18,6 +18,8 @@ new #[Title('Profile settings')] class extends Component {
     public string $telephone = '';
     /** Quartier choisi dans la liste (F29) : sert au ciblage des alertes. */
     public string $quartier_id = '';
+    /** F30 : recevoir les annonces urgentes par e-mail (préférence de l'habitant). */
+    public bool $notifier_par_email = true;
 
     /**
      * Mount the component.
@@ -28,6 +30,7 @@ new #[Title('Profile settings')] class extends Component {
         $this->email = Auth::user()->email;
         $this->telephone = (string) Auth::user()->telephone;
         $this->quartier_id = (string) (Auth::user()->quartier_id ?? '');
+        $this->notifier_par_email = (bool) Auth::user()->notifier_par_email;
     }
 
     /**
@@ -41,6 +44,7 @@ new #[Title('Profile settings')] class extends Component {
             ...$this->profileRules($user->id),
             'telephone' => ['nullable', 'string', 'max:30', 'regex:/^\+?[0-9 .()-]{6,30}$/'],
             'quartier_id' => ['nullable', 'integer', 'exists:quartiers,id'],
+            'notifier_par_email' => ['boolean'],
         ], [
             'quartier_id.integer' => 'Choisissez un quartier dans la liste.',
             'quartier_id.exists' => 'Choisissez un quartier dans la liste.',
@@ -91,6 +95,9 @@ new #[Title('Profile settings')] class extends Component {
                     <flux:select.option :value="$id">{{ $nom }}</flux:select.option>
                 @endforeach
             </flux:select>
+
+            <flux:checkbox wire:model="notifier_par_email" label="Recevoir les annonces urgentes par e-mail"
+                description="Les annonces de niveau Danger vous sont aussi envoyées par e-mail. Elles restent toujours visibles dans la cloche." />
 
             <div class="flex items-center gap-4">
                 <div class="flex items-center justify-end">

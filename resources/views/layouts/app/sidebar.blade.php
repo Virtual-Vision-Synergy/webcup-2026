@@ -5,10 +5,10 @@
 --}}
 @section('tn-feature-nav')
                     <flux:sidebar.item icon="exclamation-triangle" :href="route('signalements.index')" :current="request()->routeIs('signalements.*')" wire:navigate>
-                        {{ __('Signalements') }}
+                        Signalements
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="bus" :href="route('transports.index')" :current="request()->routeIs('transports.*')" wire:navigate>
-                        {{ __('Transports') }}
+                        Transports
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="calendar-days" :href="route('appointments.index')" :current="request()->routeIs('appointments.*')" wire:navigate>
                         Mes rendez-vous
@@ -16,13 +16,18 @@
 
                     {{-- make:feature:nav --}}
 @endsection
+@php
+    // F30 : filet de sécurité si le cron du planificateur ne tourne pas (annonces programmées arrivées à leur début).
+    // Avant tout rendu, pour que les deux cloches affichent le même compteur.
+    app(\App\Services\NotifierAnnonce::class)->traiterEchuesAuPlusUneFoisParMinute();
+@endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="fr">
     <head>
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-black antialiased" x-data>
-        <a href="#contenu" class="sr-only z-[60] rounded-sm bg-cyan px-4 py-2 text-on-cyan focus:not-sr-only focus:fixed focus:start-4 focus:top-4">{{ __('Aller au contenu') }}</a>
+        <a href="#contenu" class="sr-only z-[60] rounded-sm bg-cyan px-4 py-2 text-on-cyan focus:not-sr-only focus:fixed focus:start-4 focus:top-4">Aller au contenu</a>
 
         <div
             id="tn-page"
@@ -35,34 +40,34 @@
                 </flux:sidebar.header>
 
                 <flux:sidebar.nav>
-                    <flux:sidebar.group heading="{{ __('Espace citoyen') }}" class="grid">
+                    <flux:sidebar.group heading="Espace citoyen" class="grid">
                         <flux:sidebar.item icon="house" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                            {{ __('Mon espace') }}
+                            Mon espace
                         </flux:sidebar.item>
 
                         <flux:sidebar.item icon="landmark" :href="route('services.index')" :current="request()->routeIs('services.*')" wire:navigate>
-                            {{ __('Services') }}
+                            Services
                         </flux:sidebar.item>
 
                         <flux:sidebar.item icon="newspaper" :href="route('actualites.index')" :current="request()->routeIs('actualites.*')" wire:navigate>
-                            {{ __('Actualités') }}
+                            Actualités
                         </flux:sidebar.item>
 
                         <flux:sidebar.item icon="mail" :href="route('messages.index')" :current="request()->routeIs('messages.*')" wire:navigate>
-                            {{ __('Messages') }}
+                            Messages
                         </flux:sidebar.item>
 
                         <flux:sidebar.item icon="file-text" :href="route('demarches.index')" :current="request()->routeIs('demarches.*')" wire:navigate>
-                            {{ __('Mes démarches') }}
+                            Mes démarches
                         </flux:sidebar.item>
 
                         @yield('tn-feature-nav')
                     </flux:sidebar.group>
 
                     @can('viewAgentSpace')
-                        <flux:sidebar.group heading="{{ __('Espace agent') }}" class="grid">
+                        <flux:sidebar.group heading="Espace agent" class="grid">
                             <flux:sidebar.item icon="briefcase" :href="route('agent.tableau-de-bord')" data-test="agent-space-link">
-                                {{ __('Espace agent') }}
+                                Espace agent
                             </flux:sidebar.item>
                         </flux:sidebar.group>
                     @endcan
@@ -84,7 +89,7 @@
 
                         <div class="ms-auto flex items-center gap-2">
                             <x-tn.api-status class="max-sm:hidden" />
-                            <x-tn.langue />
+                            <x-tn.cloche />
                             <x-tn.contrast-toggle class="max-lg:hidden" />
                             <x-tn.text-size class="max-lg:hidden" />
                             <x-tn.theme-toggle class="max-lg:hidden" />

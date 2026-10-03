@@ -27,12 +27,13 @@ use Illuminate\Support\Facades\Cache;
  * @property string|null $consignes
  * @property Carbon $debut
  * @property Carbon $fin
+ * @property Carbon|null $notified_at Envoi de la notification aux habitants (F30) ; assigné par NotifierAnnonce uniquement.
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $user
  * @property-read Quartier|null $quartier
  *
- * user_id (l'auteur) n'est volontairement PAS remplissable : il est assigné dans le code.
+ * user_id (l'auteur) et notified_at ne sont volontairement PAS remplissables : ils sont assignés dans le code.
  */
 #[Fillable(['titre', 'contenu', 'niveau', 'debut', 'fin', 'quartier_id', 'consignes'])]
 class Annonce extends Model
@@ -218,6 +219,7 @@ class Annonce extends Model
         return [
             'debut' => 'datetime',
             'fin' => 'datetime',
+            'notified_at' => 'datetime',
             'quartier_id' => 'integer',
         ];
     }

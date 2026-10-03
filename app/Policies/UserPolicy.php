@@ -69,4 +69,21 @@ class UserPolicy
     {
         return $this->viewAccount($user, $model) && ! $user->is($model) && ! $model->isActive();
     }
+
+    /*
+    | F71 : comptes des habitants sans e-mail, créés par un agent (un par un ou par import CSV).
+    | Un nouveau code d'activation ne peut être émis que pour un citoyen SANS e-mail géré par l'acteur (jamais soi-même) :
+    | un compte avec e-mail garde la réinitialisation du mot de passe par e-mail, sans prise de contrôle possible par un agent.
+    */
+
+    public function createResidentAccounts(User $user): bool
+    {
+        return $user->isAgent() || $user->isAdmin();
+    }
+
+    public function issueActivationCode(User $user, User $model): bool
+    {
+        return $this->viewAccount($user, $model) && $model->isCitoyen() && ! $model->aUnEmail()
+            && ! $user->is($model) && $model->isActive();
+    }
 }

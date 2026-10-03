@@ -84,32 +84,94 @@ new #[Title('Démarche')] class extends Component {
     }
 }; ?>
 
-<section class="w-full max-w-2xl space-y-6">
-    <div>
-        <flux:link :href="route('demarches.index')" wire:navigate class="text-sm">&larr; Mes démarches</flux:link>
-        <flux:heading size="xl" level="1" class="mt-2">
-            {{ $record ? 'Modifier la démarche' : 'Nouvelle démarche' }}
-        </flux:heading>
-    </div>
+@php
+    $etapes = ['Service', 'Votre demande', 'Récapitulatif'];
+    $nomsServices = $this->serviceOptions->pluck('nom', 'id')->mapWithKeys(fn ($nom, $id) => [(string) $id => $nom]);
+    // Après une erreur de validation, on revient sur l'étape qui contient le champ fautif.
+    $etapeErreur = $errors->has('service_id') ? 1 : ($errors->hasAny(['titre', 'description']) ? 2 : null);
+@endphp
 
-    <form wire:submit="save" class="space-y-6">
-        <flux:input wire:model="titre" label="Objet de la démarche" placeholder="Ex. Demande d'acte de naissance" required />
+<section
+    class="mx-auto w-full max-w-2xl space-y-6"
+    x-data="{
+        etape: {{ $etapeErreur ?? 1 }},
+        services: @js($nomsServices),
+        suivant() { if (this.etape === 2 && (! $wire.titre.trim() || ! $wire.description.trim())) { $refs.erreurEtape.hidden = false; return; } $refs.erreurEtape.hidden = true; this.etape++; this.$nextTick(() => $refs.contenu.focus()); },
+        precedent() { this.etape--; this.$nextTick(() => $refs.contenu.focus()); },
+    }"
+>
+    <x-tn.page-header
+        label="Démarches"
+        :title="$record ? 'Modifier la démarche' : 'Nouvelle démarche'"
+        :breadcrumb="['Démarches' => route('demarches.index'), ($record ? 'Modifier' : 'Nouvelle') => null]"
+    />
 
-        <flux:textarea wire:model="description" label="Détails" placeholder="Précisez votre demande (personnes concernées, dates, pièces disponibles…)" rows="5" required />
+    <x-tn.stepper :steps="$etapes" current="etape" />
 
-        <flux:select wire:model="service_id" label="Service concerné">
-            <flux:select.option value="">— Je ne sais pas —</flux:select.option>
-            @foreach ($this->serviceOptions as $option)
-                <flux:select.option :value="$option->id">{{ $option->nom }}</flux:select.option>
-            @endforeach
-        </flux:select>
+    <form wire:submit="save" class="space-y-6" x-on:keydown.enter="if (etape < 3 && $event.target.tagName !== 'TEXTAREA') { $event.preventDefault(); suivant(); }">
+        <div x-ref="contenu" tabindex="-1" class="outline-none">
+            {{-- ÉTAPE 1 : SERVICE --}}
+            <fieldset x-show="etape === 1" class="space-y-3">
+                <legend class="tn-display mb-1 text-xl font-semibold text-ink">Quel service est concerné ?</legend>
+                <p class="mb-4 text-ink-2">Choisissez le service municipal. En cas de doute, la mairie orientera votre demande.</p>
 
-        <div class="flex items-center gap-3">
-            <flux:button type="submit" variant="primary">
-                <span wire:loading.remove wire:target="save">Enregistrer</span>
+                <div class="grid gap-2 sm:grid-cols-2">
+                    <label class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
+                        <input type="radio" wire:model="service_id" value="" class="size-4 accent-[var(--color-cyan)]">
+                        <span class="font-medium text-ink">Je ne sais pas</span>
+                    </label>
+                    @foreach ($this->serviceOptions as $option)
+                        <label wire:key="service-{{ $option->id }}" class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
+                            <input type="radio" wire:model="service_id" value="{{ $option->id }}" class="size-4 accent-[var(--color-cyan)]">
+                            <span class="font-medium text-ink">{{ $option->nom }}</span>
+                        </label>
+                    @endforeach
+                </div>
+                <flux:error name="service_id" />
+            </fieldset>
+
+            {{-- ÉTAPE 2 : DEMANDE --}}
+            <div x-show="etape === 2" x-cloak class="space-y-6">
+                <div>
+                    <h2 class="tn-display text-xl font-semibold text-ink">Décrivez votre demande</h2>
+                    <p class="mt-1 text-ink-2">Un objet court, puis les détails utiles au traitement.</p>
+                </div>
+                <flux:input wire:model="titre" label="Objet de la démarche" placeholder="Ex. Demande d'acte de naissance" required />
+                <flux:textarea wire:model="description" label="Détails" placeholder="Précisez votre demande (personnes concernées, dates, pièces disponibles…)" rows="6" required />
+            </div>
+
+            {{-- ÉTAPE 3 : RÉCAPITULATIF --}}
+            <div x-show="etape === 3" x-cloak class="space-y-4">
+                <h2 class="tn-display text-xl font-semibold text-ink">Vérifiez avant d'envoyer</h2>
+                <x-tn.panel padding="p-5">
+                    <dl>
+                        <x-tn.field label="Service"><span x-text="services[$wire.service_id] ?? 'Je ne sais pas'"></span></x-tn.field>
+                        <x-tn.field label="Objet"><span x-text="$wire.titre"></span></x-tn.field>
+                        <x-tn.field label="Détails"><p class="whitespace-pre-line" x-text="$wire.description"></p></x-tn.field>
+                    </dl>
+                </x-tn.panel>
+                @if ($errors->any())
+                    <div class="rounded-md border border-magenta/35 bg-magenta/8 p-4 text-magenta" role="alert">
+                        Certains champs sont à corriger : {{ implode(' ', $errors->all()) }}
+                    </div>
+                @endif
+            </div>
+
+            <p x-ref="erreurEtape" hidden class="mt-4 text-sm text-magenta" role="alert">Renseignez l'objet et les détails pour continuer.</p>
+        </div>
+
+        {{-- Un seul CTA par étape --}}
+        <div class="flex items-center justify-between gap-3 border-t border-line pt-5">
+            <div>
+                <flux:button type="button" variant="ghost" icon="arrow-left" x-show="etape > 1" x-on:click="precedent()">Retour</flux:button>
+                <flux:button :href="route('demarches.index')" wire:navigate variant="ghost" x-show="etape === 1">Annuler</flux:button>
+            </div>
+
+            <flux:button type="button" variant="primary" icon:trailing="arrow-right" x-show="etape < 3" x-on:click="suivant()">Continuer</flux:button>
+            <flux:button type="submit" variant="primary" class="tn-cta" x-show="etape === 3" x-cloak>
+                <span wire:loading.remove wire:target="save">{{ $record ? 'Enregistrer' : 'Envoyer la démarche' }}</span>
                 <span wire:loading wire:target="save">Enregistrement…</span>
             </flux:button>
-            <flux:button :href="route('demarches.index')" wire:navigate variant="ghost">Annuler</flux:button>
         </div>
     </form>
 </section>

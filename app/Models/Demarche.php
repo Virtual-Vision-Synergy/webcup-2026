@@ -25,6 +25,9 @@ class Demarche extends Model
     /** Couleurs Flux des badges. */
     public const STATUT_COLORS = ['deposee' => 'amber', 'en_cours' => 'blue', 'traitee' => 'green', 'refusee' => 'red'];
 
+    /** État affiché par le badge Terra Nova (la couleur indique un état : normal, perturbé, alerte, info). */
+    public const STATUT_ETATS = ['deposee' => 'perturbe', 'en_cours' => 'info', 'traitee' => 'normal', 'refusee' => 'alerte'];
+
     /** Libellés affichés (avec accents). */
     public const STATUT_LABELS = ['deposee' => 'Déposée', 'en_cours' => 'En cours', 'traitee' => 'Traitée', 'refusee' => 'Refusée'];
 
@@ -59,6 +62,11 @@ class Demarche extends Model
     public function couleurStatut(): string
     {
         return self::STATUT_COLORS[$this->statut] ?? 'zinc';
+    }
+
+    public function etatStatut(): string
+    {
+        return self::STATUT_ETATS[$this->statut] ?? 'info';
     }
 
     /**

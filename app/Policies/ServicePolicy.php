@@ -35,4 +35,12 @@ class ServicePolicy
     {
         return $user->isAdmin() || $service->user_id === $user->id;
     }
+
+    /**
+     * Mettre en avant (ou retirer) un service dans le catalogue et sur l'accueil : agents et admins uniquement.
+     */
+    public function feature(User $user, ?Service $service = null): bool
+    {
+        return $user->isAdmin() || $user->isAgent();
+    }
 }

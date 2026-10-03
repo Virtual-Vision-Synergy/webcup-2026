@@ -106,7 +106,7 @@ test('un agent ne peut pas soutenir une demande', function () {
 
 test('l’agent voit le nombre de soutiens et peut trier les demandes par soutiens', function () {
     $peuSoutenue = Signalement::factory()->nouveau()->create(['lieu' => 'Rue peu soutenue']);
-    $tresSoutenue = Signalement::factory()->nouveau()->create(['lieu' => 'Rue très soutenue']);
+    $tresSoutenue = Signalement::factory()->nouveau()->create(['lieu' => 'Avenue populaire']);
     Soutien::factory()->for($peuSoutenue)->create();
     Soutien::factory(3)->for($tresSoutenue)->create();
 
@@ -114,7 +114,7 @@ test('l’agent voit le nombre de soutiens et peut trier les demandes par soutie
         ->test('pages::signalements.index')
         ->set('tri', 'soutiens')
         ->assertSee('Soutiens')
-        ->assertSeeInOrder(['Rue très soutenue', 'Rue peu soutenue']);
+        ->assertSeeInOrder(['Avenue populaire', 'Rue peu soutenue']);
 });
 
 test('l’auteur voit combien d’habitants soutiennent sa demande', function () {
@@ -125,5 +125,5 @@ test('l’auteur voit combien d’habitants soutiennent sa demande', function ()
     $this->actingAs($citoyen)
         ->get(route('signalements.show', $signalement))
         ->assertOk()
-        ->assertSee('2 autres habitants soutiennent');
+        ->assertSeeText('2 autres habitants soutiennent');
 });

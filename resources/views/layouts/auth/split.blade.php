@@ -10,6 +10,7 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-night text-ink antialiased">
+        <x-tn.bandeau-annonces />
         <div class="grid min-h-dvh lg:grid-cols-2">
             {{-- Côté visuel : ciel, planète, grille --}}
             <div class="tn-sky relative hidden overflow-hidden lg:flex lg:flex-col lg:p-10">

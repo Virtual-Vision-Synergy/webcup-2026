@@ -85,6 +85,8 @@ new #[Title('Messages')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    <x-tn.aide id="messages-index">Écrivez à un service avec « Nouveau message » ; la réponse apparaîtra dans cette liste.</x-tn.aide>
+
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher un message…" aria-label="Rechercher un message" class="sm:max-w-sm" />
         <flux:checkbox wire:model.live="mine" label="Mes messages uniquement" />

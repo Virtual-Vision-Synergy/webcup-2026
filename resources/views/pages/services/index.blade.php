@@ -85,6 +85,8 @@ new #[Title('Services')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    <x-tn.aide id="services-index">Tapez le nom d'un service dans la recherche, puis ouvrez sa fiche pour voir ses horaires et ses contacts.</x-tn.aide>
+
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher un service…" aria-label="Rechercher un service" class="sm:max-w-sm" />
         @can('create', Service::class)

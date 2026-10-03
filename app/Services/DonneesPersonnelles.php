@@ -58,7 +58,7 @@ class DonneesPersonnelles
                 'identifiant' => $user->identifiant,
                 'telephone' => $user->telephone,
                 'quartier' => $user->quartierResidence?->nom ?? $user->quartier,
-                'role' => $user->role->label ?? null,
+                'role' => $user->role->label,
                 'langue' => $user->langue,
                 'alertes_par_email' => $user->notifier_par_email,
                 'double_authentification' => $user->two_factor_confirmed_at !== null,
@@ -84,14 +84,14 @@ class DonneesPersonnelles
                     'lieu' => $s->lieu,
                     'description' => $s->description,
                     'etat' => Signalement::libelleStatut($s->statut),
-                    'soutiens_recus' => (int) $s->soutiens_count,
+                    'soutiens_recus' => (int) $s->getAttribute('soutiens_count'),
                     'signale_le' => $this->date($s->created_at),
                 ])->all(),
             ],
             'soutiens' => $soutiens->map(fn (Soutien $s): array => [
-                'signalement' => $s->signalement ? '#'.$s->signalement->id.' · '.Signalement::libelleCategorie($s->signalement->categorie) : 'Signalement supprimé',
-                'lieu' => $s->signalement?->lieu,
-                'etat' => $s->signalement ? Signalement::libelleStatut($s->signalement->statut) : null,
+                'signalement' => '#'.$s->signalement->id.' · '.Signalement::libelleCategorie($s->signalement->categorie),
+                'lieu' => $s->signalement->lieu,
+                'etat' => Signalement::libelleStatut($s->signalement->statut),
                 'soutenu_le' => $this->date($s->created_at),
             ])->all(),
             'remontees' => [
@@ -106,13 +106,13 @@ class DonneesPersonnelles
                 ])->all(),
             ],
             'rendez_vous' => $rendezVous->map(fn (RendezVous $r): array => [
-                'service' => $r->service?->nom,
-                'date' => $this->date($r->creneau?->debut),
+                'service' => $r->service->nom,
+                'date' => $this->date($r->creneau->debut),
                 'motif' => $r->motif,
                 'etat' => RendezVous::libelleStatut($r->statut),
             ])->all(),
             'avis_projets' => $avis->map(fn (AvisProjet $a): array => [
-                'projet' => $a->projet?->titre,
+                'projet' => $a->projet->titre,
                 'position' => $a->positionLabel(),
                 'commentaire' => $a->commentaire,
                 'donne_le' => $this->date($a->created_at),
@@ -191,7 +191,7 @@ class DonneesPersonnelles
     /**
      * Nombre d'éléments pour chaque état connu (même à zéro), indexé par libellé lisible.
      *
-     * @param  array<string, int>  $compte
+     * @param  array<array-key, int>  $compte
      * @param  array<int, string>  $options
      * @param  callable(string): string  $libelle
      * @return array<string, int>

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +17,7 @@ use Illuminate\Support\Str;
  *
  * user_id et slug ne sont volontairement PAS remplissables : ils sont assignés dans le code.
  * Le slug est généré à la création depuis le nom et ne change plus (URL stables).
+ * mis_en_avant n'est pas remplissable non plus : réservé aux agents et admins (ServicePolicy::feature).
  */
 #[Fillable(['nom', 'categorie', 'description', 'horaires', 'telephone', 'email', 'adresse'])]
 class Service extends Model
@@ -39,6 +42,27 @@ class Service extends Model
 
     /** Slugs qui entreraient en conflit avec les routes /services/... */
     private const RESERVED_SLUGS = ['create'];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'mis_en_avant' => 'boolean',
+        ];
+    }
+
+    /**
+     * Services mis en avant d'abord, puis par nom.
+     *
+     * @param  Builder<Service>  $query
+     */
+    #[Scope]
+    protected function prioritaires(Builder $query): void
+    {
+        $query->orderByDesc('mis_en_avant')->orderBy('nom');
+    }
 
     protected static function booted(): void
     {

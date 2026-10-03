@@ -2,6 +2,7 @@
 
 use App\Models\Service;
 use Flux\Flux;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
@@ -15,6 +16,7 @@ new #[Title('Service')] class extends Component {
     public string $nom = '';
     public string $description = '';
     public string $categorie = '';
+    public bool $mis_en_avant = false;
 
     public function mount(?Service $service = null): void
     {
@@ -24,6 +26,7 @@ new #[Title('Service')] class extends Component {
             $this->nom = (string) ($service->nom ?? '');
             $this->description = (string) ($service->description ?? '');
             $this->categorie = (string) ($service->categorie ?? '');
+            $this->mis_en_avant = (bool) $service->mis_en_avant;
         } else {
             $this->authorize('create', Service::class);
         }
@@ -38,6 +41,7 @@ new #[Title('Service')] class extends Component {
             'nom' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:5000'],
             'categorie' => ['required', Rule::in(Service::CATEGORIE_OPTIONS)],
+            'mis_en_avant' => ['boolean'],
         ];
     }
 
@@ -48,15 +52,24 @@ new #[Title('Service')] class extends Component {
             : $this->authorize('create', Service::class);
 
         $validated = $this->validate();
+        $miseEnAvant = (bool) ($validated['mis_en_avant'] ?? false);
+        unset($validated['mis_en_avant']);
 
-        if ($this->record) {
-            $this->record->update($validated);
-            $record = $this->record;
-        } else {
-            $record = new Service($validated);
+        $record = $this->record ?? new Service;
+        $record->fill($validated);
+
+        if (! $record->exists) {
             $record->user()->associate(auth()->user());
-            $record->save();
         }
+
+        // Champ réservé : seuls les agents et admins peuvent le changer (sinon la valeur actuelle est conservée).
+        if (auth()->user()->can('feature', $record)) {
+            $record->mis_en_avant = $miseEnAvant;
+        }
+
+        $record->save();
+
+        Cache::forget('landing.etat');
 
         Flux::toast(variant: 'success', text: 'Service enregistré(e).');
 
@@ -81,6 +94,10 @@ new #[Title('Service')] class extends Component {
                 <flux:select.option value="{{ $valeur }}">{{ $label }}</flux:select.option>
             @endforeach
         </flux:select>
+
+        @can('feature', $record ?? Service::class)
+            <flux:checkbox wire:model="mis_en_avant" label="Mettre en avant" description="Le service apparaît en tête du catalogue et sur la page d'accueil." />
+        @endcan
 
         <div class="flex items-center gap-3">
             <flux:button type="submit" variant="primary">Enregistrer</flux:button>

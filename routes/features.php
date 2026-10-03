@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::middleware(['auth'])->group(function () {
+    Route::livewire('roles', 'pages::roles.index')->name('roles.index');
+    Route::livewire('roles/create', 'pages::roles.form')->name('roles.create');
+    Route::livewire('roles/{role}', 'pages::roles.show')->name('roles.show');
+    Route::livewire('roles/{role}/edit', 'pages::roles.form')->name('roles.edit');
+
     // make:feature:routes
 });
 

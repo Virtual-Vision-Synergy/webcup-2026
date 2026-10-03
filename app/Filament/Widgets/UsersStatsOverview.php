@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Models\Role;
 use App\Models\User;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
@@ -27,7 +28,7 @@ class UsersStatsOverview extends StatsOverviewWidget
             Stat::make('Inscrits', User::count())
                 ->description('Comptes utilisateurs')
                 ->icon('heroicon-o-users'),
-            Stat::make('Administrateurs', User::where('role', 'admin')->count())
+            Stat::make('Administrateurs', User::where('role_id', Role::idFor(Role::ADMIN))->count())
                 ->description('Accès à cet espace')
                 ->icon('heroicon-o-shield-check')
                 ->color('warning'),

@@ -48,14 +48,16 @@ test('un citoyen reçoit un 403 sur les actions save et retablir', function () {
     $citoyen = User::factory()->citoyen()->create();
     interrompre($this->service);
 
-    $page = formulaireDisponibilite($agent, $this->service);
-
     Livewire::actingAs($citoyen)->test('pages::agent.services.disponibilite', ['service' => $this->service])->assertForbidden();
 
     // Appels directs des actions par un citoyen sur une page ouverte par un agent (requête forgée).
-    $this->actingAs($citoyen);
-    $page->call('save')->assertForbidden();
-    $page->call('retablir')->assertForbidden();
+    // Une page par action : après un 403, le snapshot Livewire de la page n'est plus réutilisable.
+    foreach (['save', 'retablir'] as $action) {
+        $page = formulaireDisponibilite($agent, $this->service);
+
+        $this->actingAs($citoyen);
+        $page->call($action)->assertForbidden();
+    }
 
     expect($this->service->interruptionCourante()->first())->not->toBeNull();
 });

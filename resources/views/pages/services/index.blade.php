@@ -4,6 +4,7 @@ use App\Models\Service;
 use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
@@ -24,6 +25,10 @@ new #[Title('Services')] class extends Component {
     #[Url(except: false)]
     public bool $mine = false;
 
+    /** F45 : affichage en liste (cartes paginées) ou sur la carte des lieux d'accueil. */
+    #[Url(except: 'liste')]
+    public string $vue = 'liste';
+
     public function mount(): void
     {
         $this->authorize('viewAny', Service::class);
@@ -42,6 +47,18 @@ new #[Title('Services')] class extends Component {
     public function updatedMine(): void
     {
         $this->resetPage();
+    }
+
+    public function afficher(string $vue): void
+    {
+        $this->authorize('viewAny', Service::class);
+
+        $this->vue = $vue === 'carte' ? 'carte' : 'liste';
+    }
+
+    public function enCarte(): bool
+    {
+        return $this->vue === 'carte';
     }
 
     public function resetFilters(): void
@@ -83,6 +100,42 @@ new #[Title('Services')] class extends Component {
             ->with('user')
             ->prioritaires()
             ->paginate(10);
+    }
+
+    /**
+     * Lieux d'accueil localisés qui correspondent aux filtres (carte et liste textuelle équivalente).
+     *
+     * @return Collection<int, Service>
+     */
+    #[Computed]
+    public function lieux(): Collection
+    {
+        return $this->filteredQuery()
+            ->geolocalises()
+            ->prioritaires()
+            ->limit(200)
+            ->get();
+    }
+
+    /**
+     * Points de la carte : nom, adresse, horaires et lien vers la fiche du service.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    #[Computed]
+    public function points(): array
+    {
+        return $this->lieux
+            ->map(fn (Service $service): array => [
+                ...(array) $service->pointCarte(__($service->nom), route('services.show', $service)),
+                'lignes' => array_filter([
+                    $service->adresse ? __($service->adresse) : null,
+                    $service->horaires ? __($service->horaires) : null,
+                ]),
+                'lien' => __('Voir la fiche du service'),
+            ])
+            ->values()
+            ->all();
     }
 
     public function toggleFeatured(int $id): void
@@ -134,10 +187,52 @@ new #[Title('Services')] class extends Component {
         @can('create', Service::class)
             <flux:checkbox wire:model.live="mine" label="{{ __('Mes services uniquement') }}" />
         @endcan
+        <div class="flex gap-1 sm:ms-auto" role="group" aria-label="{{ __('Mode d\'affichage') }}">
+            <flux:button size="sm" icon="list-bullet" :variant="$this->enCarte() ? 'ghost' : 'filled'" wire:click="afficher('liste')" aria-pressed="{{ $this->enCarte() ? 'false' : 'true' }}">{{ __('Liste') }}</flux:button>
+            <flux:button size="sm" icon="map" :variant="$this->enCarte() ? 'filled' : 'ghost'" wire:click="afficher('carte')" aria-pressed="{{ $this->enCarte() ? 'true' : 'false' }}">{{ __('Carte') }}</flux:button>
+        </div>
         <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">{{ __('Mise à jour…') }}</span>
     </div>
 
-    @if ($this->items->isEmpty() && $this->hasFilters())
+    @if ($this->enCarte())
+        @if ($this->lieux->isEmpty())
+            <x-tn.empty icon="map" title="{{ __('Aucun lieu à afficher') }}" text="{{ $this->hasFilters() ? __('Aucun service localisé ne correspond à cette recherche ou cette catégorie.') : __('Les lieux d\'accueil des services seront bientôt placés sur la carte.') }}">
+                @if ($this->hasFilters())
+                    <flux:button variant="primary" icon="x-mark" wire:click="resetFilters">{{ __('Effacer les filtres') }}</flux:button>
+                @endif
+            </x-tn.empty>
+        @else
+            <div class="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+                <x-carte :points="$this->points" hauteur="28rem" :label="__('Carte des services physiques de la ville')" />
+
+                <section aria-labelledby="liste-lieux" class="min-w-0 rounded-md border border-line bg-surface">
+                    <h2 id="liste-lieux" class="border-b border-line px-4 py-3 font-semibold text-ink">
+                        {{ __(':n lieu(x) sur la carte', ['n' => $this->lieux->count()]) }}
+                        <span class="block text-xs font-normal text-ink-2">{{ __('Version texte de la carte : mêmes lieux, mêmes informations.') }}</span>
+                    </h2>
+                    <ul class="divide-y divide-line lg:max-h-[24.5rem] lg:overflow-y-auto">
+                        @foreach ($this->lieux as $lieu)
+                            <li wire:key="lieu-{{ $lieu->id }}" class="space-y-1 px-4 py-3 text-sm">
+                                <a href="{{ route('services.show', $lieu) }}" wire:navigate class="font-semibold text-ink hover:text-cyan hover:underline">{{ __($lieu->nom) }}</a>
+                                @if ($lieu->categorie)
+                                    <flux:badge size="sm" class="ms-1">{{ __(Service::labelCategorie($lieu->categorie)) }}</flux:badge>
+                                @endif
+                                @if ($lieu->adresse)
+                                    <p class="flex gap-2 text-ink-2"><flux:icon name="map-pin" class="mt-0.5 size-4 shrink-0" /><span><span class="sr-only">{{ __('Adresse :') }}</span> {{ __($lieu->adresse) }}</span></p>
+                                @endif
+                                @if ($lieu->horaires)
+                                    <p class="flex gap-2 text-ink-2"><flux:icon name="clock" class="mt-0.5 size-4 shrink-0" /><span class="whitespace-pre-line font-mono text-xs leading-5"><span class="sr-only">{{ __('Horaires :') }}</span> {{ __($lieu->horaires) }}</span></p>
+                                @endif
+                                <a href="https://www.openstreetmap.org/directions?to={{ $lieu->latitude }}%2C{{ $lieu->longitude }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-cyan hover:underline">
+                                    <flux:icon name="arrow-top-right-on-square" class="size-4" />{{ __('Itinéraire') }}<span class="sr-only"> {{ __('vers :nom (nouvel onglet)', ['nom' => __($lieu->nom)]) }}</span>
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
+            </div>
+        @endif
+    @elseif ($this->items->isEmpty() && $this->hasFilters())
         <x-tn.empty icon="magnifying-glass" title="{{ __('Aucun service ne correspond') }}" text="{{ __('Aucun résultat pour cette recherche ou cette catégorie. Essayez un autre mot (ex. « santé », « état civil ») ou affichez tout le catalogue.') }}">
             <flux:button variant="primary" icon="x-mark" wire:click="resetFilters">{{ __('Effacer les filtres') }}</flux:button>
         </x-tn.empty>

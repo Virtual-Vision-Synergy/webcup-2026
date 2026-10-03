@@ -145,6 +145,12 @@ new #[Title('Service')] class extends Component {
                     <x-tn.field :label="__('Adresse')"><p class="whitespace-pre-line text-sm">{{ __($record->adresse) }}</p></x-tn.field>
                 @endif
             </dl>
+            @if ($point = $record->pointCarte(__($record->nom)))
+                <x-carte :points="[$point]" hauteur="14rem" :zoom="16" :label="__('Emplacement de :nom', ['nom' => __($record->nom)])" class="mt-4" />
+                <a href="https://www.openstreetmap.org/directions?to={{ $record->latitude }}%2C{{ $record->longitude }}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-flex items-center gap-1 text-sm text-cyan hover:underline">
+                    <flux:icon name="arrow-top-right-on-square" class="size-4" />{{ __('Itinéraire (nouvel onglet)') }}
+                </a>
+            @endif
             @if (! $record->horaires && ! $record->telephone && ! $record->email && ! $record->adresse)
                 <p class="text-ink-2">{{ __('Les informations pratiques seront publiées prochainement.') }}</p>
             @endif

@@ -2,10 +2,10 @@
 
 use App\Concerns\ThrottlesPerUser;
 use App\Models\Signalement;
+use App\Services\OptimiseurImage;
 use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -152,7 +152,7 @@ new #[Title('Signalements')] class extends Component {
         $this->authorize('delete', $record);
 
         if ($record->photo) {
-            Storage::disk('public')->delete($record->photo);
+            app(OptimiseurImage::class)->supprimer($record->photo);
         }
 
         $record->delete();

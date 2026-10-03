@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
+use App\Models\Concerns\HasCoordinates;
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -25,11 +26,11 @@ use Illuminate\Support\Str;
  * indisponible_depuis, motif_indisponibilite et retour_prevu_le ne sont pas remplissables :
  * réservés aux admins via rendreIndisponible() / retablir() (ServicePolicy::toggleAvailability, F63).
  */
-#[Fillable(['nom', 'categorie', 'description', 'horaires', 'telephone', 'email', 'adresse', 'lieu_rendez_vous', 'pieces_a_fournir', 'duree_rendez_vous'])]
+#[Fillable(['nom', 'categorie', 'description', 'horaires', 'telephone', 'email', 'adresse', 'lieu_rendez_vous', 'pieces_a_fournir', 'duree_rendez_vous', 'latitude', 'longitude'])]
 class Service extends Model
 {
     /** @use HasFactory<ServiceFactory> */
-    use Auditable, HasAuditHistory, HasFactory;
+    use Auditable, HasAuditHistory, HasCoordinates, HasFactory;
 
     /** Catégories du catalogue (filtre et recherche). */
     public const CATEGORIE_OPTIONS = ['administratif', 'sante', 'social', 'education', 'culture', 'urbanisme', 'securite', 'economie'];
@@ -59,6 +60,8 @@ class Service extends Model
             'duree_rendez_vous' => 'integer',
             'indisponible_depuis' => 'datetime',
             'retour_prevu_le' => 'date',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
         ];
     }
 

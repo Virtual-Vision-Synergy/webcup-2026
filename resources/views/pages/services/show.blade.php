@@ -37,7 +37,7 @@ new #[Title('Service')] class extends Component {
     <x-tn.page-header
         :label="Service::labelCategorie($record->categorie) ?? 'Service municipal'"
         :title="$record->nom"
-        :breadcrumb="['Services' => route('services.index'), $record->nom => null]"
+        :breadcrumb="['Mon espace' => route('dashboard'), 'Services' => route('services.index'), $record->nom => null]"
     >
         <x-slot:actions>
             @if (Route::has('messages.create'))

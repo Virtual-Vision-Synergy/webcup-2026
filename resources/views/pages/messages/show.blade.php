@@ -33,7 +33,7 @@ new #[Title('Message')] class extends Component {
     <x-tn.page-header
         label="Message"
         :title="$record->sujet ?? 'Sans objet'"
-        :breadcrumb="['Messages' => route('messages.index'), 'Message' => null]"
+        :breadcrumb="['Mon espace' => route('dashboard'), 'Messages' => route('messages.index'), ($record->sujet ?: 'Message') => null]"
     >
         <x-slot:actions>
             @can('update', $record)

@@ -116,6 +116,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
 <section class="mx-auto w-full max-w-6xl space-y-6">
     <x-tn.page-header
         label="Espace agent"
+        :breadcrumb="['Espace agent' => route('agent.index'), 'Demandes des habitants' => null]"
         title="Demandes des habitants"
         :subtitle="$enAttenteTotal.' demande(s) en attente d’une action sur '.array_sum($this->compteurs).' au total'"
     />

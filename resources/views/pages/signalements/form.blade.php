@@ -93,7 +93,9 @@ new #[Title('Signalement')] class extends Component {
         label="Signalements"
         :title="$record ? 'Modifier le signalement' : 'Signaler un problème'"
         :subtitle="$record ? null : 'Lampadaire cassé, nid-de-poule, dépôt sauvage… Indiquez ce qui s’est passé et où : la mairie transmet au bon service.'"
-        :breadcrumb="['Signalements' => route('signalements.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
+        :breadcrumb="$record
+            ? ['Mon espace' => route('dashboard'), 'Signalements' => route('signalements.index'), 'Signalement' => route('signalements.show', $record), 'Modifier' => null]
+            : ['Mon espace' => route('dashboard'), 'Signalements' => route('signalements.index'), 'Nouveau' => null]"
     />
 
     <form wire:submit="save" class="space-y-6">

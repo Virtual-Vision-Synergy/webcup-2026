@@ -35,7 +35,7 @@ new #[Title('Actualite')] class extends Component {
     <x-tn.page-header
         label="Fil du Haut Conseil"
         :title="$record->titre"
-        :breadcrumb="['Actualités' => route('actualites.index'), 'Annonce' => null]"
+        :breadcrumb="['Mon espace' => route('dashboard'), 'Actualités' => route('actualites.index'), ($record->titre ?: 'Annonce') => null]"
     >
         <x-slot:meta>
             <p class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink-2">

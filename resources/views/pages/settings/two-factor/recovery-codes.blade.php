@@ -3,6 +3,7 @@
 use Laravel\Fortify\Actions\GenerateNewRecoveryCodes;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 new class extends Component {
     #[Locked]
@@ -24,6 +25,27 @@ new class extends Component {
         $generateNewRecoveryCodes(auth()->user());
 
         $this->loadRecoveryCodes();
+    }
+
+    /**
+     * Télécharge les codes de récupération de l'utilisateur connecté dans un fichier texte.
+     */
+    public function downloadRecoveryCodes(): ?StreamedResponse
+    {
+        $this->loadRecoveryCodes();
+
+        if (blank($this->recoveryCodes)) {
+            return null;
+        }
+
+        $contenu = 'Codes de récupération - '.config('app.name')."\n"
+            .'Compte : '.auth()->user()->email."\n"
+            .'Chaque code ne peut servir qu\'une seule fois. Conservez ce fichier en lieu sûr.'."\n\n"
+            .implode("\n", $this->recoveryCodes)."\n";
+
+        return response()->streamDownload(function () use ($contenu): void {
+            echo $contenu;
+        }, 'codes-recuperation-2fa.txt', ['Content-Type' => 'text/plain; charset=UTF-8']);
     }
 
     /**
@@ -88,6 +110,14 @@ new class extends Component {
 
             @if (filled($recoveryCodes))
                 <flux:button
+                    icon="arrow-down-tray"
+                    variant="filled"
+                    wire:click="downloadRecoveryCodes"
+                >
+                    Télécharger les codes
+                </flux:button>
+
+                <flux:button
                     x-show="showRecoveryCodes"
                     icon="arrow-path"
                     variant="filled"
@@ -107,7 +137,7 @@ new class extends Component {
         >
             <div class="mt-3 space-y-3">
                 @error('recoveryCodes')
-                    <flux:callout variant="danger" icon="x-circle" heading="{{$message}}"/>
+                    <flux:callout variant="danger" icon="x-circle" heading="{{ $message }}" role="alert" />
                 @enderror
 
                 @if (filled($recoveryCodes))

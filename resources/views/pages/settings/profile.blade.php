@@ -2,6 +2,7 @@
 
 use App\Concerns\ProfileValidationRules;
 use App\Models\Quartier;
+use App\Models\User;
 use App\Services\OnboardingProgress;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -27,7 +28,8 @@ new #[Title('Profile settings')] class extends Component {
     public function mount(): void
     {
         $this->name = Auth::user()->name;
-        $this->email = Auth::user()->email;
+        // F71 : un compte sans e-mail n'affiche pas son adresse technique.
+        $this->email = Auth::user()->emailAffichable() ?? '';
         $this->telephone = (string) Auth::user()->telephone;
         $this->quartier_id = (string) (Auth::user()->quartier_id ?? '');
         $this->notifier_par_email = (bool) Auth::user()->notifier_par_email;
@@ -42,6 +44,8 @@ new #[Title('Profile settings')] class extends Component {
 
         $validated = $this->validate([
             ...$this->profileRules($user->id),
+            // F71 : l'e-mail reste facultatif pour un compte créé sans e-mail.
+            ...($user->aUnEmail() ? [] : ['email' => ['nullable', ...array_slice($this->emailRules($user->id), 1)]]),
             'telephone' => ['nullable', 'string', 'max:30', 'regex:/^\+?[0-9 .()-]{6,30}$/'],
             'quartier_id' => ['nullable', 'integer', 'exists:quartiers,id'],
             'notifier_par_email' => ['boolean'],
@@ -50,10 +54,15 @@ new #[Title('Profile settings')] class extends Component {
             'quartier_id.exists' => 'Choisissez un quartier dans la liste.',
         ]);
 
-        $validated['telephone'] = trim($validated['telephone'] ?? '') ?: null;
+        // F71 : téléphone enregistré sans espaces pour pouvoir se connecter avec.
+        $validated['telephone'] = User::normaliserTelephone($validated['telephone'] ?? null);
         $validated['quartier_id'] = filled($validated['quartier_id'] ?? null) ? (int) $validated['quartier_id'] : null;
         // Ancienne saisie libre (D12) tenue à jour avec le nom du quartier choisi.
         $validated['quartier'] = $validated['quartier_id'] ? Quartier::query()->whereKey($validated['quartier_id'])->value('nom') : null;
+
+        if (blank($validated['email'] ?? null)) {
+            unset($validated['email']);
+        }
 
         $user->fill($validated);
 
@@ -83,7 +92,7 @@ new #[Title('Profile settings')] class extends Component {
             <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
 
             <div>
-                <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />
+                <flux:input wire:model="email" :label="__('Email')" type="email" :required="auth()->user()->aUnEmail()" autocomplete="email" />
 
             </div>
 
@@ -115,6 +124,19 @@ new #[Title('Profile settings')] class extends Component {
                     <a href="{{ route('onboarding.show') }}" wire:navigate class="font-medium text-cyan hover:underline" data-test="revoir-onboarding">Revoir la prise en main</a>
                 </p>
             @endcan
+
+            <p class="mb-6 text-sm text-ink-2">
+                Ce que la plateforme garde sur vous et ce que la suppression efface :
+                <a href="{{ route('privacy.show') }}" wire:navigate class="font-medium text-cyan hover:underline" data-test="lien-vos-donnees">Vos données</a>
+                · <a href="{{ route('concerns.index') }}" wire:navigate class="font-medium text-cyan hover:underline">Mes remontées</a>
+            </p>
+
+            <div class="mb-6 flex flex-wrap items-center gap-3">
+                <flux:button icon="arrow-down-tray" :href="route('profile.data')" data-test="telecharger-mes-donnees">
+                    Télécharger mes données
+                </flux:button>
+                <flux:text class="text-sm">Document lisible (PDF) et fichiers JSON / CSV.</flux:text>
+            </div>
 
             <livewire:pages::settings.delete-user-form />
     </x-pages::settings.layout>

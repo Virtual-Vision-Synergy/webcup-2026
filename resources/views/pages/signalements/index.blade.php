@@ -216,7 +216,7 @@ new #[Title('Signalements')] class extends Component {
     </div>
 
     @error('throttle')
-        <flux:callout variant="danger" icon="exclamation-circle" :heading="$message" />
+        <flux:callout variant="danger" icon="exclamation-circle" :heading="$message" role="alert" />
     @enderror
 
     @if ($this->items->isEmpty() && $this->demandesPubliques)

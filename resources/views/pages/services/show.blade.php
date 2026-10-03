@@ -1,11 +1,11 @@
 <?php
 
-use App\Models\Demarche;
 use App\Models\RendezVous;
 use App\Models\Service;
 use App\Models\ServiceInterruption;
 use App\Services\OnboardingProgress;
 use Flux\Flux;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
@@ -23,6 +23,27 @@ new #[Title('Service')] class extends Component {
 
         // Parcours de prise en main (D12), étape « Trouver un service » : sans effet hors parcours en cours.
         OnboardingProgress::pour(auth()->user())->marquerServiceVisite($service);
+    }
+
+    /**
+     * Services disponibles de la même catégorie, proposés quand celui-ci est indisponible (F63).
+     *
+     * @return Collection<int, Service>
+     */
+    #[Computed]
+    public function alternatives(): Collection
+    {
+        if (! $this->record->estIndisponible()) {
+            return new Collection;
+        }
+
+        return Service::query()
+            ->disponibles()
+            ->whereKeyNot($this->record->id)
+            ->when($this->record->categorie, fn ($query) => $query->where('categorie', $this->record->categorie))
+            ->prioritaires()
+            ->limit(3)
+            ->get(['id', 'nom', 'slug']);
     }
 
     public function delete(): void
@@ -59,6 +80,9 @@ new #[Title('Service')] class extends Component {
         :breadcrumb="[__('Mon espace') => route('dashboard'), __('Services') => route('services.index'), __($record->nom) => null]"
     >
         <x-slot:actions>
+            @if (! $record->estIndisponible() && Route::has('demarches.create'))
+                <flux:button variant="primary" icon="document-plus" :href="route('demarches.create', ['service' => $record->id])" wire:navigate>{{ __('Commencer une démarche') }}</flux:button>
+            @endif
             @if (Route::has('messages.create'))
                 <flux:button variant="primary" icon="mail" :href="route('messages.create')" class="tn-cta" wire:navigate>{{ __('Écrire au service') }}</flux:button>
             @endif
@@ -110,7 +134,7 @@ new #[Title('Service')] class extends Component {
 
     {{-- Démarches possibles depuis ce service (F39, D12) : suspendues pendant une interruption (contrôle serveur aussi). --}}
     <div class="flex flex-wrap items-center gap-3">
-        @if ($interruption)
+        @if ($record->estIndisponible())
             @if ($this->prendRendezVous)
                 <flux:button icon="calendar-days" disabled>Prendre rendez-vous</flux:button>
             @endif
@@ -122,11 +146,53 @@ new #[Title('Service')] class extends Component {
                     <flux:button variant="primary" icon="calendar-days" :href="route('appointments.create', ['service' => $record->slug])" wire:navigate>Prendre rendez-vous</flux:button>
                 @endcan
             @endif
-            @can('create', Demarche::class)
-                <flux:button icon="document-plus" :href="route('demarches.create', ['service' => $record->id])" wire:navigate>Faire une demande</flux:button>
-            @endcan
         @endif
     </div>
+
+    {{-- F63 : service désactivé par un administrateur. --}}
+    @if ($record->indisponible_depuis)
+        <div class="rounded-md border border-magenta/35 bg-magenta/8 p-5 md:p-6" role="status">
+            <div class="flex items-start gap-3">
+                <flux:icon name="no-symbol" class="mt-0.5 size-6 shrink-0 text-magenta" aria-hidden="true" />
+                <div class="min-w-0 space-y-3">
+                    <div>
+                        <flux:badge color="red" size="sm">{{ __('Indisponible') }}</flux:badge>
+                        <p class="mt-2 font-semibold text-ink">{{ $record->motif_indisponibilite ?: __('Ce service est momentanément indisponible.') }}</p>
+                        <p class="text-sm text-ink-2">{{ __('Les démarches et les rendez-vous en ligne sont suspendus pour ce service.') }}</p>
+                    </div>
+                    <div>
+                        <x-tn.section-label as="h2" class="mb-2">{{ __('Que faire maintenant ?') }}</x-tn.section-label>
+                        <ul class="space-y-2 text-sm text-ink">
+                            <li class="flex gap-2">
+                                <flux:icon name="calendar-days" class="mt-0.5 size-4 shrink-0 text-cyan" aria-hidden="true" />
+                                <span>{{ $record->retour_prevu_le ? __('Revenez à partir du :date : retour du service prévu ce jour-là.', ['date' => $record->retour_prevu_le->translatedFormat('l j F Y')]) : __('Revenez plus tard : la date de retour n\'est pas encore connue.') }}</span>
+                            </li>
+                            @if ($this->alternatives->isNotEmpty())
+                                <li class="flex gap-2">
+                                    <flux:icon name="arrow-right-circle" class="mt-0.5 size-4 shrink-0 text-cyan" aria-hidden="true" />
+                                    <span>
+                                        {{ __('Utilisez un autre service :') }}
+                                        @foreach ($this->alternatives as $alternative)
+                                            <a href="{{ route('services.show', $alternative) }}" wire:navigate class="text-cyan hover:underline">{{ __($alternative->nom) }}</a>@if (! $loop->last), @endif
+                                        @endforeach
+                                    </span>
+                                </li>
+                            @endif
+                            <li class="flex gap-2">
+                                <flux:icon name="phone" class="mt-0.5 size-4 shrink-0 text-cyan" aria-hidden="true" />
+                                <span>
+                                    {{ __('Contactez la mairie') }}@if ($record->telephone) {{ __('au') }} <a href="tel:{{ preg_replace('/[^0-9+]/', '', $record->telephone) }}" class="font-mono text-cyan hover:underline">{{ $record->telephone }}</a>@endif
+                                    @if (Route::has('messages.create'))
+                                        {{ __('ou') }} <a href="{{ route('messages.create') }}" wire:navigate class="text-cyan hover:underline">{{ __('envoyez un message') }}</a>
+                                    @endif
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <x-audit-history :subject="$record" variant="resume" />
 
@@ -151,6 +217,12 @@ new #[Title('Service')] class extends Component {
                     <x-tn.field :label="__('Adresse')"><p class="whitespace-pre-line text-sm">{{ __($record->adresse) }}</p></x-tn.field>
                 @endif
             </dl>
+            @if ($point = $record->pointCarte(__($record->nom)))
+                <x-carte :points="[$point]" hauteur="14rem" :zoom="16" :label="__('Emplacement de :nom', ['nom' => __($record->nom)])" class="mt-4" />
+                <a href="https://www.openstreetmap.org/directions?to={{ $record->latitude }}%2C{{ $record->longitude }}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-flex items-center gap-1 text-sm text-cyan hover:underline">
+                    <flux:icon name="arrow-top-right-on-square" class="size-4" />{{ __('Itinéraire (nouvel onglet)') }}
+                </a>
+            @endif
             @if (! $record->horaires && ! $record->telephone && ! $record->email && ! $record->adresse)
                 <p class="text-ink-2">{{ __('Les informations pratiques seront publiées prochainement.') }}</p>
             @endif

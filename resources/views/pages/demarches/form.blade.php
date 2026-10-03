@@ -169,13 +169,14 @@ new #[Title('Démarche')] class extends Component {
                     </dl>
                 </x-tn.panel>
                 @if ($errors->any())
-                    <div class="rounded-md border border-magenta/35 bg-magenta/8 p-4 text-magenta" role="alert">
-                        Certains champs sont à corriger : {{ implode(' ', $errors->all()) }}
+                    <div class="flex items-start gap-2 rounded-md border border-magenta/35 bg-magenta/8 p-4 text-magenta" role="alert">
+                        <flux:icon.exclamation-circle class="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+                        <p>Certains champs sont à corriger : {{ implode(' ', $errors->all()) }}</p>
                     </div>
                 @endif
             </div>
 
-            <p x-ref="erreurEtape" hidden class="mt-4 text-sm text-magenta" role="alert">Renseignez l'objet et les détails pour continuer.</p>
+            <p x-ref="erreurEtape" hidden class="mt-4 text-sm text-magenta" role="alert"><flux:icon.exclamation-circle variant="micro" class="me-1 inline size-4 align-[-3px]" aria-hidden="true" />Renseignez l'objet et les détails pour continuer.</p>
         </div>
 
         {{-- Un seul CTA par étape --}}

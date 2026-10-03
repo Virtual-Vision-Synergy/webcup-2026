@@ -95,6 +95,7 @@ class AuditLog extends Model
         'Demarche' => ['classe' => Demarche::class, 'libelle' => 'Démarche', 'article' => 'la démarche', 'route' => 'demarches.show', 'droit' => 'view'],
         'Signalement' => ['classe' => Signalement::class, 'libelle' => 'Signalement', 'article' => 'le signalement', 'route' => 'signalements.show', 'droit' => 'view'],
         'Message' => ['classe' => Message::class, 'libelle' => 'Message', 'article' => 'le message', 'route' => 'messages.show', 'droit' => 'view'],
+        'LigneTransport' => ['classe' => LigneTransport::class, 'libelle' => 'Ligne de transport', 'article' => 'la ligne', 'route' => 'transports.show', 'droit' => 'view'],
         'AuditLog' => ['classe' => AuditLog::class, 'libelle' => 'Journal', 'article' => 'le journal', 'route' => null, 'droit' => 'viewAny'],
     ];
 
@@ -137,7 +138,38 @@ class AuditLog extends Model
         'message' => 'Message',
         'filtres' => 'Filtres appliqués',
         'lignes' => 'Nombre de lignes',
+        'lieu_rendez_vous' => 'Lieu de rendez-vous',
+        'pieces_a_fournir' => 'Pièces à fournir',
+        'duree_rendez_vous' => 'Durée du rendez-vous',
+        'mis_en_avant' => 'Mis en avant',
+        'numero' => 'Numéro',
+        'mode' => 'Mode',
+        'arrets' => 'Arrêts',
+        'frequence' => 'Fréquence',
+        'etat' => 'État du trafic',
+        'perturbation' => 'Perturbation',
     ];
+
+    /**
+     * Types acceptés dans l'URL de l'historique d'un élément (F48) : slug → clé de SUBJECTS.
+     * Liste blanche : aucun nom de classe n'est jamais lu dans l'URL.
+     *
+     * @var array<string, string>
+     */
+    public const HISTORY_TYPES = [
+        'service' => 'Service',
+        'compte' => 'User',
+        'message-general' => 'Annonce',
+        'role' => 'Role',
+        'actualite' => 'Actualite',
+        'demarche' => 'Demarche',
+        'signalement' => 'Signalement',
+        'message' => 'Message',
+        'transport' => 'LigneTransport',
+    ];
+
+    /** Valeur affichée pour un champ vide dans l'historique d'un élément. */
+    public const VIDE = '(vide)';
 
     protected static function booted(): void
     {
@@ -262,6 +294,102 @@ class AuditLog extends Model
     public function dateLocale(string $format = 'd/m/Y H:i'): string
     {
         return $this->created_at?->timezone(self::FUSEAU)->format($format) ?? '—';
+    }
+
+    /**
+     * Slug d'URL de l'historique d'un élément (F48), null si son type n'a pas d'historique.
+     */
+    public static function slugFor(Model $subject): ?string
+    {
+        $slug = array_search(class_basename($subject), self::HISTORY_TYPES, true);
+
+        return $slug === false ? null : $slug;
+    }
+
+    /**
+     * L'utilisateur peut-il consulter l'historique de cet élément ? Il faut lire le journal (agent / admin)
+     * ET avoir le droit d'ouvrir l'élément lui-même (ex. F34 : un agent ne voit pas la fiche d'un autre agent).
+     */
+    public static function peutVoirHistorique(?User $user, Model $subject): bool
+    {
+        $droit = self::SUBJECTS[class_basename($subject)]['droit'] ?? null;
+
+        return $user !== null
+            && self::slugFor($subject) !== null
+            && $droit !== null
+            && $user->can('viewAny', self::class)
+            && $user->can($droit, $subject);
+    }
+
+    /**
+     * Valeur lisible pour l'historique d'un élément (F48) : « (vide) », Oui / Non, dates en français
+     * à l'heure de Madagascar, options traduites via la constante <CHAMP>_LABELS (ou _LIBELLES) du modèle.
+     */
+    public function valeurLisible(string $champ, mixed $valeur): string
+    {
+        if ($valeur === null || $valeur === '') {
+            return self::VIDE;
+        }
+
+        if ($valeur === self::MASQUE) {
+            return self::MASQUE;
+        }
+
+        $classe = self::SUBJECTS[$this->subject_type]['classe'] ?? null;
+        $cast = $classe !== null && $classe !== self::class ? ((new $classe)->getCasts()[$champ] ?? null) : null;
+
+        if ($cast === 'boolean' || is_bool($valeur)) {
+            return filter_var($valeur, FILTER_VALIDATE_BOOLEAN) ? 'Oui' : 'Non';
+        }
+
+        if (is_string($cast) && is_string($valeur) && (str_starts_with($cast, 'date') || str_starts_with($cast, 'immutable_date'))) {
+            try {
+                $date = Carbon::parse($valeur, 'UTC');
+
+                return str_contains($cast, 'datetime')
+                    ? $date->timezone(self::FUSEAU)->format('d/m/Y à H:i')
+                    : $date->format('d/m/Y');
+            } catch (\Throwable) {
+                return $valeur;
+            }
+        }
+
+        if ($classe !== null && is_scalar($valeur)) {
+            foreach (['_LABELS', '_LIBELLES'] as $suffixe) {
+                $constante = $classe.'::'.Str::upper($champ).$suffixe;
+                $libelles = defined($constante) ? constant($constante) : null;
+
+                if (is_array($libelles) && isset($libelles[(string) $valeur])) {
+                    return (string) $libelles[(string) $valeur];
+                }
+            }
+        }
+
+        return self::formatValeur($valeur);
+    }
+
+    /**
+     * « 3 octobre 2026 à 14 h 32 » (heure de Madagascar).
+     */
+    public function dateComplete(): string
+    {
+        $date = $this->created_at?->copy()->setTimezone(self::FUSEAU)->settings(['locale' => 'fr']);
+
+        return $date === null ? '—' : $date->translatedFormat('j F Y').' à '.$date->format('H \h i');
+    }
+
+    /**
+     * « il y a 5 minutes ».
+     */
+    public function dateRelative(): string
+    {
+        return $this->created_at?->copy()->settings(['locale' => 'fr'])->diffForHumans() ?? '';
+    }
+
+    public function estDuJour(): bool
+    {
+        return $this->created_at !== null
+            && $this->created_at->copy()->timezone(self::FUSEAU)->isSameDay(now(self::FUSEAU));
     }
 
     /**

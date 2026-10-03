@@ -121,6 +121,7 @@ new #[Title('Mes démarches')] class extends Component {
         :breadcrumb="['Mon espace' => route('dashboard'), 'Démarches' => null]"
     >
         <x-slot:actions>
+            <flux:button icon="clock" :href="route('demarches.historique')" wire:navigate>Historique</flux:button>
             @can('create', Demarche::class)
                 <flux:button variant="primary" icon="plus" :href="route('demarches.create')" class="tn-cta" wire:navigate>
                     Nouvelle démarche
@@ -147,7 +148,7 @@ new #[Title('Mes démarches')] class extends Component {
         @if ($this->voitToutesLesDemarches)
             <flux:checkbox wire:model.live="mine" label="Mes démarches uniquement" />
         @endif
-        <span wire:loading class="font-mono text-[11px] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
     </div>
 
     @if ($this->items->isEmpty())

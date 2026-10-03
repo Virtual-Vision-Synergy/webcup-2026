@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\HasAuditHistory;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -26,7 +27,9 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $name
  * @property string $email
  * @property string|null $telephone
- * @property string|null $quartier
+ * @property string|null $quartier Ancienne saisie libre (D12), tenue à jour avec le nom du quartier choisi.
+ * @property int|null $quartier_id
+ * @property-read Quartier|null $quartierResidence
  * @property-read Onboarding|null $onboarding
  * @property Carbon|null $email_verified_at
  * @property string $password
@@ -35,6 +38,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
  * @property Carbon|null $deactivated_at
+ * @property bool $notifier_par_email Préférence de l'habitant (F30) : annonces urgentes par e-mail.
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
@@ -42,12 +46,12 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * (inscription, admin, deactivate()/reactivate()).
  * L'ancienne colonne texte « role » existe encore en base mais n'est plus utilisée.
  */
-#[Fillable(['name', 'email', 'password', 'telephone', 'quartier'])]
+#[Fillable(['name', 'email', 'password', 'telephone', 'quartier', 'quartier_id', 'notifier_par_email'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use Auditable, HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use Auditable, HasAuditHistory, HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * Get the attributes that should be cast.
@@ -59,7 +63,9 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'quartier_id' => 'integer',
             'deactivated_at' => 'datetime',
+            'notifier_par_email' => 'boolean',
         ];
     }
 
@@ -105,6 +111,16 @@ class User extends Authenticatable implements FilamentUser
     public function demarches(): HasMany
     {
         return $this->hasMany(Demarche::class);
+    }
+
+    /**
+     * Quartier choisi par l'habitant dans son profil (F29) : sert au ciblage des alertes.
+     *
+     * @return BelongsTo<Quartier, $this>
+     */
+    public function quartierResidence(): BelongsTo
+    {
+        return $this->belongsTo(Quartier::class, 'quartier_id');
     }
 
     /**

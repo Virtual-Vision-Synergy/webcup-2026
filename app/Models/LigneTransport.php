@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
+use App\Models\Concerns\HasAuditHistory;
 use Database\Factories\LigneTransportFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class LigneTransport extends Model
 {
     /** @use HasFactory<LigneTransportFactory> */
-    use HasFactory;
+    use Auditable, HasAuditHistory, HasFactory;
 
     public const MODE_OPTIONS = ['bus', 'navette', 'taxi-be', 'train'];
 

@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\RendezVous;
 use App\Models\User;
+use Illuminate\Auth\Access\Response;
 
 /**
  * Un habitant ne voit et n'annule que ses propres rendez-vous (sinon 403).
@@ -39,8 +40,34 @@ class RendezVousPolicy
         return $user->isAgent() || $user->isAdmin();
     }
 
-    public function changerStatut(User $user, RendezVous $rendezVous): bool
+    /**
+     * F70 : uniquement pour un rendez-vous d'un service de l'agent.
+     */
+    public function changerStatut(User $user, RendezVous $rendezVous): Response
     {
-        return ($user->isAgent() || $user->isAdmin()) && $rendezVous->estConfirme();
+        $acces = $this->accesService($user, $rendezVous);
+
+        return $acces->allowed() && ! $rendezVous->estConfirme()
+            ? Response::deny('Ce rendez-vous n’est plus confirmé : son statut ne peut plus être changé.')
+            : $acces;
+    }
+
+    /**
+     * F70 : révéler le motif saisi par l'habitant (motif de consultation obligatoire, journalisé).
+     */
+    public function viewConfidential(User $user, RendezVous $rendezVous): Response
+    {
+        return $this->accesService($user, $rendezVous);
+    }
+
+    private function accesService(User $user, RendezVous $rendezVous): Response
+    {
+        if (! $user->isAgent() && ! $user->isAdmin()) {
+            return Response::deny('Accès refusé. Cette action est réservée au personnel municipal.');
+        }
+
+        return $user->canAccessService($rendezVous->service_id)
+            ? Response::allow()
+            : Response::deny(DemarchePolicy::MOTIF_AUTRE_SERVICE);
     }
 }

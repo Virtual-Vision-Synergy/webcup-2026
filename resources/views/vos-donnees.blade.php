@@ -33,6 +33,11 @@
             subtitle="Ce que la plateforme garde sur vous, pourquoi, combien de temps, qui peut le voir, et comment l’effacer."
         >
             <x-slot:actions>
+                @auth
+                    <flux:button icon="arrow-down-tray" :href="route('profile.data')">
+                        Télécharger mes données
+                    </flux:button>
+                @endauth
                 <flux:button variant="primary" icon="chat-bubble-left-ellipsis" :href="route('concerns.create')" class="tn-cta">
                     Faire remonter une inquiétude
                 </flux:button>

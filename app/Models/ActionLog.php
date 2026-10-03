@@ -47,6 +47,9 @@ class ActionLog extends Model
         'rendez_vous_statut' => 'Statut de rendez-vous modifié',
         'service_indisponible' => 'Service rendu indisponible',
         'service_retabli' => 'Service rétabli',
+        'export_donnees_document' => 'Export de ses données (document)',
+        'export_donnees_json' => 'Export de ses données (JSON)',
+        'export_donnees_csv' => 'Export de ses données (CSV)',
     ];
 
     /**

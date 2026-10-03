@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AuditLog;
+use App\Models\Service;
 use App\Models\User;
 use App\Services\ComptesHabitants;
 use Flux\Flux;
@@ -19,10 +20,47 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
     #[Locked]
     public array $fiches = [];
 
+    /** @var list<string> F70 : services couverts par l'agent (cases cochées par l'admin). */
+    public array $servicesCouverts = [];
+
     public function mount(User $user): void
     {
         $this->authorize('viewAccount', $user);
         $this->account = $user->loadMissing('role');
+
+        if (auth()->user()->can('assignServices', $this->account)) {
+            $this->servicesCouverts = array_map('strval', $this->account->serviceIds());
+        }
+    }
+
+    /**
+     * F70 : services de la ville (affectation des agents, réservée à l'admin).
+     *
+     * @return Collection<int, Service>
+     */
+    #[Computed]
+    public function services(): Collection
+    {
+        $this->authorize('assignServices', $this->account);
+
+        return Service::query()->orderBy('nom')->get(['id', 'nom']);
+    }
+
+    /**
+     * F70 : rattache l'agent aux services cochés (admin uniquement, journalisé dans F47).
+     */
+    public function enregistrerServices(): void
+    {
+        $this->authorize('assignServices', $this->account);
+
+        $this->validate([
+            'servicesCouverts' => ['array'],
+            'servicesCouverts.*' => ['integer', 'exists:services,id'],
+        ]);
+
+        $this->account->affecterServices(array_map('intval', $this->servicesCouverts));
+
+        Flux::toast(variant: 'success', text: __('Services de l’agent mis à jour.'));
     }
 
     public function deactivate(): void
@@ -120,11 +158,24 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
         <x-tn.section-label as="h2" class="mb-2">{{ __('Informations du compte') }}</x-tn.section-label>
         <dl>
             <x-tn.field label="{{ __('Nom') }}">{{ $account->name }}</x-tn.field>
-            <x-tn.field label="{{ __('E-mail') }}">{{ $account->emailAffichable() ?? __('Aucune (compte sans e-mail)') }}</x-tn.field>
+            {{-- F70 : coordonnées masquées par défaut (motif + journal pour les afficher). --}}
+            <x-tn.field label="{{ __('E-mail') }}">
+                @if ($account->aUnEmail())
+                    <livewire:donnee-confidentielle :subject="$account" champ="email" wire:key="confidentiel-email" />
+                @else
+                    {{ __('Aucune (compte sans e-mail)') }}
+                @endif
+            </x-tn.field>
             @if ($account->identifiant)
                 <x-tn.field label="{{ __('Identifiant d\'habitant') }}"><span class="font-mono">{{ $account->identifiant }}</span>@if ($account->aActiverCompte()) <flux:badge size="sm" color="amber" class="ms-1">{{ __('À activer') }}</flux:badge>@endif</x-tn.field>
             @endif
-            <x-tn.field label="{{ __('Téléphone') }}">{{ $account->telephone ?? '—' }}</x-tn.field>
+            <x-tn.field label="{{ __('Téléphone') }}">
+                @if ($account->telephone)
+                    <livewire:donnee-confidentielle :subject="$account" champ="telephone" wire:key="confidentiel-telephone" />
+                @else
+                    —
+                @endif
+            </x-tn.field>
             <x-tn.field label="{{ __('Profil') }}">{{ $account->role?->label ?? '—' }}</x-tn.field>
             <x-tn.field label="{{ __('Inscription') }}">{{ $account->created_at?->format('d/m/Y à H:i') }}</x-tn.field>
             <x-tn.field label="{{ __('Statut') }}">
@@ -136,6 +187,25 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
             </x-tn.field>
         </dl>
     </x-tn.surface>
+
+    @can('assignServices', $account)
+        <x-tn.surface data-test="services-agent">
+            <x-tn.section-label as="h2" class="mb-1">{{ __('Services couverts') }}</x-tn.section-label>
+            <flux:text class="mb-4">{{ __('L’agent n’accède qu’aux demandes et rendez-vous de ces services. Chaque changement est inscrit au journal.') }}</flux:text>
+            <form wire:submit="enregistrerServices" class="space-y-4">
+                <div class="grid gap-2 sm:grid-cols-2">
+                    @foreach ($this->services as $service)
+                        <flux:checkbox wire:model="servicesCouverts" :value="(string) $service->id" :label="$service->nom" wire:key="service-{{ $service->id }}" />
+                    @endforeach
+                </div>
+                <flux:error name="servicesCouverts.*" />
+                <flux:button type="submit" variant="primary" icon="check">
+                    <span wire:loading.remove wire:target="enregistrerServices">{{ __('Enregistrer les services') }}</span>
+                    <span wire:loading wire:target="enregistrerServices">{{ __('Enregistrement…') }}</span>
+                </flux:button>
+            </form>
+        </x-tn.surface>
+    @endcan
 
     <x-tn.surface>
         <x-tn.section-label as="h2" class="mb-3">{{ __('Journal des actions') }}</x-tn.section-label>

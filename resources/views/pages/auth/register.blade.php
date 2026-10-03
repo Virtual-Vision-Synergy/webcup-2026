@@ -66,6 +66,11 @@
                 viewable
             />
 
+            <p class="text-sm text-zinc-600 dark:text-zinc-400">
+                Avant de créer votre compte, lisez
+                <flux:link :href="route('privacy.show')" data-test="lien-vos-donnees">comment vos données sont utilisées</flux:link>.
+            </p>
+
             <div class="flex items-center justify-end">
                 <flux:button type="submit" variant="primary" class="w-full" data-test="register-user-button">
                     {{ __('Create account') }}

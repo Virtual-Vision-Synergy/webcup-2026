@@ -67,6 +67,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('notifications/{notification}/lire', [NotificationController::class, 'lire'])->whereUuid('notification')->name('notifications.read');
     Route::get('notifications/{notification}/ouvrir', [NotificationController::class, 'ouvrir'])->whereUuid('notification')->name('notifications.open');
 
+    // F51 : remontées d'inquiétudes sur les données (RemonteePolicy : l'auteur seul, sinon 403 ; traitement dans routes/agent.php).
+    Route::livewire('mes-remontees', 'pages::remontees.index')->name('concerns.index');
+    Route::livewire('mes-remontees/nouvelle', 'pages::remontees.form')->name('concerns.create');
+    Route::livewire('mes-remontees/{remontee}', 'pages::remontees.show')->name('concerns.show');
+    Route::livewire('mes-remontees/{remontee}/accuse-reception', 'pages::remontees.accuse-reception')->name('concerns.received');
+
     // F54 : mes appareils et connexions récentes ; « Ce n'était pas moi » (droits dans KnownDevicePolicy : 403 pour l'appareil d'un autre).
     Route::livewire('profil/appareils', 'pages::profile.devices')->name('profile.devices.index');
     Route::get('profil/appareils/{knownDevice}/pas-moi', [KnownDeviceController::class, 'confirm'])->name('profile.devices.confirm');

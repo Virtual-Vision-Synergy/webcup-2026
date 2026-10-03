@@ -41,6 +41,9 @@ class ActionLog extends Model
         'export' => 'Export',
         'account_deactivated' => 'Compte désactivé',
         'account_reactivated' => 'Compte réactivé',
+        'rendez_vous_reserve' => 'Rendez-vous réservé',
+        'rendez_vous_annule' => 'Rendez-vous annulé',
+        'rendez_vous_statut' => 'Statut de rendez-vous modifié',
     ];
 
     /**

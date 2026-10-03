@@ -19,6 +19,8 @@ new #[Title('Service')] class extends Component {
     public string $lieu_rendez_vous = '';
     public string $duree_rendez_vous = '';
     public string $pieces_a_fournir = '';
+    public string $latitude = '';
+    public string $longitude = '';
     public bool $mis_en_avant = false;
 
     public function mount(?Service $service = null): void
@@ -33,6 +35,8 @@ new #[Title('Service')] class extends Component {
             $this->lieu_rendez_vous = (string) ($service->lieu_rendez_vous ?? '');
             $this->duree_rendez_vous = (string) ($service->duree_rendez_vous ?? '');
             $this->pieces_a_fournir = (string) ($service->pieces_a_fournir ?? '');
+            $this->latitude = (string) ($service->latitude ?? '');
+            $this->longitude = (string) ($service->longitude ?? '');
         } else {
             $this->authorize('create', Service::class);
         }
@@ -50,6 +54,8 @@ new #[Title('Service')] class extends Component {
             'lieu_rendez_vous' => ['nullable', 'string', 'max:255'],
             'duree_rendez_vous' => ['nullable', 'integer', 'min:5', 'max:240'],
             'pieces_a_fournir' => ['nullable', 'string', 'max:2000'],
+            'latitude' => ['nullable', 'required_with:longitude', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'required_with:latitude', 'numeric', 'between:-180,180'],
             'mis_en_avant' => ['boolean'],
         ];
     }
@@ -64,7 +70,7 @@ new #[Title('Service')] class extends Component {
         $miseEnAvant = (bool) ($validated['mis_en_avant'] ?? false);
         unset($validated['mis_en_avant']);
 
-        foreach (['lieu_rendez_vous', 'duree_rendez_vous', 'pieces_a_fournir'] as $field) {
+        foreach (['lieu_rendez_vous', 'duree_rendez_vous', 'pieces_a_fournir', 'latitude', 'longitude'] as $field) {
             if (($validated[$field] ?? null) === '') {
                 $validated[$field] = null;
             }
@@ -111,6 +117,18 @@ new #[Title('Service')] class extends Component {
                 <flux:select.option value="{{ $valeur }}">{{ __($label) }}</flux:select.option>
             @endforeach
         </flux:select>
+
+        <fieldset class="space-y-4">
+            <flux:heading size="sm">{{ __('Lieu d\'accueil sur la carte') }}</flux:heading>
+            <flux:text>{{ __('Placez le lieu où les habitants sont reçus : il apparaîtra sur la carte des services.') }}</flux:text>
+
+            <x-carte mode="choix" hauteur="16rem" :label="__('Choisir l\'emplacement du service')" />
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:input wire:model="latitude" label="{{ __('Latitude') }}" inputmode="decimal" />
+                <flux:input wire:model="longitude" label="{{ __('Longitude') }}" inputmode="decimal" />
+            </div>
+        </fieldset>
 
         <fieldset class="space-y-4">
             <flux:heading size="sm">Prise de rendez-vous</flux:heading>

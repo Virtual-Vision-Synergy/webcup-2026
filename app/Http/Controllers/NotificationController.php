@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Annonce;
 use App\Models\Demarche;
+use App\Models\RendezVous;
 use App\Models\Signalement;
 use App\Notifications\StatutDemandeChange;
 use Illuminate\Http\JsonResponse;
@@ -39,7 +40,7 @@ class NotificationController extends Controller
 
     /**
      * Ouvre la notification : la marque comme lue puis mène à l'annonce (ou à la liste si elle n'est plus en ligne),
-     * ou à la demande dont l'état a changé (F49).
+     * à la demande dont l'état a changé (F49), ou à la fiche du rendez-vous pour un rappel (F40).
      */
     public function ouvrir(DatabaseNotification $notification): RedirectResponse
     {
@@ -49,6 +50,14 @@ class NotificationController extends Controller
 
         if ($notification->type === StatutDemandeChange::class) {
             return $this->ouvrirDemande($notification);
+        }
+
+        // F40 : rappel de rendez-vous → sa fiche (RendezVousPolicy::view y est vérifiée).
+        $rendezVousId = $notification->data['rendez_vous_id'] ?? null;
+        if (is_int($rendezVousId)) {
+            return RendezVous::query()->whereKey($rendezVousId)->exists()
+                ? redirect()->route('appointments.show', $rendezVousId)
+                : redirect()->route('notifications.index')->with('status', 'Ce rendez-vous n’existe plus.');
         }
 
         $annonceId = $notification->data['annonce_id'] ?? null;

@@ -4,20 +4,29 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Auth\LoginThrottle;
 use App\Http\Middleware\EnsureAccountIsActive;
+use App\Http\Middleware\IgnorerEmailVide;
+use App\Http\Responses\LockoutResponse;
 use App\Http\Responses\ParcoursApresConnexionResponse;
+use App\Models\LoginAttempt;
 use App\Models\User;
+use App\Services\LoginAttemptRecorder;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Lockout;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Laravel\Fortify\Contracts\LockoutResponse as LockoutResponseContract;
 use Laravel\Fortify\Contracts\LoginResponse;
 use Laravel\Fortify\Contracts\RegisterResponse;
 use Laravel\Fortify\Contracts\TwoFactorLoginResponse;
 use Laravel\Fortify\Fortify;
+use Laravel\Fortify\LoginRateLimiter;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -30,6 +39,11 @@ class FortifyServiceProvider extends ServiceProvider
         $this->app->singleton(LoginResponse::class, ParcoursApresConnexionResponse::class);
         $this->app->singleton(RegisterResponse::class, ParcoursApresConnexionResponse::class);
         $this->app->singleton(TwoFactorLoginResponse::class, ParcoursApresConnexionResponse::class);
+
+        // F37 : limiteur e-mail + IP et IP seule, échecs uniquement, seuils dans config/security.php.
+        $this->app->singleton(LoginThrottle::class);
+        $this->app->alias(LoginThrottle::class, LoginRateLimiter::class);
+        $this->app->singleton(LockoutResponseContract::class, LockoutResponse::class);
     }
 
     /**
@@ -51,20 +65,56 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::createUsersUsing(CreateNewUser::class);
 
         // F34 : identifiants vérifiés d'abord (pas d'énumération), puis refus explicite si le compte est désactivé.
+        // F37 : le blocage est vérifié AVANT ce rappel (EnsureLoginIsNotThrottled) ; ici on compte les échecs.
         // Ce rappel sert aussi au parcours 2FA (RedirectIfTwoFactorAuthenticatable).
-        Fortify::authenticateUsing(function (Request $request): ?User {
-            $user = User::where(Fortify::username(), $request->input(Fortify::username()))->first();
+        Fortify::authenticateUsing(function (Request $request): User {
+            // F71 : e-mail, identifiant d'habitant ou numéro de téléphone dans le même champ.
+            $email = (string) $request->input(Fortify::username());
+            $user = User::trouverPourConnexion($email);
 
             if (! $user || ! Hash::check((string) $request->input('password'), $user->password)) {
-                return null;
+                $this->failLogin($request, $email, $user);
             }
 
             if (! $user->isActive()) {
+                app(LoginAttemptRecorder::class)->record($request, $email, $user, successful: false, reason: LoginAttempt::REASON_DEACTIVATED);
+
                 throw ValidationException::withMessages([Fortify::username() => EnsureAccountIsActive::MESSAGE]);
             }
 
             return $user;
         });
+    }
+
+    /**
+     * Échec de connexion : journal (sans mot de passe), compteur, puis message générique ou de blocage.
+     * Même message que le compte existe ou non.
+     *
+     * @throws ValidationException
+     */
+    private function failLogin(Request $request, string $email, ?User $user): never
+    {
+        event(new Failed(config('fortify.guard'), $user, [Fortify::username() => $email]));
+
+        $throttle = app(LoginThrottle::class);
+        $throttle->increment($request);
+
+        if ($throttle->tooManyAttempts($request)) {
+            event(new Lockout($request));
+
+            throw ValidationException::withMessages([
+                Fortify::username() => LoginThrottle::lockoutMessage($throttle->availableIn($request)),
+            ]);
+        }
+
+        $message = trans('auth.failed');
+        $remaining = $throttle->remaining($request);
+
+        if ($remaining <= (int) config('security.login.warn_remaining')) {
+            $message .= ' Il vous reste '.$remaining.' '.($remaining > 1 ? 'tentatives' : 'tentative').' avant un blocage temporaire.';
+        }
+
+        throw ValidationException::withMessages([Fortify::username() => $message]);
     }
 
     /**
@@ -82,6 +132,9 @@ class FortifyServiceProvider extends ServiceProvider
 
     /**
      * Configure rate limiting.
+     *
+     * La connexion n'utilise plus de limiteur de route (`fortify.limiters.login = null`) : c'est LoginThrottle,
+     * appelé dans le pipeline Fortify, qui ne compte que les échecs.
      */
     private function configureRateLimiting(): void
     {
@@ -89,11 +142,22 @@ class FortifyServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($request->session()->get('login.id'));
         });
 
-        RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
-
-            return Limit::perMinute(5)->by($throttleKey);
+        // F37 : inscription et « mot de passe oublié » limités par IP (routes enregistrées par Fortify).
+        RateLimiter::for('auth-sensible', function (Request $request) {
+            return Limit::perMinute((int) config('security.sensitive_routes_per_minute'))->by($request->ip());
         });
 
+        $this->app->booted(function (): void {
+            foreach (Route::getRoutes()->getRoutes() as $route) {
+                if (in_array($route->getName(), ['register.store', 'password.email'], true)
+                    && ! in_array('throttle:auth-sensible', $route->middleware(), true)) {
+                    $route->middleware('throttle:auth-sensible');
+                }
+
+                if ($route->getName() === 'register.store' && ! in_array(IgnorerEmailVide::class, $route->middleware(), true)) {
+                    $route->middleware(IgnorerEmailVide::class);
+                }
+            }
+        });
     }
 }

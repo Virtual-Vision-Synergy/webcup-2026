@@ -158,6 +158,8 @@ class DatabaseSeeder extends Seeder
             $this->call(AuditLogSeeder::class);
         }
 
+        $this->call(LigneTransportSeeder::class);
+
         // make:feature:seeders
     }
 }

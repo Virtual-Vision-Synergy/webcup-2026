@@ -94,7 +94,7 @@ class Service extends Model
 
     public static function labelCategorie(?string $categorie): ?string
     {
-        return $categorie === null ? null : __(self::CATEGORIE_LABELS[$categorie] ?? ucfirst($categorie));
+        return $categorie === null ? null : (self::CATEGORIE_LABELS[$categorie] ?? ucfirst($categorie));
     }
 
     /**

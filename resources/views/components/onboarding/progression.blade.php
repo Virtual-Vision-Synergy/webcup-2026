@@ -15,7 +15,7 @@
 
 {{-- Indicateur de progression du parcours de prise en main : texte + barre accessible + statut écrit de chaque étape. --}}
 <div {{ $attributes->class('w-full') }} data-test="onboarding-progression">
-    <div class="flex items-center justify-between gap-3 font-mono text-[11px] uppercase tracking-[.06em] text-ink-2">
+    <div class="flex items-center justify-between gap-3 font-mono text-[0.6875rem] uppercase tracking-[.06em] text-ink-2">
         <span>Étape <span class="text-ink">{{ $etapeAffichee }}</span> sur {{ $total }}</span>
         <span><span class="text-ink">{{ $faites }}</span>/{{ $total }} faite(s)</span>
     </div>
@@ -55,7 +55,7 @@
                     />
                     <span class="min-w-0 flex-1">
                         <span class="block font-medium">{{ $numero }}. {{ $etape['titre'] }}</span>
-                        <span class="block font-mono text-[10.5px] uppercase tracking-[.06em]">
+                        <span class="block font-mono text-[0.65625rem] uppercase tracking-[.06em]">
                             {{ match ($statut) { 'faite' => 'Faite', 'en_cours' => 'En cours', default => 'À faire' } }}
                         </span>
                     </span>

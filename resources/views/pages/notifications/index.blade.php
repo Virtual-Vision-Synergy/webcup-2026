@@ -62,7 +62,7 @@ new #[Title('Mes notifications')] class extends Component {
     @endif
 
     @if ($this->items->isEmpty())
-        <x-tn.empty icon="bell" title="Aucune notification" text="Vous serez prévenu ici dès qu’une annonce importante concernera votre quartier ou toute la ville.">
+        <x-tn.empty icon="bell" title="Aucune notification" text="Vous serez prévenu ici dès qu’une annonce importante concernera votre quartier ou que l’état d’une de vos demandes changera.">
             <flux:button :href="route('dashboard')" wire:navigate>Retour à mon espace</flux:button>
         </x-tn.empty>
     @else
@@ -74,6 +74,18 @@ new #[Title('Mes notifications')] class extends Component {
                     $etat = match ($niveau) { 'danger', 'alerte' => 'alerte', 'vigilance' => 'perturbe', default => 'info' };
                     $url = $notification->data['url'] ?? null;
                     $urlSure = is_string($url) && preg_match('#^(https?://|/)#i', $url) === 1 && ! str_starts_with($url, '//');
+                    $data = (array) $notification->data;
+                    $sujet = $data['sujet'] ?? '';
+                    $lignes = $data['lignes'] ?? [];
+                    $libelle = $data['libelle'] ?? 'Ouvrir';
+                    // F49 : avis d'état d'une demande, retraduit dans la langue courante et ouvert par notifications.open.
+                    if ($notification->type === \App\Notifications\StatutDemandeChange::class && \App\Notifications\StatutDemandeChange::estAvisDeStatut($data)) {
+                        $sujet = \App\Notifications\StatutDemandeChange::sujetDepuis($data);
+                        $lignes = \App\Notifications\StatutDemandeChange::lignesDepuis($data);
+                        $url = route('notifications.open', $notification->id);
+                        $urlSure = true;
+                        $libelle = __('Voir ma demande');
+                    }
                 @endphp
                 <li wire:key="notification-{{ $notification->id }}" data-test="notification"
                     @class([
@@ -96,14 +108,14 @@ new #[Title('Mes notifications')] class extends Component {
                         </time>
                     </div>
 
-                    <p class="mt-2 font-medium text-ink">{{ $notification->data['sujet'] ?? '' }}</p>
-                    @foreach ($notification->data['lignes'] ?? [] as $ligne)
+                    <p class="mt-2 font-medium text-ink">{{ $sujet }}</p>
+                    @foreach ($lignes as $ligne)
                         <p class="mt-1 text-sm text-ink-2">{{ $ligne }}</p>
                     @endforeach
 
                     <div class="mt-3 flex flex-wrap items-center gap-2">
                         @if ($urlSure)
-                            <flux:button size="sm" variant="primary" :href="$url">{{ $notification->data['libelle'] ?? 'Ouvrir' }}</flux:button>
+                            <flux:button size="sm" variant="primary" :href="$url">{{ $libelle }}</flux:button>
                         @endif
                         @if ($nonLue)
                             <form method="POST" action="{{ route('notifications.read', $notification->id) }}">

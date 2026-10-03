@@ -5,7 +5,7 @@
 @endphp
 
 {{-- Choix de la langue des contenus (services, démarches). Le français est la langue de repli. --}}
-<form method="POST" action="{{ route('langue') }}" {{ $attributes->class('flex items-center gap-1') }} aria-label="Langue des contenus">
+<form method="POST" action="{{ route('langue') }}" {{ $attributes->class('flex items-center gap-1') }} aria-label="Langue des contenus" @wire:ignore>
     @csrf
     @foreach (Traduction::LANGUES as $code => $libelle)
         <button

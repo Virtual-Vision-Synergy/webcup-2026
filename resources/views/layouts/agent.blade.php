@@ -8,6 +8,8 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-night text-ink antialiased">
+        <a href="#contenu" class="sr-only z-[60] rounded-sm bg-cyan px-4 py-2 text-on-cyan focus:not-sr-only focus:fixed focus:start-4 focus:top-4">{{ __('Aller au contenu') }}</a>
+
         {{-- Bandeau « poste agent » : même système Terra Nova, repérable par l'intitulé et le trait cyan. --}}
         <flux:header container class="tn-glass sticky top-0 z-40 h-[72px]! border-b border-t-2 border-t-cyan">
             <a href="{{ route('agent.tableau-de-bord') }}" class="flex items-center gap-3" aria-label="Espace agent : tableau de bord">
@@ -35,6 +37,9 @@
                 </flux:navbar.item>
                 <flux:navbar.item icon="calendar-days" :href="route('agent.appointments.index')" :current="request()->routeIs('agent.appointments.*')">
                     Rendez-vous
+                </flux:navbar.item>
+                <flux:navbar.item icon="shield-check" :href="route('agent.security.index')" :current="request()->routeIs('agent.security.*')">
+                    Sécurité
                 </flux:navbar.item>
                 <flux:navbar.item icon="document-text" :href="route('agent.audit.index')" :current="request()->routeIs('agent.audit.*')">
                     Journal
@@ -70,6 +75,7 @@
                     <flux:menu.item icon="clipboard-document-list" :href="route('agent.demandes')" class="md:hidden">Demandes des habitants</flux:menu.item>
                     <flux:menu.item icon="calendar-days" :href="route('agent.appointments.index')" class="md:hidden">Rendez-vous du jour</flux:menu.item>
                     <flux:menu.item icon="document-text" :href="route('agent.audit.index')" class="md:hidden">Journal</flux:menu.item>
+                    <flux:menu.item icon="shield-check" :href="route('agent.security.index')" class="md:hidden">Sécurité des connexions</flux:menu.item>
                     <flux:menu.item icon="arrow-uturn-left" :href="route('dashboard')">Retour à l'espace citoyen</flux:menu.item>
                     <flux:menu.item icon="cog" :href="route('profile.edit')">{{ __('Settings') }}</flux:menu.item>
 
@@ -89,7 +95,7 @@
 
         {{-- F44 : pas de <flux:main> (grille Flux) : le bandeau d'alerte y devenait une colonne étroite à côté du contenu.
              min-w-0 : un tableau large défile dans son conteneur au lieu d'élargir la page. --}}
-        <main id="contenu" class="mx-auto w-full min-w-0 max-w-7xl px-4 py-6 sm:px-6 lg:p-8">
+        <main id="contenu" tabindex="-1" class="mx-auto w-full min-w-0 max-w-7xl px-4 py-6 sm:px-6 lg:p-8">
             {{ $slot }}
         </main>
 

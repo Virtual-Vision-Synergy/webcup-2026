@@ -21,10 +21,10 @@ function avisDe(User $user): mixed
 test('un agent qui passe une démarche en cours ne prévient que son propriétaire', function () {
     Notification::fake();
     $proprietaire = User::factory()->citoyen()->create();
-    $agent = User::factory()->agent()->create();
     $autre = User::factory()->citoyen()->create();
     $admin = User::factory()->admin()->create();
     $demarche = Demarche::factory()->for($proprietaire)->create(['statut' => 'deposee']);
+    $agent = agentDeTousLesServices();
 
     Livewire::actingAs($agent)
         ->test('pages::agent.demandes')
@@ -120,7 +120,7 @@ test('un e-mail en échec ne bloque pas l’agent et la cloche garde l’avis', 
     $proprietaire = User::factory()->citoyen()->create();
     $demarche = Demarche::factory()->for($proprietaire)->create(['statut' => 'deposee']);
 
-    Livewire::actingAs(User::factory()->agent()->create())
+    Livewire::actingAs(agentDeTousLesServices())
         ->test('pages::agent.demandes')
         ->call('changerStatut', $demarche->id, 'refusee')
         ->assertOk()

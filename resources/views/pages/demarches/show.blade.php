@@ -1,8 +1,12 @@
 <?php
 
+use App\Models\AuditLog;
 use App\Models\Demarche;
+use App\Services\AuditLogger;
+use Illuminate\Database\Eloquent\Collection;
 use Flux\Flux;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -13,7 +17,8 @@ new #[Title('Démarche')] class extends Component {
 
     public function mount(Demarche $demarche): void
     {
-        $this->authorize('view', $demarche);
+        // F70 : refus explicite et journalisé pour un agent d'un autre service (DemarchePolicy::view).
+        AuditLogger::autoriser('view', $demarche);
         $this->record = $demarche->loadMissing(['service', 'user']);
     }
 
@@ -30,12 +35,31 @@ new #[Title('Démarche')] class extends Component {
 
     public function changerStatut(string $statut): void
     {
-        $this->authorize('changerStatut', $this->record);
+        AuditLogger::autoriser('changerStatut', $this->record);
         abort_unless(in_array($statut, Demarche::STATUT_OPTIONS, true), 422);
 
         $this->record->changerStatut($statut);
 
         Flux::toast(variant: 'success', text: __('Statut mis à jour.'));
+    }
+
+    /**
+     * F70 : consultations des données confidentielles de ce dossier (bloc réservé à l'admin).
+     *
+     * @return Collection<int, AuditLog>
+     */
+    #[Computed]
+    public function consultations(): Collection
+    {
+        abort_unless(auth()->user()->isAdmin(), 403);
+
+        return AuditLog::query()
+            ->where('subject_type', 'Demarche')
+            ->where('subject_id', $this->record->id)
+            ->where('action', 'confidential_viewed')
+            ->latest('id')
+            ->limit(20)
+            ->get();
     }
 }; ?>
 
@@ -97,6 +121,23 @@ new #[Title('Démarche')] class extends Component {
                 <x-tn.timeline :items="$chronologie" />
             </x-tn.panel>
 
+            {{-- F70 : coordonnées du demandeur, masquées par défaut (motif + journal pour les afficher). --}}
+            @if (! $record->user?->is(auth()->user()))
+                @can('viewConfidential', $record)
+                    <x-tn.surface>
+                        <x-tn.section-label as="h2" class="mb-2">{{ __('Demandeur') }}</x-tn.section-label>
+                        <dl>
+                            <x-tn.field :label="__('Nom')">{{ $record->user?->name ?? '—' }}</x-tn.field>
+                            @foreach ($record->confidentialFields() as $champ => $definition)
+                                <x-tn.field :label="$definition['label']">
+                                    <livewire:donnee-confidentielle :subject="$record" :champ="$champ" wire:key="confidentiel-{{ $champ }}" />
+                                </x-tn.field>
+                            @endforeach
+                        </dl>
+                    </x-tn.surface>
+                @endcan
+            @endif
+
             @can('changerStatut', $record)
                 <x-tn.surface>
                     <x-tn.section-label as="h2" class="mb-3">{{ __('Changer le statut') }}</x-tn.section-label>
@@ -111,6 +152,28 @@ new #[Title('Démarche')] class extends Component {
             @endcan
         </div>
     </div>
+
+    @if (auth()->user()->isAdmin())
+        <x-tn.surface data-test="consultations-confidentielles">
+            <x-tn.section-label as="h2" class="mb-3">{{ __('Consultations des données confidentielles') }}</x-tn.section-label>
+            @if ($this->consultations->isEmpty())
+                <flux:text>Aucune consultation enregistrée pour ce dossier.</flux:text>
+            @else
+                <ul class="divide-y divide-line text-sm">
+                    @foreach ($this->consultations as $consultation)
+                        <li wire:key="consultation-{{ $consultation->id }}" class="flex flex-col gap-1 py-2 sm:flex-row sm:items-center sm:justify-between">
+                            <span>
+                                <span class="font-medium text-ink">{{ $consultation->auteur() }}</span>
+                                a consulté « {{ $consultation->changes['champ']['apres'] ?? '—' }} »
+                                <span class="text-ink-2">— motif : {{ $consultation->changes['motif']['apres'] ?? '—' }}</span>
+                            </span>
+                            <span class="font-mono text-xs text-ink-2">{{ $consultation->dateLocale() }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </x-tn.surface>
+    @endif
 
     <x-audit-history :subject="$record" />
 </section>

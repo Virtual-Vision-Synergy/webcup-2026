@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Service;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -44,7 +46,10 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * F70 : agent rattaché à tous les services existants au moment de l'appel (il voit toutes leurs démarches).
+ */
+function agentDeTousLesServices(): User
 {
-    // ..
+    return User::factory()->agentDe(...Service::all()->all())->create();
 }

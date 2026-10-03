@@ -71,7 +71,9 @@ new #[Title('Mes démarches')] class extends Component {
      */
     protected function filteredQuery(): Builder
     {
+        // F70 : un agent ne voit que les démarches de ses services, un habitant les siennes.
         return Demarche::query()
+            ->visibleTo(auth()->user())
             ->when($this->search !== '', function ($query) {
                 $term = '%'.$this->search.'%';
                 $query->where(fn ($q) => $q->where('titre', 'like', $term)->orWhere('description', 'like', $term));

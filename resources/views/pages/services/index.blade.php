@@ -242,9 +242,16 @@ new #[Title('Services')] class extends Component {
         <ul class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             @foreach ($this->items as $item)
                 <li wire:key="row-{{ $item->id }}" @class(['group relative flex min-w-0 flex-col rounded-md border bg-surface p-5 transition-colors hover:border-cyan/40', 'border-cyan/40' => $item->mis_en_avant, 'border-line' => ! $item->mis_en_avant])>
-                    @if ($item->mis_en_avant)
-                        <flux:badge size="sm" color="cyan" icon="star" class="mb-3 self-start">{{ __('Mis en avant') }}</flux:badge>
-                    @endif
+                    <div class="mb-3 flex flex-wrap gap-1.5">
+                        @if ($item->estIndisponible())
+                            <flux:badge size="sm" color="red" icon="no-symbol">{{ __('Indisponible') }}</flux:badge>
+                        @else
+                            <flux:badge size="sm" color="green" icon="check-circle">{{ __('Disponible') }}</flux:badge>
+                        @endif
+                        @if ($item->mis_en_avant)
+                            <flux:badge size="sm" color="cyan" icon="star">{{ __('Mis en avant') }}</flux:badge>
+                        @endif
+                    </div>
                     <div class="flex items-start gap-3">
                         <span class="flex size-10 shrink-0 items-center justify-center rounded-sm border border-cyan/18 bg-cyan/8 text-cyan" aria-hidden="true">
                             <flux:icon name="landmark" class="size-5" />
@@ -261,6 +268,14 @@ new #[Title('Services')] class extends Component {
                             @endif
                         </div>
                     </div>
+                    @if ($item->estIndisponible())
+                        <p class="mt-3 rounded-sm border border-magenta/35 bg-magenta/8 px-3 py-2 text-sm text-magenta" role="status">
+                            {{ $item->motif_indisponibilite ?: __('Service momentanément indisponible.') }}
+                            <span class="block text-xs">
+                                {{ $item->retour_prevu_le ? __('Retour prévu le :date.', ['date' => $item->retour_prevu_le->translatedFormat('j F Y')]) : __('Date de retour à confirmer.') }}
+                            </span>
+                        </p>
+                    @endif
                     <dl class="mt-4 space-y-1.5 border-t border-line pt-3 text-sm">
                         @if ($item->horaires)
                             <div class="flex min-w-0 gap-2"><dt class="sr-only">{{ __('Horaires') }}</dt><flux:icon name="clock" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="min-w-0 truncate font-mono text-xs leading-5 text-ink-2">{{ \Illuminate\Support\Str::before(__($item->horaires), "\n") }}</dd></div>

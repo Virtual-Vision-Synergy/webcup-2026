@@ -6,6 +6,7 @@ use App\Models\Actualite;
 use App\Models\Demarche;
 use App\Models\Message;
 use App\Models\Service;
+use App\Models\Signalement;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -70,6 +71,20 @@ class DatabaseSeeder extends Seeder
         if (! app()->isProduction()) {
             // Quelques démarches pour le compte citoyen de démo : son espace personnel n'est pas vide.
             Demarche::factory(4)->recycle($services)->for(User::where('email', 'user@example.com')->firstOrFail())->create();
+        }
+
+        Signalement::factory(15)->recycle($users)->create();
+        Signalement::factory(5)->nouveau()->recycle($users)->create();
+
+        if (! app()->isProduction()) {
+            // Signalements du compte citoyen de démo, dont un lampadaire cassé tout juste signalé.
+            $citoyen = User::where('email', 'user@example.com')->firstOrFail();
+            Signalement::factory()->nouveau()->for($citoyen)->create([
+                'categorie' => 'eclairage',
+                'description' => 'Le lampadaire devant chez moi est cassé, la rue est plongée dans le noir depuis trois jours.',
+                'lieu' => 'Rue des Lumières, devant le n° 12',
+            ]);
+            Signalement::factory(2)->for($citoyen)->create();
         }
 
         // make:feature:seeders

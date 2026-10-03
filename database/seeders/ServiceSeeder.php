@@ -38,7 +38,7 @@ class ServiceSeeder extends Seeder
     /**
      * Traductions de démonstration (anglais et malgache) pour quelques services ; les autres retombent sur le français.
      */
-    private function traduire(): void
+    public function traduire(): void
     {
         foreach ($this->traductions() as $nom => $parLangue) {
             $service = Service::query()->where('nom', $nom)->first();

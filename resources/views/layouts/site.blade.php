@@ -22,7 +22,7 @@
         >
             <x-tn.site-header />
 
-            <main id="contenu" @class(['flex-1', 'mx-auto w-full max-w-7xl px-4 py-8 lg:px-8' => ! $fluid])>
+            <main id="contenu" tabindex="-1" @class(['flex-1', 'outline-none', 'mx-auto w-full max-w-7xl px-4 py-8 lg:px-8' => ! $fluid])>
                 {{ $slot }}
             </main>
 

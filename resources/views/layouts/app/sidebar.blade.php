@@ -19,7 +19,7 @@
             class="tn-page min-h-screen bg-night text-ink lg:flex"
             x-bind:class="$store.menu?.ouvert && 'tn-page-recule'"
         >
-            <flux:sidebar sticky class="border-e max-lg:hidden!">
+            <flux:sidebar sticky class="border-e max-lg:hidden!" aria-label="Navigation principale">
                 <flux:sidebar.header>
                     <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
                 </flux:sidebar.header>
@@ -83,7 +83,7 @@
                     </div>
                 </header>
 
-                <div id="contenu" class="flex flex-1 flex-col">
+                <div id="contenu" tabindex="-1" class="flex flex-1 flex-col outline-none">
                     {{ $slot }}
                 </div>
             </div>

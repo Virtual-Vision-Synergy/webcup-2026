@@ -8,6 +8,7 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-night text-ink antialiased">
+        <a href="#contenu" class="sr-only z-[60] rounded-sm bg-cyan px-4 py-2 text-on-cyan focus:not-sr-only focus:fixed focus:start-4 focus:top-4">Aller au contenu</a>
         {{-- Bandeau « poste agent » : même système Terra Nova, repérable par l'intitulé et le trait cyan. --}}
         <flux:header container class="tn-glass sticky top-0 z-40 h-[72px]! border-b border-t-2 border-t-cyan">
             <a href="{{ route('agent.index') }}" class="flex items-center gap-3" aria-label="Espace agent : demandes Nova Terra">
@@ -16,7 +17,7 @@
                 <x-tn.status-badge etat="info">Espace agent</x-tn.status-badge>
             </a>
 
-            <flux:navbar class="ms-6 max-md:hidden">
+            <flux:navbar class="ms-6 max-md:hidden" aria-label="Navigation de l'espace agent">
                 <flux:navbar.item icon="inbox-stack" :href="route('agent.index')" :current="request()->routeIs('agent.index')">
                     Demandes Nova Terra
                 </flux:navbar.item>
@@ -59,7 +60,7 @@
             </flux:dropdown>
         </flux:header>
 
-        <flux:main container>
+        <flux:main container id="contenu" tabindex="-1" class="outline-none">
             {{ $slot }}
         </flux:main>
 

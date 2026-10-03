@@ -4,6 +4,7 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white antialiased dark:bg-linear-to-b dark:from-neutral-950 dark:to-neutral-900">
+        <a href="#contenu" class="sr-only z-[60] rounded-sm bg-white px-4 py-2 text-black focus:not-sr-only focus:fixed focus:start-4 focus:top-4">Aller au contenu</a>
         <div class="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
             <div class="flex w-full max-w-sm flex-col gap-2">
                 <a href="{{ route('home') }}" class="flex flex-col items-center gap-2 font-medium" wire:navigate>
@@ -13,7 +14,7 @@
                     <span class="sr-only">{{ config('app.name', 'Laravel') }}</span>
                 </a>
                 <div class="flex flex-col gap-6">
-                    {{ $slot }}
+                    <main id="contenu" tabindex="-1" class="outline-none">{{ $slot }}</main>
                 </div>
             </div>
         </div>

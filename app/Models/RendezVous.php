@@ -14,7 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Rendez-vous d'un habitant avec un agent (F39).
  *
  * Seul le motif saisi par l'habitant est remplissable : user_id, service_id, creneau_id, statut et annule_le
- * sont assignés dans le code (PriseDeRendezVous, changerStatut).
+ * sont assignés dans le code (PriseDeRendezVous, changerStatut). reminder_sent_at n'est renseigné que par
+ * la commande appointments:send-reminders (F40).
  *
  * @property int $id
  * @property int $user_id
@@ -23,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $motif
  * @property string $statut
  * @property CarbonImmutable|null $annule_le
+ * @property CarbonImmutable|null $reminder_sent_at
  * @property CarbonImmutable|null $created_at
  * @property-read User $user
  * @property-read Service $service
@@ -65,6 +67,7 @@ class RendezVous extends Model
     {
         return [
             'annule_le' => 'datetime',
+            'reminder_sent_at' => 'datetime',
         ];
     }
 

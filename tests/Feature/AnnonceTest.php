@@ -170,13 +170,58 @@ test('le contenu du bandeau est échappé', function () {
         ->assertSee('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;', false);
 });
 
-test('le bandeau propose un bouton de fermeture mémorisé par message et par version', function () {
+test('le bandeau propose un bouton de fermeture qui n’annonce le titre qu’une fois', function () {
     $annonce = Annonce::factory()->active()->create(['titre' => 'Coupure d’eau', 'niveau' => 'alerte']);
 
-    $this->get(route('home'))
-        ->assertSee('aria-label="Fermer le message : Coupure d’eau"', false)
+    $html = $this->get(route('home'))
+        ->assertSee('aria-label="Fermer ce message"', false)
+        ->assertDontSee('Fermer le message : Coupure d’eau', false)
         ->assertSee($annonce->cleFermeture(), false)
-        ->assertSee('role="alert"', false);
+        ->assertSee('role="alert"', false)
+        ->getContent();
+
+    expect(substr_count($html, 'Coupure d’eau'))->toBe(1);
+});
+
+test('un message fermé n’est plus affiché aux pages suivantes, sauf s’il est modifié', function () {
+    // Page publique : l'espace connecté envoie aussi la notification (F30), qui afficherait le titre dans la cloche.
+    $annonce = Annonce::factory()->active()->create(['titre' => 'Coupure d’eau']);
+    $ancienneCle = $annonce->cleFermeture();
+
+    $this->withUnencryptedCookie(Annonce::COOKIE_FERMES, '99-1,'.$ancienneCle)
+        ->get(route('home'))
+        ->assertDontSee('Coupure d’eau');
+
+    $this->travel(1)->minutes();
+    $annonce->update(['titre' => 'Coupure d’eau prolongée']);
+
+    $this->withUnencryptedCookie(Annonce::COOKIE_FERMES, $ancienneCle)
+        ->get(route('home'))
+        ->assertSee('Coupure d’eau prolongée');
+});
+
+test('un cookie de fermeture malformé est ignoré', function () {
+    expect(Annonce::clesFermees('12-1700000000, <script>,abc,3-4'))->toBe(['12-1700000000', '3-4'])
+        ->and(Annonce::clesFermees(null))->toBe([]);
+});
+
+test('plusieurs messages : seul le plus grave est déplié, les autres sont repliés', function () {
+    Annonce::factory()->active()->create(['niveau' => 'danger', 'titre' => 'Urgence']);
+    Annonce::factory()->active()->create(['niveau' => 'information', 'titre' => 'Info']);
+
+    $this->get(route('home'))
+        ->assertSeeInOrder(['Urgence', 'id="tn-autres-annonces"', 'Info', 'Voir l’autre message'], false);
+});
+
+test('la page 403 est en français avec un retour', function () {
+    $citoyen = User::factory()->citoyen()->create();
+
+    $this->actingAs($citoyen)
+        ->get(route('agent.annonces.index'))
+        ->assertForbidden()
+        ->assertSee('Accès refusé')
+        ->assertSee('Mon tableau de bord')
+        ->assertDontSee('This action is unauthorized');
 });
 
 test('une modification est visible tout de suite malgré le cache', function () {

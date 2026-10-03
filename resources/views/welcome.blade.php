@@ -103,6 +103,28 @@
         </div>
     </section>
 
+    {{-- F46 : URGENCES / SANTÉ, accès direct depuis l'accueil --}}
+    <section class="border-t border-magenta/35 bg-magenta/8" aria-labelledby="titre-urgences">
+        <div class="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+            <h2 id="titre-urgences" class="flex items-center gap-2 font-semibold text-ink">
+                <flux:icon name="heart" class="size-5 shrink-0 text-magenta" aria-hidden="true" />
+                {{ __('Urgence ?') }}
+            </h2>
+            <ul class="flex flex-wrap gap-2">
+                @foreach (array_slice(Service::NUMEROS_URGENCE, 0, 3) as $urgence)
+                    <li>
+                        <a href="tel:{{ $urgence['numero'] }}" class="inline-flex min-h-11 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm text-ink hover:border-magenta/50">
+                            {{ __($urgence['label']) }} <span class="font-mono font-semibold text-magenta">{{ $urgence['numero'] }}</span>
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+            <a href="{{ route('urgences.index') }}" class="inline-flex min-h-11 items-center gap-1 font-medium text-magenta hover:underline">
+                {{ __('Urgences / Santé : hôpitaux et numéros') }} <flux:icon name="arrow-right" class="size-4" aria-hidden="true" />
+            </a>
+        </div>
+    </section>
+
     {{-- LES 4 RUBRIQUES --}}
     <section class="border-y border-line bg-night" aria-labelledby="titre-rubriques">
         <h2 id="titre-rubriques" class="sr-only">{{ __('Accès rapide aux rubriques') }}</h2>

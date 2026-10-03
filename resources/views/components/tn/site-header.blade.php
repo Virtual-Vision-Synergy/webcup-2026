@@ -6,7 +6,7 @@
 @endphp
 
 {{-- Header vitré : 72px sur desktop (logo, nav, état de l'API, thème, compte), minimal sur mobile (logo + compte). --}}
-<header {{ $attributes->class('tn-glass sticky top-0 z-40 border-b') }}>
+<header {{ $attributes->class('tn-glass tn-entete-collant sticky top-0 z-40 border-b') }}>
     <div class="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 lg:h-[72px] lg:px-8">
         <x-app-logo href="{{ route('home') }}" />
 

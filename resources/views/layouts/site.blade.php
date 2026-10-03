@@ -17,7 +17,7 @@
 
         <div
             id="tn-page"
-            class="tn-page flex min-h-screen flex-col bg-night pb-[calc(4rem+env(safe-area-inset-bottom))] text-ink lg:pb-0"
+            class="tn-page tn-place-barre flex min-h-screen flex-col bg-night pb-[calc(4rem+env(safe-area-inset-bottom))] text-ink lg:pb-0"
             x-bind:class="$store.menu?.ouvert && 'tn-page-recule'"
         >
             <x-tn.site-header />

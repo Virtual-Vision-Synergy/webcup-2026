@@ -82,8 +82,8 @@
                 <x-desktop-user-menu :name="auth()->user()->name" />
             </flux:sidebar>
 
-            <div class="flex min-w-0 flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
-                <header class="tn-glass sticky top-0 z-30 border-b">
+            <div class="tn-place-barre flex min-w-0 flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
+                <header class="tn-glass tn-entete-collant sticky top-0 z-30 border-b">
                     <div class="flex h-16 items-center gap-3 px-4 lg:h-[72px] lg:px-8">
                         <x-app-logo href="{{ route('dashboard') }}" class="lg:hidden" wire:navigate />
 

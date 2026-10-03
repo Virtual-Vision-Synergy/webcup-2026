@@ -70,6 +70,28 @@ html[data-text-size='lg'] { font-size: 125%; }
 html[data-text-size='xl'] { font-size: 150%; }
 body { overflow-wrap: anywhere; }
 
+/*
+ * F44 : ZOOM NAVIGATEUR 200 % / 400 % (WCAG 1.4.10 « Redistribution »).
+ * À 400 % sur un écran de 1280 px, la page n'a plus que 320 px de large et ~250 px de haut.
+ * - Aucun texte coupé : sur écran étroit ou texte agrandi, les « … » de `truncate` laissent place au retour à la ligne.
+ * - Aucun défilement horizontal de la page : seules les tables de données défilent dans leur propre cadre.
+ * - Écran très bas : l'en-tête et la barre d'onglets cessent de flotter pour laisser la place au contenu.
+ */
+img, video, iframe, canvas { max-width: 100%; }
+
+@media (max-width: 40rem) {
+    .truncate { overflow: visible; text-overflow: clip; white-space: normal; }
+}
+
+html[data-text-size='lg'] .truncate,
+html[data-text-size='xl'] .truncate { overflow: visible; text-overflow: clip; white-space: normal; }
+
+@media (max-height: 25rem) {
+    .tn-entete-collant { position: static; }
+    .tn-barre-onglets { position: static; }
+    .tn-place-barre { padding-bottom: 0; }
+}
+
 @layer theme {
     .dark {
         --color-night: #050A16;

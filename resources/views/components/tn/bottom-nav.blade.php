@@ -22,7 +22,7 @@
 
 {{-- Barre d'onglets mobile (< lg) : 5 colonnes, onglet central mis en avant. --}}
 <nav
-    {{ $attributes->class('tn-glass fixed inset-x-0 bottom-0 z-40 border-t lg:hidden') }}
+    {{ $attributes->class('tn-glass tn-barre-onglets fixed inset-x-0 bottom-0 z-40 border-t lg:hidden') }}
     style="padding-bottom: env(safe-area-inset-bottom)"
     aria-label="Navigation mobile"
 >

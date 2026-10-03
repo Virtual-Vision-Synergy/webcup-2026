@@ -153,6 +153,8 @@ class DatabaseSeeder extends Seeder
             Signalement::factory(2)->for($citoyen)->create();
         }
 
+        $this->call(LigneTransportSeeder::class);
+
         // make:feature:seeders
     }
 }

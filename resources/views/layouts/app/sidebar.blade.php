@@ -7,6 +7,9 @@
                     <flux:sidebar.item icon="exclamation-triangle" :href="route('signalements.index')" :current="request()->routeIs('signalements.*')" wire:navigate>
                         Signalements
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="bus" :href="route('transports.index')" :current="request()->routeIs('transports.*')" wire:navigate>
+                        Transports
+                    </flux:sidebar.item>
                     {{-- make:feature:nav --}}
 @endsection
 <!DOCTYPE html>

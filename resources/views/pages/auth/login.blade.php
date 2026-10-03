@@ -50,6 +50,12 @@
             </div>
         </form>
 
+        @if (Route::has('login-link.create'))
+            <flux:button :href="route('login-link.create')" variant="outline" icon="envelope" class="w-full" wire:navigate data-test="login-link">
+                Recevoir un lien de connexion
+            </flux:button>
+        @endif
+
         <div class="space-x-1 text-sm text-center rtl:space-x-reverse text-zinc-600 dark:text-zinc-400">
             <span>{{ __('Don\'t have an account?') }}</span>
             <flux:link :href="route('register')" wire:navigate>{{ __('Sign up') }}</flux:link>

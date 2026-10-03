@@ -6,26 +6,34 @@ use App\Models\Service;
 use Illuminate\Database\Seeder;
 
 /**
- * F64 : état de démonstration des services. La plupart restent disponibles ; État civil est perturbé
+ * F64 : état de démonstration des services. La plupart restent disponibles ; Urbanisme est perturbé
  * (forte affluence) et la Médiathèque indisponible (travaux, retour dans 10 jours, alternative proposée).
+ * Un service déjà interrompu par ServiceInterruptionSeeder (F38) n'est pas touché : son interruption fait foi.
  * Idempotent : relancé, il remet simplement ces deux états.
  */
 class EtatServicesSeeder extends Seeder
 {
     public function run(): void
     {
-        Service::query()->where('nom', 'Médiathèque Ravinala')->first()?->mettreAJourEtat(
+        $this->service('Médiathèque Ravinala')?->mettreAJourEtat(
             Service::ETAT_INDISPONIBLE,
             'Fermée pour travaux de rénovation de la salle de lecture.',
             now()->addDays(10)->startOfDay(),
             'Le point lecture de la mairie annexe d\'Isoraka prête et reçoit les retours de livres, du lundi au samedi de 9 h à 17 h.',
         );
 
-        Service::query()->where('nom', 'État civil')->first()?->mettreAJourEtat(
+        $this->service('Urbanisme')?->mettreAJourEtat(
             Service::ETAT_PERTURBE,
-            'Forte affluence : délais d\'attente allongés au guichet (environ 1 h 30).',
+            'Forte affluence : délais d\'instruction des permis allongés (environ 3 semaines).',
             null,
-            'Faites votre demande d\'acte en ligne : elle est traitée sans passer au guichet.',
+            'Déposez votre dossier en ligne : il est enregistré sans passer au guichet.',
         );
+    }
+
+    private function service(string $nom): ?Service
+    {
+        $service = Service::query()->where('nom', $nom)->first();
+
+        return $service?->interruptionEnCours() === null ? $service : null;
     }
 }

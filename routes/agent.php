@@ -35,6 +35,10 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     // F39 : rendez-vous du jour (RendezVousPolicy::viewAgenda).
     Route::livewire('rendez-vous', 'pages::agent.rendez-vous')->name('appointments.index');
 
+    // F38 : disponibilité des services (maintenance, incident). Droits dans ServicePolicy::manageAvailability.
+    Route::livewire('services', 'pages::agent.services.index')->name('services.index');
+    Route::livewire('services/{service}/disponibilite', 'pages::agent.services.disponibilite')->name('services.availability');
+
     // F47 : journal d'audit en LECTURE SEULE (aucune route de création, modification ni suppression).
     Route::livewire('journal', 'pages::agent.audit.index')->name('audit.index');
     Route::livewire('journal/{auditLog}', 'pages::agent.audit.show')->name('audit.show');
@@ -45,6 +49,10 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
 
     // F66 : synthèse des avis des habitants sur un projet (ProjetPolicy::voirAvis).
     Route::livewire('projets/{projet}/avis', 'pages::agent.projets.avis')->name('projets.avis');
+
+    // F68 : boîte à idées — tri par soutiens, état, réponse et masquage (IdeaPolicy dans chaque action).
+    Route::livewire('idees', 'pages::agent.ideas.index')->name('ideas.index');
+    Route::livewire('idees/{idea:reference}', 'pages::agent.ideas.show')->where('idea', 'IDE-\d{4}-\d{6}')->name('ideas.show');
 
     // F48 : historique d'un élément (lecture seule). {type} passe par la liste blanche AuditLog::HISTORY_TYPES (sinon 404).
     Route::livewire('historique/{type}/{id}', 'pages::agent.audit.history')

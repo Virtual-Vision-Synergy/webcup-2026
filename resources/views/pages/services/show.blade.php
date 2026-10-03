@@ -1,15 +1,19 @@
 <?php
 
 use App\Models\ActionLog;
+use App\Models\CreneauRendezVous;
+use App\Models\RendezVous;
 use App\Models\Service;
+use App\Models\ServiceInterruption;
 use App\Services\OnboardingProgress;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
-use Livewire\Attributes\Computed;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -32,7 +36,7 @@ new #[Title('Service')] class extends Component {
     public function mount(Service $service): void
     {
         $this->authorize('view', $service);
-        $this->record = $service;
+        $this->record = $service->load('interruptionCourante.alternativeService');
         $this->remplirFormulaireEtat();
 
         // Parcours de prise en main (D12), étape « Trouver un service » : sans effet hors parcours en cours.
@@ -95,7 +99,8 @@ new #[Title('Service')] class extends Component {
         ActionLog::record('service_etat_modifie', $this->record);
         Cache::forget('landing.etat');
 
-        unset($this->alternatives);
+        $this->record->load('interruptionCourante.alternativeService');
+        unset($this->alternatives, $this->interruption);
         $this->remplirFormulaireEtat();
         $this->modal('etat-service')->close();
 
@@ -106,9 +111,10 @@ new #[Title('Service')] class extends Component {
     {
         $this->resetValidation();
         $this->etat = $this->record->etat();
-        $this->motif = (string) $this->record->motif_indisponibilite;
-        $this->retourPrevuLe = (string) $this->record->retour_prevu_le?->toDateString();
-        $this->alternativeTexte = (string) $this->record->alternative_texte;
+        // Pré-rempli avec ce que voit l'habitant (interruption F38 en cours, sinon champs F63 / F64).
+        $this->motif = (string) $this->record->motifEtat();
+        $this->retourPrevuLe = (string) $this->record->retourPrevuEtat()?->setTimezone(CreneauRendezVous::fuseau())->toDateString();
+        $this->alternativeTexte = Str::limit((string) $this->record->alternativeTexteEtat(), 255, '');
         $this->alternativeUrl = (string) $this->record->alternative_url;
     }
 
@@ -121,6 +127,21 @@ new #[Title('Service')] class extends Component {
         Flux::toast(variant: 'success', text: __('Service supprimé(e).'));
 
         $this->redirectRoute('services.index', navigate: true);
+    }
+
+    /**
+     * Interruption en cours (F38) : seules les informations publiques sont envoyées à la vue (jamais l'agent).
+     */
+    #[Computed]
+    public function interruption(): ?ServiceInterruption
+    {
+        return $this->record->interruptionEnCours();
+    }
+
+    #[Computed]
+    public function prendRendezVous(): bool
+    {
+        return (int) $this->record->duree_rendez_vous > 0;
     }
 }; ?>
 
@@ -164,13 +185,15 @@ new #[Title('Service')] class extends Component {
     <div class="flex flex-wrap gap-2">
         @if ($record->estIndisponible())
             <flux:button variant="primary" icon="no-symbol" disabled aria-describedby="demarche-impossible">{{ __('Démarche momentanément impossible') }}</flux:button>
-            <p id="demarche-impossible" class="sr-only">{{ __('Le service est indisponible : consultez l\'alternative proposée ci-dessus.') }}</p>
+            <p id="demarche-impossible" class="text-sm font-medium text-ink-2">{{ __('Démarche suspendue pendant l’interruption : voyez « Que faire en attendant ? » ci-dessus.') }}</p>
         @else
             @if (Route::has('demarches.create'))
                 <flux:button variant="primary" icon="document-plus" :href="route('demarches.create', ['service' => $record->id])" class="tn-cta" wire:navigate>{{ __('Commencer une démarche') }}</flux:button>
             @endif
-            @if ($record->duree_rendez_vous > 0 && Route::has('appointments.create'))
-                <flux:button icon="calendar-days" :href="route('appointments.create', ['service' => $record->slug])" wire:navigate>{{ __('Prendre rendez-vous') }}</flux:button>
+            @if ($this->prendRendezVous && Route::has('appointments.create'))
+                @can('create', RendezVous::class)
+                    <flux:button icon="calendar-days" :href="route('appointments.create', ['service' => $record->slug])" wire:navigate>{{ __('Prendre rendez-vous') }}</flux:button>
+                @endcan
             @endif
         @endif
     </div>

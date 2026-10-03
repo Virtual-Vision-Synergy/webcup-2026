@@ -25,9 +25,9 @@ new #[Title('Services')] class extends Component {
     #[Url(except: false)]
     public bool $mine = false;
 
-    /** F64 : n'afficher que les services pleinement disponibles. */
-    #[Url(as: 'disponibles', except: false)]
-    public bool $disponiblesSeulement = false;
+    /** F38 / F64 : n'afficher que les services disponibles (ni interrompus, ni indisponibles, ni perturbés). */
+    #[Url(except: false)]
+    public bool $disponibles = false;
 
     /** F45 : affichage en liste (cartes paginées) ou sur la carte des lieux d'accueil. */
     #[Url(except: 'liste')]
@@ -53,7 +53,7 @@ new #[Title('Services')] class extends Component {
         $this->resetPage();
     }
 
-    public function updatedDisponiblesSeulement(): void
+    public function updatedDisponibles(): void
     {
         $this->resetPage();
     }
@@ -72,13 +72,13 @@ new #[Title('Services')] class extends Component {
 
     public function resetFilters(): void
     {
-        $this->reset('search', 'categorie', 'mine', 'disponiblesSeulement');
+        $this->reset('search', 'categorie', 'mine', 'disponibles');
         $this->resetPage();
     }
 
     public function hasFilters(): bool
     {
-        return trim($this->search) !== '' || $this->categorie !== '' || $this->mine || $this->disponiblesSeulement;
+        return trim($this->search) !== '' || $this->categorie !== '' || $this->mine || $this->disponibles;
     }
 
     /**
@@ -100,14 +100,14 @@ new #[Title('Services')] class extends Component {
             // Une valeur inconnue (URL modifiée à la main) est ignorée.
             ->when(in_array($this->categorie, Service::CATEGORIE_OPTIONS, true), fn ($query) => $query->where('categorie', $this->categorie))
             ->when($this->mine, fn ($query) => $query->whereBelongsTo(auth()->user()))
-            ->when($this->disponiblesSeulement, fn ($query) => $query->pleinementDisponibles());
+            ->when($this->disponibles, fn ($query) => $query->pleinementDisponibles());
     }
 
     #[Computed]
     public function items(): LengthAwarePaginator
     {
         return $this->filteredQuery()
-            ->with('user')
+            ->with(['user', 'interruptionCourante'])
             ->prioritaires()
             ->paginate(10);
     }
@@ -120,7 +120,7 @@ new #[Title('Services')] class extends Component {
     #[Computed]
     public function prioritaires(): Collection
     {
-        return Service::query()->where('mis_en_avant', true)->orderBy('nom')->limit(6)->get();
+        return Service::query()->with('interruptionCourante')->where('mis_en_avant', true)->orderBy('nom')->limit(6)->get();
     }
 
     /**
@@ -141,6 +141,7 @@ new #[Title('Services')] class extends Component {
     {
         return $this->filteredQuery()
             ->geolocalises()
+            ->with('interruptionCourante')
             ->prioritaires()
             ->limit(200)
             ->get();
@@ -213,7 +214,7 @@ new #[Title('Services')] class extends Component {
                 <flux:select.option value="{{ $valeur }}">{{ __($label) }}</flux:select.option>
             @endforeach
         </flux:select>
-        <flux:checkbox wire:model.live="disponiblesSeulement" label="{{ __('Uniquement les services disponibles') }}" />
+        <flux:checkbox wire:model.live="disponibles" label="{{ __('Disponibles seulement') }}" />
         @can('create', Service::class)
             <flux:checkbox wire:model.live="mine" label="{{ __('Mes services uniquement') }}" />
         @endcan
@@ -322,8 +323,8 @@ new #[Title('Services')] class extends Component {
                             'border-magenta/35 bg-magenta/8 text-magenta' => $item->estIndisponible(),
                             'border-amber/35 bg-amber/8 text-amber' => $item->estPerturbe(),
                         ])>
-                            {{ $item->motif_indisponibilite ?: ($item->estIndisponible() ? __('Service momentanément indisponible.') : __('Délais allongés.')) }}
-                            <span class="block text-xs">{{ __($item->libelleRetourPrevu()) }}.</span>
+                            {{ $item->motifEtat() ?: ($item->estIndisponible() ? __('Service momentanément indisponible.') : __('Délais allongés.')) }}
+                            <span class="block text-xs font-medium">{{ __($item->libelleRetourPrevu()) }}</span>
                         </p>
                     @endif
                     <dl class="mt-4 space-y-1.5 border-t border-line pt-3 text-sm">

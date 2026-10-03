@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\BloqueSiServiceIndisponible;
 use App\Models\Demarche;
 use App\Models\Service;
 use App\Services\OnboardingProgress;
@@ -13,6 +14,8 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Démarche')] class extends Component {
+    use BloqueSiServiceIndisponible;
+
     #[Locked]
     public ?Demarche $record = null;
 
@@ -35,10 +38,8 @@ new #[Title('Démarche')] class extends Component {
             $serviceId = request()->integer('service');
             $service = $serviceId > 0 ? Service::query()->find($serviceId) : null;
 
-            // F64 : lien direct vers un service indisponible → retour sur sa fiche, avec le motif et l'alternative.
-            if ($service?->estIndisponible()) {
-                $this->refuserServiceIndisponible($service);
-
+            // F38 / F64 : lien direct vers un service indisponible → retour sur sa fiche (motif, retour prévu, alternative).
+            if ($this->redirigerSiServiceIndisponible($service)) {
                 return;
             }
 
@@ -82,7 +83,7 @@ new #[Title('Démarche')] class extends Component {
     #[Computed]
     public function serviceOptions(): Collection
     {
-        return Service::query()->orderBy('nom')->get(['id', 'nom', 'indisponible_depuis', 'perturbe_depuis', 'motif_indisponibilite', 'retour_prevu_le']);
+        return Service::query()->with('interruptionCourante')->orderBy('nom')->get(['id', 'nom', 'indisponible_depuis', 'perturbe_depuis', 'motif_indisponibilite', 'retour_prevu_le']);
     }
 
     public function save(): void
@@ -91,12 +92,9 @@ new #[Title('Démarche')] class extends Component {
             ? $this->authorize('update', $this->record)
             : $this->authorize('create', Demarche::class);
 
-        // F64 : refus serveur d'une NOUVELLE démarche sur un service indisponible (le bouton masqué ne suffit pas).
-        $service = ! $this->record && filled($this->service_id) ? Service::query()->find($this->service_id) : null;
-
-        if ($service?->estIndisponible()) {
-            $this->refuserServiceIndisponible($service);
-
+        // F38 / F64 : refus serveur d'une NOUVELLE démarche sur un service indisponible (le bouton masqué ne suffit pas).
+        // Une démarche déjà déposée reste modifiable sur son service (règle de validation de service_id).
+        if (! $this->record && filled($this->service_id) && $this->redirigerSiServiceIndisponible(Service::query()->find($this->service_id))) {
             return;
         }
 
@@ -129,16 +127,6 @@ new #[Title('Démarche')] class extends Component {
         }
 
         $this->redirectRoute('demarches.show', $record, navigate: true);
-    }
-
-    /**
-     * F64 : renvoie sur la fiche du service avec un message clair (motif, retour prévu, alternative).
-     */
-    private function refuserServiceIndisponible(Service $service): void
-    {
-        session()->flash('service-indisponible', $service->messageIndisponibilite());
-
-        $this->redirectRoute('services.show', $service, navigate: true);
     }
 }; ?>
 
@@ -177,31 +165,32 @@ new #[Title('Démarche')] class extends Component {
 
                 <div class="grid gap-2 sm:grid-cols-2">
                     <label class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
-                        <input type="radio" wire:model="service_id" value="" class="size-4 accent-[var(--color-cyan)]">
+                        <input type="radio" wire:model="service_id" name="service_id" value="" class="size-4 accent-[var(--color-cyan)]">
                         <span class="font-medium text-ink">Je ne sais pas</span>
                     </label>
                     @foreach ($this->serviceOptions as $option)
-                        @if ($option->estIndisponible())
-                            <div wire:key="service-{{ $option->id }}" class="flex min-h-14 items-start gap-3 rounded-md border border-dashed border-line bg-surface px-4 py-3 opacity-75">
-                                <input type="radio" disabled aria-describedby="service-{{ $option->id }}-indispo" class="mt-1 size-4">
-                                <span class="min-w-0">
-                                    <span class="block font-medium text-ink-2">{{ $option->nom }}</span>
-                                    <span id="service-{{ $option->id }}-indispo" class="block text-xs text-magenta">
-                                        Indisponible{{ $option->retour_prevu_le ? ' · retour prévu le '.$option->retour_prevu_le->translatedFormat('j F') : '' }}
-                                    </span>
-                                </span>
-                            </div>
-                        @else
-                            <label wire:key="service-{{ $option->id }}" class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
-                                <input type="radio" wire:model="service_id" value="{{ $option->id }}" class="size-4 accent-[var(--color-cyan)]">
-                                <span class="min-w-0">
-                                    <span class="block font-medium text-ink">{{ $option->nom }}</span>
-                                    @if ($option->estPerturbe())
-                                        <span class="block text-xs text-amber">Perturbé · délais allongés</span>
+                        @php($bloque = $option->estIndisponible() && (! $record || (int) $record->service_id !== $option->id))
+                        <label wire:key="service-{{ $option->id }}" @class([
+                            'flex min-h-14 items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors',
+                            'cursor-pointer hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8' => ! $bloque,
+                            'cursor-not-allowed opacity-70' => $bloque,
+                        ])>
+                            <input type="radio" wire:model="service_id" name="service_id" value="{{ $option->id }}" class="size-4 accent-[var(--color-cyan)]" @disabled($bloque)>
+                            <span class="min-w-0">
+                                <span class="block font-medium text-ink">{{ $option->nom }}</span>
+                                @if ($option->estPerturbe())
+                                    <span class="block text-xs text-amber">Perturbé · délais allongés</span>
+                                @endif
+                                @if ($bloque)
+                                    {{-- F38 / F63 : service indisponible, statut écrit en texte (pas seulement en couleur). --}}
+                                    @if ($option->indisponible_depuis)
+                                        <span class="block text-sm text-ink-2">Indisponible{{ $option->retour_prevu_le ? ' · retour prévu le '.$option->retour_prevu_le->translatedFormat('j F') : '' }}</span>
+                                    @else
+                                        <span class="block text-sm text-ink-2">Indisponible · démarche suspendue pendant l’interruption</span>
                                     @endif
-                                </span>
-                            </label>
-                        @endif
+                                @endif
+                            </span>
+                        </label>
                     @endforeach
                 </div>
                 <flux:error name="service_id" />
@@ -212,6 +201,7 @@ new #[Title('Démarche')] class extends Component {
                 <div>
                     <h2 class="tn-display text-xl font-semibold text-ink">Décrivez votre demande</h2>
                     <p class="mt-1 text-ink-2">Un objet court, puis les détails utiles au traitement.</p>
+                    <x-tn.mention-obligatoire />
                 </div>
                 <flux:input wire:model="titre" label="Objet de la démarche" placeholder="Ex. Demande d'acte de naissance" required />
                 <flux:textarea wire:model="description" label="Détails" placeholder="Précisez votre demande (personnes concernées, dates, pièces disponibles…)" rows="6" required />

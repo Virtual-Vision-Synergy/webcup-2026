@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Schemas;
 
+use App\Models\Role;
 use App\Models\User;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -32,15 +33,13 @@ class UserForm
                     ->required(fn (string $operation): bool => $operation === 'create')
                     ->dehydrated(fn (?string $state): bool => filled($state))
                     ->helperText(fn (string $operation): ?string => $operation === 'edit' ? 'Laisser vide pour ne pas le changer.' : null),
-                // role n'est pas "fillable" : il est enregistré explicitement dans CreateUser / EditUser.
-                Select::make('role')
+                // role_id n'est pas "fillable" : il est enregistré explicitement dans CreateUser / EditUser.
+                Select::make('role_id')
                     ->label('Rôle')
-                    ->options([
-                        'user' => 'Utilisateur',
-                        'admin' => 'Administrateur',
-                    ])
-                    ->default('user')
+                    ->options(fn (): array => Role::query()->orderBy('id')->pluck('label', 'id')->all())
+                    ->default(fn (): int => Role::idFor(Role::CITOYEN))
                     ->required()
+                    ->exists(Role::class, 'id')
                     ->native(false)
                     ->disabled(fn (?User $record): bool => $record?->is(auth()->user()) ?? false)
                     ->helperText(fn (?User $record): ?string => $record?->is(auth()->user()) ? 'Vous ne pouvez pas modifier votre propre rôle.' : null),

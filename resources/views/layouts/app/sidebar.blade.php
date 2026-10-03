@@ -16,6 +16,12 @@
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
 
+                    @can('viewAny', \App\Models\Role::class)
+                        <flux:sidebar.item icon="shield-check" :href="route('roles.index')" :current="request()->routeIs('roles.*')" wire:navigate>
+                            Rôles
+                        </flux:sidebar.item>
+                    @endcan
+
                     {{-- make:feature:nav --}}
                 </flux:sidebar.group>
             </flux:sidebar.nav>
@@ -61,6 +67,7 @@
                                 <div class="grid flex-1 text-start text-sm leading-tight">
                                     <flux:heading class="truncate">{{ auth()->user()->name }}</flux:heading>
                                     <flux:text class="truncate">{{ auth()->user()->email }}</flux:text>
+                                    <flux:badge size="sm" class="mt-1 w-fit">{{ auth()->user()->role->label }}</flux:badge>
                                 </div>
                             </div>
                         </div>

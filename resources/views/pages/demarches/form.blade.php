@@ -2,6 +2,7 @@
 
 use App\Models\Demarche;
 use App\Models\Service;
+use App\Services\OnboardingProgress;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -29,6 +30,12 @@ new #[Title('Démarche')] class extends Component {
             $this->service_id = (string) ($demarche->service_id ?? '');
         } else {
             $this->authorize('create', Demarche::class);
+
+            // Pré-sélection du service (lien « Commencer une démarche » du parcours de prise en main, D12).
+            $serviceId = request()->integer('service');
+            if ($serviceId > 0 && Service::query()->whereKey($serviceId)->exists()) {
+                $this->service_id = (string) $serviceId;
+            }
         }
     }
 
@@ -69,6 +76,8 @@ new #[Title('Démarche')] class extends Component {
             }
         }
 
+        $depuisParcours = ! $this->record && OnboardingProgress::pour(auth()->user())->doitRevenirAuParcours();
+
         if ($this->record) {
             $this->record->update($validated);
             $record = $this->record;
@@ -79,6 +88,13 @@ new #[Title('Démarche')] class extends Component {
         }
 
         Flux::toast(variant: 'success', text: 'Démarche enregistrée.');
+
+        // Parcours de prise en main (D12) : la première démarche termine le parcours, on affiche les félicitations.
+        if ($depuisParcours) {
+            $this->redirectRoute('onboarding.show', navigate: true);
+
+            return;
+        }
 
         $this->redirectRoute('demarches.show', $record, navigate: true);
     }

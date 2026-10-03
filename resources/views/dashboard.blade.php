@@ -30,6 +30,8 @@
             </x-slot:actions>
         </x-tn.page-header>
 
+        <x-onboarding.rappel />
+
         {{-- ALERTES --}}
         @if ($alertes->isNotEmpty())
             <section aria-labelledby="titre-alertes" class="flex flex-col gap-2">

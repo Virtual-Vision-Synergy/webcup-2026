@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\ThrottlesPerUser;
 use App\Models\Message;
 use Flux\Flux;
 use Illuminate\Support\Facades\Storage;
@@ -8,7 +9,9 @@ use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
-new #[Title('Message')] class extends Component {
+new #[Title('Contacter la mairie')] class extends Component {
+    use ThrottlesPerUser;
+
     #[Locked]
     public ?Message $record = null;
 
@@ -16,6 +19,10 @@ new #[Title('Message')] class extends Component {
     public string $email = '';
     public string $sujet = '';
     public string $message = '';
+
+    /** Message envoyé : affiche l'écran de confirmation. */
+    #[Locked]
+    public ?int $envoyeId = null;
 
     public function mount(?Message $message = null): void
     {
@@ -28,6 +35,8 @@ new #[Title('Message')] class extends Component {
             $this->message = (string) ($message->message ?? '');
         } else {
             $this->authorize('create', Message::class);
+            $this->nom = (string) auth()->user()->name;
+            $this->email = (string) auth()->user()->email;
         }
     }
 
@@ -38,9 +47,22 @@ new #[Title('Message')] class extends Component {
     {
         return [
             'nom' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255'],
             'sujet' => ['required', 'string', 'max:255'],
             'message' => ['required', 'string', 'max:5000'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function validationAttributes(): array
+    {
+        return [
+            'nom' => 'nom',
+            'email' => 'adresse e-mail',
+            'sujet' => 'sujet',
+            'message' => 'message',
         ];
     }
 
@@ -54,40 +76,77 @@ new #[Title('Message')] class extends Component {
 
         if ($this->record) {
             $this->record->update($validated);
-            $record = $this->record;
-        } else {
-            $record = new Message($validated);
-            $record->user()->associate(auth()->user());
-            $record->save();
+
+            Flux::toast(variant: 'success', text: 'Message modifié.');
+
+            $this->redirectRoute('messages.show', $this->record, navigate: true);
+
+            return;
         }
 
-        Flux::toast(variant: 'success', text: 'Message enregistré(e).');
+        $this->throttlePerUser('contact-mairie', maxAttempts: 5, decaySeconds: 60);
 
-        $this->redirectRoute('messages.show', $record, navigate: true);
+        $record = new Message($validated);
+        $record->user()->associate(auth()->user());
+        $record->save();
+
+        $this->envoyeId = $record->id;
+        $this->reset('sujet', 'message');
+
+        Flux::toast(variant: 'success', text: 'Votre message a bien été envoyé à la mairie.');
+    }
+
+    public function nouveau(): void
+    {
+        $this->authorize('create', Message::class);
+
+        $this->envoyeId = null;
     }
 }; ?>
 
 <section class="mx-auto w-full max-w-2xl space-y-6">
     <x-tn.page-header
         label="Contact"
-        :title="$record ? 'Modifier le message' : 'Écrire à un service'"
+        :title="$record ? 'Modifier le message' : 'Contacter la mairie'"
+        :subtitle="$record ? null : 'Le Service des Relations Citoyennes vous répondra dans les meilleurs délais.'"
         :breadcrumb="$record
             ? ['Mon espace' => route('dashboard'), 'Messages' => route('messages.index'), ($record->sujet ?: 'Message') => route('messages.show', $record), 'Modifier' => null]
             : ['Mon espace' => route('dashboard'), 'Messages' => route('messages.index'), 'Nouveau' => null]"
     />
 
-    <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
-        <flux:input wire:model="nom" label="Nom" required />
+    @if ($envoyeId)
+        <div role="status" class="space-y-4 rounded-md border border-line bg-surface p-5 md:p-6">
+            <flux:callout variant="success" icon="check-circle">
+                <flux:callout.heading>Message envoyé à la mairie</flux:callout.heading>
+                <flux:callout.text>Merci ! Votre message a bien été transmis au Service des Relations Citoyennes. Un agent le traitera prochainement.</flux:callout.text>
+            </flux:callout>
 
-        <flux:input wire:model="email" label="Email" required />
-
-        <flux:input wire:model="sujet" label="Sujet" required />
-
-        <flux:textarea wire:model="message" label="Message" rows="5" required />
-
-        <div class="flex items-center gap-3">
-            <flux:button type="submit" variant="primary">Enregistrer</flux:button>
-            <flux:button :href="route('messages.index')" wire:navigate variant="ghost">Annuler</flux:button>
+            <div class="flex flex-wrap items-center gap-3">
+                <flux:button variant="primary" :href="route('messages.show', $envoyeId)" wire:navigate>Voir mon message</flux:button>
+                <flux:button variant="ghost" wire:click="nouveau">Écrire un autre message</flux:button>
+            </div>
         </div>
-    </form>
+    @else
+        <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6" novalidate>
+            <flux:input wire:model="nom" label="Nom" required />
+
+            <flux:input wire:model="email" type="email" label="Adresse e-mail" required />
+
+            <flux:input wire:model="sujet" label="Sujet" required />
+
+            <flux:textarea wire:model="message" label="Message" rows="5" required />
+
+            @error('throttle')
+                <flux:text class="text-red-600">{{ $message }}</flux:text>
+            @enderror
+
+            <div class="flex items-center gap-3">
+                <flux:button type="submit" variant="primary">
+                    <span wire:loading.remove wire:target="save">{{ $record ? 'Enregistrer' : 'Envoyer à la mairie' }}</span>
+                    <span wire:loading wire:target="save">Envoi…</span>
+                </flux:button>
+                <flux:button :href="route('messages.index')" wire:navigate variant="ghost">Annuler</flux:button>
+            </div>
+        </form>
+    @endif
 </section>

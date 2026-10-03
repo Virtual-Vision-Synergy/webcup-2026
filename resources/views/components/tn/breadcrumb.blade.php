@@ -8,7 +8,7 @@
     $niveaux = $home ? ['Accueil' => route('home')] + $items : $items;
 @endphp
 <nav {{ $attributes }} aria-label="Fil d'Ariane">
-    <ol class="flex flex-wrap items-center gap-1.5 font-mono text-[11px] uppercase tracking-[.06em] text-ink-2">
+    <ol class="flex flex-wrap items-center gap-1.5 font-mono text-[0.6875rem] uppercase tracking-[.06em] text-ink-2">
         @foreach ($niveaux as $libelle => $url)
             <li class="flex min-w-0 items-center gap-1.5">
                 @if ($url && ! $loop->last)

@@ -38,6 +38,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(RoleSeeder::class);
+        $this->call(QuartierSeeder::class);
 
         if (! app()->isProduction()) {
             User::factory()->admin()->create([
@@ -114,7 +115,7 @@ class DatabaseSeeder extends Seeder
         Message::factory(20)->recycle($users)->create();
 
         $services = Service::all();
-        Demarche::factory(20)->recycle($users)->recycle($services)->create();
+        Demarche::factory(20)->recente()->recycle($users)->recycle($services)->create();
 
         if (! app()->isProduction()) {
             // Quelques démarches pour le compte citoyen de démo : son espace personnel n'est pas vide.
@@ -126,18 +127,26 @@ class DatabaseSeeder extends Seeder
         Annonce::factory()->active()->for($auteur)->create([
             'titre' => 'Coupure d’eau à Ambohijanahary',
             'contenu' => 'Travaux sur le réseau : l’eau sera coupée dans le quartier Ambohijanahary aujourd’hui de 9 h à 16 h. Faites une réserve et évitez les lessives ; un camion-citerne stationne place des Pionniers.',
-            'niveau' => 'important',
+            'niveau' => 'vigilance',
         ]);
         Annonce::factory()->programmee()->for($auteur)->create([
             'titre' => 'Alerte météo : vents violents demain',
             'contenu' => 'Rafales jusqu’à 110 km/h attendues. Rentrez le mobilier extérieur, limitez vos déplacements et suivez les consignes du Haut Conseil sur cette plateforme.',
-            'niveau' => 'urgent',
+            'niveau' => 'alerte',
         ]);
         Annonce::factory()->expiree()->for($auteur)->create([
             'titre' => 'Fermeture exceptionnelle de la mairie annexe',
             'contenu' => 'La mairie annexe du secteur Nord était fermée pour inventaire. Les démarches restaient possibles en ligne.',
             'niveau' => 'information',
         ]);
+
+        // Alerte ciblée F29 « Montée des eaux — quartier sud » + habitants sud@example.com et nord@example.com.
+        $this->call(AlerteMonteeDesEauxSeeder::class);
+
+        if (! app()->isProduction()) {
+            // F30 : notifications lues et non lues pour user@example.com + annonce « Danger » programmée dans 5 min.
+            $this->call(NotificationsAnnoncesSeeder::class);
+        }
 
         Signalement::factory(15)->recycle($users)->create();
         Signalement::factory(5)->nouveau()->recycle($users)->create();
@@ -153,6 +162,16 @@ class DatabaseSeeder extends Seeder
             Signalement::factory(2)->for($citoyen)->create();
         }
 
+        // Soutiens d'habitants aux demandes encore ouvertes (F52) : chaque citoyen soutient au plus une fois.
+        $citoyens = $users->filter(fn (User $user): bool => $user->isCitoyen());
+        Signalement::query()->whereIn('statut', Signalement::STATUTS_OUVERTS)->get()
+            ->each(function (Signalement $signalement) use ($citoyens): void {
+                $citoyens->reject(fn (User $user): bool => $user->id === $signalement->user_id)
+                    ->shuffle()
+                    ->take(random_int(0, 5))
+                    ->each(fn (User $user) => $signalement->ajouterSoutien($user));
+            });
+
         if (! app()->isProduction()) {
             $this->call(LoginAttemptSeeder::class);
         }
@@ -163,6 +182,9 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call(LigneTransportSeeder::class);
+
+        // F39 : services ouverts aux rendez-vous, créneaux sur 14 jours ouvrés, agenda du jour pour agent@example.com.
+        $this->call(RendezVousSeeder::class);
 
         // make:feature:seeders
     }

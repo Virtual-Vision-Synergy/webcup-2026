@@ -122,6 +122,7 @@ new #[Title('Mes démarches')] class extends Component {
     >
         <x-slot:actions>
             <flux:button icon="clock" :href="route('demarches.historique')" wire:navigate>Historique</flux:button>
+            <flux:button icon="arrow-down-tray" :href="route('demarches.recapitulatif')">Télécharger le récapitulatif</flux:button>
             @can('create', Demarche::class)
                 <flux:button variant="primary" icon="plus" :href="route('demarches.create')" class="tn-cta" wire:navigate>
                     {{ __('Nouvelle démarche') }}

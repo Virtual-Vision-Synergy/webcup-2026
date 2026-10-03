@@ -46,6 +46,7 @@ new #[Title('Signalement')] class extends Component {
 @php
     $statut = $record->statut;
     $categorie = Signalement::libelleCategorie($record->categorie);
+    $nombreSoutiens = $record->soutiens()->count();
 @endphp
 
 <section class="mx-auto w-full max-w-5xl space-y-6">
@@ -58,6 +59,7 @@ new #[Title('Signalement')] class extends Component {
             <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink-2">
                 <x-tn.status-badge :etat="$record->etatStatut()">{{ Signalement::libelleStatut($statut) }}</x-tn.status-badge>
                 <span>Par {{ $record->user?->name }}</span>
+                <span class="inline-flex items-center gap-1"><flux:icon.users variant="micro" /> {{ $nombreSoutiens }} {{ $nombreSoutiens > 1 ? 'habitants soutiennent' : 'habitant soutient' }} cette demande</span>
                 <span class="font-mono text-xs">{{ $record->created_at->format('d.m.Y · H:i') }}</span>
             </div>
         </x-slot:meta>
@@ -100,6 +102,13 @@ new #[Title('Signalement')] class extends Component {
                 <x-tn.surface>
                     <x-tn.section-label as="h2" class="mb-2">Suivi</x-tn.section-label>
                     <p class="text-ink-2">Votre signalement a été transmis à la mairie. Son état évoluera ici dès qu'un agent l'aura pris en charge.</p>
+                    <p class="mt-3 text-ink-2">
+                        @if ($nombreSoutiens > 0)
+                            <strong class="text-ink">{{ $nombreSoutiens }}</strong> {{ $nombreSoutiens > 1 ? 'autres habitants soutiennent' : 'autre habitant soutient' }} votre demande.
+                        @else
+                            Les autres habitants peuvent soutenir votre demande depuis « Soutenir une demande ».
+                        @endif
+                    </p>
                 </x-tn.surface>
             @endcan
         </div>

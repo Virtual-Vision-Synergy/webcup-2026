@@ -1,111 +1,44 @@
-# Webcup 2026 — contexte projet pour Claude Code
+# CLAUDE.md
 
-Tu travailles avec l'équipe **Virtual Vision Synergie** (4 développeurs, Madagascar) sur le **24h by Webcup 2026** :
-un hackathon où l'on construit en 24 h une **application web** sur un sujet révélé au départ.
-Réponds en **français**. L'équipe découvre Laravel : explique brièvement ce que tu fais et pourquoi.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Règles et conventions détaillées : @CONVENTION.md
-État actuel du projet et du serveur (à lire en premier) : @docs/PASSATION.md
-Organisation du week-end (rôles, workflow, board, déroulé) : `docs/guides/20-playbook-competition.md`. Cours Laravel du projet : `docs/guides/10-laravel-complet.md`. Rôles : Randy chef/intégration/déploiement, Manakasina Judicaël adjoint touche-à-tout, Tsoa (Voa-hary) exécuteur, Njaraniaina scrum master et testeuse.
-Consignes officielles Laravel Boost (versions, skills, outils) : @AGENTS.md
-
-## La compétition (ce qui guide toutes les décisions)
-
-- Samedi 3 oct. 9h → dimanche 4 oct. 9h. ~7 fonctionnalités de base au départ, puis des fonctionnalités
-  « progressives » annoncées toutes les 2-3 h. Impossible de tout faire : **la priorisation est évaluée**.
-- Le jury **vérifie chaque fonctionnalité déclarée** et **teste la sécurité** (authentification, contrôle d'accès,
-  validation des entrées, endpoints protégés, fuite de données, brute force, rôles). Il peut lire le code (repo public).
-- Critères : fonctionnalités réellement livrées, qualité technique, design/UX, cohérence ambition/exécution.
-- Conséquence : **une fonctionnalité sûre et finie vaut mieux que deux à moitié**. Ne jamais laisser une page cassée.
-
-## Stack (versions installées — ne pas en supposer d'autres)
-
-- Laravel 13, PHP 8.4, Livewire 4 (composants **single-file** `resources/views/pages/**/nom.blade.php`),
-  UI **Flux** (version gratuite : button, input, select, textarea, checkbox, table, card, badge, modal, pagination,
-  heading, text, link, sidebar…), Tailwind 4, Vite.
-- Auth : starter kit Livewire + Fortify (inscription, 2FA, confirmation de mot de passe).
-- Admin : **Filament 5** sur `/admin`, réservé aux `role = 'admin'` (`User::canAccessPanel()`).
-- Tests : **Pest**. Formatage : **Pint**.
-- Base : SQLite en local, **MariaDB 10.11** en production (hébergement mutualisé cPanel Hodi, 2 Go RAM).
-- Pas de nouvelle dépendance Composer/npm sans demander à l'équipe.
-
-## Architecture
-
-- Une fonctionnalité métier = modèle + migration + factory + **policy** + 3 pages Livewire (`index`, `form`, `show`)
-  dans `resources/views/pages/<slug>/` + routes dans `routes/features.php` (groupe `auth`) + tests Pest.
-- **Pour créer une fonctionnalité CRUD, utilise d'abord le générateur**, puis adapte le résultat :
-  ```
-  php artisan make:feature Incident --fields="titre:string,description:text?,niveau:enum(faible/moyen/critique),photo:image?,latitude:decimal?,longitude:decimal?" --icon=exclamation-triangle
-  ```
-  Types : string, text, integer, decimal, boolean, date, datetime, enum(a/b/c), image. `?` = facultatif.
-  Sous PowerShell, séparer les valeurs d'enum par `/` (le `|` est intercepté).
-  Ensuite : `php artisan migrate`, éventuellement `php artisan make:filament-resource Nom --generate`.
-- Aucun exemple n'est livré dans le dépôt : génère-en un avec `make:feature` et relis-le avant d'adapter.
-- Marqueurs utilisés par le générateur (ne pas les supprimer) :
-  `// make:feature:routes` (routes/features.php), `{{-- make:feature:nav --}}` (sidebar),
-  `// make:feature:seeders` (DatabaseSeeder).
-
-## Règles de sécurité non négociables
-
-1. Toute route métier est dans le groupe `auth` de `routes/features.php`, sauf exception publique explicite.
-2. Chaque action Livewire qui lit/modifie/supprime une ressource appelle `$this->authorize(...)` (Policy).
-3. Jamais d'ID venant du client sans vérification : Policy ou filtrage par propriétaire.
-4. `role`, `user_id` et tout champ sensible ne sont **jamais** dans `#[Fillable]` : ils sont assignés dans le code.
-5. Validation serveur systématique (`rules()` Livewire). Uploads : `image`, `mimes:jpg,jpeg,png,webp`, `max:2048`.
-6. Blade : toujours `{{ }}`, jamais `{!! !!}` sur une donnée utilisateur.
-7. Secrets uniquement dans `.env`. Clés API (OpenRouter…) utilisées **côté serveur seulement**.
-8. Chaque nouvelle fonctionnalité a au minimum un test « le propriétaire peut » et un test « un autre utilisateur → 403 ».
-
-## Typage
-
-- Typer paramètres, retours de méthode et propriétés de classe.
-- Propriétés de **formulaire** Livewire en `string` (les champs HTML envoient du texte), contrôlées par la validation,
-  converties par les `casts` du modèle. Pas de `declare(strict_types=1)`.
+Le contexte projet complet (compétition, stack, règles de sécurité, migrations en production, Git) est dans @CONTEXT.md ; les conventions dans @CONVENTION.md ; l'état du serveur dans @docs/PASSATION.md ; les consignes Laravel Boost dans @AGENTS.md. Réponds en français.
 
 ## Commandes
 
+```bash
+composer run dev                                   # serveur + queue:listen + Vite (laisser tourner)
+php artisan test --compact                         # tous les tests (Pest)
+php artisan test --compact tests/Feature/SecurityTest.php   # un fichier
+php artisan test --compact --filter="nom du test"  # un seul test
+vendor/bin/pint --format agent                     # formatage (la CI échoue sinon)
+composer types:check                               # PHPStan (--memory-limit=1G déjà dans le script)
+composer test                                      # = config:clear + pint --test + phpstan + tests (équivaut à la CI)
 ```
-composer run dev                    # serveur de dev + Vite
-php artisan migrate:fresh --seed    # base locale propre + données de démo (JAMAIS en production)
-vendor/bin/pint                     # formatage (obligatoire avant push, sinon la CI échoue)
-php artisan test                    # tests
-```
-Comptes de démo locaux : `admin@example.com` / `user@example.com`, mot de passe `password`.
 
-## Migrations en production (règles strictes)
+`composer ci:check` et `composer test` exécutent Pint en mode `--test` : lance d'abord `vendor/bin/pint`.
 
-MariaDB 10.11 uniquement (pas de PostgreSQL). Les migrations tournent **automatiquement** à chaque déploiement sur `main`, et « Restaurer » ne ramène que le code, **jamais la base**.
+## Architecture (vue d'ensemble)
 
-- Pendant la compétition : **migrations additives uniquement** (nouvelle table, ou colonne `nullable` ou avec valeur par défaut).
-- **Interdit** sur une table ou colonne existante : `drop`, `rename`, `change()` de type. Pour remplacer une table ou une colonne : créer la nouvelle, copier les données, **garder l'ancienne**.
-- **Une seule modification de schéma par migration** (MariaDB n'annule pas un DDL à moitié fait).
-- **Ne jamais modifier une migration déjà mergée sur `main`** : corriger avec une nouvelle migration.
-- Le job CI **« mariadb »** doit être vert avant tout merge contenant une migration.
-- **Jamais** `migrate:fresh`, `db:wipe`, `db:seed` ni `migrate:rollback` en production.
-## Git et livraison
+- **Pas de contrôleurs** : chaque page est un composant Livewire single-file `resources/views/pages/<slug>/{index,form,show}.blade.php` (le préfixe `⚡` apparaît sur certains fichiers, ex. `components/⚡cloche-notifications.blade.php`). Le routage des fonctionnalités est dans `routes/features.php` (groupe `auth`) ; `routes/web.php` ne porte que le socle (accueil, tableau de bord).
+- **`php artisan make:feature`** (`app/Console/Commands/MakeFeature.php`, testé par `tests/Feature/MakeFeatureTest.php`) génère modèle, migration, factory, policy, 3 pages, routes, entrée de sidebar, seeder et tests. Il s'appuie sur les marqueurs `// make:feature:routes`, `{{-- make:feature:nav --}}`, `// make:feature:seeders` : ne pas les supprimer. Le dépôt ne livre plus d'exemple de fonctionnalité (`Signalement` retiré) : en générer un pour s'inspirer.
+- **Boîte à outils transversale** (réutiliser avant de réécrire) :
+  - `app/Services/Ai.php` : client OpenRouter côté serveur (`isConfigured()`, `ask($system, $prompt)`, retourne `null` si indisponible → prévoir un secours) ; config dans `config/services.php`.
+  - `app/Services/OrgaApi.php` : client HTTP de l'API de l'organisation avec cache (`get($path, $query, $ttl)`).
+  - `app/Concerns/ThrottlesPerUser.php` : `throttlePerUser($action, $max, $decay)` pour limiter les actions sensibles.
+  - `app/Concerns/ExportsCsv.php` : export CSV ; `app/Models/ActionLog.php` : journal d'actions (ressource Filament `ActionLogs`).
+  - `app/Models/Concerns/HasCoordinates.php` + `<x-carte>` (Leaflet) : cartes ; notifications + cloche `⚡cloche-notifications`.
+  - Widget Filament `UsersStatsOverview` ; commande `app:promouvoir-admin` (rôle admin) ; `app:test-mail`.
+- **Admin** : Filament 5 sur `/admin` (`app/Filament/Resources`, `Widgets`), accès par `User::canAccessPanel()` (`role = 'admin'`).
+- **Temps réel** : pas de WebSockets, uniquement `wire:poll.10s.visible` (jamais sous 5 s, limite de 20 requêtes simultanées en production).
+- **CI** (`.github/workflows/tests.yml`) : Pint + PHPStan + tests sur SQLite, plus un job **mariadb** obligatoire avant tout merge contenant une migration.
+- **Déploiement** : `hodifly.json` ; chaque merge sur `main` part en production (migrations incluses).
 
-- Ne fais **pas** de commit, push ou merge toi-même : propose les commandes, l'équipe les lance.
-- Messages de commit : `feat: …`, `fix: …`, `test: …`, `style: …`, `docs: …` (en français).
-- PR : `Refs #12`, jamais `Closes #12`.
-- Déploiement : **automatique**. Chaque merge sur `main` est compilé et mis en ligne par Hodifly (cPanel) en 1 à 2 minutes : ce qui est mergé part en ligne, donc jamais de merge sans CI verte.
-- Les variables de production se changent dans Hodifly (Modifier → Variables), jamais dans un `.env` du serveur (réécrit à chaque déploiement). Sur le serveur, l'application en ligne est `~/app`.
-- Ne jamais modifier le bloc `AddHandler … ea-php84` de `public/.htaccess` (il active PHP 8.4 sur le serveur).
+## Tests
 
-## Style de travail attendu
+Pest, `tests/Pest.php` étend `TestCase`. Les tests de sécurité transverses sont dans `tests/Feature/SecurityTest.php` ; la boîte à outils dans `tests/Feature/Toolbox/`. Lire la skill `testing-best-practices` avant d'écrire des tests.
 
-- Avant de coder : reformule la fonctionnalité en 2-3 lignes, liste les fichiers touchés, puis code.
-- Après avoir codé : lance `vendor/bin/pint` et `php artisan test`, puis indique comment tester à la main
-  (URL, compte à utiliser, ce qu'on doit voir).
-- Interface en français, responsive mobile, avec états vide / chargement / erreur / succès.
-- Données de démo réalistes (factory + seeder) pour chaque nouvelle entité.
+## Outillage Claude du dépôt
 
-## Sessions cloud (prioritaire sur la règle « pas de commit » ci-dessus)
-
-Si tu tournes dans une session cloud (et non sur le PC de Randy) :
-
-1. Au démarrage, lance `bash scripts/cloud-setup.sh`. Si `composer install` échoue à cause du réseau, dis-le tout de suite et continue sans lancer les tests (la CI GitHub les lancera).
-2. Travaille sur une branche `feat/<sujet>` créée depuis `main`. Ne touche jamais à `main` et ne merge jamais.
-3. Petits commits en français, format `type: description`.
-4. Avant de pousser : `vendor/bin/pint` puis `php artisan test`. Si tu ne peux pas les lancer, écris-le dans la PR.
-5. Ouvre une PR avec `Refs #<numéro d'issue>` (jamais `Closes`) et liste dans la description : ce qui a été fait, comment tester à la main, risques.
-6. Une session = une fonctionnalité. Ne modifie pas `routes/features.php`, la sidebar ou le seeder à la main : passe par `make:feature` (marqueurs), pour éviter les conflits entre sessions parallèles.
+- Commandes slash dans `.claude/commands/` : `/fonctionnalite`, `/triage`, `/audit-secu`, `/recap-jury`.
+- Skills dans `.claude/skills/` (Flux, Livewire, Fortify, Tailwind, bonnes pratiques Laravel, tests) : les activer quand le domaine correspond.

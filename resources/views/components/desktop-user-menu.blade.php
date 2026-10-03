@@ -15,6 +15,7 @@
             <div class="grid flex-1 text-start text-sm leading-tight">
                 <flux:heading class="truncate">{{ auth()->user()->name }}</flux:heading>
                 <flux:text class="truncate">{{ auth()->user()->email }}</flux:text>
+                <flux:badge size="sm" class="mt-1 w-fit" data-test="user-role">{{ auth()->user()->role->label }}</flux:badge>
             </div>
         </div>
         <flux:menu.separator />

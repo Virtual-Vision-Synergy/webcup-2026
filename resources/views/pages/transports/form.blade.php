@@ -105,7 +105,9 @@ new #[Title('Ligne de transport')] class extends Component {
     <x-tn.page-header
         label="Mobilité"
         :title="$record ? 'Modifier la ligne '.$record->numero : 'Ajouter une ligne'"
-        :breadcrumb="['Transports' => route('transports.index'), ($record ? 'Modifier' : 'Nouvelle ligne') => null]"
+        :breadcrumb="$record
+            ? ['Mon espace' => route('dashboard'), 'Transports' => route('transports.index'), 'Ligne '.$record->numero => route('transports.show', $record), 'Modifier' => null]
+            : ['Mon espace' => route('dashboard'), 'Transports' => route('transports.index'), 'Nouvelle ligne' => null]"
     />
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">

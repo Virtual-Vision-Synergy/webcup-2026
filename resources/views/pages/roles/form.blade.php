@@ -68,7 +68,9 @@ new #[Title('Rôle')] class extends Component {
     <x-tn.page-header
         label="Administration"
         :title="$record ? 'Modifier le rôle' : 'Ajouter un rôle'"
-        :breadcrumb="['Rôles' => route('roles.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
+        :breadcrumb="$record
+            ? ['Mon espace' => route('dashboard'), 'Rôles' => route('roles.index'), $record->code => route('roles.show', $record), 'Modifier' => null]
+            : ['Mon espace' => route('dashboard'), 'Rôles' => route('roles.index'), 'Nouveau' => null]"
     />
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">

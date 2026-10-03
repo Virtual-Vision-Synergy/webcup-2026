@@ -1,11 +1,13 @@
 @php
     // Emplacement des illustrations officielles HD : déposer public/images/hero/ciel-nuit.webp (et ciel-jour.webp).
     // Sans fichier, le ciel en CSS sert de secours.
-    $illustrationNuit = file_exists(public_path('images/hero/ciel-nuit.webp')) ? asset('images/hero/ciel-nuit.webp') : null;
-    $illustrationJour = file_exists(public_path('images/hero/ciel-jour.webp')) ? asset('images/hero/ciel-jour.webp') : null;
+    // F59 : en « Mode allégé », aucune illustration décorative n'est téléchargée.
+    $allege = \App\Support\ModeAllege::actif();
+    $illustrationNuit = ! $allege && file_exists(public_path('images/hero/ciel-nuit.webp')) ? asset('images/hero/ciel-nuit.webp') : null;
+    $illustrationJour = ! $allege && file_exists(public_path('images/hero/ciel-jour.webp')) ? asset('images/hero/ciel-jour.webp') : null;
 @endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif()])>
     <head>
         @include('partials.head')
     </head>
@@ -56,6 +58,8 @@
                 <flux:toast />
             </flux:toast.group>
         @endpersist
+
+        <x-tn.chargement />
 
         @fluxScripts
     </body>

@@ -31,6 +31,7 @@
             <x-tn.contrast-toggle class="max-lg:hidden" />
             <x-tn.text-size class="max-lg:hidden" />
             <x-tn.theme-toggle class="max-lg:hidden" />
+            <x-tn.mode-allege class="max-lg:hidden" />
 
             @if ($connecte)
                 <flux:button :href="route('dashboard')" variant="primary" class="h-10! max-lg:hidden">{{ __('Mon espace') }}</flux:button>

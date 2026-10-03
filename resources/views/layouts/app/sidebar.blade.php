@@ -29,6 +29,10 @@
                         Projets de la ville
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="chat-bubble-bottom-center-text" :href="route('avis.index')" :current="request()->routeIs('avis.*')" wire:navigate>
+                        Mes avis
+                    </flux:sidebar.item>
+
                     {{-- make:feature:nav --}}
 @endsection
 @php

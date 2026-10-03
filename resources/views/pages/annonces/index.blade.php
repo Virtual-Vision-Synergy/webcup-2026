@@ -5,6 +5,7 @@ use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -23,6 +24,7 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
     public string $filterStatut = '';
 
     /** Annonce dont on met à jour la situation (vérifiée par findOrFail + authorize à l'enregistrement). */
+    #[Locked]
     public ?int $miseAJourId = null;
 
     public string $miseAJour = '';

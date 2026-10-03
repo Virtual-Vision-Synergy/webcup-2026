@@ -136,9 +136,7 @@ new #[Title('Contacter la mairie')] class extends Component {
 
             <flux:textarea wire:model="message" label="{{ __('Message') }}" rows="5" required />
 
-            @error('throttle')
-                <flux:text class="text-red-600">{{ $message }}</flux:text>
-            @enderror
+            <flux:error name="throttle" />
 
             <div class="flex items-center gap-3">
                 <flux:button type="submit" variant="primary">

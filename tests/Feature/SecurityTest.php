@@ -41,8 +41,11 @@ test('la connexion est bloquée après trop de tentatives', function () {
         $this->post('/login', ['email' => $user->email, 'password' => 'mauvais']);
     }
 
-    $this->post('/login', ['email' => $user->email, 'password' => 'mauvais'])
-        ->assertStatus(429);
+    // F37 : le blocage renvoie vers /login avec un message en français (plus de 429 du middleware throttle).
+    $this->post('/login', ['email' => $user->email, 'password' => 'password'])
+        ->assertSessionHasErrors(['email' => 'Trop de tentatives de connexion. Par sécurité, réessayez dans 15 minutes.']);
+
+    $this->assertGuest();
 });
 
 test('les en-têtes de sécurité sont présents', function () {

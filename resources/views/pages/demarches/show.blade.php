@@ -80,6 +80,8 @@ new #[Title('Démarche')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    <x-audit-history :subject="$record" variant="resume" />
+
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <x-tn.surface>
             <x-tn.section-label as="h2" class="mb-2">Détails</x-tn.section-label>
@@ -109,4 +111,6 @@ new #[Title('Démarche')] class extends Component {
             @endcan
         </div>
     </div>
+
+    <x-audit-history :subject="$record" />
 </section>

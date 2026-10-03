@@ -39,6 +39,23 @@ new #[Layout('layouts::agent'), Title('Entrée du journal')] class extends Compo
         return route($config['route'], $subject);
     }
 
+    /**
+     * Lien vers l'historique complet de l'élément (F48), si l'agent a le droit de le consulter.
+     */
+    #[Computed]
+    public function lienHistorique(): ?string
+    {
+        $this->authorize('view', $this->log);
+
+        $subject = $this->elementExistant();
+
+        if ($subject === null || ! AuditLog::peutVoirHistorique(auth()->user(), $subject)) {
+            return null;
+        }
+
+        return route('agent.history.show', ['type' => AuditLog::slugFor($subject), 'id' => $subject->getKey()]);
+    }
+
     #[Computed]
     public function elementExistant(): ?Model
     {
@@ -62,6 +79,9 @@ new #[Layout('layouts::agent'), Title('Entrée du journal')] class extends Compo
             </div>
         </x-slot:meta>
         <x-slot:actions>
+            @if ($this->lienHistorique)
+                <flux:button :href="$this->lienHistorique" wire:navigate icon="clock">Historique de cet élément</flux:button>
+            @endif
             <flux:button :href="route('agent.audit.index')" wire:navigate variant="ghost" icon="arrow-left">Retour au journal</flux:button>
         </x-slot:actions>
     </x-tn.page-header>

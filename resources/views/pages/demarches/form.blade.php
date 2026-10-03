@@ -146,7 +146,7 @@ new #[Title('Démarche')] class extends Component {
 
                 <div class="grid gap-2 sm:grid-cols-2">
                     <label class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
-                        <input type="radio" wire:model="service_id" value="" class="size-4 accent-[var(--color-cyan)]">
+                        <input type="radio" wire:model="service_id" name="service_id" value="" class="size-4 accent-[var(--color-cyan)]">
                         <span class="font-medium text-ink">Je ne sais pas</span>
                     </label>
                     @foreach ($this->serviceOptions as $option)
@@ -162,7 +162,7 @@ new #[Title('Démarche')] class extends Component {
                             </div>
                         @else
                             <label wire:key="service-{{ $option->id }}" class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
-                                <input type="radio" wire:model="service_id" value="{{ $option->id }}" class="size-4 accent-[var(--color-cyan)]">
+                                <input type="radio" wire:model="service_id" name="service_id" value="{{ $option->id }}" class="size-4 accent-[var(--color-cyan)]">
                                 <span class="font-medium text-ink">{{ $option->nom }}</span>
                             </label>
                         @endif
@@ -176,6 +176,7 @@ new #[Title('Démarche')] class extends Component {
                 <div>
                     <h2 class="tn-display text-xl font-semibold text-ink">Décrivez votre demande</h2>
                     <p class="mt-1 text-ink-2">Un objet court, puis les détails utiles au traitement.</p>
+                    <x-tn.mention-obligatoire />
                 </div>
                 <flux:input wire:model="titre" label="Objet de la démarche" placeholder="Ex. Demande d'acte de naissance" required />
                 <flux:textarea wire:model="description" label="Détails" placeholder="Précisez votre demande (personnes concernées, dates, pièces disponibles…)" rows="6" required />

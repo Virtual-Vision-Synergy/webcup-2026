@@ -3,14 +3,15 @@
 use App\Models\Traduction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Validation\Rule;
 
 Route::view('/', 'welcome')->name('home');
 
-Route::post('langue', function (Request $request) {
-    $validated = $request->validate(['langue' => ['required', Rule::in(array_keys(Traduction::LANGUES))]]);
-    $request->session()->regenerate();
-    $request->session()->put('langue', $validated['langue']);
+Route::get('langue/{code}', function (string $code, Request $request) {
+    if (! in_array($code, array_keys(Traduction::LANGUES), true)) {
+        abort(404);
+    }
+
+    $request->session()->put('langue', $code);
 
     return back(fallback: route('home'));
 })->name('langue');

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasTraductions;
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,6 +22,10 @@ class Service extends Model
 {
     /** @use HasFactory<ServiceFactory> */
     use HasFactory;
+    use HasTraductions;
+
+    /** Champs traduisibles : colonne du service => colonne de la traduction. */
+    public const TRADUCTION_CHAMPS = ['nom' => 'titre', 'description' => 'description', 'horaires' => 'horaires'];
 
     /** Slugs qui entreraient en conflit avec les routes /services/... */
     private const RESERVED_SLUGS = ['create'];

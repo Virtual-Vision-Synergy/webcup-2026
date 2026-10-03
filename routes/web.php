@@ -1,8 +1,18 @@
 <?php
 
+use App\Models\Traduction;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Validation\Rule;
 
 Route::view('/', 'welcome')->name('home');
+
+Route::post('langue', function (Request $request) {
+    $validated = $request->validate(['langue' => ['required', Rule::in(array_keys(Traduction::LANGUES))]]);
+    $request->session()->put('langue', $validated['langue']);
+
+    return redirect()->back(fallback: route('home'));
+})->middleware('throttle:30,1')->name('langue');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::view('dashboard', 'dashboard')->name('dashboard');

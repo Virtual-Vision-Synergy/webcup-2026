@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\GereTraductions;
 use App\Models\Service;
 use Flux\Flux;
 use Illuminate\Support\Facades\Storage;
@@ -9,6 +10,8 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Service')] class extends Component {
+    use GereTraductions;
+
     #[Locked]
     public ?Service $record = null;
 
@@ -24,8 +27,10 @@ new #[Title('Service')] class extends Component {
             $this->nom = (string) ($service->nom ?? '');
             $this->description = (string) ($service->description ?? '');
             $this->icone = (string) ($service->icone ?? '');
+            $this->chargerTraductions($service->loadMissing('traductions'));
         } else {
             $this->authorize('create', Service::class);
+            $this->chargerTraductions();
         }
     }
 
@@ -38,6 +43,7 @@ new #[Title('Service')] class extends Component {
             'nom' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:5000'],
             'icone' => ['required', 'string', 'max:255'],
+            ...$this->reglesTraductions(),
         ];
     }
 
@@ -48,6 +54,7 @@ new #[Title('Service')] class extends Component {
             : $this->authorize('create', Service::class);
 
         $validated = $this->validate();
+        unset($validated['traductions']);
 
         if ($this->record) {
             $this->record->update($validated);
@@ -57,6 +64,8 @@ new #[Title('Service')] class extends Component {
             $record->user()->associate(auth()->user());
             $record->save();
         }
+
+        $this->enregistrerTraductions($record);
 
         Flux::toast(variant: 'success', text: 'Service enregistré(e).');
 
@@ -77,6 +86,8 @@ new #[Title('Service')] class extends Component {
         <flux:textarea wire:model="description" label="Description" rows="5" required />
 
         <flux:input wire:model="icone" label="Icone" required />
+
+        <x-tn.traductions :horaires="true" />
 
         <div class="flex items-center gap-3">
             <flux:button type="submit" variant="primary">Enregistrer</flux:button>

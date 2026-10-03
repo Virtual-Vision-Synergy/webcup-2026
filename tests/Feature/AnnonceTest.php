@@ -2,6 +2,7 @@
 
 use App\Models\Annonce;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Livewire;
 
 /**
@@ -185,6 +186,16 @@ test('une modification est visible tout de suite malgré le cache', function () 
     $annonce->update(['titre' => 'Nouveau titre']);
 
     $this->get(route('home'))->assertSee('Nouveau titre')->assertDontSee('Ancien titre');
+});
+
+test('le bandeau fonctionne avec un cache qui sérialise, sans désérialiser d’objet', function () {
+    // Comme en production (cache en base) : le contenu est sérialisé et aucune classe n'est autorisée à la lecture.
+    config(['cache.stores.array.serialize' => true, 'cache.serializable_classes' => false]);
+    Cache::forgetDriver('array');
+    Annonce::factory()->active()->create(['titre' => 'Message mis en cache']);
+
+    $this->get(route('home'))->assertOk()->assertSee('Message mis en cache');
+    $this->get(route('home'))->assertOk()->assertSee('Message mis en cache');
 });
 
 test('les messages en diffusion sont triés du plus grave au moins grave', function () {

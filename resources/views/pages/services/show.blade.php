@@ -31,7 +31,7 @@ new #[Title('Service')] class extends Component {
 
 <section class="mx-auto w-full max-w-5xl space-y-6">
     <x-tn.page-header
-        label="Service municipal"
+        :label="Service::labelCategorie($record->categorie) ?? 'Service municipal'"
         :title="$record->nom"
         :breadcrumb="['Services' => route('services.index'), $record->nom => null]"
     >

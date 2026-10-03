@@ -31,6 +31,7 @@ class ServiceFactory extends Factory
         return [
             'user_id' => User::factory(),
             'nom' => $nom,
+            'categorie' => fake()->randomElement(Service::CATEGORIE_OPTIONS),
             'description' => $service['description'],
             'horaires' => "Lundi au vendredi : 8 h 00 – 12 h 00 et 13 h 30 – 17 h 00\nSamedi : 8 h 30 – 12 h 00",
             'telephone' => '+261 20 22 '.fake()->numerify('### ##'),

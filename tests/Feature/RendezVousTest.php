@@ -81,6 +81,37 @@ test('un créneau réservé n’est plus proposé', function () {
         ->assertDontSee('09 h 30 à 10 h 00');
 });
 
+test('le sélecteur de date ne propose que les horaires libres du jour choisi', function () {
+    creneauDe($this->etatCivil, '2026-10-06 06:30:00');
+    $mercredi = creneauDe($this->etatCivil, '2026-10-07 11:00:00');
+
+    Livewire::actingAs(User::factory()->citoyen()->create())
+        ->test('pages::rendez-vous.form', ['serviceSlug' => $this->etatCivil->slug])
+        ->assertSet('jour', '2026-10-06')
+        ->set('jour', '2026-10-07')
+        ->assertSee('Mercredi 7 octobre 2026')
+        ->assertSee('14 h 00 à 14 h 30')
+        ->assertDontSee('09 h 30 à 10 h 00')
+        ->call('validerCreneau')
+        ->assertHasErrors(['creneauSelectionne'])
+        ->set('creneauSelectionne', (string) $mercredi->id)
+        ->call('validerCreneau')
+        ->assertSet('creneauId', (string) $mercredi->id)
+        ->assertSee('Vérifiez votre rendez-vous');
+});
+
+test('un jour sans créneau libre propose le prochain jour disponible', function () {
+    creneauDe($this->etatCivil, '2026-10-08 06:30:00');
+
+    Livewire::actingAs(User::factory()->citoyen()->create())
+        ->test('pages::rendez-vous.form', ['serviceSlug' => $this->etatCivil->slug])
+        ->set('jour', '2026-10-06')
+        ->assertSee('Aucun créneau libre le mardi 6 octobre 2026')
+        ->assertSee('jeudi 8 octobre 2026')
+        ->call('allerAuJour', '2026-10-08')
+        ->assertSee('09 h 30 à 10 h 00');
+});
+
 test('la seconde réservation d’un même créneau échoue avec un message clair', function () {
     $creneau = creneauDe($this->etatCivil, '2026-10-06 06:30:00');
     $premier = User::factory()->citoyen()->create();

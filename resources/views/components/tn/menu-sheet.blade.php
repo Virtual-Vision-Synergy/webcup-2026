@@ -139,6 +139,12 @@
                     </span>
                     <x-tn.theme-toggle class="-me-2" />
                 </li>
+                <li class="flex min-h-12 items-center justify-between gap-3 px-3">
+                    <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
+                        <flux:icon name="bolt" class="size-5 text-ink-2" />{{ __('Mode allégé') }}
+                    </span>
+                    <x-tn.mode-allege class="-me-2" />
+                </li>
             </ul>
 
             @auth

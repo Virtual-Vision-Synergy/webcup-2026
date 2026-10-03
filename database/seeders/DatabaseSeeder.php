@@ -9,6 +9,7 @@ use App\Models\Message;
 use App\Models\Onboarding;
 use App\Models\Role;
 use App\Models\Service;
+use App\Models\Signalement;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -115,6 +116,20 @@ class DatabaseSeeder extends Seeder
             'contenu' => 'La mairie annexe du secteur Nord était fermée pour inventaire. Les démarches restaient possibles en ligne.',
             'niveau' => 'information',
         ]);
+
+        Signalement::factory(15)->recycle($users)->create();
+        Signalement::factory(5)->nouveau()->recycle($users)->create();
+
+        if (! app()->isProduction()) {
+            // Signalements du compte citoyen de démo, dont un lampadaire cassé tout juste signalé.
+            $citoyen = User::where('email', 'user@example.com')->firstOrFail();
+            Signalement::factory()->nouveau()->for($citoyen)->create([
+                'categorie' => 'eclairage',
+                'description' => 'Le lampadaire devant chez moi est cassé, la rue est plongée dans le noir depuis trois jours.',
+                'lieu' => 'Rue des Lumières, devant le n° 12',
+            ]);
+            Signalement::factory(2)->for($citoyen)->create();
+        }
 
         // make:feature:seeders
     }

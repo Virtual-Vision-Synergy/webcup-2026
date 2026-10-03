@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AuditLog;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,4 +26,10 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     // F47 : journal d'audit en LECTURE SEULE (aucune route de création, modification ni suppression).
     Route::livewire('journal', 'pages::agent.audit.index')->name('audit.index');
     Route::livewire('journal/{auditLog}', 'pages::agent.audit.show')->name('audit.show');
+
+    // F48 : historique d'un élément (lecture seule). {type} passe par la liste blanche AuditLog::HISTORY_TYPES (sinon 404).
+    Route::livewire('historique/{type}/{id}', 'pages::agent.audit.history')
+        ->whereIn('type', array_keys(AuditLog::HISTORY_TYPES))
+        ->whereNumber('id')
+        ->name('history.show');
 });

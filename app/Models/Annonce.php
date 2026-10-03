@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\HasAuditHistory;
 use Database\Factories\AnnonceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -38,7 +39,7 @@ use Illuminate\Support\Facades\Cache;
 class Annonce extends Model
 {
     /** @use HasFactory<AnnonceFactory> */
-    use Auditable, HasFactory;
+    use Auditable, HasAuditHistory, HasFactory;
 
     /** Du moins au plus grave. */
     public const NIVEAU_OPTIONS = ['information', 'vigilance', 'alerte', 'danger'];

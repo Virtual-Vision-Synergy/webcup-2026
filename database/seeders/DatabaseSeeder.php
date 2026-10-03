@@ -72,6 +72,8 @@ class DatabaseSeeder extends Seeder
             Demarche::factory(4)->recycle($services)->for(User::where('email', 'user@example.com')->firstOrFail())->create();
         }
 
+        $this->call(LigneTransportSeeder::class);
+
         // make:feature:seeders
     }
 }

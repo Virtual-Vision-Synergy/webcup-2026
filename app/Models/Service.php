@@ -44,6 +44,67 @@ class Service extends Model
         'economie' => 'Commerce et marchés',
     ];
 
+    /**
+     * Numéros d'urgence affichés en tête de la page Urgences / Santé (F46), gratuits et joignables 24 h/24.
+     *
+     * @var array<int, array{numero: string, label: string, detail: string, icon: string}>
+     */
+    public const NUMEROS_URGENCE = [
+        ['numero' => '117', 'label' => 'Police secours', 'detail' => 'Agression, accident, danger immédiat', 'icon' => 'shield-exclamation'],
+        ['numero' => '118', 'label' => 'Sapeurs-pompiers', 'detail' => 'Incendie, inondation, secours à personne', 'icon' => 'fire'],
+        ['numero' => '124', 'label' => 'Urgences médicales (SAMU)', 'detail' => 'Malaise, blessure grave, accouchement', 'icon' => 'heart'],
+        ['numero' => '+261 20 22 401 17', 'label' => 'Police municipale', 'detail' => 'Patrouilles 24 h/24', 'icon' => 'phone'],
+    ];
+
+    /**
+     * Hôpitaux et services d'urgence de la ville (F46), ajoutés à l'annuaire en catégorie santé
+     * (migration de données et ServiceSeeder).
+     *
+     * @var array<int, array{nom: string, description: string, horaires: string, telephone: string, email: string|null, adresse: string, latitude: float, longitude: float}>
+     */
+    public const ETABLISSEMENTS_SANTE = [
+        [
+            'nom' => 'Centre hospitalier de Nova Terra',
+            'description' => "Hôpital principal de la ville : service d'urgences adultes ouvert jour et nuit, chirurgie, radiologie et laboratoire.\nEn cas d'urgence vitale, appelez d'abord le 124.",
+            'horaires' => "Urgences : 24 h/24, 7 j/7\nConsultations : lundi au vendredi, 8 h 00 – 16 h 00",
+            'telephone' => '+261 20 22 410 00',
+            'email' => 'accueil@chu-novaterra.mg',
+            'adresse' => "Avenue de l'Hôpital, quartier Ampefiloha, Nova Terra",
+            'latitude' => -18.9152,
+            'longitude' => 47.5203,
+        ],
+        [
+            'nom' => 'Hôpital mère-enfant Ravaka',
+            'description' => 'Maternité, urgences pédiatriques et gynécologiques, suivi de grossesse et néonatologie.',
+            'horaires' => "Urgences pédiatriques et maternité : 24 h/24, 7 j/7\nConsultations : lundi au samedi, 8 h 00 – 12 h 00",
+            'telephone' => '+261 20 22 410 50',
+            'email' => 'contact@hopital-ravaka.mg',
+            'adresse' => '22 rue des Flamboyants, quartier Isoraka, Nova Terra',
+            'latitude' => -18.9034,
+            'longitude' => 47.5327,
+        ],
+        [
+            'nom' => 'Clinique Fanantenana',
+            'description' => 'Clinique de proximité : petites urgences (plaies, fractures simples, fièvre), consultations sans rendez-vous et soins infirmiers.',
+            'horaires' => "Urgences : tous les jours, 7 h 00 – 22 h 00\nLa nuit : Centre hospitalier de Nova Terra",
+            'telephone' => '+261 20 22 410 80',
+            'email' => null,
+            'adresse' => '5 rue Rainandriamampandry, quartier Ankadifotsy, Nova Terra',
+            'latitude' => -18.9226,
+            'longitude' => 47.5251,
+        ],
+        [
+            'nom' => 'Pharmacie de garde municipale',
+            'description' => "Délivrance de médicaments les nuits, dimanches et jours fériés, sur présentation d'une ordonnance. Liste des pharmacies de garde de la semaine affichée sur place.",
+            'horaires' => "Lundi au samedi : 19 h 00 – 8 h 00\nDimanche et jours fériés : 24 h/24",
+            'telephone' => '+261 20 22 410 99',
+            'email' => null,
+            'adresse' => "Place de l'Indépendance, à côté de l'hôtel de ville, Nova Terra",
+            'latitude' => -18.9117,
+            'longitude' => 47.5269,
+        ],
+    ];
+
     /** Slugs qui entreraient en conflit avec les routes /services/... */
     private const RESERVED_SLUGS = ['create'];
 

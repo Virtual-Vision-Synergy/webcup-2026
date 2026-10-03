@@ -153,6 +153,10 @@ class DatabaseSeeder extends Seeder
             Signalement::factory(2)->for($citoyen)->create();
         }
 
+        if (! app()->isProduction()) {
+            $this->call(LoginAttemptSeeder::class);
+        }
+
         // make:feature:seeders
     }
 }

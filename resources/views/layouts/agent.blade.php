@@ -29,6 +29,9 @@
                 <flux:navbar.item icon="clipboard-document-list" :href="route('agent.demandes')" :current="request()->routeIs('agent.demandes')">
                     Demandes des habitants
                 </flux:navbar.item>
+                <flux:navbar.item icon="shield-check" :href="route('agent.security.index')" :current="request()->routeIs('agent.security.*')">
+                    Sécurité
+                </flux:navbar.item>
             </flux:navbar>
 
             <flux:spacer />
@@ -56,6 +59,7 @@
                     <flux:menu.item icon="users" :href="route('agent.citizens.index')" class="md:hidden">Comptes citoyens</flux:menu.item>
                     <flux:menu.item icon="megaphone" :href="route('agent.annonces.index')" class="md:hidden">Messages généraux</flux:menu.item>
                     <flux:menu.item icon="clipboard-document-list" :href="route('agent.demandes')" class="md:hidden">Demandes des habitants</flux:menu.item>
+                    <flux:menu.item icon="shield-check" :href="route('agent.security.index')" class="md:hidden">Sécurité des connexions</flux:menu.item>
                     <flux:menu.item icon="arrow-uturn-left" :href="route('dashboard')">Retour à l'espace citoyen</flux:menu.item>
                     <flux:menu.item icon="cog" :href="route('profile.edit')">{{ __('Settings') }}</flux:menu.item>
 

@@ -26,6 +26,8 @@ class DatabaseSeeder extends Seeder
      *   - admin@example.com       Administrateur
      *   - agent@example.com       Agent municipal
      *   - jury.agent@example.com  Agent municipal (compte jury agent)
+     *   - user@example.com        Citoyen
+     *   - desactive@example.com   Citoyen désactivé (connexion refusée)
      *   - user@example.com        Citoyen (prise en main terminée)
      *   - nouveau@example.com     Citoyen tout neuf (prise en main jamais vue → /bienvenue)
      *   - parcours@example.com    Citoyen à mi-parcours (profil complet, 1/3)
@@ -76,6 +78,26 @@ class DatabaseSeeder extends Seeder
                 'email' => 'passe@example.com',
             ]);
             Onboarding::factory()->passe()->for($citoyenPasse)->create();
+
+            // F34 : citoyens aux noms variés pour démontrer la recherche, dont un compte déjà désactivé.
+            foreach ([
+                ['Hanitra Rakotomalala', 'hanitra.rakoto@example.com'],
+                ['Tojo Andriamanana', 'tojo.andria@example.com'],
+                ['Awa Diallo', 'awa.diallo@example.com'],
+                ['Lucas Moreau', 'lucas.moreau@example.com'],
+                ['Fanja Razafindrabe', 'fanja.razaf@example.com'],
+                ['Inès Benali', 'ines.benali@example.com'],
+                ['Mamy Rasolofo', 'mamy.rasolofo@example.com'],
+                ['Chloé Martin', 'chloe.martin@example.com'],
+                ['Kevin Ramanantsoa', 'kevin.ramanantsoa@example.com'],
+            ] as [$name, $email]) {
+                User::factory()->citoyen()->create(['name' => $name, 'email' => $email]);
+            }
+
+            User::factory()->citoyen()->deactivated()->create([
+                'name' => 'Compte Désactivé',
+                'email' => 'desactive@example.com',
+            ]);
         }
 
         User::factory(8)->create([

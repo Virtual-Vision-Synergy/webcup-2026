@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
@@ -21,6 +22,8 @@ use Illuminate\Support\Str;
  * user_id et slug ne sont volontairement PAS remplissables : ils sont assignés dans le code.
  * Le slug est généré à la création depuis le nom et ne change plus (URL stables).
  * mis_en_avant n'est pas remplissable non plus : réservé aux agents et admins (ServicePolicy::feature).
+ * indisponible_depuis, motif_indisponibilite et retour_prevu_le ne sont pas remplissables :
+ * réservés aux admins via rendreIndisponible() / retablir() (ServicePolicy::toggleAvailability, F63).
  */
 #[Fillable(['nom', 'categorie', 'description', 'horaires', 'telephone', 'email', 'adresse', 'lieu_rendez_vous', 'pieces_a_fournir', 'duree_rendez_vous'])]
 class Service extends Model
@@ -54,6 +57,8 @@ class Service extends Model
         return [
             'mis_en_avant' => 'boolean',
             'duree_rendez_vous' => 'integer',
+            'indisponible_depuis' => 'datetime',
+            'retour_prevu_le' => 'date',
         ];
     }
 
@@ -66,6 +71,49 @@ class Service extends Model
     protected function prioritaires(Builder $query): void
     {
         $query->orderByDesc('mis_en_avant')->orderBy('nom');
+    }
+
+    /**
+     * Services disponibles : ceux qu'un administrateur n'a pas désactivés (F63).
+     *
+     * @param  Builder<Service>  $query
+     */
+    #[Scope]
+    protected function disponibles(Builder $query): void
+    {
+        $query->whereNull('indisponible_depuis');
+    }
+
+    public function estIndisponible(): bool
+    {
+        return $this->indisponible_depuis !== null;
+    }
+
+    /**
+     * Désactive le service (panne, fermeture…) : il reste visible au catalogue mais n'accepte plus de démarche
+     * ni de rendez-vous. Action tracée dans le journal.
+     */
+    public function rendreIndisponible(string $motif, ?Carbon $retourPrevuLe = null): void
+    {
+        $this->indisponible_depuis = now();
+        $this->motif_indisponibilite = trim($motif);
+        $this->retour_prevu_le = $retourPrevuLe;
+        $this->save();
+
+        ActionLog::record('service_indisponible', $this);
+    }
+
+    /**
+     * Remet le service en service. Action tracée dans le journal.
+     */
+    public function retablir(): void
+    {
+        $this->indisponible_depuis = null;
+        $this->motif_indisponibilite = null;
+        $this->retour_prevu_le = null;
+        $this->save();
+
+        ActionLog::record('service_retabli', $this);
     }
 
     protected static function booted(): void

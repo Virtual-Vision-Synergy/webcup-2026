@@ -2,6 +2,7 @@
 
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Services\ComptesHabitants;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Computed;
@@ -13,6 +14,10 @@ use Livewire\Component;
 new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component {
     #[Locked]
     public User $account;
+
+    /** @var list<array{nom: string, identifiant: string, telephone: string|null, code: string}> F71 : fiche affichée une seule fois après émission. */
+    #[Locked]
+    public array $fiches = [];
 
     public function mount(User $user): void
     {
@@ -37,6 +42,21 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
         $this->account->reactivate();
 
         Flux::toast(variant: 'success', text: __('Compte réactivé : :nom peut de nouveau se connecter.', ['nom' => $this->account->name]));
+    }
+
+    /**
+     * F71 : nouveau code d'activation à usage unique (l'ancien code et le code personnel actuel cessent de servir
+     * une fois le nouveau code utilisé). Utile si l'habitant a perdu sa fiche ou oublié son code personnel.
+     */
+    public function issueActivationCode(ComptesHabitants $comptes): void
+    {
+        $this->authorize('issueActivationCode', $this->account);
+
+        $code = $comptes->nouveauCode($this->account);
+
+        $this->fiches = [['nom' => $this->account->name, 'identifiant' => (string) $this->account->identifiant, 'telephone' => $this->account->telephone, 'code' => $code]];
+
+        Flux::toast(variant: 'success', text: __('Nouveau code d\'activation émis : imprimez la fiche.'));
     }
 
     /**
@@ -81,11 +101,18 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
                     <flux:button variant="danger" icon="no-symbol">{{ __('Désactiver le compte') }}</flux:button>
                 </flux:modal.trigger>
             @endcan
+            @can('issueActivationCode', $account)
+                <flux:button icon="ticket" wire:click="issueActivationCode" wire:loading.attr="disabled" wire:confirm="{{ __('Émettre un nouveau code d\'activation ? L\'ancien ne fonctionnera plus.') }}">{{ __('Nouveau code d\'activation') }}</flux:button>
+            @endcan
             @can('reactivate', $account)
                 <flux:button variant="primary" icon="arrow-path" wire:click="reactivate" wire:loading.attr="disabled">{{ __('Réactiver le compte') }}</flux:button>
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
+
+    @if ($fiches !== [])
+        <x-habitants.fiches-activation :fiches="$fiches" />
+    @endif
 
     <x-audit-history :subject="$account" variant="resume" />
 
@@ -93,7 +120,11 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
         <x-tn.section-label as="h2" class="mb-2">{{ __('Informations du compte') }}</x-tn.section-label>
         <dl>
             <x-tn.field label="{{ __('Nom') }}">{{ $account->name }}</x-tn.field>
-            <x-tn.field label="{{ __('E-mail') }}">{{ $account->email }}</x-tn.field>
+            <x-tn.field label="{{ __('E-mail') }}">{{ $account->emailAffichable() ?? __('Aucune (compte sans e-mail)') }}</x-tn.field>
+            @if ($account->identifiant)
+                <x-tn.field label="{{ __('Identifiant d\'habitant') }}"><span class="font-mono">{{ $account->identifiant }}</span>@if ($account->aActiverCompte()) <flux:badge size="sm" color="amber" class="ms-1">{{ __('À activer') }}</flux:badge>@endif</x-tn.field>
+            @endif
+            <x-tn.field label="{{ __('Téléphone') }}">{{ $account->telephone ?? '—' }}</x-tn.field>
             <x-tn.field label="{{ __('Profil') }}">{{ $account->role?->label ?? '—' }}</x-tn.field>
             <x-tn.field label="{{ __('Inscription') }}">{{ $account->created_at?->format('d/m/Y à H:i') }}</x-tn.field>
             <x-tn.field label="{{ __('Statut') }}">

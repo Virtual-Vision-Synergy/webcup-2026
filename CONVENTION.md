@@ -14,7 +14,7 @@
 | Quoi | Où |
 |---|---|
 | Laravel 13 (PHP 8.4) + Livewire 4 (composants single-file) + Flux + Tailwind 4 | tout le projet |
-| Pages des fonctionnalités (logique + vue dans un fichier) | `resources/views/pages/<entite>/⚡index|⚡form|⚡show.blade.php` |
+| Pages des fonctionnalités (logique + vue dans un fichier) | `resources/views/pages/<entite>/index|form|show.blade.php` |
 | Routes des fonctionnalités (groupe `auth`) | `routes/features.php` |
 | Routes du socle (accueil, tableau de bord, paramètres) | `routes/web.php`, `routes/settings.php` |
 | Modèles, relations, casts, constantes d'options | `app/Models/` |

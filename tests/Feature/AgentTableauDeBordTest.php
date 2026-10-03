@@ -32,7 +32,7 @@ test('un agent voit les compteurs, l’activité et les dernières demandes', fu
     Signalement::factory()->nouveau()->create();
     Signalement::factory()->create(['statut' => 'resolu']);
 
-    $page = Livewire::actingAs(User::factory()->agent()->create())->test('pages::agent.tableau-de-bord');
+    $page = Livewire::actingAs(agentDeTousLesServices())->test('pages::agent.tableau-de-bord');
 
     expect($page->instance()->compteurs)->toBe([
         'total' => 4,
@@ -51,14 +51,14 @@ test('un agent voit les compteurs, l’activité et les dernières demandes', fu
 });
 
 test('le tableau de bord affiche des états vides sans données', function () {
-    $this->actingAs(User::factory()->agent()->create())
+    $this->actingAs(agentDeTousLesServices())
         ->get(route('agent.tableau-de-bord'))
         ->assertOk()
         ->assertSee(['Aucune demande cette semaine', 'Aucune demande pour l’instant', 'Aucun signalement']);
 });
 
 test('le tableau de bord est accessible en un clic depuis la navigation agent', function () {
-    $this->actingAs(User::factory()->agent()->create())
+    $this->actingAs(agentDeTousLesServices())
         ->get(route('agent.demandes'))
         ->assertSee(route('agent.tableau-de-bord'), false);
 });

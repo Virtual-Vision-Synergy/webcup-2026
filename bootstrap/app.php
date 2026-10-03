@@ -4,11 +4,14 @@ use App\Http\Middleware\DefinirLangue;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\SecurityHeaders;
 use App\Models\Annonce;
+use App\Services\AuditLogger;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Exceptions\InvalidSignatureException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -31,6 +34,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (InvalidSignatureException $e, Request $request) {
             if ($request->routeIs('profile.devices.report*')) {
                 return response()->view('errors.lien-appareil-invalide', [], 403);
+            }
+
+            return null;
+        });
+
+        // F70 : chaque accès refusé (403) d'un utilisateur connecté est journalisé (F47), puis la page 403 s'affiche.
+        $exceptions->render(function (HttpExceptionInterface $e, Request $request) {
+            if ($e->getStatusCode() === 403 && $request->user() !== null) {
+                $subject = collect($request->route()?->parameters() ?? [])->first(fn (mixed $valeur): bool => $valeur instanceof Model);
+                AuditLogger::logRefus($e->getMessage(), $subject, $request);
             }
 
             return null;

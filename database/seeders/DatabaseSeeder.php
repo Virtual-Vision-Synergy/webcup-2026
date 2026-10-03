@@ -200,6 +200,9 @@ class DatabaseSeeder extends Seeder
         // F40 : rendez-vous de démo rappelé automatiquement ~10 min après le seed (hors production).
         $this->call(RappelRendezVousSeeder::class);
 
+        // F70 : agents rattachés à leurs services (État civil, Action sociale) et dossiers aux données confidentielles.
+        $this->call(PermissionsServicesSeeder::class);
+
         // make:feature:seeders
     }
 }

@@ -25,6 +25,7 @@ trait HasAuditHistory
     {
         return $this->hasMany(AuditLog::class, 'subject_id')
             ->where('subject_type', class_basename(static::class))
+            ->whereNotIn('action', AuditLog::ACTIONS_PERSONNELLES)
             ->latest('id');
     }
 

@@ -131,8 +131,8 @@ new #[Layout('layouts::agent'), Title('Entrée du journal')] class extends Compo
                         @foreach ($log->changes as $champ => $valeurs)
                             <flux:table.row wire:key="champ-{{ $champ }}">
                                 <flux:table.cell class="font-medium">{{ AuditLog::libelleChamp($champ) }}</flux:table.cell>
-                                <flux:table.cell class="whitespace-normal! break-words text-ink-2">{{ AuditLog::formatValeur($valeurs['avant'] ?? null) }}</flux:table.cell>
-                                <flux:table.cell class="whitespace-normal! break-words">{{ AuditLog::formatValeur($valeurs['apres'] ?? null) }}</flux:table.cell>
+                                <flux:table.cell class="whitespace-normal! break-words text-ink-2">{{ $log->valeurAffichee((string) $champ, $valeurs['avant'] ?? null) }}</flux:table.cell>
+                                <flux:table.cell class="whitespace-normal! break-words">{{ $log->valeurAffichee((string) $champ, $valeurs['apres'] ?? null) }}</flux:table.cell>
                             </flux:table.row>
                         @endforeach
                     </flux:table.rows>

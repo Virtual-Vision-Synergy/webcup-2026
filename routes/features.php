@@ -31,6 +31,7 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('roles/{role}/edit', 'pages::roles.form')->name('roles.edit');
 
     Route::livewire('demarches', 'pages::demarches.index')->name('demarches.index');
+    Route::livewire('demarches/historique', 'pages::demarches.historique')->name('demarches.historique');
     Route::livewire('demarches/create', 'pages::demarches.form')->name('demarches.create');
     Route::livewire('demarches/{demarche}', 'pages::demarches.show')->name('demarches.show');
     Route::livewire('demarches/{demarche}/edit', 'pages::demarches.form')->name('demarches.edit');
@@ -50,6 +51,11 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('transports/{ligneTransport}', 'pages::transports.show')->name('transports.show');
     Route::livewire('transports/{ligneTransport}/edit', 'pages::transports.form')->name('transports.edit');
 
+    // F39 : prise de rendez-vous avec un agent (droits dans RendezVousPolicy ; agenda agent dans routes/agent.php).
+    Route::livewire('rendez-vous', 'pages::rendez-vous.index')->name('appointments.index');
+    Route::livewire('rendez-vous/prendre', 'pages::rendez-vous.form')->name('appointments.create');
+    Route::livewire('rendez-vous/{rendezVous}', 'pages::rendez-vous.show')->name('appointments.show');
+
     // make:feature:routes
 });
 
@@ -58,5 +64,8 @@ Route::middleware(['auth'])->group(function () {
 | Création, modification et suppression restent dans le groupe `auth` ci-dessus.
 */
 Route::group([], function () {
+    // F29 : page d'une alerte en cours, consultable sans compte (lien partageable) ; 404 hors période (AnnoncePolicy::view).
+    Route::livewire('alertes/{annonce}', 'pages::alertes.show')->name('alertes.show');
+
     // make:feature:routes-public
 });

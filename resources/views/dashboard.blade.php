@@ -14,6 +14,8 @@
         ->latest('updated_at')
         ->limit(3)
         ->get();
+    // F29 : alertes en cours qui visent le quartier de l'habitant, affichées en tête.
+    $alertesQuartier = \App\Models\Annonce::enDiffusion($user)->filter(fn ($annonce) => $annonce->concerne($user));
     $rubriques = array_filter(config('navigation.rubriques'), fn (array $r): bool => Route::has($r['route']));
 @endphp
 
@@ -29,6 +31,30 @@
                 @endcan
             </x-slot:actions>
         </x-tn.page-header>
+
+        @if ($alertesQuartier->isNotEmpty())
+            <section aria-labelledby="titre-alertes-quartier" class="flex flex-col gap-3">
+                <h2 id="titre-alertes-quartier" class="tn-display text-lg font-semibold text-ink">Alertes dans votre quartier</h2>
+                @foreach ($alertesQuartier as $alerteQuartier)
+                    <x-tn.bandeau-annonce
+                        class="rounded-md border"
+                        variante="renforce"
+                        :niveau="$alerteQuartier->niveau"
+                        :titre="$alerteQuartier->titre"
+                        :contenu="$alerteQuartier->contenu"
+                        :consignes="$alerteQuartier->listeConsignes()"
+                        :quartier="$alerteQuartier->nomQuartier()"
+                        :lien="route('alertes.show', $alerteQuartier->id)"
+                    />
+                @endforeach
+            </section>
+        @elseif ($user->quartier_id === null)
+            <p class="rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink-2">
+                <flux:icon name="map-pin" class="me-1 inline size-4 text-cyan" aria-hidden="true" />
+                Indiquez votre quartier pour voir en priorité les alertes qui vous concernent.
+                <a href="{{ route('profile.edit') }}" wire:navigate class="font-medium text-cyan underline underline-offset-2">Renseigner mon quartier</a>
+            </p>
+        @endif
 
         <x-onboarding.rappel />
 
@@ -64,6 +90,7 @@
                     </div>
                     @if ($totalDemarches > 0)
                         <a href="{{ route('demarches.index') }}" wire:navigate class="inline-flex min-h-11 items-center text-sm font-medium text-cyan hover:underline">Tout voir</a>
+                        <a href="{{ route('demarches.historique') }}" wire:navigate class="inline-flex min-h-11 items-center text-sm font-medium text-cyan hover:underline">Historique</a>
                     @endif
                 </div>
 

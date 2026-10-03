@@ -16,6 +16,18 @@
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="briefcase" :href="route('services.index')" :current="request()->routeIs('services.*')" wire:navigate>
+                        Services
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="newspaper" :href="route('actualites.index')" :current="request()->routeIs('actualites.*')" wire:navigate>
+                        Actualites
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="envelope" :href="route('messages.index')" :current="request()->routeIs('messages.*')" wire:navigate>
+                        Messages
+                    </flux:sidebar.item>
+
                     {{-- make:feature:nav --}}
                 </flux:sidebar.group>
             </flux:sidebar.nav>

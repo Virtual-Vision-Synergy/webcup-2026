@@ -393,13 +393,14 @@ new #[Title('Prendre rendez-vous')] class extends Component {
                         type="date"
                         wire:model.live="jour"
                         label="Jour"
+                        required
                         :min="$this->creneauxParJour->keys()->first()"
                         :max="$this->creneauxParJour->keys()->last()"
                         class="cursor-pointer"
                     />
 
                     @if ($this->creneauxDuJour->isNotEmpty())
-                        <flux:select wire:model="creneauSelectionne" label="Horaire" placeholder="Choisir un horaire…" class="cursor-pointer">
+                        <flux:select wire:model="creneauSelectionne" label="Horaire" placeholder="Choisir un horaire…" class="cursor-pointer" required>
                             @foreach ($this->creneauxDuJour as $creneau)
                                 <flux:select.option wire:key="creneau-{{ $creneau->id }}" :value="$creneau->id">
                                     {{ $creneau->libelleHeureDebut() }} à {{ $creneau->libelleHeureFin() }}

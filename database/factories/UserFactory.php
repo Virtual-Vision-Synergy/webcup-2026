@@ -85,4 +85,9 @@ class UserFactory extends Factory
     {
         return $this->state(fn () => ['role_id' => Role::idFor(Role::AGENT)]);
     }
+
+    public function deactivated(): static
+    {
+        return $this->state(fn () => ['deactivated_at' => now()]);
+    }
 }

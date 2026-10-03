@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -31,8 +32,9 @@ use Illuminate\Support\Carbon;
  * @property string|null $lieu
  * @property string|null $latitude
  * @property string|null $longitude
+ * @property bool $consultation_ouverte F66 : les habitants peuvent donner leur avis.
  *
- * user_id n'est volontairement PAS remplissable : il est assigné dans le code (agent auteur).
+ * user_id et consultation_ouverte ne sont volontairement PAS remplissables : ils sont assignés dans le code.
  */
 #[Fillable(['titre', 'categorie', 'quartier_id', 'resume', 'description', 'etat', 'etapes', 'etapes_terminees', 'avancement', 'date_debut', 'date_fin', 'budget', 'lieu', 'latitude', 'longitude'])]
 class Projet extends Model
@@ -80,6 +82,7 @@ class Projet extends Model
             'date_debut' => 'date',
             'date_fin' => 'date',
             'budget' => 'integer',
+            'consultation_ouverte' => 'boolean',
         ];
     }
 
@@ -97,6 +100,14 @@ class Projet extends Model
     public function quartier(): BelongsTo
     {
         return $this->belongsTo(Quartier::class);
+    }
+
+    /**
+     * @return HasMany<AvisProjet, $this>
+     */
+    public function avis(): HasMany
+    {
+        return $this->hasMany(AvisProjet::class);
     }
 
     /**

@@ -33,6 +33,8 @@ new #[Title('Projet de la ville')] class extends Component {
     public string $latitude = '';
     public string $longitude = '';
 
+    public bool $consultation_ouverte = false;
+
     public function mount(?Projet $projet = null): void
     {
         if ($projet?->exists) {
@@ -53,6 +55,7 @@ new #[Title('Projet de la ville')] class extends Component {
             $this->lieu = (string) ($projet->lieu ?? '');
             $this->latitude = (string) ($projet->latitude ?? '');
             $this->longitude = (string) ($projet->longitude ?? '');
+            $this->consultation_ouverte = $projet->consultation_ouverte;
         } else {
             $this->authorize('create', Projet::class);
         }
@@ -88,6 +91,7 @@ new #[Title('Projet de la ville')] class extends Component {
             'lieu' => ['nullable', 'string', 'max:255'],
             'latitude' => ['nullable', 'required_with:longitude', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'required_with:latitude', 'numeric', 'between:-180,180'],
+            'consultation_ouverte' => ['boolean'],
         ];
     }
 
@@ -136,6 +140,9 @@ new #[Title('Projet de la ville')] class extends Component {
             'latitude' => $validated['latitude'] ?: null,
             'longitude' => $validated['longitude'] ?: null,
         ]);
+
+        // F66 : hors #[Fillable], assigné ici (formulaire réservé aux agents et admins).
+        $record->consultation_ouverte = (bool) $validated['consultation_ouverte'];
 
         if (! $record->exists) {
             $record->user()->associate(auth()->user());
@@ -216,6 +223,11 @@ new #[Title('Projet de la ville')] class extends Component {
                 <flux:input wire:model="latitude" label="{{ __('Latitude') }}" inputmode="decimal" />
                 <flux:input wire:model="longitude" label="{{ __('Longitude') }}" inputmode="decimal" />
             </div>
+        </fieldset>
+
+        <fieldset class="space-y-4">
+            <flux:heading size="sm">{{ __('Consultation des habitants') }}</flux:heading>
+            <flux:checkbox wire:model="consultation_ouverte" label="{{ __('Ouvrir ce projet à l\'avis des habitants') }}" description="{{ __('Les habitants connectés pourront répondre pour, contre ou sans avis, avec un commentaire. Ce n\'est pas un vote officiel.') }}" />
         </fieldset>
 
         <div class="flex items-center gap-3">

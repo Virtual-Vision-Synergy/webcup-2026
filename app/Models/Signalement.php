@@ -14,7 +14,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 
 /**
@@ -28,9 +27,10 @@ use Illuminate\Support\Carbon;
 #[Fillable(['categorie', 'description', 'lieu', 'photo'])]
 class Signalement extends Model
 {
+    use Auditable, HasAuditHistory, HasFactory, PrevientDuChangementDeStatut;
+
     /** @use HasFactory<SignalementFactory> */
     use Auditable, HasAuditHistory, HasFactory, Soutenable;
-    use Auditable, HasAuditHistory, HasFactory, PrevientDuChangementDeStatut;
 
     public const CATEGORIE_OPTIONS = ['eclairage', 'voirie', 'proprete', 'eau', 'espaces_verts', 'mobilier', 'autre'];
 

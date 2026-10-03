@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\KnownDevice;
 use App\Models\LoginAttempt;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -10,7 +11,8 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 // F37 : purge du journal des tentatives de connexion (rétention dans config/security.php).
-Schedule::command('model:prune', ['--model' => [LoginAttempt::class]])->daily();
+// F54 : purge des appareils inactifs depuis plus de 6 mois.
+Schedule::command('model:prune', ['--model' => [LoginAttempt::class, KnownDevice::class]])->daily();
 
 // F39 : prolonge chaque nuit l'agenda des créneaux de rendez-vous (idempotent).
 Schedule::command('appointments:generate-slots')->dailyAt('01:00');

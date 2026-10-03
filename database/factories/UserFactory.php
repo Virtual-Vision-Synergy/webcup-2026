@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Quartier;
 use App\Models\Role;
+use App\Models\Service;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -93,6 +94,16 @@ class UserFactory extends Factory
     public function agent(): static
     {
         return $this->state(fn () => ['role_id' => Role::idFor(Role::AGENT)]);
+    }
+
+    /**
+     * F70 : agent rattaché aux services donnés.
+     */
+    public function agentDe(Service ...$services): static
+    {
+        return $this->agent()->afterCreating(
+            fn (User $user) => $user->services()->attach(array_map(fn (Service $service): int => $service->id, $services)),
+        );
     }
 
     public function deactivated(): static

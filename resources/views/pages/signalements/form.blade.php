@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\Signalement;
+use App\Services\OptimiseurImage;
 use Flux\Flux;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
@@ -65,10 +65,10 @@ new #[Title('Signalement')] class extends Component {
         $validated = $this->validate();
 
         if ($this->photo) {
-            if ($this->record?->photo) {
-                Storage::disk('public')->delete($this->record->photo);
-            }
-            $validated['photo'] = $this->photo->store('signalements', 'public');
+            $optimiseur = app(OptimiseurImage::class);
+            $optimiseur->supprimer($this->record?->photo);
+            // F60 : redimensionnée (1600 px max) et compressée en WebP à l'enregistrement.
+            $validated['photo'] = $optimiseur->enregistrer($this->photo, 'signalements');
         } else {
             unset($validated['photo']);
         }
@@ -122,7 +122,7 @@ new #[Title('Signalement')] class extends Component {
             @if ($photo && ! $errors->has('photo'))
                 <img src="{{ $photo->temporaryUrl() }}" alt="{{ __('Aperçu de la photo') }}" class="h-40 rounded-lg object-cover" />
             @elseif ($record?->photo)
-                <img src="{{ Storage::url($record->photo) }}" alt="{{ __('Photo du signalement') }}" class="h-40 rounded-lg object-cover" />
+                <x-tn.image :chemin="$record->photo" :alt="__('Photo du signalement')" sizes="320px" class="h-40 w-auto rounded-lg object-cover" />
             @endif
         </div>
 

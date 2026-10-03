@@ -17,7 +17,7 @@ test('un agent voit le nombre de demandes en attente de prise en charge', functi
     Demarche::factory()->create(['statut' => 'en_cours']);
     Demarche::factory()->create(['statut' => 'traitee']);
 
-    $this->actingAs(User::factory()->agent()->create())
+    $this->actingAs(agentDeTousLesServices())
         ->get(route('agent.index'))
         ->assertOk()
         ->assertSee('data-test="compteur-demandes-attente"', false)
@@ -28,21 +28,21 @@ test('un agent voit le nombre de demandes en attente de prise en charge', functi
 test('le compteur suit les changements d’état et les nouvelles demandes', function () {
     $demarches = Demarche::factory()->count(2)->create(['statut' => 'deposee']);
 
-    $compteur = Livewire::actingAs(User::factory()->agent()->create())
+    $compteur = Livewire::actingAs(agentDeTousLesServices())
         ->test('compteur-demandes-attente')
         ->assertSeeInOrder(['2', 'demandes en attente']);
 
     $demarches->first()->changerStatut('en_cours');
     $compteur->call('$refresh')->assertSeeInOrder(['1', 'demande en attente de prise en charge']);
 
-    Demarche::factory()->create(['statut' => 'deposee']);
+    Demarche::factory()->for($demarches->first()->service)->create(['statut' => 'deposee']);
     $compteur->call('$refresh')->assertSeeInOrder(['2', 'demandes en attente']);
 });
 
 test('sans demande en attente, le compteur affiche « Aucune demande en attente »', function () {
     Demarche::factory()->create(['statut' => 'traitee']);
 
-    Livewire::actingAs(User::factory()->agent()->create())
+    Livewire::actingAs(agentDeTousLesServices())
         ->test('compteur-demandes-attente')
         ->assertSee('Aucune demande en attente')
         ->assertDontSee('Voir ces demandes');

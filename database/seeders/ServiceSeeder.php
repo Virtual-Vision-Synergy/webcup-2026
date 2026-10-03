@@ -34,6 +34,30 @@ class ServiceSeeder extends Seeder
         'Marchés et commerce' => 'economie',
     ];
 
+    /**
+     * Position du lieu d'accueil de chaque service sur la carte (F45).
+     *
+     * @var array<string, array{0: float, 1: float}>
+     */
+    private const COORDONNEES = [
+        'État civil' => [-18.9102, 47.5256],
+        'Accueil de la Mairie' => [-18.9098, 47.5252],
+        'Élections et recensement' => [-18.9105, 47.5261],
+        'Police municipale' => [-18.9093, 47.5264],
+        'Urbanisme' => [-18.9061, 47.5218],
+        'Services techniques et voirie' => [-18.8987, 47.5332],
+        'Action sociale (CCAS)' => [-18.9178, 47.5297],
+        'Santé publique' => [-18.9189, 47.5312],
+        'Médiathèque Ravinala' => [-18.9037, 47.5281],
+        'Petite enfance et écoles' => [-18.9141, 47.5187],
+        'Sports et associations' => [-18.9213, 47.5175],
+        'Environnement et propreté' => [-18.8962, 47.5145],
+        'Culture et festivités' => [-18.9071, 47.5303],
+        'Marchés et commerce' => [-18.9119, 47.5236],
+        'Cimetière et affaires funéraires' => [-18.9265, 47.5389],
+        'Jeunesse' => [-18.9012, 47.5241],
+    ];
+
     public function run(): void
     {
         $auteur = User::query()->where('role', 'admin')->first() ?? User::query()->first();
@@ -42,14 +66,32 @@ class ServiceSeeder extends Seeder
             return;
         }
 
+        // F46 : hôpitaux et services d'urgence (catégorie santé, déjà localisés).
+        foreach (Service::ETABLISSEMENTS_SANTE as $data) {
+            if (Service::query()->where('nom', $data['nom'])->exists()) {
+                continue;
+            }
+
+            $service = new Service($data);
+            $service->categorie = 'sante';
+            $service->slug = Service::uniqueSlug($data['nom']);
+            $service->user()->associate($auteur);
+            $service->save();
+        }
+
         foreach ($this->services() as $data) {
             $data['categorie'] = self::CATEGORIES[$data['nom']] ?? null;
+            [$data['latitude'], $data['longitude']] = self::COORDONNEES[$data['nom']] ?? [null, null];
 
             $existant = Service::query()->where('nom', $data['nom'])->first();
 
             if ($existant !== null) {
                 if ($existant->categorie === null && $data['categorie'] !== null) {
                     $existant->update(['categorie' => $data['categorie']]);
+                }
+
+                if ($existant->latitude === null && $data['latitude'] !== null) {
+                    $existant->update(['latitude' => $data['latitude'], 'longitude' => $data['longitude']]);
                 }
 
                 continue;

@@ -10,15 +10,17 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-night text-ink antialiased">
+        <a href="#contenu" class="sr-only z-[60] rounded-sm bg-cyan px-4 py-2 text-on-cyan focus:not-sr-only focus:fixed focus:start-4 focus:top-4">{{ __('Aller au contenu') }}</a>
         <x-tn.bandeau-annonces />
         <div class="grid min-h-dvh grid-cols-1 lg:grid-cols-2">
             {{-- Côté visuel : ciel, planète, grille --}}
             <div class="tn-sky relative hidden overflow-hidden lg:flex lg:flex-col lg:p-10">
                 @if ($illustrationNuit)
-                    <img src="{{ $illustrationNuit }}" alt="" class="absolute inset-0 hidden size-full object-cover dark:block" fetchpriority="high">
+                    {{-- F60 : loading="lazy" = seule l'illustration du thème affiché est téléchargée. --}}
+                    <img src="{{ $illustrationNuit }}" alt="" class="absolute inset-0 hidden size-full object-cover dark:block" loading="lazy" decoding="async">
                 @endif
                 @if ($illustrationJour)
-                    <img src="{{ $illustrationJour }}" alt="" class="absolute inset-0 size-full object-cover dark:hidden">
+                    <img src="{{ $illustrationJour }}" alt="" class="absolute inset-0 size-full object-cover dark:hidden" loading="lazy" decoding="async">
                 @endif
                 <div class="tn-planet -top-24 -right-24 size-[420px]" aria-hidden="true"></div>
                 <div class="tn-grid" aria-hidden="true"></div>
@@ -36,10 +38,10 @@
             <div class="relative flex flex-col px-4 py-6 sm:px-8 lg:p-10">
                 <div class="flex flex-wrap items-center justify-between gap-2 lg:justify-end">
                     <x-app-logo href="{{ route('home') }}" class="lg:hidden" />
-                    <div class="flex items-center"><x-tn.contrast-toggle /><x-tn.theme-toggle /></div>
+                    <div class="flex items-center gap-1"><x-tn.langue /><x-tn.contrast-toggle /><x-tn.theme-toggle /></div>
                 </div>
 
-                <main id="contenu" class="flex flex-1 items-center justify-center py-8">
+                <main id="contenu" tabindex="-1" class="flex flex-1 items-center justify-center py-8">
                     <x-tn.panel class="w-full max-w-[420px]" padding="p-6 sm:p-8">
                         <div class="flex flex-col gap-6">
                             {{ $slot }}

@@ -7,7 +7,8 @@ use App\Models\User;
 
 /**
  * Par défaut : tout utilisateur connecté peut lire et créer ;
- * seuls le propriétaire et les admins peuvent modifier ou supprimer.
+ * le propriétaire, les agents et les admins peuvent modifier ;
+ * seuls le propriétaire et les admins peuvent supprimer.
  */
 class ServicePolicy
 {
@@ -28,7 +29,7 @@ class ServicePolicy
 
     public function update(User $user, Service $service): bool
     {
-        return $user->isAdmin() || $service->user_id === $user->id;
+        return $user->isAdmin() || $user->isAgent() || $service->user_id === $user->id;
     }
 
     public function delete(User $user, Service $service): bool

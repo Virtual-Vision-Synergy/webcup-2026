@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
+use App\Models\Concerns\HasAuditHistory;
 use Database\Factories\LigneTransportFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class LigneTransport extends Model
 {
     /** @use HasFactory<LigneTransportFactory> */
-    use HasFactory;
+    use Auditable, HasAuditHistory, HasFactory;
 
     public const MODE_OPTIONS = ['bus', 'navette', 'taxi-be', 'train'];
 
@@ -67,12 +69,12 @@ class LigneTransport extends Model
 
     public function modeLabel(): string
     {
-        return self::MODE_LABELS[$this->mode] ?? ucfirst((string) $this->mode);
+        return __(self::MODE_LABELS[$this->mode] ?? ucfirst((string) $this->mode));
     }
 
     public function etatLabel(): string
     {
-        return self::ETAT_LABELS[$this->etat] ?? (string) $this->etat;
+        return __(self::ETAT_LABELS[$this->etat] ?? (string) $this->etat);
     }
 
     /**

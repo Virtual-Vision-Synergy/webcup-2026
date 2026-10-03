@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\DefinirLangue;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
@@ -15,7 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SecurityHeaders::class);
-        $middleware->web(append: [EnsureAccountIsActive::class]);
+        $middleware->web(append: [DefinirLangue::class, EnsureAccountIsActive::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

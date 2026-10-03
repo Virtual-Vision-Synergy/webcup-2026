@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\HasAuditHistory;
 use Database\Factories\AnnonceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,18 +28,19 @@ use Illuminate\Support\Facades\Cache;
  * @property string|null $consignes
  * @property Carbon $debut
  * @property Carbon $fin
+ * @property Carbon|null $notified_at Envoi de la notification aux habitants (F30) ; assigné par NotifierAnnonce uniquement.
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $user
  * @property-read Quartier|null $quartier
  *
- * user_id (l'auteur) n'est volontairement PAS remplissable : il est assigné dans le code.
+ * user_id (l'auteur) et notified_at ne sont volontairement PAS remplissables : ils sont assignés dans le code.
  */
 #[Fillable(['titre', 'contenu', 'niveau', 'debut', 'fin', 'quartier_id', 'consignes'])]
 class Annonce extends Model
 {
     /** @use HasFactory<AnnonceFactory> */
-    use Auditable, HasFactory;
+    use Auditable, HasAuditHistory, HasFactory;
 
     /** Du moins au plus grave. */
     public const NIVEAU_OPTIONS = ['information', 'vigilance', 'alerte', 'danger'];
@@ -136,7 +138,7 @@ class Annonce extends Model
 
     public function libelleNiveau(): string
     {
-        return self::NIVEAU_LIBELLES[$this->niveau] ?? ucfirst($this->niveau);
+        return __(self::NIVEAU_LIBELLES[$this->niveau] ?? ucfirst($this->niveau));
     }
 
     public function estGrave(): bool
@@ -218,6 +220,7 @@ class Annonce extends Model
         return [
             'debut' => 'datetime',
             'fin' => 'datetime',
+            'notified_at' => 'datetime',
             'quartier_id' => 'integer',
         ];
     }

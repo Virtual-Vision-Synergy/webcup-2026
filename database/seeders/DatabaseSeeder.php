@@ -143,6 +143,11 @@ class DatabaseSeeder extends Seeder
         // Alerte ciblée F29 « Montée des eaux — quartier sud » + habitants sud@example.com et nord@example.com.
         $this->call(AlerteMonteeDesEauxSeeder::class);
 
+        if (! app()->isProduction()) {
+            // F30 : notifications lues et non lues pour user@example.com + annonce « Danger » programmée dans 5 min.
+            $this->call(NotificationsAnnoncesSeeder::class);
+        }
+
         Signalement::factory(15)->recycle($users)->create();
         Signalement::factory(5)->nouveau()->recycle($users)->create();
 

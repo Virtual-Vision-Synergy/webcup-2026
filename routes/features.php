@@ -75,5 +75,9 @@ Route::group([], function () {
     // F29 : page d'une alerte en cours, consultable sans compte (lien partageable) ; 404 hors période (AnnoncePolicy::view).
     Route::livewire('alertes/{annonce}', 'pages::alertes.show')->name('alertes.show');
 
+    // F67 : projets de la ville, consultables sans compte (ProjetPolicy) ; gestion dans l'espace agent (routes/agent.php).
+    Route::livewire('projets', 'pages::projets.index')->name('projets.index');
+    Route::livewire('projets/{projet}', 'pages::projets.show')->whereNumber('projet')->name('projets.show');
+
     // make:feature:routes-public
 });

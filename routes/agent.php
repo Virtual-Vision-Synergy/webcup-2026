@@ -23,6 +23,11 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     Route::livewire('/citoyens/{user}', 'pages::agent.citizens.show')->name('citizens.show');
     Route::livewire('demandes', 'pages::agent.demandes')->name('demandes');
 
+    // F67 : gestion des projets de la ville (ProjetPolicy : agents et admins).
+    Route::livewire('projets', 'pages::projets.gestion')->name('projets.index');
+    Route::livewire('projets/create', 'pages::projets.form')->name('projets.create');
+    Route::livewire('projets/{projet}/edit', 'pages::projets.form')->name('projets.edit');
+
     // F39 : rendez-vous du jour (RendezVousPolicy::viewAgenda).
     Route::livewire('rendez-vous', 'pages::agent.rendez-vous')->name('appointments.index');
 

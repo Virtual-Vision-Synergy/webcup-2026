@@ -182,6 +182,9 @@ class DatabaseSeeder extends Seeder
         // F39 : services ouverts aux rendez-vous, créneaux sur 14 jours ouvrés, agenda du jour pour agent@example.com.
         $this->call(RendezVousSeeder::class);
 
+        // F67 : projets de la ville (voirie, école, parc, réseau d'eau, énergie).
+        $this->call(ProjetSeeder::class);
+
         // make:feature:seeders
     }
 }

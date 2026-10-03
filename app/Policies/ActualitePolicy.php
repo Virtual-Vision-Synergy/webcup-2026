@@ -2,21 +2,21 @@
 
 namespace App\Policies;
 
-use App\Models\Service;
+use App\Models\Actualite;
 use App\Models\User;
 
 /**
  * Par défaut : tout utilisateur connecté peut lire et créer ;
  * seuls le propriétaire et les admins peuvent modifier ou supprimer.
  */
-class ServicePolicy
+class ActualitePolicy
 {
     public function viewAny(User $user): bool
     {
         return true;
     }
 
-    public function view(User $user, Service $service): bool
+    public function view(User $user, Actualite $actualite): bool
     {
         return true;
     }
@@ -26,13 +26,13 @@ class ServicePolicy
         return true;
     }
 
-    public function update(User $user, Service $service): bool
+    public function update(User $user, Actualite $actualite): bool
     {
-        return $user->isAdmin() || $service->user_id === $user->id;
+        return $user->isAdmin() || $actualite->user_id === $user->id;
     }
 
-    public function delete(User $user, Service $service): bool
+    public function delete(User $user, Actualite $actualite): bool
     {
-        return $user->isAdmin() || $service->user_id === $user->id;
+        return $user->isAdmin() || $actualite->user_id === $user->id;
     }
 }

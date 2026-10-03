@@ -70,11 +70,6 @@ new #[Title('Service')] class extends Component {
             }
         }
 
-        if ($this->record) {
-            $this->record->update($validated);
-            $record = $this->record;
-        } else {
-            $record = new Service($validated);
         $record = $this->record ?? new Service;
         $record->fill($validated);
 
@@ -95,7 +90,7 @@ new #[Title('Service')] class extends Component {
 
         $this->redirectRoute('services.show', $record, navigate: true);
     }
-} ?>
+}; ?>
 
 <section class="mx-auto w-full max-w-2xl space-y-6">
     <x-tn.page-header

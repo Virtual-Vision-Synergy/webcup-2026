@@ -8,43 +8,336 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * SYSTÈME « HOLO » TERRA NOVA
+ * Les couleurs sont des variables : valeurs CLAIRES ici (:root), valeurs SOMBRES dans `.dark` plus bas.
+ * La couleur indique un ÉTAT : cyan = action, ambre = perturbé, magenta = alerte, vert = normal.
+ */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-display: 'Saira', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-    --color-zinc-50: #fafafa;
-    --color-zinc-100: #f5f5f5;
-    --color-zinc-200: #e5e5e5;
-    --color-zinc-300: #d4d4d4;
-    --color-zinc-400: #a3a3a3;
-    --color-zinc-500: #737373;
-    --color-zinc-600: #525252;
-    --color-zinc-700: #404040;
-    --color-zinc-800: #262626;
-    --color-zinc-900: #171717;
-    --color-zinc-950: #0a0a0a;
+    /* Clair : « salle de contrôle de jour » */
+    --color-night: #F2F8FB;
+    --color-surface: #FFFFFF;
+    --color-surface-2: #E7F0F5;
+    --color-ink: #0F1B2B;
+    --color-ink-2: #4D6070;
+    --color-line: rgb(15 27 43 / .10);
 
-    /* COULEUR D'ACCENT (temporaire : amber) — à changer ICI uniquement, blocs clair ET sombre. */
-    --color-accent: var(--color-amber-700);
-    --color-accent-content: var(--color-amber-700);
-    --color-accent-foreground: var(--color-white);
+    --color-cyan: #00778D;
+    --color-magenta: #C41F5F;
+    --color-amber: #96590C;
+    --color-green: #007E46;
+    --color-on-cyan: #FFFFFF;
+
+    /* Gris de Flux remappés sur des tons bleutés : tous les composants Flux suivent le thème. */
+    --color-zinc-50: #F2F8FB;
+    --color-zinc-100: #E7F0F5;
+    --color-zinc-200: #D3E0E8;
+    --color-zinc-300: #B4C6D2;
+    --color-zinc-400: #8197A8;
+    --color-zinc-500: #5E7385;
+    --color-zinc-600: #4D6070;
+    --color-zinc-700: #23334A;
+    --color-zinc-800: #121F2F;
+    --color-zinc-900: #0B1422;
+    --color-zinc-950: #050A16;
+
+    --color-accent: var(--color-cyan);
+    --color-accent-content: var(--color-cyan);
+    --color-accent-foreground: var(--color-on-cyan);
+
+    --radius-xs: 4px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --chamfer: 18px;
 }
 
 @layer theme {
     .dark {
-        --color-accent: var(--color-amber-400);
-        --color-accent-content: var(--color-amber-400);
-        --color-accent-foreground: var(--color-neutral-900);
+        --color-night: #050A16;
+        --color-surface: #0B1422;
+        --color-surface-2: #121F2F;
+        --color-ink: #E7F0F5;
+        --color-ink-2: #98AEBF;
+        --color-line: rgb(65 221 248 / .12);
+
+        --color-cyan: #41DDF8;
+        --color-magenta: #FF4285;
+        --color-amber: #FFB44B;
+        --color-green: #56E795;
+        --color-on-cyan: #001321;
+
+        /* Flux redéfinit l'accent en sombre : on le repose sur le cyan sombre. */
+        --color-accent: #41DDF8;
+        --color-accent-content: #41DDF8;
+        --color-accent-foreground: #001321;
     }
 }
 
 @layer base {
-
     *,
     ::after,
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
+        border-color: var(--color-line, currentColor);
+    }
+
+    html {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        background-color: var(--color-night);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        transition: background-color 200ms ease, color 200ms ease;
+    }
+
+    h1, h2, h3 {
+        text-wrap: balance;
+    }
+
+    p {
+        text-wrap: pretty;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-cyan);
+        outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        ::before,
+        ::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+}
+
+@layer components {
+    /* Titres Saira élargis */
+    .tn-display {
+        font-family: var(--font-display);
+        font-stretch: 112%;
+    }
+
+    .tn-h1 {
+        font-family: var(--font-display);
+        font-stretch: 112%;
+        font-weight: 700;
+        font-size: 38px;
+        line-height: 1.02;
+        letter-spacing: -0.01em;
+    }
+
+    @media (min-width: 768px) {
+        .tn-h1 {
+            font-size: 64px;
+        }
+    }
+
+    .tn-h2 {
+        font-family: var(--font-display);
+        font-stretch: 112%;
+        font-weight: 600;
+        font-size: 26px;
+        line-height: 1.1;
+    }
+
+    @media (min-width: 768px) {
+        .tn-h2 {
+            font-size: 32px;
+        }
+    }
+
+    .tn-label {
+        font-family: var(--font-display);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+    }
+
+    .tn-data {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Verre : uniquement ce qui flotte au-dessus d'un visuel (header, panneau d'état, menu mobile, overlays carte). */
+    .tn-glass {
+        background-color: rgb(255 255 255 / .70);
+        border-color: rgb(15 27 43 / .08);
+        backdrop-filter: blur(18px) saturate(140%);
+        -webkit-backdrop-filter: blur(18px) saturate(140%);
+    }
+
+    .dark .tn-glass {
+        background-color: rgb(5 10 22 / .35);
+        border-color: rgb(65 221 248 / .12);
+        backdrop-filter: blur(14px) saturate(140%);
+        -webkit-backdrop-filter: blur(14px) saturate(140%);
+    }
+
+    /* Panneau chanfreiné : wrapper 1px (bord dégradé) + intérieur vitré. */
+    .tn-panel {
+        --tn-c: 14px;
+        padding: 1px;
+        background: linear-gradient(135deg, rgb(0 119 141 / .5), rgb(0 119 141 / .1) 55%, rgb(196 31 95 / .3));
+        clip-path: polygon(var(--tn-c) 0, 100% 0, 100% calc(100% - var(--tn-c)), calc(100% - var(--tn-c)) 100%, 0 100%, 0 var(--tn-c));
+        filter: drop-shadow(0 1px 2px rgb(15 27 43 / .06)) drop-shadow(0 8px 24px rgb(15 27 43 / .10));
+    }
+
+    .tn-panel-inner {
+        height: 100%;
+        background-color: rgb(255 255 255 / .80);
+        backdrop-filter: blur(18px) saturate(140%);
+        -webkit-backdrop-filter: blur(18px) saturate(140%);
+        clip-path: polygon(var(--tn-c) 0, 100% 0, 100% calc(100% - var(--tn-c)), calc(100% - var(--tn-c)) 100%, 0 100%, 0 var(--tn-c));
+    }
+
+    @media (min-width: 768px) {
+        .tn-panel {
+            --tn-c: var(--chamfer);
+        }
+    }
+
+    .dark .tn-panel {
+        background: linear-gradient(135deg, rgb(65 221 248 / .6), rgb(65 221 248 / .1) 55%, rgb(255 66 133 / .4));
+        filter: none;
+    }
+
+    .dark .tn-panel-inner {
+        background-color: rgb(8 16 32 / .74);
+    }
+
+    /* CTA principal : lueur en sombre, ombre douce en clair (jamais de glow sur fond blanc). */
+    .tn-cta {
+        box-shadow: 0 1px 2px rgb(15 27 43 / .06), 0 8px 24px -8px rgb(15 27 43 / .12);
+    }
+
+    .dark .tn-cta {
+        box-shadow: 0 0 32px rgb(65 221 248 / .25);
+    }
+
+    .tn-btn-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .5rem;
+        min-height: 44px;
+        padding: 0 1.125rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid color-mix(in oklab, var(--color-cyan) 40%, transparent);
+        background-color: color-mix(in oklab, var(--color-cyan) 6%, transparent);
+        color: var(--color-cyan);
+        font-weight: 500;
+        transition: background-color 150ms ease;
+    }
+
+    .tn-btn-secondary:hover {
+        background-color: color-mix(in oklab, var(--color-cyan) 12%, transparent);
+    }
+
+    /* Ciel du hero et de l'écran de connexion (secours CSS des illustrations officielles). */
+    .tn-sky {
+        background: linear-gradient(180deg, #F2F8FB 0%, #DDEFF7 55%, #F6E3DE 100%);
+    }
+
+    .dark .tn-sky {
+        background: linear-gradient(180deg, #050A16 0%, #0D0F2E 45%, #2A0F35 78%, #3A0F2A 100%);
+    }
+
+    .tn-planet {
+        position: absolute;
+        border-radius: 9999px;
+        pointer-events: none;
+        opacity: .55;
+        background: radial-gradient(circle at 35% 30%, #BDEFF9 0%, #5FB8D0 30%, #2B5A85 62%, rgb(43 90 133 / 0) 72%);
+    }
+
+    .dark .tn-planet {
+        opacity: .9;
+        background: radial-gradient(circle at 35% 30%, #7FE9FB 0%, #1C8FB0 28%, #142C5C 58%, rgb(20 44 92 / 0) 72%);
+        box-shadow: 0 0 120px 10px rgb(65 221 248 / .12);
+    }
+
+    .tn-grid {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+            linear-gradient(rgb(0 119 141 / .08) 1px, transparent 1px),
+            linear-gradient(90deg, rgb(0 119 141 / .08) 1px, transparent 1px);
+        background-size: 64px 64px;
+        mask-image: radial-gradient(ellipse at 70% 30%, #000 0%, transparent 70%);
+    }
+
+    .dark .tn-grid {
+        background-image:
+            linear-gradient(rgb(65 221 248 / .06) 1px, transparent 1px),
+            linear-gradient(90deg, rgb(65 221 248 / .06) 1px, transparent 1px);
+    }
+
+    /* Point « en direct » */
+    .tn-live-dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 9999px;
+        background-color: currentColor;
+        box-shadow: 0 0 0 3px color-mix(in oklab, currentColor 20%, transparent);
+        animation: tn-pulse 2.4s ease-in-out infinite;
+    }
+
+    /* Onglet actif : trait cyan (lueur en sombre seulement). */
+    .tn-tab-active {
+        position: relative;
+        color: var(--color-ink);
+    }
+
+    .tn-tab-active::after {
+        content: '';
+        position: absolute;
+        left: .75rem;
+        right: .75rem;
+        bottom: -1px;
+        height: 2px;
+        border-radius: 2px;
+        background: var(--color-cyan);
+    }
+
+    .dark .tn-tab-active::after {
+        box-shadow: 0 0 12px rgb(65 221 248 / .7);
+    }
+
+    /* Bottom sheet mobile : la page recule derrière. */
+    .tn-page {
+        transform-origin: 50% 0;
+        transition: transform 480ms cubic-bezier(.32, .72, 0, 1), border-radius 480ms cubic-bezier(.32, .72, 0, 1);
+    }
+
+    .tn-page-recule {
+        transform: scale(.92) translateY(18px);
+        border-radius: 34px;
+        overflow: hidden;
+    }
+}
+
+@keyframes tn-pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .55;
     }
 }
 
@@ -59,9 +352,15 @@
 input:focus[data-flux-control],
 textarea:focus[data-flux-control],
 select:focus[data-flux-control] {
-    @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
+    @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-night;
 }
 
-/* \[:where(&)\]:size-4 {
-    @apply size-4;
-} */
+/* Rail latéral Flux restylé : surface pleine, filet, item actif cyan. */
+[data-flux-sidebar] {
+    background-color: var(--color-surface) !important;
+    border-color: var(--color-line) !important;
+}
+
+[data-flux-sidebar-item][data-current] {
+    box-shadow: inset 2px 0 0 var(--color-cyan);
+}

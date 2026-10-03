@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\AvisProjet;
 use App\Models\Projet;
 use App\Models\Quartier;
 use App\Models\Role;
@@ -35,6 +36,44 @@ class ProjetSeeder extends Seeder
             $projet->quartier_id = $quartier === null ? null : Quartier::idPour($quartier);
             $projet->user()->associate($auteur);
             $projet->save();
+        }
+
+        // F66 : les projets encore à l'étude sont ouverts à l'avis des habitants pour la démo.
+        Projet::query()->where('etat', 'etude')->update(['consultation_ouverte' => true]);
+        $this->avisDeDemo();
+    }
+
+    /**
+     * Quelques avis d'habitants (hors compte de démo user@example.com, pour qu'il puisse tester lui-même).
+     */
+    private function avisDeDemo(): void
+    {
+        $projet = Projet::query()->where('consultation_ouverte', true)->first();
+
+        if ($projet === null) {
+            return;
+        }
+
+        $reponses = [
+            ['pour', 'Enfin ! Le quartier en a vraiment besoin.'],
+            ['pour', null],
+            ['contre', 'J\'ai peur du bruit pendant les travaux, pensez aux horaires.'],
+            ['sans_avis', 'Il faudrait plus d\'informations sur le budget.'],
+            ['pour', 'Pensez aux personnes à mobilité réduite.'],
+        ];
+
+        $habitants = User::query()->citizens()->where('email', '!=', 'user@example.com')->limit(count($reponses))->get();
+
+        foreach ($habitants as $i => $habitant) {
+            if (AvisProjet::query()->whereBelongsTo($habitant)->whereBelongsTo($projet)->exists()) {
+                continue;
+            }
+
+            [$position, $commentaire] = $reponses[$i];
+            $avis = new AvisProjet(['position' => $position, 'commentaire' => $commentaire]);
+            $avis->user()->associate($habitant);
+            $avis->projet()->associate($projet);
+            $avis->save();
         }
     }
 

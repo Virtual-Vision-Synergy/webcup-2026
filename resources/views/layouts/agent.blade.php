@@ -10,13 +10,16 @@
     <body class="min-h-screen bg-night text-ink antialiased">
         {{-- Bandeau « poste agent » : même système Terra Nova, repérable par l'intitulé et le trait cyan. --}}
         <flux:header container class="tn-glass sticky top-0 z-40 h-[72px]! border-b border-t-2 border-t-cyan">
-            <a href="{{ route('agent.index') }}" class="flex items-center gap-3" aria-label="Espace agent : demandes Nova Terra">
+            <a href="{{ route('agent.tableau-de-bord') }}" class="flex items-center gap-3" aria-label="Espace agent : tableau de bord">
                 <x-app-logo-icon class="size-[26px] shrink-0" />
                 <span class="tn-display text-[0.9375rem] font-semibold tracking-[.16em] max-sm:hidden" style="font-stretch: 118%">TERRA NOVA</span>
                 <x-tn.status-badge etat="info">Espace agent</x-tn.status-badge>
             </a>
 
             <flux:navbar class="ms-6 max-md:hidden">
+                <flux:navbar.item icon="chart-bar" :href="route('agent.tableau-de-bord')" :current="request()->routeIs('agent.tableau-de-bord')">
+                    Tableau de bord
+                </flux:navbar.item>
                 <flux:navbar.item icon="inbox-stack" :href="route('agent.index')" :current="request()->routeIs('agent.index')">
                     Demandes Nova Terra
                 </flux:navbar.item>
@@ -56,6 +59,7 @@
 
                     <flux:menu.separator />
 
+                    <flux:menu.item icon="chart-bar" :href="route('agent.tableau-de-bord')" class="md:hidden">Tableau de bord</flux:menu.item>
                     <flux:menu.item icon="inbox-stack" :href="route('agent.index')" class="md:hidden">Demandes Nova Terra</flux:menu.item>
                     <flux:menu.item icon="users" :href="route('agent.citizens.index')" class="md:hidden">Comptes citoyens</flux:menu.item>
                     <flux:menu.item icon="megaphone" :href="route('agent.annonces.index')" class="md:hidden">Messages généraux</flux:menu.item>

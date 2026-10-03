@@ -53,7 +53,7 @@ class LigneTransport extends Model
      */
     public function listeArrets(): array
     {
-        return collect(preg_split('/\R/', (string) $this->arrets))
+        return collect(preg_split('/\R/', (string) $this->arrets) ?: [])
             ->map(fn (string $arret) => trim($arret))
             ->filter()
             ->values()

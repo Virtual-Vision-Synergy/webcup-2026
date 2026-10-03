@@ -182,6 +182,9 @@ class DatabaseSeeder extends Seeder
         // F39 : services ouverts aux rendez-vous, créneaux sur 14 jours ouvrés, agenda du jour pour agent@example.com.
         $this->call(RendezVousSeeder::class);
 
+        // F38 : État civil en incident, Médiathèque en maintenance, une interruption passée (historique).
+        $this->call(ServiceInterruptionSeeder::class);
+
         // make:feature:seeders
     }
 }

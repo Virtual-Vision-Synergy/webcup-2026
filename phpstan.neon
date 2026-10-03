@@ -19,4 +19,5 @@ parameters:
             paths:
                 - app/Concerns/ExportsCsv.php
                 - app/Concerns/ThrottlesPerUser.php
+                - app/Concerns/BloqueSiServiceIndisponible.php
                 - app/Models/Concerns/HasCoordinates.php

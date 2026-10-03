@@ -26,6 +26,10 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     // F39 : rendez-vous du jour (RendezVousPolicy::viewAgenda).
     Route::livewire('rendez-vous', 'pages::agent.rendez-vous')->name('appointments.index');
 
+    // F38 : disponibilité des services (maintenance, incident). Droits dans ServicePolicy::manageAvailability.
+    Route::livewire('services', 'pages::agent.services.index')->name('services.index');
+    Route::livewire('services/{service}/disponibilite', 'pages::agent.services.disponibilite')->name('services.availability');
+
     // F47 : journal d'audit en LECTURE SEULE (aucune route de création, modification ni suppression).
     Route::livewire('journal', 'pages::agent.audit.index')->name('audit.index');
     Route::livewire('journal/{auditLog}', 'pages::agent.audit.show')->name('audit.show');

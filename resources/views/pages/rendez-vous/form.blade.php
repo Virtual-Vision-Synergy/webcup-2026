@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\BloqueSiServiceIndisponible;
 use App\Concerns\ThrottlesPerUser;
 use App\Exceptions\CreneauIndisponible;
 use App\Models\CreneauRendezVous;
@@ -17,7 +18,7 @@ use Livewire\Component;
  * Le service et le créneau choisis sont dans l'URL, mais toujours revalidés côté serveur.
  */
 new #[Title('Prendre rendez-vous')] class extends Component {
-    use ThrottlesPerUser;
+    use BloqueSiServiceIndisponible, ThrottlesPerUser;
 
     #[Url(as: 'service', except: '')]
     public string $serviceSlug = '';
@@ -45,6 +46,11 @@ new #[Title('Prendre rendez-vous')] class extends Component {
             $this->creneauId = '';
         }
 
+        // F38 : service interrompu (maintenance, incident) → retour à sa fiche, qui explique quand revenir.
+        if ($this->redirigerSiServiceIndisponible($this->service)) {
+            return;
+        }
+
         if ($this->creneauId !== '' && $this->creneau === null) {
             $this->creneauId = '';
             $this->erreurCreneau = CreneauIndisponible::INVALIDE;
@@ -59,7 +65,7 @@ new #[Title('Prendre rendez-vous')] class extends Component {
     #[Computed]
     public function services(): Collection
     {
-        return Service::query()->prendRendezVous()->orderBy('nom')->get();
+        return Service::query()->prendRendezVous()->with('interruptionCourante')->orderBy('nom')->get();
     }
 
     #[Computed]
@@ -191,6 +197,9 @@ new #[Title('Prendre rendez-vous')] class extends Component {
     {
         $this->authorize('create', RendezVous::class);
 
+        // F38 : refusé côté serveur si le service est interrompu, même si le bouton a été contourné.
+        Service::query()->prendRendezVous()->where('slug', $slug)->first()?->assertDisponible('service');
+
         $this->serviceSlug = $slug;
         $this->creneauId = '';
         $this->erreurCreneau = '';
@@ -248,6 +257,9 @@ new #[Title('Prendre rendez-vous')] class extends Component {
             return;
         }
 
+        // F38 : le service a pu être interrompu depuis le choix du créneau.
+        $service->assertDisponible('service');
+
         try {
             $rendezVous = app(PriseDeRendezVous::class)->reserver(auth()->user(), $service, (int) $this->creneauId, $this->motif);
         } catch (CreneauIndisponible $e) {
@@ -296,6 +308,12 @@ new #[Title('Prendre rendez-vous')] class extends Component {
         </flux:callout>
     @endif
 
+    @error('service')
+        <flux:callout variant="danger" icon="exclamation-triangle" role="alert">
+            <flux:callout.text>{{ $message }}</flux:callout.text>
+        </flux:callout>
+    @enderror
+
     @error('throttle')
         <flux:callout variant="danger" icon="exclamation-triangle" role="alert">
             <flux:callout.text>{{ $message }}</flux:callout.text>
@@ -312,17 +330,27 @@ new #[Title('Prendre rendez-vous')] class extends Component {
             <ul class="grid gap-3 sm:grid-cols-2">
                 @foreach ($this->services as $service)
                     <li wire:key="service-{{ $service->id }}">
-                        <button type="button" wire:click="choisirService('{{ $service->slug }}')" class="h-full w-full cursor-pointer rounded-md border border-line bg-surface p-4 text-left transition hover:border-cyan hover:bg-cyan/5 focus-visible:border-cyan">
-                            <span class="block font-semibold text-ink">{{ $service->nom }}</span>
-                            <span class="mt-2 flex items-start gap-1.5 text-sm text-ink-2">
-                                <flux:icon.map-pin class="mt-0.5 size-4 shrink-0" />
-                                {{ $service->lieuRendezVous() ?? 'Lieu communiqué par le service' }}
-                            </span>
-                            <span class="mt-1 flex items-center gap-1.5 text-sm text-ink-2">
-                                <flux:icon.clock class="size-4 shrink-0" />
-                                Durée : {{ $service->duree_rendez_vous }} minutes
-                            </span>
-                        </button>
+                        @if ($interruption = $service->interruptionEnCours())
+                            {{-- F38 : service interrompu, listé mais non sélectionnable. --}}
+                            <div class="h-full w-full rounded-md border border-line bg-surface p-4 opacity-80" aria-disabled="true">
+                                <span class="block font-semibold text-ink">{{ $service->nom }}</span>
+                                <x-tn.status-badge :etat="$interruption->etatBadge()" class="mt-2">Indisponible · {{ $interruption->libelleType() }}</x-tn.status-badge>
+                                <span class="mt-2 block text-sm text-ink-2">{{ $interruption->libelleRetour() }}</span>
+                                <a href="{{ route('services.show', $service) }}" wire:navigate class="mt-2 inline-block text-sm text-cyan hover:underline">Démarche suspendue pendant l’interruption · que faire en attendant ?</a>
+                            </div>
+                        @else
+                            <button type="button" wire:click="choisirService('{{ $service->slug }}')" class="h-full w-full cursor-pointer rounded-md border border-line bg-surface p-4 text-left transition hover:border-cyan hover:bg-cyan/5 focus-visible:border-cyan">
+                                <span class="block font-semibold text-ink">{{ $service->nom }}</span>
+                                <span class="mt-2 flex items-start gap-1.5 text-sm text-ink-2">
+                                    <flux:icon.map-pin class="mt-0.5 size-4 shrink-0" />
+                                    {{ $service->lieuRendezVous() ?? 'Lieu communiqué par le service' }}
+                                </span>
+                                <span class="mt-1 flex items-center gap-1.5 text-sm text-ink-2">
+                                    <flux:icon.clock class="size-4 shrink-0" />
+                                    Durée : {{ $service->duree_rendez_vous }} minutes
+                                </span>
+                            </button>
+                        @endif
                     </li>
                 @endforeach
             </ul>

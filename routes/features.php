@@ -82,6 +82,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('profil/appareils/{knownDevice}/pas-moi', [KnownDeviceController::class, 'confirm'])->name('profile.devices.confirm');
     Route::post('profil/appareils/{knownDevice}/pas-moi', [KnownDeviceController::class, 'notMe'])->name('profile.devices.not-me');
 
+    // F72 : « Par où commencer ? » — services recommandés selon la situation de l'habitant (OnboardingPolicy::parOuCommencer).
+    Route::livewire('par-ou-commencer', 'pages::onboarding.par-ou-commencer')
+        ->middleware('can:parOuCommencer,'.Onboarding::class)
+        ->name('onboarding.par-ou-commencer');
+
     // make:feature:routes
 });
 

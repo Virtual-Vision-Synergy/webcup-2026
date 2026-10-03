@@ -68,6 +68,9 @@
 
         <x-onboarding.rappel />
 
+        {{-- F72 : services recommandés selon la situation de l'habitant --}}
+        <x-onboarding.par-ou-commencer />
+
         {{-- ALERTES --}}
         @if ($alertes->isNotEmpty())
             <section aria-labelledby="titre-alertes" class="flex flex-col gap-2">

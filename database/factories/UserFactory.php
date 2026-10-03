@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Quartier;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -67,8 +68,16 @@ class UserFactory extends Factory
     {
         return $this->state(fn () => [
             'telephone' => fake()->numerify('034 ## ### ##'),
-            'quartier' => fake()->randomElement(['Analakely', 'Isoraka', 'Ambohijatovo', 'Andohalo', 'Faravohitra']),
+            'quartier_id' => fn () => Quartier::query()->inRandomOrder()->value('id'),
         ]);
+    }
+
+    /**
+     * Habitant d'un quartier donné (slug : nord, sud, est, ouest, centre).
+     */
+    public function quartier(string $slug): static
+    {
+        return $this->state(fn () => ['quartier_id' => Quartier::idPour($slug)]);
     }
 
     public function admin(): static

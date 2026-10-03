@@ -26,7 +26,9 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $name
  * @property string $email
  * @property string|null $telephone
- * @property string|null $quartier
+ * @property string|null $quartier Ancienne saisie libre (D12), tenue à jour avec le nom du quartier choisi.
+ * @property int|null $quartier_id
+ * @property-read Quartier|null $quartierResidence
  * @property-read Onboarding|null $onboarding
  * @property Carbon|null $email_verified_at
  * @property string $password
@@ -42,7 +44,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * (inscription, admin, deactivate()/reactivate()).
  * L'ancienne colonne texte « role » existe encore en base mais n'est plus utilisée.
  */
-#[Fillable(['name', 'email', 'password', 'telephone', 'quartier'])]
+#[Fillable(['name', 'email', 'password', 'telephone', 'quartier', 'quartier_id'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements FilamentUser
 {
@@ -59,6 +61,7 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'quartier_id' => 'integer',
             'deactivated_at' => 'datetime',
         ];
     }
@@ -105,6 +108,16 @@ class User extends Authenticatable implements FilamentUser
     public function demarches(): HasMany
     {
         return $this->hasMany(Demarche::class);
+    }
+
+    /**
+     * Quartier choisi par l'habitant dans son profil (F29) : sert au ciblage des alertes.
+     *
+     * @return BelongsTo<Quartier, $this>
+     */
+    public function quartierResidence(): BelongsTo
+    {
+        return $this->belongsTo(Quartier::class, 'quartier_id');
     }
 
     /**

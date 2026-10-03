@@ -20,6 +20,9 @@
                 <flux:navbar.item icon="inbox-stack" :href="route('agent.index')" :current="request()->routeIs('agent.index')">
                     Demandes Nova Terra
                 </flux:navbar.item>
+                <flux:navbar.item icon="clipboard-document-list" :href="route('agent.demandes')" :current="request()->routeIs('agent.demandes')">
+                    Demandes des habitants
+                </flux:navbar.item>
             </flux:navbar>
 
             <flux:spacer />
@@ -44,6 +47,7 @@
                     <flux:menu.separator />
 
                     <flux:menu.item icon="inbox-stack" :href="route('agent.index')" class="md:hidden">Demandes Nova Terra</flux:menu.item>
+                    <flux:menu.item icon="clipboard-document-list" :href="route('agent.demandes')" class="md:hidden">Demandes des habitants</flux:menu.item>
                     <flux:menu.item icon="arrow-uturn-left" :href="route('dashboard')">Retour à l'espace citoyen</flux:menu.item>
                     <flux:menu.item icon="cog" :href="route('profile.edit')">{{ __('Settings') }}</flux:menu.item>
 

@@ -13,7 +13,7 @@ function remplirAnnonce(mixed $test, array $valeurs = []): mixed
     $valeurs += [
         'titre' => 'Coupure d’eau à Ambohijanahary',
         'contenu' => 'L’eau sera coupée de 9 h à 16 h.',
-        'niveau' => 'important',
+        'niveau' => 'vigilance',
         'debut' => '2026-10-03T09:00',
         'fin' => '2026-10-04T09:00',
     ];
@@ -64,7 +64,7 @@ test('un agent peut publier un message général', function () {
 
     $annonce = Annonce::sole();
     expect($annonce->user_id)->toBe($agent->id)
-        ->and($annonce->niveau)->toBe('important')
+        ->and($annonce->niveau)->toBe('vigilance')
         // Saisie en heure de Madagascar (UTC+3), stockée en UTC.
         ->and($annonce->debut->format('Y-m-d H:i'))->toBe('2026-10-03 06:00');
 });
@@ -171,7 +171,7 @@ test('le contenu du bandeau est échappé', function () {
 });
 
 test('le bandeau propose un bouton de fermeture mémorisé par message et par version', function () {
-    $annonce = Annonce::factory()->active()->create(['titre' => 'Coupure d’eau', 'niveau' => 'urgent']);
+    $annonce = Annonce::factory()->active()->create(['titre' => 'Coupure d’eau', 'niveau' => 'alerte']);
 
     $this->get(route('home'))
         ->assertSee('aria-label="Fermer le message : Coupure d’eau"', false)
@@ -200,8 +200,8 @@ test('le bandeau fonctionne avec un cache qui sérialise, sans désérialiser d�
 
 test('les messages en diffusion sont triés du plus grave au moins grave', function () {
     Annonce::factory()->active()->create(['niveau' => 'information', 'titre' => 'Info']);
-    Annonce::factory()->active()->create(['niveau' => 'urgent', 'titre' => 'Urgence']);
-    Annonce::factory()->expiree()->create(['niveau' => 'urgent', 'titre' => 'Expirée']);
+    Annonce::factory()->active()->create(['niveau' => 'alerte', 'titre' => 'Urgence']);
+    Annonce::factory()->expiree()->create(['niveau' => 'alerte', 'titre' => 'Expirée']);
 
     expect(Annonce::enDiffusion()->pluck('titre')->all())->toBe(['Urgence', 'Info']);
 });

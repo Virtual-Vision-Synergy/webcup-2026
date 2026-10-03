@@ -14,6 +14,14 @@
                         Mes rendez-vous
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="chat-bubble-left-ellipsis" :href="route('concerns.index')" :current="request()->routeIs('concerns.*')" wire:navigate>
+                        Mes remontées
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="shield-check" :href="route('privacy.show')" :current="request()->routeIs('privacy.show')" wire:navigate>
+                        Vos données
+                    </flux:sidebar.item>
+
                     {{-- make:feature:nav --}}
 @endsection
 @php

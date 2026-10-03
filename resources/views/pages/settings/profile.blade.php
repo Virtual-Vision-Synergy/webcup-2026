@@ -116,6 +116,12 @@ new #[Title('Profile settings')] class extends Component {
                 </p>
             @endcan
 
+            <p class="mb-6 text-sm text-ink-2">
+                Ce que la plateforme garde sur vous et ce que la suppression efface :
+                <a href="{{ route('privacy.show') }}" wire:navigate class="font-medium text-cyan hover:underline" data-test="lien-vos-donnees">Vos données</a>
+                · <a href="{{ route('concerns.index') }}" wire:navigate class="font-medium text-cyan hover:underline">Mes remontées</a>
+            </p>
+
             <livewire:pages::settings.delete-user-form />
     </x-pages::settings.layout>
 </section>

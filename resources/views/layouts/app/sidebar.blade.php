@@ -13,6 +13,17 @@
                     <flux:sidebar.item icon="calendar-days" :href="route('appointments.index')" :current="request()->routeIs('appointments.*')" wire:navigate>
                         Mes rendez-vous
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="heart" :href="route('urgences.index')" :current="request()->routeIs('urgences.*')" wire:navigate>
+                        Urgences / Santé
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="chat-bubble-left-ellipsis" :href="route('concerns.index')" :current="request()->routeIs('concerns.*')" wire:navigate>
+                        Mes remontées
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="shield-check" :href="route('privacy.show')" :current="request()->routeIs('privacy.show')" wire:navigate>
+                        Vos données
+                    </flux:sidebar.item>
 
                     {{-- make:feature:nav --}}
 @endsection

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Onboarding;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -33,6 +34,16 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('demarches/create', 'pages::demarches.form')->name('demarches.create');
     Route::livewire('demarches/{demarche}', 'pages::demarches.show')->name('demarches.show');
     Route::livewire('demarches/{demarche}/edit', 'pages::demarches.form')->name('demarches.edit');
+
+    Route::livewire('signalements', 'pages::signalements.index')->name('signalements.index');
+    Route::livewire('signalements/create', 'pages::signalements.form')->name('signalements.create');
+    Route::livewire('signalements/{signalement}', 'pages::signalements.show')->name('signalements.show');
+    Route::livewire('signalements/{signalement}/edit', 'pages::signalements.form')->name('signalements.edit');
+
+    // Parcours de prise en main des nouveaux habitants (D12) : toujours celui de l'utilisateur connecté.
+    Route::livewire('bienvenue', 'pages::onboarding.index')
+        ->middleware('can:view,'.Onboarding::class)
+        ->name('onboarding.show');
 
     // make:feature:routes
 });

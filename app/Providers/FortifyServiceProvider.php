@@ -6,6 +6,7 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Models\User;
+use App\Http\Responses\ParcoursApresConnexionResponse;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -13,6 +14,9 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Laravel\Fortify\Contracts\LoginResponse;
+use Laravel\Fortify\Contracts\RegisterResponse;
+use Laravel\Fortify\Contracts\TwoFactorLoginResponse;
 use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -22,7 +26,10 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Parcours de prise en main (D12) : redirige les nouveaux habitants vers /bienvenue.
+        $this->app->singleton(LoginResponse::class, ParcoursApresConnexionResponse::class);
+        $this->app->singleton(RegisterResponse::class, ParcoursApresConnexionResponse::class);
+        $this->app->singleton(TwoFactorLoginResponse::class, ParcoursApresConnexionResponse::class);
     }
 
     /**

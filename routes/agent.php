@@ -12,4 +12,5 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     // F34 : comptes citoyens (droits fins dans UserPolicy : administerAccounts, viewAccount, deactivate, reactivate).
     Route::livewire('/citoyens', 'pages::agent.citizens.index')->name('citizens.index');
     Route::livewire('/citoyens/{user}', 'pages::agent.citizens.show')->name('citizens.show');
+    Route::livewire('demandes', 'pages::agent.demandes')->name('demandes');
 });

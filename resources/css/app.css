@@ -125,6 +125,11 @@ body { overflow-wrap: anywhere; }
         outline-offset: 2px;
     }
 
+    /* F41 : zone de contenu ciblée par « Aller au contenu » (focus programmatique, pas d'action). */
+    main[tabindex='-1']:focus {
+        outline: none;
+    }
+
     @media (prefers-reduced-motion: reduce) {
         *,
         ::before,

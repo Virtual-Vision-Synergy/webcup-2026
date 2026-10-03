@@ -103,9 +103,9 @@
 
                 <x-tn.bandeau-annonces />
 
-                <div id="contenu" class="flex flex-1 flex-col">
+                <main id="contenu" tabindex="-1" class="flex flex-1 flex-col">
                     {{ $slot }}
-                </div>
+                </main>
             </div>
         </div>
 

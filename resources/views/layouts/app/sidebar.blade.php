@@ -10,6 +10,10 @@
                     <flux:sidebar.item icon="bus" :href="route('transports.index')" :current="request()->routeIs('transports.*')" wire:navigate>
                         Transports
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="calendar-days" :href="route('appointments.index')" :current="request()->routeIs('appointments.*')" wire:navigate>
+                        Mes rendez-vous
+                    </flux:sidebar.item>
+
                     {{-- make:feature:nav --}}
 @endsection
 <!DOCTYPE html>

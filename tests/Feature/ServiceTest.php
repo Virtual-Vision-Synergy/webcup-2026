@@ -74,3 +74,29 @@ test('un admin peut supprimer', function () {
 
     expect(Service::find($record->id))->toBeNull();
 });
+
+test('les services prioritaires apparaissent en tête du catalogue et dans Mon espace (F28)', function () {
+    Service::factory()->misEnAvant()->create(['nom' => 'Guichet prioritaire']);
+    Service::factory()->create(['nom' => 'Guichet ordinaire']);
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('services.index'))
+        ->assertOk()
+        ->assertSeeInOrder(['Services prioritaires', 'Guichet prioritaire', 'Prioritaire']);
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSeeInOrder(['Services prioritaires', 'Guichet prioritaire'])
+        ->assertDontSee('Guichet ordinaire');
+});
+
+test('le bloc des services prioritaires est masqué pendant une recherche', function () {
+    Service::factory()->misEnAvant()->create(['nom' => 'Guichet prioritaire']);
+
+    Livewire::actingAs(User::factory()->create())
+        ->test('pages::services.index')
+        ->set('search', 'introuvable')
+        ->assertDontSee('Services prioritaires');
+});

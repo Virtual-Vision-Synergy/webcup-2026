@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Models\Concerns\Auditable;
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -53,6 +52,7 @@ class Service extends Model
     {
         return [
             'mis_en_avant' => 'boolean',
+            'duree_rendez_vous' => 'integer',
         ];
     }
 
@@ -121,16 +121,6 @@ class Service extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'duree_rendez_vous' => 'integer',
-        ];
     }
 
     /**

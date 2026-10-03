@@ -14,7 +14,7 @@
         <flux:header container class="tn-glass sticky top-0 z-40 h-[72px]! border-b border-t-2 border-t-cyan">
             <a href="{{ route('agent.tableau-de-bord') }}" class="flex items-center gap-3" aria-label="Espace agent : tableau de bord">
                 <x-app-logo-icon class="size-[26px] shrink-0" />
-                <span class="tn-display text-[0.9375rem] font-semibold tracking-[.16em] max-sm:hidden" style="font-stretch: 118%">TERRA NOVA</span>
+                <span class="tn-display text-[0.9375rem] font-semibold tracking-[.16em] max-sm:hidden">TERRA NOVA</span>
                 <x-tn.status-badge etat="info">Espace agent</x-tn.status-badge>
             </a>
 

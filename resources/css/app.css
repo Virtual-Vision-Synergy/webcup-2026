@@ -14,9 +14,9 @@
  * La couleur indique un ÉTAT : cyan = action, ambre = perturbé, magenta = alerte, vert = normal.
  */
 @theme {
-    --font-display: 'Saira', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
     --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
-    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
 
     /* Clair : « salle de contrôle de jour » */
     --color-night: #F2F8FB;
@@ -143,16 +143,14 @@ body { overflow-wrap: anywhere; }
 }
 
 @layer components {
-    /* Titres Saira élargis */
+    /* Titres (IBM Plex Sans) */
     .tn-display {
         font-family: var(--font-display);
-        font-stretch: 112%;
     }
 
     .tn-h1 {
         font-family: var(--font-display);
-        font-stretch: 112%;
-        font-weight: 700;
+        font-weight: 600;
         font-size: 2.375rem;
         line-height: 1.02;
         letter-spacing: -0.01em;
@@ -166,7 +164,6 @@ body { overflow-wrap: anywhere; }
 
     .tn-h2 {
         font-family: var(--font-display);
-        font-stretch: 112%;
         font-weight: 600;
         font-size: 1.625rem;
         line-height: 1.1;
@@ -429,83 +426,6 @@ select:focus[data-flux-control] {
 [data-flux-sidebar-item][data-current] {
     box-shadow: inset 2px 0 0 var(--color-cyan);
 }
-
-/* Carte Leaflet aux couleurs Terra Nova : contrôles vitrés, bulles en surface, marqueurs d'état. */
-.leaflet-container {
-    background-color: var(--color-surface-2);
-    font-family: var(--font-sans);
-}
-
-.leaflet-bar,
-.leaflet-control-attribution {
-    border: 1px solid var(--color-line) !important;
-    border-radius: var(--radius-sm) !important;
-    overflow: hidden;
-    background-color: rgb(255 255 255 / .75) !important;
-    backdrop-filter: blur(14px);
-    box-shadow: none !important;
-}
-
-.dark .leaflet-bar,
-.dark .leaflet-control-attribution {
-    background-color: rgb(5 10 22 / .6) !important;
-}
-
-.leaflet-bar a,
-.leaflet-control-attribution,
-.leaflet-control-attribution a {
-    color: var(--color-ink) !important;
-    background-color: transparent !important;
-    border-color: var(--color-line) !important;
-}
-
-.leaflet-bar a {
-    width: 36px !important;
-    height: 36px !important;
-    line-height: 36px !important;
-}
-
-.leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
-    background-color: var(--color-surface);
-    color: var(--color-ink);
-    border: 1px solid var(--color-line);
-    box-shadow: 0 8px 24px -8px rgb(0 0 0 / .35);
-}
-
-.leaflet-popup-content a {
-    color: var(--color-cyan);
-}
-
-.tn-marqueur {
-    border-radius: 9999px;
-    border: 3px solid var(--color-surface);
-    background-color: var(--color-cyan);
-}
-
-.tn-marqueur-normal { background-color: var(--color-green); }
-.tn-marqueur-perturbe { background-color: var(--color-amber); }
-.tn-marqueur-alerte { background-color: var(--color-magenta); }
-
-/* F43 : un symbole par état dans le marqueur, pour ne pas dépendre de la couleur. */
-.tn-marqueur::after {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: var(--color-surface);
-    font: 700 11px/1 var(--font-sans);
-    content: 'i';
-}
-
-.tn-marqueur-normal::after { content: '✓'; }
-.tn-marqueur-perturbe::after { content: '!'; }
-.tn-marqueur-alerte::after { content: '✕'; }
-
-.dark .tn-marqueur-normal { box-shadow: 0 0 0 4px rgb(86 231 149 / .25); }
-.dark .tn-marqueur-perturbe { box-shadow: 0 0 0 4px rgb(255 180 75 / .25); }
-.dark .tn-marqueur-alerte { box-shadow: 0 0 0 4px rgb(255 66 133 / .25); }
-.dark .tn-marqueur-info { box-shadow: 0 0 0 4px rgb(65 221 248 / .25); }
 
 /*
  * CONTRASTE ÉLEVÉ (classe `hc` sur <html>, posée par partials/head selon la préférence mémorisée).

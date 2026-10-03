@@ -116,6 +116,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
 <section class="mx-auto w-full max-w-6xl space-y-6">
     <x-tn.page-header
         label="Espace agent"
+        :breadcrumb="['Espace agent' => route('agent.index'), 'Demandes des habitants' => null]"
         title="Demandes des habitants"
         :subtitle="$enAttenteTotal.' demande(s) en attente d’une action sur '.array_sum($this->compteurs).' au total'"
     />
@@ -152,7 +153,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
         @if ($search !== '' || $filterStatut !== '' || $enAttente)
             <flux:button variant="ghost" size="sm" icon="x-mark" wire:click="resetFilters">Effacer les filtres</flux:button>
         @endif
-        <span wire:loading class="font-mono text-[11px] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
     </div>
 
     @if ($this->items->isEmpty())

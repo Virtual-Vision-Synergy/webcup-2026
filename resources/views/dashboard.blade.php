@@ -21,9 +21,9 @@
 
 <x-layouts::app :title="__('Dashboard')">
     <div class="mx-auto flex w-full max-w-6xl flex-col gap-8">
-        <x-tn.page-header label="Mon espace" :title="'Bonjour '.$user->name" subtitle="Vos démarches et l'activité de la ville, en un coup d'œil.">
+        <x-tn.page-header label="Mon espace" :breadcrumb="['Mon espace' => null]" :title="'Bonjour '.$user->name" subtitle="Vos démarches et l'activité de la ville, en un coup d'œil.">
             <x-slot:actions>
-                <span class="inline-flex items-center gap-2 rounded-xs border border-line px-2.5 py-1 font-mono text-[11px] uppercase tracking-[.06em] text-ink-2">
+                <span class="inline-flex items-center gap-2 rounded-xs border border-line px-2.5 py-1 font-mono text-[0.6875rem] uppercase tracking-[.06em] text-ink-2">
                     <flux:icon name="users-round" class="size-3.5" /> {{ $user->role->label }}
                 </span>
                 @can('create', Demarche::class)
@@ -97,7 +97,7 @@
                 <dl class="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-line bg-line sm:grid-cols-4">
                     @foreach (Demarche::STATUT_OPTIONS as $statut)
                         <div class="bg-surface/90 px-3 py-3 dark:bg-night/70">
-                            <dt class="flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[.06em] text-ink-2">{{ Demarche::libelleStatut($statut) }}</dt>
+                            <dt class="flex items-center gap-1.5 font-mono text-[0.65625rem] uppercase tracking-[.06em] text-ink-2">{{ Demarche::libelleStatut($statut) }}</dt>
                             <dd class="tn-display mt-1 text-2xl font-semibold tabular-nums text-ink">{{ sprintf('%02d', $parStatut[$statut] ?? 0) }}</dd>
                         </div>
                     @endforeach

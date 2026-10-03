@@ -157,6 +157,11 @@ class DatabaseSeeder extends Seeder
             Signalement::factory(2)->for($citoyen)->create();
         }
 
+        if (! app()->isProduction()) {
+            // Journal d'audit de démo (F47). Les autres seeders n'écrivent rien dans le journal (WithoutModelEvents).
+            $this->call(AuditLogSeeder::class);
+        }
+
         $this->call(LigneTransportSeeder::class);
 
         // F39 : services ouverts aux rendez-vous, créneaux sur 14 jours ouvrés, agenda du jour pour agent@example.com.

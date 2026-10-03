@@ -135,7 +135,7 @@ new #[Title('Signalements')] class extends Component {
         @if ($this->voitTousLesSignalements)
             <flux:checkbox wire:model.live="mine" label="Mes signalements uniquement" />
         @endif
-        <span wire:loading class="font-mono text-[11px] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
     </div>
 
     @if ($this->items->isEmpty())

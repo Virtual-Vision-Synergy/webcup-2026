@@ -39,4 +39,12 @@ class ServiceFactory extends Factory
             'adresse' => fake()->numberBetween(1, 120).' avenue de la République, Nova Terra',
         ];
     }
+
+    /**
+     * Service mis en avant dans le catalogue et sur l'accueil.
+     */
+    public function misEnAvant(): static
+    {
+        return $this->state(fn (): array => ['mis_en_avant' => true]);
+    }
 }

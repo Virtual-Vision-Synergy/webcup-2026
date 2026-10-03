@@ -5,7 +5,7 @@
 
 {{-- Barre de progression d'un formulaire en étapes ($current = numéro de l'étape, à partir de 1). --}}
 <div {{ $attributes }}>
-    <div class="flex items-center justify-between font-mono text-[11px] uppercase tracking-[.06em] text-ink-2">
+    <div class="flex items-center justify-between font-mono text-[0.6875rem] uppercase tracking-[.06em] text-ink-2">
         <span>Étape <span class="text-ink" x-text="{{ $current }}">1</span> / {{ count($steps) }}</span>
         <span class="text-ink" x-text="{{ json_encode(array_values($steps)) }}[{{ $current }} - 1]">{{ $steps[0] ?? '' }}</span>
     </div>

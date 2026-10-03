@@ -109,7 +109,9 @@ new #[Title('Contacter la mairie')] class extends Component {
         label="Contact"
         :title="$record ? 'Modifier le message' : 'Contacter la mairie'"
         :subtitle="$record ? null : 'Le Service des Relations Citoyennes vous répondra dans les meilleurs délais.'"
-        :breadcrumb="['Messages' => route('messages.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
+        :breadcrumb="$record
+            ? ['Mon espace' => route('dashboard'), 'Messages' => route('messages.index'), ($record->sujet ?: 'Message') => route('messages.show', $record), 'Modifier' => null]
+            : ['Mon espace' => route('dashboard'), 'Messages' => route('messages.index'), 'Nouveau' => null]"
     />
 
     @if ($envoyeId)

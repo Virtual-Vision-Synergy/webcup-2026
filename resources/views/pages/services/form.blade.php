@@ -2,6 +2,7 @@
 
 use App\Models\Service;
 use Flux\Flux;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
@@ -18,6 +19,7 @@ new #[Title('Service')] class extends Component {
     public string $lieu_rendez_vous = '';
     public string $duree_rendez_vous = '';
     public string $pieces_a_fournir = '';
+    public bool $mis_en_avant = false;
 
     public function mount(?Service $service = null): void
     {
@@ -27,6 +29,7 @@ new #[Title('Service')] class extends Component {
             $this->nom = (string) ($service->nom ?? '');
             $this->description = (string) ($service->description ?? '');
             $this->categorie = (string) ($service->categorie ?? '');
+            $this->mis_en_avant = (bool) $service->mis_en_avant;
             $this->lieu_rendez_vous = (string) ($service->lieu_rendez_vous ?? '');
             $this->duree_rendez_vous = (string) ($service->duree_rendez_vous ?? '');
             $this->pieces_a_fournir = (string) ($service->pieces_a_fournir ?? '');
@@ -47,6 +50,7 @@ new #[Title('Service')] class extends Component {
             'lieu_rendez_vous' => ['nullable', 'string', 'max:255'],
             'duree_rendez_vous' => ['nullable', 'integer', 'min:5', 'max:240'],
             'pieces_a_fournir' => ['nullable', 'string', 'max:2000'],
+            'mis_en_avant' => ['boolean'],
         ];
     }
 
@@ -57,6 +61,8 @@ new #[Title('Service')] class extends Component {
             : $this->authorize('create', Service::class);
 
         $validated = $this->validate();
+        $miseEnAvant = (bool) ($validated['mis_en_avant'] ?? false);
+        unset($validated['mis_en_avant']);
 
         foreach (['lieu_rendez_vous', 'duree_rendez_vous', 'pieces_a_fournir'] as $field) {
             if (($validated[$field] ?? null) === '') {
@@ -69,21 +75,35 @@ new #[Title('Service')] class extends Component {
             $record = $this->record;
         } else {
             $record = new Service($validated);
+        $record = $this->record ?? new Service;
+        $record->fill($validated);
+
+        if (! $record->exists) {
             $record->user()->associate(auth()->user());
-            $record->save();
         }
+
+        // Champ réservé : seuls les agents et admins peuvent le changer (sinon la valeur actuelle est conservée).
+        if (auth()->user()->can('feature', $record)) {
+            $record->mis_en_avant = $miseEnAvant;
+        }
+
+        $record->save();
+
+        Cache::forget('landing.etat');
 
         Flux::toast(variant: 'success', text: 'Service enregistré(e).');
 
         $this->redirectRoute('services.show', $record, navigate: true);
     }
-}; ?>
+} ?>
 
 <section class="mx-auto w-full max-w-2xl space-y-6">
     <x-tn.page-header
         label="Annuaire"
         :title="$record ? 'Modifier le service' : 'Ajouter un service'"
-        :breadcrumb="['Services' => route('services.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
+        :breadcrumb="$record
+            ? ['Mon espace' => route('dashboard'), 'Services' => route('services.index'), $record->nom => route('services.show', $record), 'Modifier' => null]
+            : ['Mon espace' => route('dashboard'), 'Services' => route('services.index'), 'Nouveau' => null]"
     />
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
@@ -107,6 +127,10 @@ new #[Title('Service')] class extends Component {
 
             <flux:textarea wire:model="pieces_a_fournir" label="Pièces à apporter (une par ligne)" rows="4" />
         </fieldset>
+
+        @can('feature', $record ?? Service::class)
+            <flux:checkbox wire:model="mis_en_avant" label="Mettre en avant" description="Le service apparaît en tête du catalogue et sur la page d'accueil." />
+        @endcan
 
         <div class="flex items-center gap-3">
             <flux:button type="submit" variant="primary">Enregistrer</flux:button>

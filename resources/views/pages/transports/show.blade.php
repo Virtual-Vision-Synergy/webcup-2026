@@ -34,7 +34,7 @@ new #[Title('Ligne de transport')] class extends Component {
     <x-tn.page-header
         :label="$record->modeLabel().' · Ligne '.$record->numero"
         :title="$record->nom"
-        :breadcrumb="['Transports' => route('transports.index'), 'Ligne '.$record->numero => null]"
+        :breadcrumb="['Mon espace' => route('dashboard'), 'Transports' => route('transports.index'), 'Ligne '.$record->numero => null]"
     >
         <x-slot:actions>
             @can('update', $record)

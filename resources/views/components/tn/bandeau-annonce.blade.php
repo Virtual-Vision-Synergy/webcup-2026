@@ -59,6 +59,8 @@
 
         <div class="min-w-0 flex-1">
             <p class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span class="rounded-xs border border-current px-1.5 font-mono text-[0.65625rem] font-semibold uppercase leading-5 tracking-[.06em]">{{ $libelle }}</span>
+                <span class="font-semibold text-ink">{{ $titre }}</span>
                 <span @class(['rounded-xs border border-current px-1.5 font-mono text-[10.5px] font-semibold uppercase leading-5 tracking-[.06em]', $style['accent']])>{{ $libelle }}</span>
                 @if ($variante === 'renforce' && $quartier)
                     <span @class(['rounded-xs px-1.5 font-mono text-[10.5px] font-semibold uppercase leading-5 tracking-[.06em] ring-1 ring-current', $style['accent']])>Concerne votre quartier : {{ $quartier }}</span>

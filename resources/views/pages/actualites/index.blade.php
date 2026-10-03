@@ -1,10 +1,10 @@
 <?php
 
 use App\Models\Actualite;
+use App\Services\OptimiseurImage;
 use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -65,7 +65,7 @@ new #[Title('Actualites')] class extends Component {
         $record = Actualite::findOrFail($id);
         $this->authorize('delete', $record);
         if ($record->image) {
-            Storage::disk('public')->delete($record->image);
+            app(OptimiseurImage::class)->supprimer($record->image);
         }
         $record->delete();
 
@@ -111,7 +111,7 @@ new #[Title('Actualites')] class extends Component {
             <article class="grid overflow-hidden rounded-md border border-line bg-surface lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
                 <div class="tn-sky relative min-h-56 overflow-hidden lg:min-h-80">
                     @if ($aLaUne->image)
-                        <img src="{{ Storage::url($aLaUne->image) }}" alt="" class="absolute inset-0 size-full object-cover">
+                        <x-tn.image :chemin="$aLaUne->image" :prioritaire="true" sizes="(min-width: 1024px) 55vw, 100vw" class="absolute inset-0 size-full object-cover" />
                     @else
                         <div class="tn-planet -right-16 -bottom-24 size-[280px]" aria-hidden="true"></div>
                         <div class="tn-grid" aria-hidden="true"></div>

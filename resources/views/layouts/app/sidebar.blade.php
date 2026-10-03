@@ -14,6 +14,10 @@
                         Mes rendez-vous
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="building-office-2" :href="route('projets.index')" :current="request()->routeIs('projets.*')" wire:navigate>
+                        Projets de la ville
+                    </flux:sidebar.item>
+
                     {{-- make:feature:nav --}}
 @endsection
 @php

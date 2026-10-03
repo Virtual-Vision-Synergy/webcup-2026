@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +21,7 @@ use Illuminate\Support\Str;
 class Service extends Model
 {
     /** @use HasFactory<ServiceFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     /** Slugs qui entreraient en conflit avec les routes /services/... */
     private const RESERVED_SLUGS = ['create'];

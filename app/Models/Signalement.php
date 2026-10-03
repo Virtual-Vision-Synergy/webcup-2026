@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Database\Factories\SignalementFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Signalement extends Model
 {
     /** @use HasFactory<SignalementFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     public const CATEGORIE_OPTIONS = ['eclairage', 'voirie', 'proprete', 'eau', 'espaces_verts', 'mobilier', 'autre'];
 
@@ -54,6 +55,14 @@ class Signalement extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Nom lisible dans le journal d'audit (F47) : « Éclairage — Rue des Lumières ».
+     */
+    public function auditLabel(): string
+    {
+        return self::libelleCategorie((string) $this->categorie).' — '.$this->lieu;
     }
 
     public static function libelleCategorie(string $categorie): string

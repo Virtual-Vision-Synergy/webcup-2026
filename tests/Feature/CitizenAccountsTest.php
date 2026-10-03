@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureAccountIsActive;
-use App\Models\ActionLog;
+use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -85,8 +85,8 @@ test('un agent peut désactiver puis réactiver un citoyen', function () {
         ->assertSee(['Compte désactivé', 'Compte réactivé', 'par '.$agent->name]);
 
     expect($citoyen->fresh()->isActive())->toBeTrue()
-        ->and(ActionLog::where('user_id', $agent->id)->where('subject_id', $citoyen->id)->pluck('action')->all())
-        ->toEqualCanonicalizing(['account_deactivated', 'account_reactivated']);
+        ->and(AuditLog::where('actor_id', $agent->id)->where('subject_id', $citoyen->id)->pluck('action')->all())
+        ->toEqualCanonicalizing(['deactivated', 'reactivated']);
 });
 
 test('un agent reçoit un 403 sur la fiche d\'un admin ou d\'un autre agent', function (string $role) {

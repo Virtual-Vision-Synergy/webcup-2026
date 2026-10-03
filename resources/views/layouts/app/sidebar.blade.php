@@ -83,6 +83,8 @@
                     </div>
                 </header>
 
+                <x-tn.bandeau-annonces />
+
                 <div id="contenu" class="flex flex-1 flex-col">
                     {{ $slot }}
                 </div>

@@ -24,8 +24,9 @@
                 'extrait' => Str::limit(strip_tags((string) $a->contenu), 140),
                 'date' => $a->date?->toDateString(),
             ])->all(),
-        'apercu_services' => Service::query()->orderBy('nom')->limit(4)->get(['nom', 'slug', 'horaires'])
-            ->map(fn (Service $s): array => ['nom' => $s->nom, 'slug' => $s->slug, 'horaires' => $s->horaires])->all(),
+        // Services mis en avant par les agents en premier, complétés par ordre alphabétique.
+        'apercu_services' => Service::query()->prioritaires()->limit(4)->get(['nom', 'slug', 'horaires', 'mis_en_avant'])
+            ->map(fn (Service $s): array => ['nom' => $s->nom, 'slug' => $s->slug, 'horaires' => $s->horaires, 'mis_en_avant' => $s->mis_en_avant])->all(),
     ]);
 
     $majIlYa = max(0, now()->timestamp - $etat['genere_le']);
@@ -170,8 +171,11 @@
                     <ul class="mt-4">
                         @foreach ($etat['apercu_services'] as $service)
                             <li>
-                                <x-tn.list-row icon="landmark" :href="route('services.show', $service['slug'])">
+                                <x-tn.list-row :icon="($service['mis_en_avant'] ?? false) ? 'star' : 'landmark'" :href="route('services.show', $service['slug'])">
                                     <span class="block truncate font-medium text-ink group-hover:text-cyan">{{ $service['nom'] }}</span>
+                                    @if ($service['mis_en_avant'] ?? false)
+                                        <span class="sr-only">(service mis en avant)</span>
+                                    @endif
                                     @if ($service['horaires'])
                                         <span class="block truncate font-mono text-xs text-ink-2">{{ $service['horaires'] }}</span>
                                     @endif

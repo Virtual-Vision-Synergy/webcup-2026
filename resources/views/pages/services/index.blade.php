@@ -4,6 +4,7 @@ use App\Models\Service;
 use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
@@ -80,8 +81,21 @@ new #[Title('Services')] class extends Component {
     {
         return $this->filteredQuery()
             ->with('user')
-            ->latest()
+            ->prioritaires()
             ->paginate(10);
+    }
+
+    public function toggleFeatured(int $id): void
+    {
+        $record = Service::findOrFail($id);
+        $this->authorize('feature', $record);
+
+        $record->mis_en_avant = ! $record->mis_en_avant;
+        $record->save();
+
+        Cache::forget('landing.etat');
+
+        Flux::toast(variant: 'success', text: $record->mis_en_avant ? 'Service mis en avant.' : 'Service retiré de la mise en avant.');
     }
 
     public function delete(int $id): void
@@ -132,7 +146,10 @@ new #[Title('Services')] class extends Component {
     @else
         <ul class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             @foreach ($this->items as $item)
-                <li wire:key="row-{{ $item->id }}" class="group relative flex min-w-0 flex-col rounded-md border border-line bg-surface p-5 transition-colors hover:border-cyan/40">
+                <li wire:key="row-{{ $item->id }}" @class(['group relative flex min-w-0 flex-col rounded-md border bg-surface p-5 transition-colors hover:border-cyan/40', 'border-cyan/40' => $item->mis_en_avant, 'border-line' => ! $item->mis_en_avant])>
+                    @if ($item->mis_en_avant)
+                        <flux:badge size="sm" color="cyan" icon="star" class="mb-3 self-start">Mis en avant</flux:badge>
+                    @endif
                     <div class="flex items-start gap-3">
                         <span class="flex size-10 shrink-0 items-center justify-center rounded-sm border border-cyan/18 bg-cyan/8 text-cyan" aria-hidden="true">
                             <flux:icon name="landmark" class="size-5" />
@@ -157,8 +174,11 @@ new #[Title('Services')] class extends Component {
                             <div class="flex gap-2"><dt class="sr-only">Téléphone</dt><flux:icon name="phone" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="font-mono text-xs leading-5 text-ink-2">{{ $item->telephone }}</dd></div>
                         @endif
                     </dl>
-                    @canany(['update', 'delete'], $item)
+                    @canany(['feature', 'update', 'delete'], $item)
                         <div class="relative z-10 mt-3 flex justify-end gap-1">
+                            @can('feature', $item)
+                                <flux:button size="sm" variant="ghost" icon="star" :icon:variant="$item->mis_en_avant ? 'solid' : 'outline'" wire:click="toggleFeatured({{ $item->id }})" :aria-label="($item->mis_en_avant ? 'Retirer la mise en avant de ' : 'Mettre en avant ').$item->nom" :title="$item->mis_en_avant ? 'Retirer la mise en avant' : 'Mettre en avant'" />
+                            @endcan
                             @can('update', $item)
                                 <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('services.edit', $item)" wire:navigate aria-label="Modifier {{ $item->nom }}" />
                             @endcan

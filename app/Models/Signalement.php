@@ -16,7 +16,9 @@ use Illuminate\Database\UniqueConstraintViolationException;
  * Problème signalé par un citoyen dans l'espace public (lampadaire, voirie, propreté…).
  * Visible uniquement par son auteur et par le personnel (agents, admins) : voir SignalementPolicy.
  *
- * user_id et statut ne sont volontairement PAS remplissables : ils sont assignés dans le code.
+ * user_id, statut et doublon_de_id ne sont volontairement PAS remplissables : ils sont assignés dans le code.
+ *
+ * @property int|null $doublon_de_id
  */
 #[Fillable(['categorie', 'description', 'lieu', 'photo'])]
 class Signalement extends Model
@@ -71,6 +73,41 @@ class Signalement extends Model
     public function soutiens(): HasMany
     {
         return $this->hasMany(Soutien::class);
+    }
+
+    /**
+     * Demande principale dans laquelle ce signalement a été fusionné (F75).
+     *
+     * @return BelongsTo<Signalement, $this>
+     */
+    public function doublonDe(): BelongsTo
+    {
+        return $this->belongsTo(Signalement::class, 'doublon_de_id');
+    }
+
+    /**
+     * Signalements similaires fusionnés dans celui-ci (F75).
+     *
+     * @return HasMany<Signalement, $this>
+     */
+    public function doublons(): HasMany
+    {
+        return $this->hasMany(Signalement::class, 'doublon_de_id');
+    }
+
+    /**
+     * Rattache ce signalement à la demande principale de son groupe : il en prend l'état
+     * et sort des regroupements (réservé au personnel : policy changerStatut).
+     */
+    public function fusionnerDans(Signalement $principal): void
+    {
+        if ($principal->is($this)) {
+            return;
+        }
+
+        $this->doublon_de_id = $principal->id;
+        $this->statut = $principal->statut;
+        $this->save();
     }
 
     public function estOuvert(): bool

@@ -131,6 +131,13 @@ new #[Title('Profile settings')] class extends Component {
                 · <a href="{{ route('concerns.index') }}" wire:navigate class="font-medium text-cyan hover:underline">Mes remontées</a>
             </p>
 
+            <div class="mb-6 flex flex-wrap items-center gap-3">
+                <flux:button icon="arrow-down-tray" :href="route('profile.data')" data-test="telecharger-mes-donnees">
+                    Télécharger mes données
+                </flux:button>
+                <flux:text class="text-sm">Document lisible (PDF) et fichiers JSON / CSV.</flux:text>
+            </div>
+
             <livewire:pages::settings.delete-user-form />
     </x-pages::settings.layout>
 </section>

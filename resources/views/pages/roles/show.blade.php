@@ -34,7 +34,7 @@ new #[Title('Rôle')] class extends Component {
         label="Administration"
         :title="$record->code"
         :subtitle="$record->label.' · '.$record->users_count.' compte(s)'"
-        :breadcrumb="['Rôles' => route('roles.index'), $record->code => null]"
+        :breadcrumb="['Mon espace' => route('dashboard'), 'Rôles' => route('roles.index'), $record->code => null]"
     >
         <x-slot:actions>
             @can('update', $record)

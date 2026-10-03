@@ -21,4 +21,8 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
 
     // F37 : journal des tentatives de connexion (LoginAttemptPolicy : viewAny agent/admin, unlock admin).
     Route::livewire('securite/connexions', 'pages::agent.security.index')->name('security.index');
+
+    // F47 : journal d'audit en LECTURE SEULE (aucune route de création, modification ni suppression).
+    Route::livewire('journal', 'pages::agent.audit.index')->name('audit.index');
+    Route::livewire('journal/{auditLog}', 'pages::agent.audit.show')->name('audit.show');
 });

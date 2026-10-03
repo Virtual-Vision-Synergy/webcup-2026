@@ -7,6 +7,9 @@
                     <flux:sidebar.item icon="exclamation-triangle" :href="route('signalements.index')" :current="request()->routeIs('signalements.*')" wire:navigate>
                         Signalements
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="bus" :href="route('transports.index')" :current="request()->routeIs('transports.*')" wire:navigate>
+                        Transports
+                    </flux:sidebar.item>
                     {{-- make:feature:nav --}}
 @endsection
 <!DOCTYPE html>
@@ -77,6 +80,7 @@
 
                         <div class="ms-auto flex items-center gap-2">
                             <x-tn.api-status class="max-sm:hidden" />
+                            <x-tn.contrast-toggle class="max-lg:hidden" />
                             <x-tn.theme-toggle class="max-lg:hidden" />
                             <a href="{{ route('profile.edit') }}" class="flex size-11 items-center justify-center lg:hidden" wire:navigate>
                                 <flux:avatar size="sm" :name="auth()->user()->name" :initials="auth()->user()->initials()" />

@@ -40,7 +40,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
     {
         Gate::authorize('viewAgentSpace');
 
-        $totaux = Demarche::query()->selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut');
+        $totaux = Demarche::query()->visibleTo(auth()->user())->selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut');
 
         return collect(Demarche::STATUT_OPTIONS)->mapWithKeys(fn (string $statut): array => [$statut => (int) ($totaux[$statut] ?? 0)])->all();
     }
@@ -59,7 +59,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
 
         return [
             'total' => array_sum($this->parStatut),
-            'aujourdhui' => Demarche::query()->where('created_at', '>=', $this->debutAujourdhui()->utc())->count(),
+            'aujourdhui' => Demarche::query()->visibleTo(auth()->user())->where('created_at', '>=', $this->debutAujourdhui()->utc())->count(),
             'en_attente' => $this->parStatut['deposee'] ?? 0,
             'signalements' => (int) $signalements->sum(),
             'signalements_nouveaux' => (int) ($signalements['nouveau'] ?? 0),
@@ -80,6 +80,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
 
         // Regroupement en PHP : le jour est calculé à l'heure locale, identique sur SQLite et MariaDB.
         $parJour = Demarche::query()
+            ->visibleTo(auth()->user())
             ->where('created_at', '>=', $debut->copy()->utc())
             ->pluck('created_at')
             ->countBy(fn (mixed $date): string => CarbonImmutable::parse($date)->timezone(self::FUSEAU_AFFICHAGE)->toDateString());
@@ -106,7 +107,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
     {
         Gate::authorize('viewAgentSpace');
 
-        return Demarche::query()->with(['user:id,name', 'service:id,nom'])->latest()->latest('id')->limit(6)->get();
+        return Demarche::query()->visibleTo(auth()->user())->with(['user:id,name', 'service:id,nom'])->latest()->latest('id')->limit(6)->get();
     }
 
     /**

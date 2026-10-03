@@ -16,6 +16,10 @@
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="building-library" :href="route('services.index')" :current="request()->routeIs('services.*')" wire:navigate>
+                        Services municipaux
+                    </flux:sidebar.item>
+
                     @can('viewAny', \App\Models\Role::class)
                         <flux:sidebar.item icon="shield-check" :href="route('roles.index')" :current="request()->routeIs('roles.*')" wire:navigate>
                             Rôles

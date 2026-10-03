@@ -13,6 +13,9 @@
                     <flux:sidebar.item icon="calendar-days" :href="route('appointments.index')" :current="request()->routeIs('appointments.*')" wire:navigate>
                         Mes rendez-vous
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="clipboard-document-list" :href="route('mes-demandes.index')" :current="request()->routeIs('mes-demandes.*')" wire:navigate>
+                        Mes demandes
+                    </flux:sidebar.item>
 
                     {{-- make:feature:nav --}}
 @endsection

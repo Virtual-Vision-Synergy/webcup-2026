@@ -14,7 +14,7 @@ new #[Title('Démarche')] class extends Component {
     public function mount(Demarche $demarche): void
     {
         $this->authorize('view', $demarche);
-        $this->record = $demarche->loadMissing(['service', 'user']);
+        $this->record = $demarche->loadMissing(['service.traductions', 'user', 'traductions']);
     }
 
     public function delete(): void
@@ -60,8 +60,8 @@ new #[Title('Démarche')] class extends Component {
 <section class="mx-auto w-full max-w-5xl space-y-6">
     <x-tn.page-header
         label="Démarche"
-        :title="$record->titre"
-        :breadcrumb="['Démarches' => route('demarches.index'), $record->titre => null]"
+        :title="$record->traduit('titre')"
+        :breadcrumb="['Démarches' => route('demarches.index'), $record->traduit('titre') => null]"
     >
         <x-slot:meta>
             <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink-2">
@@ -80,13 +80,17 @@ new #[Title('Démarche')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    @unless ($record->estTraduit())
+        <p class="rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink-2" role="status">Cette démarche n'est pas encore traduite : elle s'affiche en français.</p>
+    @endunless
+
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <x-tn.surface>
             <x-tn.section-label as="h2" class="mb-2">Détails</x-tn.section-label>
             <dl>
-                <x-tn.field label="Objet">{{ $record->titre ?? '—' }}</x-tn.field>
-                <x-tn.field label="Service">{{ $record->service?->nom ?? 'Non précisé' }}</x-tn.field>
-                <x-tn.field label="Description"><p class="whitespace-pre-line leading-relaxed">{{ $record->description ?? '—' }}</p></x-tn.field>
+                <x-tn.field label="Objet">{{ $record->traduit('titre') ?? '—' }}</x-tn.field>
+                <x-tn.field label="Service">{{ $record->service?->traduit('nom') ?? 'Non précisé' }}</x-tn.field>
+                <x-tn.field label="Description"><p class="whitespace-pre-line leading-relaxed">{{ $record->traduit('description') ?? '—' }}</p></x-tn.field>
             </dl>
         </x-tn.surface>
 

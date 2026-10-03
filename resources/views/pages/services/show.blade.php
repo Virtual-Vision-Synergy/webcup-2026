@@ -14,7 +14,7 @@ new #[Title('Service')] class extends Component {
     public function mount(Service $service): void
     {
         $this->authorize('view', $service);
-        $this->record = $service;
+        $this->record = $service->loadMissing('traductions');
     }
 
     public function delete(): void
@@ -32,8 +32,8 @@ new #[Title('Service')] class extends Component {
 <section class="mx-auto w-full max-w-5xl space-y-6">
     <x-tn.page-header
         label="Service municipal"
-        :title="$record->nom"
-        :breadcrumb="['Services' => route('services.index'), $record->nom => null]"
+        :title="$record->traduit('nom')"
+        :breadcrumb="['Services' => route('services.index'), $record->traduit('nom') => null]"
     >
         <x-slot:actions>
             @if (Route::has('messages.create'))
@@ -48,16 +48,20 @@ new #[Title('Service')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    @unless ($record->estTraduit())
+        <p class="rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink-2" role="status">Cette fiche n'est pas encore traduite : elle s'affiche en français.</p>
+    @endunless
+
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <x-tn.surface>
             <x-tn.section-label as="h2" class="mb-3">Missions</x-tn.section-label>
-            <p class="whitespace-pre-line leading-relaxed text-ink">{{ $record->description ?? 'Description à venir.' }}</p>
+            <p class="whitespace-pre-line leading-relaxed text-ink">{{ $record->traduit('description') ?? 'Description à venir.' }}</p>
         </x-tn.surface>
 
         <x-tn.panel label="Infos pratiques" padding="p-5 md:p-6">
             <dl>
-                @if ($record->horaires)
-                    <x-tn.field label="Horaires"><p class="whitespace-pre-line font-mono text-sm leading-6">{{ $record->horaires }}</p></x-tn.field>
+                @if ($record->traduit('horaires'))
+                    <x-tn.field label="Horaires"><p class="whitespace-pre-line font-mono text-sm leading-6">{{ $record->traduit('horaires') }}</p></x-tn.field>
                 @endif
                 @if ($record->telephone)
                     <x-tn.field label="Téléphone"><a href="tel:{{ preg_replace('/[^0-9+]/', '', $record->telephone) }}" class="font-mono text-sm text-cyan hover:underline">{{ $record->telephone }}</a></x-tn.field>

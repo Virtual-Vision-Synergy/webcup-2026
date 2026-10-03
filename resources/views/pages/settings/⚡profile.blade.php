@@ -1,6 +1,8 @@
 <?php
 
 use App\Concerns\ProfileValidationRules;
+use App\Models\Quartier;
+use App\Services\OnboardingProgress;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -13,6 +15,9 @@ new #[Title('Profile settings')] class extends Component {
 
     public string $name = '';
     public string $email = '';
+    public string $telephone = '';
+    /** Quartier choisi dans la liste (F29) : sert au ciblage des alertes. */
+    public string $quartier_id = '';
 
     /**
      * Mount the component.
@@ -21,6 +26,8 @@ new #[Title('Profile settings')] class extends Component {
     {
         $this->name = Auth::user()->name;
         $this->email = Auth::user()->email;
+        $this->telephone = (string) Auth::user()->telephone;
+        $this->quartier_id = (string) (Auth::user()->quartier_id ?? '');
     }
 
     /**
@@ -30,7 +37,19 @@ new #[Title('Profile settings')] class extends Component {
     {
         $user = Auth::user();
 
-        $validated = $this->validate($this->profileRules($user->id));
+        $validated = $this->validate([
+            ...$this->profileRules($user->id),
+            'telephone' => ['nullable', 'string', 'max:30', 'regex:/^\+?[0-9 .()-]{6,30}$/'],
+            'quartier_id' => ['nullable', 'integer', 'exists:quartiers,id'],
+        ], [
+            'quartier_id.integer' => 'Choisissez un quartier dans la liste.',
+            'quartier_id.exists' => 'Choisissez un quartier dans la liste.',
+        ]);
+
+        $validated['telephone'] = trim($validated['telephone'] ?? '') ?: null;
+        $validated['quartier_id'] = filled($validated['quartier_id'] ?? null) ? (int) $validated['quartier_id'] : null;
+        // Ancienne saisie libre (D12) tenue à jour avec le nom du quartier choisi.
+        $validated['quartier'] = $validated['quartier_id'] ? Quartier::query()->whereKey($validated['quartier_id'])->value('nom') : null;
 
         $user->fill($validated);
 
@@ -41,6 +60,11 @@ new #[Title('Profile settings')] class extends Component {
         $user->save();
 
         Flux::toast(variant: 'success', text: __('Profile updated.'));
+
+        // Parcours de prise en main (D12) : retour à l'étape suivante si l'habitant vient de /bienvenue.
+        if (OnboardingProgress::pour($user)->doitRevenirAuParcours()) {
+            $this->redirectRoute('onboarding.show', navigate: true);
+        }
     }
 
 }; ?>
@@ -59,6 +83,15 @@ new #[Title('Profile settings')] class extends Component {
 
             </div>
 
+            <flux:input wire:model="telephone" label="Téléphone" type="tel" autocomplete="tel" placeholder="Ex. 034 12 345 67" />
+
+            <flux:select wire:model="quartier_id" label="Quartier" description="Pour recevoir en priorité les alertes qui concernent votre quartier.">
+                <flux:select.option value="">Non renseigné</flux:select.option>
+                @foreach (\App\Models\Quartier::query()->orderBy('nom')->pluck('nom', 'id') as $id => $nom)
+                    <flux:select.option :value="$id">{{ $nom }}</flux:select.option>
+                @endforeach
+            </flux:select>
+
             <div class="flex items-center gap-4">
                 <div class="flex items-center justify-end">
                     <flux:button variant="primary" type="submit" class="w-full" data-test="update-profile-button">
@@ -68,6 +101,13 @@ new #[Title('Profile settings')] class extends Component {
 
             </div>
         </form>
+
+            @can('view', \App\Models\Onboarding::class)
+                <p class="mb-6 text-sm text-ink-2">
+                    Nouveau à Nova Terra ?
+                    <a href="{{ route('onboarding.show') }}" wire:navigate class="font-medium text-cyan hover:underline" data-test="revoir-onboarding">Revoir la prise en main</a>
+                </p>
+            @endcan
 
             <livewire:pages::settings.delete-user-form />
     </x-pages::settings.layout>

@@ -26,10 +26,17 @@
     --color-ink-2: #4D6070;
     --color-line: rgb(15 27 43 / .10);
 
-    --color-cyan: #00778D;
-    --color-magenta: #C41F5F;
-    --color-amber: #96590C;
-    --color-green: #007E46;
+    /*
+     * F43 : palette d'état vérifiée (simulation Machado 2009 : protanopie, deutéranopie, tritanopie).
+     * - Contraste WCAG AA (≥ 4,5:1) du texte coloré sur fond clair ET sur un fond teinté à 12 %
+     *   (badges), contrôlé par tests/Feature/AccessibiliteCouleursTest.php.
+     * - Alerte (rouge profond) et normal (vert bleuté) restent distincts en deutéranopie (ΔE ≈ 12).
+     * - La couleur n'est jamais seule : chaque état a aussi une icône de forme distincte et un libellé.
+     */
+    --color-cyan: #00687B;
+    --color-magenta: #9A1238;
+    --color-amber: #8A520B;
+    --color-green: #006E4A;
     --color-on-cyan: #FFFFFF;
 
     /* Gris de Flux remappés sur des tons bleutés : tous les composants Flux suivent le thème. */
@@ -55,6 +62,14 @@
     --chamfer: 18px;
 }
 
+/*
+ * TAILLE DU TEXTE (A / A+ / A++) : tout est en rem, on agrandit donc la base de <html>.
+ * Les longs mots et blocs flex ne doivent jamais déborder ni se chevaucher.
+ */
+html[data-text-size='lg'] { font-size: 125%; }
+html[data-text-size='xl'] { font-size: 150%; }
+body { overflow-wrap: anywhere; }
+
 @layer theme {
     .dark {
         --color-night: #050A16;
@@ -65,7 +80,7 @@
         --color-line: rgb(65 221 248 / .12);
 
         --color-cyan: #41DDF8;
-        --color-magenta: #FF4285;
+        --color-magenta: #FF4A8A;
         --color-amber: #FFB44B;
         --color-green: #56E795;
         --color-on-cyan: #001321;
@@ -133,14 +148,14 @@
         font-family: var(--font-display);
         font-stretch: 112%;
         font-weight: 700;
-        font-size: 38px;
+        font-size: 2.375rem;
         line-height: 1.02;
         letter-spacing: -0.01em;
     }
 
     @media (min-width: 768px) {
         .tn-h1 {
-            font-size: 64px;
+            font-size: 4rem;
         }
     }
 
@@ -148,19 +163,19 @@
         font-family: var(--font-display);
         font-stretch: 112%;
         font-weight: 600;
-        font-size: 26px;
+        font-size: 1.625rem;
         line-height: 1.1;
     }
 
     @media (min-width: 768px) {
         .tn-h2 {
-            font-size: 32px;
+            font-size: 2rem;
         }
     }
 
     .tn-label {
         font-family: var(--font-display);
-        font-size: 13px;
+        font-size: 0.8125rem;
         font-weight: 600;
         letter-spacing: .16em;
         text-transform: uppercase;
@@ -422,7 +437,96 @@ select:focus[data-flux-control] {
 .tn-marqueur-perturbe { background-color: var(--color-amber); }
 .tn-marqueur-alerte { background-color: var(--color-magenta); }
 
+/* F43 : un symbole par état dans le marqueur, pour ne pas dépendre de la couleur. */
+.tn-marqueur::after {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--color-surface);
+    font: 700 11px/1 var(--font-sans);
+    content: 'i';
+}
+
+.tn-marqueur-normal::after { content: '✓'; }
+.tn-marqueur-perturbe::after { content: '!'; }
+.tn-marqueur-alerte::after { content: '✕'; }
+
 .dark .tn-marqueur-normal { box-shadow: 0 0 0 4px rgb(86 231 149 / .25); }
 .dark .tn-marqueur-perturbe { box-shadow: 0 0 0 4px rgb(255 180 75 / .25); }
 .dark .tn-marqueur-alerte { box-shadow: 0 0 0 4px rgb(255 66 133 / .25); }
 .dark .tn-marqueur-info { box-shadow: 0 0 0 4px rgb(65 221 248 / .25); }
+
+/*
+ * CONTRASTE ÉLEVÉ (classe `hc` sur <html>, posée par partials/head selon la préférence mémorisée).
+ * Textes noir sur blanc / blanc sur noir (rapport > 15:1), bordures nettes, soulignement des liens.
+ */
+@layer theme {
+    html.hc {
+        --color-night: #FFFFFF;
+        --color-surface: #FFFFFF;
+        --color-surface-2: #F0F0F0;
+        --color-ink: #000000;
+        --color-ink-2: #1F1F1F;
+        --color-line: rgb(0 0 0 / .65);
+
+        --color-cyan: #004A5C;
+        --color-magenta: #8F0038;
+        --color-amber: #6B3B00;
+        --color-green: #005A2F;
+        --color-on-cyan: #FFFFFF;
+
+        --color-zinc-400: #2B2B2B;
+        --color-zinc-500: #1F1F1F;
+        --color-zinc-600: #111111;
+
+        --color-accent: #004A5C;
+        --color-accent-content: #004A5C;
+        --color-accent-foreground: #FFFFFF;
+    }
+
+    html.hc.dark {
+        --color-night: #000000;
+        --color-surface: #000000;
+        --color-surface-2: #141414;
+        --color-ink: #FFFFFF;
+        --color-ink-2: #EDEDED;
+        --color-line: rgb(255 255 255 / .7);
+
+        --color-cyan: #7CF0FF;
+        --color-magenta: #FF8FB5;
+        --color-amber: #FFD27A;
+        --color-green: #7DFFB0;
+        --color-on-cyan: #000000;
+
+        --color-zinc-300: #EDEDED;
+        --color-zinc-400: #E0E0E0;
+        --color-zinc-500: #D0D0D0;
+
+        --color-accent: #7CF0FF;
+        --color-accent-content: #7CF0FF;
+        --color-accent-foreground: #000000;
+    }
+}
+
+html.hc :focus-visible {
+    outline-width: 3px;
+}
+
+html.hc a:not([class*='button']):not([data-flux-button]) {
+    text-decoration-line: underline;
+    text-underline-offset: 3px;
+}
+
+html.hc .tn-glass,
+html.hc .tn-panel,
+html.hc .tn-panel-inner {
+    background: var(--color-surface);
+    backdrop-filter: none;
+}
+
+html.hc .tn-sky,
+html.hc .tn-planet,
+html.hc .tn-grid {
+    opacity: 0.15;
+}

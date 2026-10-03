@@ -21,6 +21,7 @@
             x-bind:class="$store.menu?.ouvert && 'tn-page-recule'"
         >
             <x-tn.site-header />
+            <x-tn.bandeau-annonces />
 
             <main id="contenu" tabindex="-1" @class(['flex-1', 'outline-none', 'mx-auto w-full max-w-7xl px-4 py-8 lg:px-8' => ! $fluid])>
                 {{ $slot }}

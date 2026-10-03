@@ -4,6 +4,16 @@
     Les rubriques ajoutées par `make:feature` (marqueur ci-dessous) apparaissent dans le rail ET dans le menu mobile.
 --}}
 @section('tn-feature-nav')
+                    <flux:sidebar.item icon="exclamation-triangle" :href="route('signalements.index')" :current="request()->routeIs('signalements.*')" wire:navigate>
+                        Signalements
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="bus" :href="route('transports.index')" :current="request()->routeIs('transports.*')" wire:navigate>
+                        Transports
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="calendar-days" :href="route('appointments.index')" :current="request()->routeIs('appointments.*')" wire:navigate>
+                        Mes rendez-vous
+                    </flux:sidebar.item>
+
                     {{-- make:feature:nav --}}
 @endsection
 <!DOCTYPE html>
@@ -19,7 +29,7 @@
             class="tn-page min-h-screen bg-night text-ink lg:flex"
             x-bind:class="$store.menu?.ouvert && 'tn-page-recule'"
         >
-            <flux:sidebar sticky class="border-e max-lg:hidden!" aria-label="Navigation principale">
+            <flux:sidebar sticky class="border-e max-lg:hidden!">
                 <flux:sidebar.header>
                     <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
                 </flux:sidebar.header>
@@ -51,7 +61,7 @@
 
                     @can('viewAgentSpace')
                         <flux:sidebar.group heading="Espace agent" class="grid">
-                            <flux:sidebar.item icon="briefcase" :href="route('agent.index')" data-test="agent-space-link">
+                            <flux:sidebar.item icon="briefcase" :href="route('agent.tableau-de-bord')" data-test="agent-space-link">
                                 Espace agent
                             </flux:sidebar.item>
                         </flux:sidebar.group>
@@ -74,6 +84,8 @@
 
                         <div class="ms-auto flex items-center gap-2">
                             <x-tn.api-status class="max-sm:hidden" />
+                            <x-tn.contrast-toggle class="max-lg:hidden" />
+                            <x-tn.text-size class="max-lg:hidden" />
                             <x-tn.theme-toggle class="max-lg:hidden" />
                             <a href="{{ route('profile.edit') }}" class="flex size-11 items-center justify-center lg:hidden" wire:navigate>
                                 <flux:avatar size="sm" :name="auth()->user()->name" :initials="auth()->user()->initials()" />
@@ -83,7 +95,9 @@
                     </div>
                 </header>
 
-                <div id="contenu" tabindex="-1" class="flex flex-1 flex-col outline-none">
+                <x-tn.bandeau-annonces />
+
+                <div id="contenu" class="flex flex-1 flex-col">
                     {{ $slot }}
                 </div>
             </div>

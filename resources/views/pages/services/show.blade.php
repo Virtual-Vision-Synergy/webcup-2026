@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Service;
+use App\Services\OnboardingProgress;
 use Flux\Flux;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Locked;
@@ -15,6 +16,9 @@ new #[Title('Service')] class extends Component {
     {
         $this->authorize('view', $service);
         $this->record = $service;
+
+        // Parcours de prise en main (D12), étape « Trouver un service » : sans effet hors parcours en cours.
+        OnboardingProgress::pour(auth()->user())->marquerServiceVisite($service);
     }
 
     public function delete(): void
@@ -31,9 +35,9 @@ new #[Title('Service')] class extends Component {
 
 <section class="mx-auto w-full max-w-5xl space-y-6">
     <x-tn.page-header
-        label="Service municipal"
+        :label="Service::labelCategorie($record->categorie) ?? 'Service municipal'"
         :title="$record->nom"
-        :breadcrumb="['Services' => route('services.index'), $record->nom => null]"
+        :breadcrumb="['Mon espace' => route('dashboard'), 'Services' => route('services.index'), $record->nom => null]"
     >
         <x-slot:actions>
             @if (Route::has('messages.create'))

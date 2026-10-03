@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Database\Factories\DemarcheFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Demarche extends Model
 {
     /** @use HasFactory<DemarcheFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     public const STATUT_OPTIONS = ['deposee', 'en_cours', 'traitee', 'refusee'];
 

@@ -61,7 +61,7 @@ new #[Title('Démarche')] class extends Component {
     <x-tn.page-header
         label="Démarche"
         :title="$record->titre"
-        :breadcrumb="['Démarches' => route('demarches.index'), $record->titre => null]"
+        :breadcrumb="['Mon espace' => route('dashboard'), 'Démarches' => route('demarches.index'), ($record->titre ?: 'Démarche') => null]"
     >
         <x-slot:meta>
             <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink-2">

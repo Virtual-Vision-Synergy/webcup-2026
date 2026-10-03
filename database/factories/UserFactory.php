@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Quartier;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -60,6 +61,25 @@ class UserFactory extends Factory
         ]);
     }
 
+    /**
+     * Profil complet (étape 1 du parcours de prise en main).
+     */
+    public function profilComplet(): static
+    {
+        return $this->state(fn () => [
+            'telephone' => fake()->numerify('034 ## ### ##'),
+            'quartier_id' => fn () => Quartier::query()->inRandomOrder()->value('id'),
+        ]);
+    }
+
+    /**
+     * Habitant d'un quartier donné (slug : nord, sud, est, ouest, centre).
+     */
+    public function quartier(string $slug): static
+    {
+        return $this->state(fn () => ['quartier_id' => Quartier::idPour($slug)]);
+    }
+
     public function admin(): static
     {
         return $this->state(fn () => ['role_id' => Role::idFor(Role::ADMIN)]);
@@ -73,5 +93,10 @@ class UserFactory extends Factory
     public function agent(): static
     {
         return $this->state(fn () => ['role_id' => Role::idFor(Role::AGENT)]);
+    }
+
+    public function deactivated(): static
+    {
+        return $this->state(fn () => ['deactivated_at' => now()]);
     }
 }

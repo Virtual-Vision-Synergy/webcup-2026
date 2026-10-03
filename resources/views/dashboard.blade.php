@@ -14,14 +14,16 @@
         ->latest('updated_at')
         ->limit(3)
         ->get();
+    // F29 : alertes en cours qui visent le quartier de l'habitant, affichées en tête.
+    $alertesQuartier = \App\Models\Annonce::enDiffusion($user)->filter(fn ($annonce) => $annonce->concerne($user));
     $rubriques = array_filter(config('navigation.rubriques'), fn (array $r): bool => Route::has($r['route']));
 @endphp
 
 <x-layouts::app :title="__('Dashboard')">
     <div class="mx-auto flex w-full max-w-6xl flex-col gap-8">
-        <x-tn.page-header label="Mon espace" :title="'Bonjour '.$user->name" subtitle="Vos démarches et l'activité de la ville, en un coup d'œil.">
+        <x-tn.page-header label="Mon espace" :breadcrumb="['Mon espace' => null]" :title="'Bonjour '.$user->name" subtitle="Vos démarches et l'activité de la ville, en un coup d'œil.">
             <x-slot:actions>
-                <span class="inline-flex items-center gap-2 rounded-xs border border-line px-2.5 py-1 font-mono text-[11px] uppercase tracking-[.06em] text-ink-2">
+                <span class="inline-flex items-center gap-2 rounded-xs border border-line px-2.5 py-1 font-mono text-[0.6875rem] uppercase tracking-[.06em] text-ink-2">
                     <flux:icon name="users-round" class="size-3.5" /> {{ $user->role->label }}
                 </span>
                 @can('create', Demarche::class)
@@ -29,6 +31,32 @@
                 @endcan
             </x-slot:actions>
         </x-tn.page-header>
+
+        @if ($alertesQuartier->isNotEmpty())
+            <section aria-labelledby="titre-alertes-quartier" class="flex flex-col gap-3">
+                <h2 id="titre-alertes-quartier" class="tn-display text-lg font-semibold text-ink">Alertes dans votre quartier</h2>
+                @foreach ($alertesQuartier as $alerteQuartier)
+                    <x-tn.bandeau-annonce
+                        class="rounded-md border"
+                        variante="renforce"
+                        :niveau="$alerteQuartier->niveau"
+                        :titre="$alerteQuartier->titre"
+                        :contenu="$alerteQuartier->contenu"
+                        :consignes="$alerteQuartier->listeConsignes()"
+                        :quartier="$alerteQuartier->nomQuartier()"
+                        :lien="route('alertes.show', $alerteQuartier->id)"
+                    />
+                @endforeach
+            </section>
+        @elseif ($user->quartier_id === null)
+            <p class="rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink-2">
+                <flux:icon name="map-pin" class="me-1 inline size-4 text-cyan" aria-hidden="true" />
+                Indiquez votre quartier pour voir en priorité les alertes qui vous concernent.
+                <a href="{{ route('profile.edit') }}" wire:navigate class="font-medium text-cyan underline underline-offset-2">Renseigner mon quartier</a>
+            </p>
+        @endif
+
+        <x-onboarding.rappel />
 
         {{-- ALERTES --}}
         @if ($alertes->isNotEmpty())
@@ -62,6 +90,7 @@
                     </div>
                     @if ($totalDemarches > 0)
                         <a href="{{ route('demarches.index') }}" wire:navigate class="inline-flex min-h-11 items-center text-sm font-medium text-cyan hover:underline">Tout voir</a>
+                        <a href="{{ route('demarches.historique') }}" wire:navigate class="inline-flex min-h-11 items-center text-sm font-medium text-cyan hover:underline">Historique</a>
                     @endif
                 </div>
 
@@ -69,7 +98,7 @@
                 <dl class="mt-5 grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-line bg-line sm:grid-cols-4">
                     @foreach (Demarche::STATUT_OPTIONS as $statut)
                         <div class="bg-surface/90 px-3 py-3 dark:bg-night/70">
-                            <dt class="flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[.06em] text-ink-2">{{ Demarche::libelleStatut($statut) }}</dt>
+                            <dt class="flex items-center gap-1.5 font-mono text-[0.65625rem] uppercase tracking-[.06em] text-ink-2">{{ Demarche::libelleStatut($statut) }}</dt>
                             <dd class="tn-display mt-1 text-2xl font-semibold tabular-nums text-ink">{{ sprintf('%02d', $parStatut[$statut] ?? 0) }}</dd>
                         </div>
                     @endforeach

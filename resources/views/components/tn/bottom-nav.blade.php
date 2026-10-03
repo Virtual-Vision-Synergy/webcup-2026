@@ -38,7 +38,7 @@
             @if (Route::has($centre['route']))
                 <a
                     href="{{ route($centre['route']) }}"
-                    class="-mt-[22px] flex flex-col items-center gap-1 text-[11px] font-medium text-cyan"
+                    class="-mt-[22px] flex flex-col items-center gap-1 text-[0.6875rem] font-medium text-cyan"
                 >
                     <span class="tn-cta flex size-14 items-center justify-center rounded-full bg-cyan text-on-cyan ring-[5px] ring-night">
                         <flux:icon :name="$centre['icon']" class="size-6" />
@@ -60,7 +60,7 @@
                 x-bind:aria-expanded="$store.menu?.ouvert ? 'true' : 'false'"
                 aria-expanded="false"
                 aria-controls="tn-menu"
-                class="flex h-full min-h-12 w-full flex-col items-center justify-center gap-1 text-[11px] font-medium text-ink-2"
+                class="flex h-full min-h-12 w-full flex-col items-center justify-center gap-1 text-[0.6875rem] font-medium text-ink-2"
                 x-bind:class="$store.menu?.ouvert && 'text-cyan!'"
             >
                 <flux:icon name="layout-grid" class="size-[22px]" />

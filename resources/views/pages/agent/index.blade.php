@@ -157,6 +157,8 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
 @endphp
 
 <section class="w-full space-y-6">
+    <x-tn.breadcrumb :items="['Espace agent' => null]" />
+
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
             <flux:heading size="xl" level="1">Demandes Nova Terra</flux:heading>

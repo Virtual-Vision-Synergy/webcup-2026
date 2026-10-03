@@ -18,5 +18,11 @@ new #[Title('Appearance settings')] class extends Component {
             <flux:radio value="dark" icon="moon">{{ __('Dark') }}</flux:radio>
             <flux:radio value="system" icon="computer-desktop">{{ __('System') }}</flux:radio>
         </flux:radio.group>
+
+        <div class="mt-8">
+            <flux:heading level="3">{{ __('Taille du texte') }}</flux:heading>
+            <flux:text class="mb-3">{{ __('Agrandissez les caractères : le choix est mémorisé sur cet appareil.') }}</flux:text>
+            <x-tn.text-size />
+        </div>
     </x-pages::settings.layout>
 </section>

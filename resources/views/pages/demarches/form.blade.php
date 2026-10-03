@@ -3,6 +3,7 @@
 use App\Concerns\GereTraductions;
 use App\Models\Demarche;
 use App\Models\Service;
+use App\Services\OnboardingProgress;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -34,6 +35,12 @@ new #[Title('Démarche')] class extends Component {
         } else {
             $this->authorize('create', Demarche::class);
             $this->chargerTraductions();
+
+            // Pré-sélection du service (lien « Commencer une démarche » du parcours de prise en main, D12).
+            $serviceId = request()->integer('service');
+            if ($serviceId > 0 && Service::query()->whereKey($serviceId)->exists()) {
+                $this->service_id = (string) $serviceId;
+            }
         }
     }
 
@@ -76,6 +83,8 @@ new #[Title('Démarche')] class extends Component {
             }
         }
 
+        $depuisParcours = ! $this->record && OnboardingProgress::pour(auth()->user())->doitRevenirAuParcours();
+
         if ($this->record) {
             $this->record->update($validated);
             $record = $this->record;
@@ -88,6 +97,13 @@ new #[Title('Démarche')] class extends Component {
         $this->enregistrerTraductions($record);
 
         Flux::toast(variant: 'success', text: 'Démarche enregistrée.');
+
+        // Parcours de prise en main (D12) : la première démarche termine le parcours, on affiche les félicitations.
+        if ($depuisParcours) {
+            $this->redirectRoute('onboarding.show', navigate: true);
+
+            return;
+        }
 
         $this->redirectRoute('demarches.show', $record, navigate: true);
     }
@@ -112,7 +128,9 @@ new #[Title('Démarche')] class extends Component {
     <x-tn.page-header
         label="Démarches"
         :title="$record ? 'Modifier la démarche' : 'Nouvelle démarche'"
-        :breadcrumb="['Démarches' => route('demarches.index'), ($record ? 'Modifier' : 'Nouvelle') => null]"
+        :breadcrumb="$record
+            ? ['Mon espace' => route('dashboard'), 'Démarches' => route('demarches.index'), ($record->titre ?: 'Démarche') => route('demarches.show', $record), 'Modifier' => null]
+            : ['Mon espace' => route('dashboard'), 'Démarches' => route('demarches.index'), 'Nouvelle' => null]"
     />
 
     <x-tn.stepper :steps="$etapes" current="etape" />

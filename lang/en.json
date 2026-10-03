@@ -667,5 +667,9 @@
     "Saisir l'identifiant et le code ci-dessus": "Enter the ID and code above",
     "Trop de tentatives. Réessayez dans :n minute(s).": "Too many attempts. Try again in :n minute(s).",
     "À activer": "To activate",
-    "Étapes": "Steps"
+    "Étapes": "Steps",
+    "Thème sombre": "Dark theme",
+    "Les champs marqués d’un astérisque": "Fields marked with an asterisk",
+    "astérisque": "asterisk",
+    "sont obligatoires.": "are required."
 }

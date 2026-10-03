@@ -67,6 +67,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('notifications/{notification}/lire', [NotificationController::class, 'lire'])->whereUuid('notification')->name('notifications.read');
     Route::get('notifications/{notification}/ouvrir', [NotificationController::class, 'ouvrir'])->whereUuid('notification')->name('notifications.open');
 
+    // D11 : « Mes demandes » de l'habitant connecté (requête filtrée sur l'auteur ; détail : SignalementPolicy::viewOwn → 403 pour autrui).
+    Route::livewire('mes-demandes', 'pages::mes-demandes.index')->name('mes-demandes.index');
+    Route::livewire('mes-demandes/{signalement}', 'pages::mes-demandes.show')->name('mes-demandes.show');
+
     // F67 : création et mise à jour des projets de la ville (ProjetPolicy : agents et admins).
     Route::livewire('projets/create', 'pages::projets.form')->name('projets.create');
     Route::livewire('projets/{projet}/edit', 'pages::projets.form')->name('projets.edit');
@@ -84,6 +88,9 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('profil/appareils', 'pages::profile.devices')->name('profile.devices.index');
     Route::get('profil/appareils/{knownDevice}/pas-moi', [KnownDeviceController::class, 'confirm'])->name('profile.devices.confirm');
     Route::post('profil/appareils/{knownDevice}/pas-moi', [KnownDeviceController::class, 'notMe'])->name('profile.devices.not-me');
+
+    // F55 : export des données personnelles de l'utilisateur connecté (aucun identifiant dans l'URL ; UserPolicy::exportPersonalData).
+    Route::livewire('profil/mes-donnees', 'pages::profile.mes-donnees')->name('profile.data');
 
     // F72 : « Par où commencer ? » — services recommandés selon la situation de l'habitant (OnboardingPolicy::parOuCommencer).
     Route::livewire('par-ou-commencer', 'pages::onboarding.par-ou-commencer')

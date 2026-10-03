@@ -6,8 +6,8 @@ use App\Models\AuditLog;
 use App\Models\Onboarding;
 use App\Models\Signalement;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Carbon;
 
 /**
  * Démo de « Mes demandes » (D11), idempotente (relançable sans doublon) :
@@ -70,7 +70,7 @@ class MesDemandesSeeder extends Seeder
                 continue;
             }
 
-            $dates = array_map(fn (array $quand): Carbon => now()->subDays($quand[0])->setTime($quand[1], random_int(0, 59)), $etapes);
+            $dates = array_map(fn (array $quand): CarbonInterface => now()->subDays($quand[0])->setTime($quand[1], random_int(0, 59)), $etapes);
             $statutActuel = (string) array_key_last($etapes);
 
             $signalement = new Signalement(['categorie' => $categorie, 'description' => $description, 'lieu' => $lieu]);

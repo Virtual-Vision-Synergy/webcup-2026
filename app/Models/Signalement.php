@@ -134,7 +134,8 @@ class Signalement extends Model
         $dernierStatut = 'nouveau';
 
         foreach ($this->etapes as $entree) {
-            $statut = self::statutDepuisLibelle($entree->changes['statut']['apres'] ?? null);
+            // getAttribute() : depuis un autre modèle, « ->changes » lirait la propriété interne d'Eloquent (toujours vide ici), pas la colonne.
+            $statut = self::statutDepuisLibelle($entree->getAttribute('changes')['statut']['apres'] ?? null);
 
             if ($statut !== null && $statut !== $dernierStatut) {
                 $etapes[] = $this->etape($statut, $entree->created_at, 'Par la '.self::ACTEUR_MAIRIE);
@@ -146,7 +147,9 @@ class Signalement extends Model
             $etapes[] = $this->etape((string) $this->statut, $this->updated_at, 'Par la '.self::ACTEUR_MAIRIE);
         }
 
-        $etapes[count($etapes) - 1]['courant'] = true;
+        $courante = array_pop($etapes);
+        $courante['courant'] = true;
+        $etapes[] = $courante;
 
         return $etapes;
     }

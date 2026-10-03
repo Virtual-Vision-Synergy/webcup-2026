@@ -59,7 +59,7 @@ new #[Title('Prendre rendez-vous')] class extends Component {
     #[Computed]
     public function services(): Collection
     {
-        return Service::query()->prendRendezVous()->orderBy('nom')->get();
+        return Service::query()->prendRendezVous()->disponibles()->orderBy('nom')->get();
     }
 
     #[Computed]
@@ -69,7 +69,7 @@ new #[Title('Prendre rendez-vous')] class extends Component {
             return null;
         }
 
-        return Service::query()->prendRendezVous()->where('slug', $this->serviceSlug)->first();
+        return Service::query()->prendRendezVous()->disponibles()->where('slug', $this->serviceSlug)->first();
     }
 
     /**

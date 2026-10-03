@@ -13,6 +13,9 @@
                     <flux:sidebar.item icon="calendar-days" :href="route('appointments.index')" :current="request()->routeIs('appointments.*')" wire:navigate>
                         Mes rendez-vous
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="heart" :href="route('urgences.index')" :current="request()->routeIs('urgences.*')" wire:navigate>
+                        Urgences / Santé
+                    </flux:sidebar.item>
 
                     {{-- make:feature:nav --}}
 @endsection
@@ -103,9 +106,9 @@
 
                 <x-tn.bandeau-annonces />
 
-                <div id="contenu" class="flex flex-1 flex-col">
+                <main id="contenu" tabindex="-1" class="flex flex-1 flex-col">
                     {{ $slot }}
-                </div>
+                </main>
             </div>
         </div>
 

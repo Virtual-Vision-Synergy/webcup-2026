@@ -186,6 +186,9 @@ class DatabaseSeeder extends Seeder
         // F39 : services ouverts aux rendez-vous, créneaux sur 14 jours ouvrés, agenda du jour pour agent@example.com.
         $this->call(RendezVousSeeder::class);
 
+        // F40 : rendez-vous de démo rappelé automatiquement ~10 min après le seed (hors production).
+        $this->call(RappelRendezVousSeeder::class);
+
         // make:feature:seeders
     }
 }

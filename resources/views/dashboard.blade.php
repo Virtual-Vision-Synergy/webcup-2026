@@ -148,6 +148,14 @@
                                 </a>
                             </li>
                         @endforeach
+                        <li class="col-span-2">
+                            <a href="{{ route('urgences.index') }}" wire:navigate class="group flex min-h-[92px] flex-col justify-between rounded-md border border-magenta/35 bg-magenta/8 p-3 transition-colors hover:border-magenta/60">
+                                <span class="flex size-9 items-center justify-center rounded-sm border border-magenta/25 bg-magenta/8 text-magenta" aria-hidden="true">
+                                    <flux:icon name="heart" class="size-[18px]" />
+                                </span>
+                                <span class="mt-2 font-medium text-ink group-hover:text-magenta">Urgences / Santé</span>
+                            </a>
+                        </li>
                     </ul>
                 </section>
 

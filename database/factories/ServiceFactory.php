@@ -37,6 +37,8 @@ class ServiceFactory extends Factory
             'telephone' => '+261 20 22 '.fake()->numerify('### ##'),
             'email' => fake()->unique()->userName().'@mairie-novaterra.mg',
             'adresse' => fake()->numberBetween(1, 120).' avenue de la République, Nova Terra',
+            'latitude' => fake()->randomFloat(7, -18.93, -18.89),
+            'longitude' => fake()->randomFloat(7, 47.51, 47.54),
         ];
     }
 

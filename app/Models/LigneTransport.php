@@ -69,12 +69,12 @@ class LigneTransport extends Model
 
     public function modeLabel(): string
     {
-        return self::MODE_LABELS[$this->mode] ?? ucfirst((string) $this->mode);
+        return __(self::MODE_LABELS[$this->mode] ?? ucfirst((string) $this->mode));
     }
 
     public function etatLabel(): string
     {
-        return self::ETAT_LABELS[$this->etat] ?? (string) $this->etat;
+        return __(self::ETAT_LABELS[$this->etat] ?? (string) $this->etat);
     }
 
     /**

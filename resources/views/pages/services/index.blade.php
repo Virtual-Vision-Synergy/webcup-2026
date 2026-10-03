@@ -95,7 +95,7 @@ new #[Title('Services')] class extends Component {
 
         Cache::forget('landing.etat');
 
-        Flux::toast(variant: 'success', text: $record->mis_en_avant ? 'Service mis en avant.' : 'Service retiré de la mise en avant.');
+        Flux::toast(variant: 'success', text: $record->mis_en_avant ? __('Service mis en avant.') : __('Service retiré de la mise en avant.'));
     }
 
     public function delete(int $id): void
@@ -105,50 +105,50 @@ new #[Title('Services')] class extends Component {
 
         $record->delete();
 
-        Flux::toast(variant: 'success', text: 'Service supprimé(e).');
+        Flux::toast(variant: 'success', text: __('Service supprimé(e).'));
     }
 }; ?>
 
 <section class="mx-auto w-full max-w-6xl space-y-6">
     <x-tn.page-header
-        label="Annuaire"
-        title="Services municipaux"
-        :subtitle="$this->items->total().' service(s) référencé(s)'"
-        :breadcrumb="['Mon espace' => route('dashboard'), 'Services' => null]"
+        :label="__('Annuaire')"
+        :title="__('Services municipaux')"
+        :subtitle="__(':n service(s) référencé(s)', ['n' => $this->items->total()])"
+        :breadcrumb="[__('Mon espace') => route('dashboard'), __('Services') => null]"
     >
         <x-slot:actions>
             @can('create', Service::class)
-                <flux:button variant="primary" icon="plus" :href="route('services.create')" wire:navigate>Ajouter</flux:button>
+                <flux:button variant="primary" icon="plus" :href="route('services.create')" wire:navigate>{{ __('Ajouter') }}</flux:button>
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher un service (ex. santé)…" aria-label="Rechercher un service" clearable class="sm:max-w-sm" />
-        <flux:select wire:model.live="categorie" aria-label="Filtrer par catégorie" class="sm:max-w-60">
-            <flux:select.option value="">Toutes les catégories</flux:select.option>
+        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="{{ __('Rechercher un service (ex. santé)…') }}" aria-label="{{ __('Rechercher un service') }}" clearable class="sm:max-w-sm" />
+        <flux:select wire:model.live="categorie" aria-label="{{ __('Filtrer par catégorie') }}" class="sm:max-w-60">
+            <flux:select.option value="">{{ __('Toutes les catégories') }}</flux:select.option>
             @foreach (Service::CATEGORIE_LABELS as $valeur => $label)
-                <flux:select.option value="{{ $valeur }}">{{ $label }}</flux:select.option>
+                <flux:select.option value="{{ $valeur }}">{{ __($label) }}</flux:select.option>
             @endforeach
         </flux:select>
         @can('create', Service::class)
-            <flux:checkbox wire:model.live="mine" label="Mes services uniquement" />
+            <flux:checkbox wire:model.live="mine" label="{{ __('Mes services uniquement') }}" />
         @endcan
-        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">{{ __('Mise à jour…') }}</span>
     </div>
 
     @if ($this->items->isEmpty() && $this->hasFilters())
-        <x-tn.empty icon="magnifying-glass" title="Aucun service ne correspond" text="Aucun résultat pour cette recherche ou cette catégorie. Essayez un autre mot (ex. « santé », « état civil ») ou affichez tout le catalogue.">
-            <flux:button variant="primary" icon="x-mark" wire:click="resetFilters">Effacer les filtres</flux:button>
+        <x-tn.empty icon="magnifying-glass" title="{{ __('Aucun service ne correspond') }}" text="{{ __('Aucun résultat pour cette recherche ou cette catégorie. Essayez un autre mot (ex. « santé », « état civil ») ou affichez tout le catalogue.') }}">
+            <flux:button variant="primary" icon="x-mark" wire:click="resetFilters">{{ __('Effacer les filtres') }}</flux:button>
         </x-tn.empty>
     @elseif ($this->items->isEmpty())
-        <x-tn.empty icon="landmark" title="Aucun service pour le moment" text="Revenez plus tard : l'annuaire est en cours de publication." />
+        <x-tn.empty icon="landmark" title="{{ __('Aucun service pour le moment') }}" text="{{ __('Revenez plus tard : l\'annuaire est en cours de publication.') }}" />
     @else
         <ul class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             @foreach ($this->items as $item)
                 <li wire:key="row-{{ $item->id }}" @class(['group relative flex min-w-0 flex-col rounded-md border bg-surface p-5 transition-colors hover:border-cyan/40', 'border-cyan/40' => $item->mis_en_avant, 'border-line' => ! $item->mis_en_avant])>
                     @if ($item->mis_en_avant)
-                        <flux:badge size="sm" color="cyan" icon="star" class="mb-3 self-start">Mis en avant</flux:badge>
+                        <flux:badge size="sm" color="cyan" icon="star" class="mb-3 self-start">{{ __('Mis en avant') }}</flux:badge>
                     @endif
                     <div class="flex items-start gap-3">
                         <span class="flex size-10 shrink-0 items-center justify-center rounded-sm border border-cyan/18 bg-cyan/8 text-cyan" aria-hidden="true">
@@ -156,34 +156,34 @@ new #[Title('Services')] class extends Component {
                         </span>
                         <div class="min-w-0">
                             <h2 class="font-semibold text-ink">
-                                <a href="{{ route('services.show', $item) }}" wire:navigate class="after:absolute after:inset-0 group-hover:text-cyan">{{ $item->nom }}</a>
+                                <a href="{{ route('services.show', $item) }}" wire:navigate class="after:absolute after:inset-0 group-hover:text-cyan">{{ __($item->nom) }}</a>
                             </h2>
                             @if ($item->categorie)
-                                <flux:badge size="sm" class="mt-1">{{ Service::labelCategorie($item->categorie) }}</flux:badge>
+                                <flux:badge size="sm" class="mt-1">{{ __(Service::labelCategorie($item->categorie)) }}</flux:badge>
                             @endif
                             @if ($item->description)
-                                <p class="mt-1 line-clamp-2 text-sm text-ink-2">{{ $item->description }}</p>
+                                <p class="mt-1 line-clamp-2 text-sm text-ink-2">{{ __($item->description) }}</p>
                             @endif
                         </div>
                     </div>
                     <dl class="mt-4 space-y-1.5 border-t border-line pt-3 text-sm">
                         @if ($item->horaires)
-                            <div class="flex min-w-0 gap-2"><dt class="sr-only">Horaires</dt><flux:icon name="clock" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="min-w-0 truncate font-mono text-xs leading-5 text-ink-2">{{ \Illuminate\Support\Str::before($item->horaires, "\n") }}</dd></div>
+                            <div class="flex min-w-0 gap-2"><dt class="sr-only">{{ __('Horaires') }}</dt><flux:icon name="clock" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="min-w-0 truncate font-mono text-xs leading-5 text-ink-2">{{ \Illuminate\Support\Str::before(__($item->horaires), "\n") }}</dd></div>
                         @endif
                         @if ($item->telephone)
-                            <div class="flex gap-2"><dt class="sr-only">Téléphone</dt><flux:icon name="phone" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="font-mono text-xs leading-5 text-ink-2">{{ $item->telephone }}</dd></div>
+                            <div class="flex gap-2"><dt class="sr-only">{{ __('Téléphone') }}</dt><flux:icon name="phone" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="font-mono text-xs leading-5 text-ink-2">{{ $item->telephone }}</dd></div>
                         @endif
                     </dl>
                     @canany(['feature', 'update', 'delete'], $item)
                         <div class="relative z-10 mt-3 flex justify-end gap-1">
                             @can('feature', $item)
-                                <flux:button size="sm" variant="ghost" icon="star" :icon:variant="$item->mis_en_avant ? 'solid' : 'outline'" wire:click="toggleFeatured({{ $item->id }})" :aria-label="($item->mis_en_avant ? 'Retirer la mise en avant de ' : 'Mettre en avant ').$item->nom" :title="$item->mis_en_avant ? 'Retirer la mise en avant' : 'Mettre en avant'" />
+                                <flux:button size="sm" variant="ghost" icon="star" :icon:variant="$item->mis_en_avant ? 'solid' : 'outline'" wire:click="toggleFeatured({{ $item->id }})" :aria-label="$item->mis_en_avant ? __('Retirer la mise en avant de :nom', ['nom' => __($item->nom)]) : __('Mettre en avant :nom', ['nom' => __($item->nom)])" :title="$item->mis_en_avant ? __('Retirer la mise en avant') : __('Mettre en avant')" />
                             @endcan
                             @can('update', $item)
-                                <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('services.edit', $item)" wire:navigate aria-label="Modifier {{ $item->nom }}" />
+                                <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('services.edit', $item)" wire:navigate aria-label="{{ __('Modifier :nom', ['nom' => __($item->nom)]) }}" />
                             @endcan
                             @can('delete', $item)
-                                <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer ce service ?" aria-label="Supprimer {{ $item->nom }}" />
+                                <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="{{ __('Supprimer ce service ?') }}" aria-label="{{ __('Supprimer :nom', ['nom' => __($item->nom)]) }}" />
                             @endcan
                         </div>
                     @endcanany

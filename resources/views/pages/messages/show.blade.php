@@ -23,7 +23,7 @@ new #[Title('Message')] class extends Component {
 
         $this->record->delete();
 
-        Flux::toast(variant: 'success', text: 'Message supprimé(e).');
+        Flux::toast(variant: 'success', text: __('Message supprimé(e).'));
 
         $this->redirectRoute('messages.index', navigate: true);
     }
@@ -31,16 +31,16 @@ new #[Title('Message')] class extends Component {
 
 <section class="mx-auto w-full max-w-3xl space-y-6">
     <x-tn.page-header
-        label="Message"
-        :title="$record->sujet ?? 'Sans objet'"
+        label="{{ __('Message') }}"
+        :title="$record->sujet ?? __('Sans objet')"
         :breadcrumb="['Mon espace' => route('dashboard'), 'Messages' => route('messages.index'), ($record->sujet ?: 'Message') => null]"
     >
         <x-slot:actions>
             @can('update', $record)
-                <flux:button icon="pencil-square" :href="route('messages.edit', $record)" wire:navigate>Modifier</flux:button>
+                <flux:button icon="pencil-square" :href="route('messages.edit', $record)" wire:navigate>{{ __('Modifier') }}</flux:button>
             @endcan
             @can('delete', $record)
-                <flux:button variant="danger" icon="trash" wire:click="delete" wire:confirm="Supprimer définitivement ce message ?">Supprimer</flux:button>
+                <flux:button variant="danger" icon="trash" wire:click="delete" wire:confirm="{{ __('Supprimer définitivement ce message ?') }}">{{ __('Supprimer') }}</flux:button>
             @endcan
         </x-slot:actions>
     </x-tn.page-header>

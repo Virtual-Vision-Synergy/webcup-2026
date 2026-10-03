@@ -3,7 +3,6 @@
 use App\Models\Demarche;
 use App\Models\Service;
 use App\Services\OnboardingProgress;
-use Closure;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
@@ -52,7 +51,7 @@ new #[Title('Démarche')] class extends Component {
             'service_id' => [
                 'nullable',
                 Rule::exists(Service::class, 'id'),
-                function (string $attribute, mixed $value, Closure $fail): void {
+                function (string $attribute, mixed $value, \Closure $fail): void {
                     $service = filled($value) ? Service::query()->find($value) : null;
 
                     if ($service?->estIndisponible()) {

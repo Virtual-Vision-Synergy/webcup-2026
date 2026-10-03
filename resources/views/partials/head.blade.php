@@ -45,4 +45,13 @@
         }
     } catch (e) {}
 </script>
+{{-- Taille du texte mémorisée (A / A+ / A++) : appliquée avant le rendu pour éviter tout saut de mise en page. --}}
+<script>
+    try {
+        var tnSize = window.localStorage.getItem('tn.text-size');
+        if (['md', 'lg', 'xl'].indexOf(tnSize) !== -1) {
+            document.documentElement.dataset.textSize = tnSize;
+        }
+    } catch (e) {}
+</script>
 @fluxAppearance

@@ -2,7 +2,7 @@
 
 {{-- Fil d'Ariane : ['Libellé' => url, …, 'Page courante' => null]. --}}
 <nav {{ $attributes }} aria-label="Fil d'Ariane">
-    <ol class="flex flex-wrap items-center gap-1.5 font-mono text-[11px] uppercase tracking-[.06em] text-ink-2">
+    <ol class="flex flex-wrap items-center gap-1.5 font-mono text-[0.6875rem] uppercase tracking-[.06em] text-ink-2">
         @foreach ($items as $libelle => $url)
             <li class="flex items-center gap-1.5">
                 @if ($url)

@@ -88,7 +88,7 @@ new #[Title('Messages')] class extends Component {
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher un message…" aria-label="Rechercher un message" class="sm:max-w-sm" />
         <flux:checkbox wire:model.live="mine" label="Mes messages uniquement" />
-        <span wire:loading class="font-mono text-[11px] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
     </div>
 
     @if ($this->items->isEmpty())

@@ -17,7 +17,7 @@
                     href="{{ route($lien['route']) }}"
                     @if ($actif) aria-current="page" @endif
                     @class([
-                        'flex items-center px-3 text-[15px] font-medium transition-colors',
+                        'flex items-center px-3 text-[0.9375rem] font-medium transition-colors',
                         'tn-tab-active' => $actif,
                         'text-ink-2 hover:text-ink' => ! $actif,
                     ])
@@ -28,6 +28,8 @@
         <div class="ms-auto flex items-center gap-2">
             <x-tn.api-status class="max-lg:hidden" />
             <x-tn.langue />
+            <x-tn.contrast-toggle class="max-lg:hidden" />
+            <x-tn.text-size class="max-lg:hidden" />
             <x-tn.theme-toggle class="max-lg:hidden" />
 
             @if ($connecte)
@@ -37,7 +39,7 @@
                     <span class="sr-only">Mon compte : {{ auth()->user()->name }}</span>
                 </a>
             @else
-                <a href="{{ route('login') }}" class="inline-flex h-11 items-center rounded-sm px-3 text-[15px] font-medium text-ink-2 hover:text-ink">Connexion</a>
+                <a href="{{ route('login') }}" class="inline-flex h-11 items-center rounded-sm px-3 text-[0.9375rem] font-medium text-ink-2 hover:text-ink">Connexion</a>
                 @if (Route::has('register'))
                     <flux:button :href="route('register')" variant="primary" class="h-10! max-lg:hidden">Créer un compte</flux:button>
                 @endif

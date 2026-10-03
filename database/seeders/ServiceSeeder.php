@@ -12,6 +12,29 @@ use Illuminate\Database\Seeder;
  */
 class ServiceSeeder extends Seeder
 {
+    /** Services mis en avant en tête du catalogue et sur l'accueil. */
+    private const MIS_EN_AVANT = ['État civil', 'Accueil de la Mairie', 'Urbanisme', 'Action sociale (CCAS)'];
+
+    /** Catégorie de chaque service de l'annuaire (voir Service::CATEGORIE_OPTIONS). */
+    private const CATEGORIES = [
+        'État civil' => 'administratif',
+        'Accueil de la Mairie' => 'administratif',
+        'Élections et recensement' => 'administratif',
+        'Cimetière et affaires funéraires' => 'administratif',
+        'Urbanisme' => 'urbanisme',
+        'Services techniques et voirie' => 'urbanisme',
+        'Environnement et propreté' => 'urbanisme',
+        'Santé publique' => 'sante',
+        'Action sociale (CCAS)' => 'social',
+        'Petite enfance et écoles' => 'education',
+        'Jeunesse' => 'education',
+        'Médiathèque Ravinala' => 'culture',
+        'Sports et associations' => 'culture',
+        'Culture et festivités' => 'culture',
+        'Police municipale' => 'securite',
+        'Marchés et commerce' => 'economie',
+    ];
+
     public function run(): void
     {
         $auteur = User::query()->where('role', 'admin')->first() ?? User::query()->first();
@@ -21,7 +44,15 @@ class ServiceSeeder extends Seeder
         }
 
         foreach ($this->services() as $data) {
-            if (Service::query()->where('nom', $data['nom'])->exists()) {
+            $data['categorie'] = self::CATEGORIES[$data['nom']] ?? null;
+
+            $existant = Service::query()->where('nom', $data['nom'])->first();
+
+            if ($existant !== null) {
+                if ($existant->categorie === null && $data['categorie'] !== null) {
+                    $existant->update(['categorie' => $data['categorie']]);
+                }
+
                 continue;
             }
 
@@ -33,6 +64,9 @@ class ServiceSeeder extends Seeder
         }
 
         $this->traduire();
+
+        // Démarches les plus courantes mises en avant (F28).
+        Service::query()->whereIn('nom', self::MIS_EN_AVANT)->update(['mis_en_avant' => true]);
     }
 
     /**

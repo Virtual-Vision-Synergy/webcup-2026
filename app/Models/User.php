@@ -39,6 +39,9 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $remember_token
  * @property Carbon|null $deactivated_at
  * @property bool $notifier_par_email Préférence de l'habitant (F30) : annonces urgentes par e-mail.
+ * @property string|null $identifiant Identifiant d'habitant (F71) pour se connecter sans e-mail.
+ * @property string|null $code_activation Empreinte du code d'activation à usage unique (F71).
+ * @property string|null $langue Langue mémorisée (F71).
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
@@ -47,11 +50,17 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * L'ancienne colonne texte « role » existe encore en base mais n'est plus utilisée.
  */
 #[Fillable(['name', 'email', 'password', 'telephone', 'quartier', 'quartier_id', 'notifier_par_email'])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'code_activation'])]
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
     use Auditable, HasAuditHistory, HasFactory, Notifiable, TwoFactorAuthenticatable;
+
+    /** F71 : domaine réservé (RFC 2606) des adresses techniques des comptes sans e-mail ; aucun message n'y part. */
+    public const DOMAINE_SANS_EMAIL = 'sans-email.invalid';
+
+    /** @var list<string> Champs non journalisés (F47) : l'empreinte du code d'activation reste hors du journal. */
+    protected array $auditIgnore = ['code_activation'];
 
     /**
      * Get the attributes that should be cast.
@@ -79,6 +88,84 @@ class User extends Authenticatable implements FilamentUser
         return Str::length($initials) > 1
             ? Str::substr($initials, 0, 1).Str::substr($initials, -1)
             : $initials;
+    }
+
+    /**
+     * F71 : vrai si l'habitant a une vraie adresse e-mail (et non l'adresse technique d'un compte sans e-mail).
+     */
+    public function aUnEmail(): bool
+    {
+        return ! str_ends_with($this->email, '@'.self::DOMAINE_SANS_EMAIL);
+    }
+
+    /**
+     * Adresse affichable : null pour un compte sans e-mail.
+     */
+    public function emailAffichable(): ?string
+    {
+        return $this->aUnEmail() ? $this->email : null;
+    }
+
+    /**
+     * Aucun e-mail n'est envoyé à un compte sans adresse (le canal mail est alors ignoré par Laravel).
+     */
+    public function routeNotificationForMail(): ?string
+    {
+        return $this->emailAffichable();
+    }
+
+    public function aActiverCompte(): bool
+    {
+        return $this->code_activation !== null;
+    }
+
+    /**
+     * F71 : retrouve un compte à partir de ce que l'habitant saisit à la connexion :
+     * adresse e-mail, identifiant d'habitant (HAB-XXXXXX) ou numéro de téléphone (s'il n'appartient qu'à un seul compte).
+     */
+    public static function trouverPourConnexion(string $saisie): ?self
+    {
+        $saisie = trim($saisie);
+
+        if ($saisie === '') {
+            return null;
+        }
+
+        if (str_contains($saisie, '@')) {
+            return self::where('email', mb_strtolower($saisie))->first();
+        }
+
+        if (preg_match('/^hab-?[a-z0-9]{4,12}$/i', $saisie) === 1) {
+            return self::where('identifiant', self::normaliserIdentifiant($saisie))->first();
+        }
+
+        $telephone = self::normaliserTelephone($saisie);
+
+        if ($telephone === null) {
+            return null;
+        }
+
+        $comptes = self::where('telephone', $telephone)->limit(2)->get();
+
+        return $comptes->count() === 1 ? $comptes->first() : null;
+    }
+
+    public static function normaliserIdentifiant(string $identifiant): string
+    {
+        $brut = strtoupper((string) preg_replace('/[^a-z0-9]/i', '', $identifiant));
+
+        return 'HAB-'.substr($brut, 3);
+    }
+
+    /**
+     * Téléphone réduit aux chiffres (et au « + » initial) : « 034 12 345 67 » → « 0341234567 ».
+     */
+    public static function normaliserTelephone(?string $telephone): ?string
+    {
+        $telephone = trim((string) $telephone);
+        $chiffres = (str_starts_with($telephone, '+') ? '+' : '').preg_replace('/\D/', '', $telephone);
+
+        return strlen(ltrim($chiffres, '+')) >= 6 ? $chiffres : null;
     }
 
     public function canAccessPanel(Panel $panel): bool
@@ -220,7 +307,10 @@ class User extends Authenticatable implements FilamentUser
         }
 
         $like = '%'.addcslashes($term, '%_\\').'%';
-        $query->where(fn (Builder $q) => $q->where('name', 'like', $like)->orWhere('email', 'like', $like));
+        $query->where(fn (Builder $q) => $q->where('name', 'like', $like)
+            ->orWhere('email', 'like', $like)
+            ->orWhere('identifiant', 'like', $like)
+            ->orWhere('telephone', 'like', $like));
     }
 
     /**

@@ -144,7 +144,7 @@
                                     <span class="flex size-9 items-center justify-center rounded-sm border border-cyan/18 bg-cyan/8 text-cyan" aria-hidden="true">
                                         <flux:icon :name="$rubrique['icon']" class="size-[18px]" />
                                     </span>
-                                    <span class="mt-2 font-medium text-ink group-hover:text-cyan">{{ $rubrique['label'] }}</span>
+                                    <span class="mt-2 font-medium text-ink group-hover:text-cyan">{{ __($rubrique['label']) }}</span>
                                 </a>
                             </li>
                         @endforeach
@@ -164,7 +164,15 @@
                     <x-tn.section-label as="h2" class="mb-2">Mon compte</x-tn.section-label>
                     <dl>
                         <x-tn.field label="Nom">{{ $user->name }}</x-tn.field>
-                        <x-tn.field label="E-mail"><span class="break-all">{{ $user->email }}</span></x-tn.field>
+                        @if ($user->aUnEmail())
+                            <x-tn.field label="E-mail"><span class="break-all">{{ $user->email }}</span></x-tn.field>
+                        @endif
+                        @if ($user->identifiant)
+                            <x-tn.field label="{{ __('Identifiant d\'habitant') }}"><span class="font-mono">{{ $user->identifiant }}</span></x-tn.field>
+                        @endif
+                        @if ($user->telephone)
+                            <x-tn.field label="{{ __('Téléphone') }}">{{ $user->telephone }}</x-tn.field>
+                        @endif
                         <x-tn.field label="Membre depuis">{{ $user->created_at?->translatedFormat('d F Y') }}</x-tn.field>
                     </dl>
                     <a href="{{ route('profile.edit') }}" wire:navigate class="tn-btn-secondary mt-4 w-full">

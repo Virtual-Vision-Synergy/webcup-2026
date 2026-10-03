@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
  * user_id et slug ne sont volontairement PAS remplissables : ils sont assignés dans le code.
  * Le slug est généré à la création depuis le nom et ne change plus (URL stables).
  */
-#[Fillable(['nom', 'description', 'icone'])]
+#[Fillable(['nom', 'description', 'horaires', 'telephone', 'email', 'adresse'])]
 class Service extends Model
 {
     /** @use HasFactory<ServiceFactory> */

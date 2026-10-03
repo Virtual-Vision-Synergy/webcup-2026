@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
+use App\Models\Concerns\PrevientDuChangementDeStatut;
 use Database\Factories\SignalementFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,7 +23,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 class Signalement extends Model
 {
     /** @use HasFactory<SignalementFactory> */
-    use Auditable, HasAuditHistory, HasFactory;
+    use Auditable, HasAuditHistory, HasFactory, PrevientDuChangementDeStatut;
 
     public const CATEGORIE_OPTIONS = ['eclairage', 'voirie', 'proprete', 'eau', 'espaces_verts', 'mobilier', 'autre'];
 
@@ -134,6 +135,7 @@ class Signalement extends Model
 
     /**
      * Seul point de passage pour modifier le statut (réservé aux agents et admins : policy changerStatut).
+     * Si l'état change vraiment, le propriétaire est prévenu (F49).
      */
     public function changerStatut(string $statut): void
     {
@@ -141,7 +143,11 @@ class Signalement extends Model
             throw new \InvalidArgumentException("Statut inconnu : {$statut}");
         }
 
+        $statutAvant = (string) $this->statut;
+
         $this->statut = $statut;
         $this->save();
+
+        $this->prevenirProprietaire($statutAvant);
     }
 }

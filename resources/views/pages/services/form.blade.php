@@ -15,7 +15,7 @@ new #[Title('Service')] class extends Component {
 
     public string $nom = '';
     public string $description = '';
-    public string $icone = '';
+    public string $categorie = '';
     public bool $mis_en_avant = false;
 
     public function mount(?Service $service = null): void
@@ -25,7 +25,7 @@ new #[Title('Service')] class extends Component {
             $this->record = $service;
             $this->nom = (string) ($service->nom ?? '');
             $this->description = (string) ($service->description ?? '');
-            $this->icone = (string) ($service->icone ?? '');
+            $this->categorie = (string) ($service->categorie ?? '');
             $this->mis_en_avant = (bool) $service->mis_en_avant;
         } else {
             $this->authorize('create', Service::class);
@@ -40,7 +40,7 @@ new #[Title('Service')] class extends Component {
         return [
             'nom' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:5000'],
-            'icone' => ['required', 'string', 'max:255'],
+            'categorie' => ['required', Rule::in(Service::CATEGORIE_OPTIONS)],
             'mis_en_avant' => ['boolean'],
         ];
     }
@@ -89,7 +89,11 @@ new #[Title('Service')] class extends Component {
 
         <flux:textarea wire:model="description" label="Description" rows="5" required />
 
-        <flux:input wire:model="icone" label="Icone" required />
+        <flux:select wire:model="categorie" label="Catégorie" placeholder="Choisir une catégorie…" required>
+            @foreach (Service::CATEGORIE_LABELS as $valeur => $label)
+                <flux:select.option value="{{ $valeur }}">{{ $label }}</flux:select.option>
+            @endforeach
+        </flux:select>
 
         @can('feature', $record ?? Service::class)
             <flux:checkbox wire:model="mis_en_avant" label="Mettre en avant" description="Le service apparaît en tête du catalogue et sur la page d'accueil." />

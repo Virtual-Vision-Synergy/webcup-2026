@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\HasAuditHistory;
 use Database\Factories\SignalementFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,7 +22,7 @@ use Illuminate\Database\UniqueConstraintViolationException;
 class Signalement extends Model
 {
     /** @use HasFactory<SignalementFactory> */
-    use Auditable, HasFactory;
+    use Auditable, HasAuditHistory, HasFactory;
 
     public const CATEGORIE_OPTIONS = ['eclairage', 'voirie', 'proprete', 'eau', 'espaces_verts', 'mobilier', 'autre'];
 
@@ -123,7 +124,7 @@ class Signalement extends Model
 
     public static function libelleStatut(string $statut): string
     {
-        return self::STATUT_LABELS[$statut] ?? ucfirst(str_replace('_', ' ', $statut));
+        return __(self::STATUT_LABELS[$statut] ?? ucfirst(str_replace('_', ' ', $statut)));
     }
 
     public function etatStatut(): string

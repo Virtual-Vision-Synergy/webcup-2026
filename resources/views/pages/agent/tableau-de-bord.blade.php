@@ -198,15 +198,17 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
                     <figcaption class="mt-3 text-sm text-ink-2">{{ $totalSemaine }} demande(s) déposée(s) sur les 7 derniers jours.</figcaption>
 
                     {{-- Version texte du graphique pour les lecteurs d'écran --}}
-                    <table class="sr-only">
-                        <caption>Demandes déposées par jour</caption>
-                        <thead><tr><th scope="col">Jour</th><th scope="col">Demandes</th></tr></thead>
-                        <tbody>
-                            @foreach ($activite as $jour)
-                                <tr><td>{{ $jour['date'] }}</td><td>{{ $jour['total'] }}</td></tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                    <div class="sr-only">
+                        <table>
+                            <caption>Demandes déposées par jour</caption>
+                            <thead><tr><th scope="col">Jour</th><th scope="col">Demandes</th></tr></thead>
+                            <tbody>
+                                @foreach ($activite as $jour)
+                                    <tr><td>{{ $jour['date'] }}</td><td>{{ $jour['total'] }}</td></tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </figure>
             @endif
         </x-tn.panel>
@@ -233,8 +235,8 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
 
     <div class="grid gap-6 lg:grid-cols-5">
         {{-- Dernières demandes avec lien direct --}}
-        <div class="space-y-3 lg:col-span-3">
-            <div class="flex items-center justify-between gap-2">
+        <div class="min-w-0 space-y-3 lg:col-span-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
                 <x-tn.section-label as="h2">Dernières demandes</x-tn.section-label>
                 <flux:link :href="route('agent.demandes')" wire:navigate class="text-sm">Toutes les demandes</flux:link>
             </div>

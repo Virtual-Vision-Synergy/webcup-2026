@@ -8,4 +8,5 @@ use Illuminate\Support\Facades\Route;
 */
 Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.')->group(function () {
     Route::livewire('/', 'pages::agent.index')->name('index');
+    Route::livewire('demandes', 'pages::agent.demandes')->name('demandes');
 });

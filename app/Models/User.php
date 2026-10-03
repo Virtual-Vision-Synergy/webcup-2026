@@ -7,6 +7,7 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -32,10 +33,12 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
+ * @property Carbon|null $deactivated_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
- * role_id n'est volontairement PAS remplissable : il est assigné dans le code (inscription, admin).
+ * role_id et deactivated_at ne sont volontairement PAS remplissables : ils sont assignés dans le code
+ * (inscription, admin, deactivate()/reactivate()).
  * L'ancienne colonne texte « role » existe encore en base mais n'est plus utilisée.
  */
 #[Fillable(['name', 'email', 'password', 'telephone', 'quartier'])]
@@ -55,6 +58,7 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'deactivated_at' => 'datetime',
         ];
     }
 
@@ -130,6 +134,66 @@ class User extends Authenticatable implements FilamentUser
     public function isCitoyen(): bool
     {
         return $this->hasRole(Role::CITOYEN);
+    }
+
+    public function isActive(): bool
+    {
+        return $this->deactivated_at === null;
+    }
+
+    /**
+     * Désactive le compte : il ne peut plus se connecter (voir EnsureAccountIsActive et FortifyServiceProvider).
+     * Droits vérifiés par UserPolicy::deactivate.
+     */
+    public function deactivate(): void
+    {
+        $this->forceFill(['deactivated_at' => now()])->save();
+    }
+
+    public function reactivate(): void
+    {
+        $this->forceFill(['deactivated_at' => null])->save();
+    }
+
+    /**
+     * @param  Builder<User>  $query
+     */
+    public function scopeCitizens(Builder $query): void
+    {
+        $query->where('role_id', Role::idFor(Role::CITOYEN));
+    }
+
+    /**
+     * Comptes qu'un agent ou un admin peut administrer : citoyens pour un agent, citoyens et agents pour un admin.
+     *
+     * @param  Builder<User>  $query
+     */
+    public function scopeManageableBy(Builder $query, User $actor): void
+    {
+        $roleIds = match (true) {
+            $actor->isAdmin() => [Role::idFor(Role::CITOYEN), Role::idFor(Role::AGENT)],
+            $actor->isAgent() => [Role::idFor(Role::CITOYEN)],
+            default => [],
+        };
+
+        $query->whereIn('role_id', $roleIds);
+    }
+
+    /**
+     * Recherche par nom ou e-mail (les jokers % et _ saisis sont traités comme du texte).
+     *
+     * @param  Builder<User>  $query
+     */
+    public function scopeSearch(Builder $query, string $term): void
+    {
+        $term = trim($term);
+
+        if ($term === '') {
+            return;
+        }
+
+        $like = '%'.addcslashes($term, '%_\\').'%';
+        $query->where(fn (Builder $q) => $q->where('name', 'like', $like)->orWhere('email', 'like', $like));
     }
 
     /**

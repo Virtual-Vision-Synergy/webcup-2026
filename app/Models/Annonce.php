@@ -112,7 +112,7 @@ class Annonce extends Model
 
     public function libelleNiveau(): string
     {
-        return self::NIVEAU_LIBELLES[$this->niveau] ?? ucfirst($this->niveau);
+        return __(self::NIVEAU_LIBELLES[$this->niveau] ?? ucfirst($this->niveau));
     }
 
     /**

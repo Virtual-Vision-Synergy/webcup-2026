@@ -72,7 +72,7 @@ new #[Title('Actualite')] class extends Component {
             $record->save();
         }
 
-        Flux::toast(variant: 'success', text: 'Actualite enregistré(e).');
+        Flux::toast(variant: 'success', text: __('Actualite enregistré(e).'));
 
         $this->redirectRoute('actualites.show', $record, navigate: true);
     }
@@ -80,33 +80,33 @@ new #[Title('Actualite')] class extends Component {
 
 <section class="mx-auto w-full max-w-2xl space-y-6">
     <x-tn.page-header
-        label="Fil du Haut Conseil"
-        :title="$record ? 'Modifier l’annonce' : 'Publier une annonce'"
+        label="{{ __('Fil du Haut Conseil') }}"
+        :title="$record ? __('Modifier l’annonce') : __('Publier une annonce')"
         :breadcrumb="$record
             ? ['Mon espace' => route('dashboard'), 'Actualités' => route('actualites.index'), ($record->titre ?: 'Annonce') => route('actualites.show', $record), 'Modifier' => null]
             : ['Mon espace' => route('dashboard'), 'Actualités' => route('actualites.index'), 'Nouveau' => null]"
     />
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
-        <flux:input wire:model="titre" label="Titre" required />
+        <flux:input wire:model="titre" label="{{ __('Titre') }}" required />
 
-        <flux:textarea wire:model="contenu" label="Contenu" rows="5" required />
+        <flux:textarea wire:model="contenu" label="{{ __('Contenu') }}" rows="5" required />
 
-        <flux:input wire:model="date" label="Date" type="date" required />
+        <flux:input wire:model="date" label="{{ __('Date') }}" type="date" required />
 
         <div class="space-y-3">
-            <flux:input type="file" wire:model="image" label="Image" accept="image/jpeg,image/png,image/webp" />
-            <div wire:loading wire:target="image"><flux:text>Envoi en cours…</flux:text></div>
+            <flux:input type="file" wire:model="image" label="{{ __('Image') }}" accept="image/jpeg,image/png,image/webp" />
+            <div wire:loading wire:target="image"><flux:text>{{ __('Envoi en cours…') }}</flux:text></div>
             @if ($image)
-                <img src="{{ $image->temporaryUrl() }}" alt="Aperçu" class="h-40 rounded-lg object-cover" />
+                <img src="{{ $image->temporaryUrl() }}" alt="{{ __('Aperçu') }}" class="h-40 rounded-lg object-cover" />
             @elseif ($record?->image)
-                <img src="{{ Storage::url($record->image) }}" alt="Image" class="h-40 rounded-lg object-cover" />
+                <img src="{{ Storage::url($record->image) }}" alt="{{ __('Image') }}" class="h-40 rounded-lg object-cover" />
             @endif
         </div>
 
         <div class="flex items-center gap-3">
-            <flux:button type="submit" variant="primary">Enregistrer</flux:button>
-            <flux:button :href="route('actualites.index')" wire:navigate variant="ghost">Annuler</flux:button>
+            <flux:button type="submit" variant="primary">{{ __('Enregistrer') }}</flux:button>
+            <flux:button :href="route('actualites.index')" wire:navigate variant="ghost">{{ __('Annuler') }}</flux:button>
         </div>
     </form>
 </section>

@@ -95,7 +95,7 @@ new #[Title('Services')] class extends Component {
 
         Cache::forget('landing.etat');
 
-        Flux::toast(variant: 'success', text: $record->mis_en_avant ? 'Service mis en avant.' : 'Service retiré de la mise en avant.');
+        Flux::toast(variant: 'success', text: $record->mis_en_avant ? __('Service mis en avant.') : __('Service retiré de la mise en avant.'));
     }
 
     public function delete(int $id): void
@@ -105,7 +105,7 @@ new #[Title('Services')] class extends Component {
 
         $record->delete();
 
-        Flux::toast(variant: 'success', text: 'Service supprimé(e).');
+        Flux::toast(variant: 'success', text: __('Service supprimé(e).'));
     }
 }; ?>
 
@@ -113,7 +113,7 @@ new #[Title('Services')] class extends Component {
     <x-tn.page-header
         :label="__('Annuaire')"
         :title="__('Services municipaux')"
-        :subtitle="$this->items->total().' '.__('service(s) référencé(s)')"
+        :subtitle="__(':n service(s) référencé(s)', ['n' => $this->items->total()])"
         :breadcrumb="[__('Mon espace') => route('dashboard'), __('Services') => null]"
     >
         <x-slot:actions>
@@ -138,11 +138,11 @@ new #[Title('Services')] class extends Component {
     </div>
 
     @if ($this->items->isEmpty() && $this->hasFilters())
-        <x-tn.empty icon="magnifying-glass" title="Aucun service ne correspond" text="Aucun résultat pour cette recherche ou cette catégorie. Essayez un autre mot (ex. « santé », « état civil ») ou affichez tout le catalogue.">
-            <flux:button variant="primary" icon="x-mark" wire:click="resetFilters">Effacer les filtres</flux:button>
+        <x-tn.empty icon="magnifying-glass" title="{{ __('Aucun service ne correspond') }}" text="{{ __('Aucun résultat pour cette recherche ou cette catégorie. Essayez un autre mot (ex. « santé », « état civil ») ou affichez tout le catalogue.') }}">
+            <flux:button variant="primary" icon="x-mark" wire:click="resetFilters">{{ __('Effacer les filtres') }}</flux:button>
         </x-tn.empty>
     @elseif ($this->items->isEmpty())
-        <x-tn.empty icon="landmark" title="Aucun service pour le moment" text="Revenez plus tard : l'annuaire est en cours de publication." />
+        <x-tn.empty icon="landmark" title="{{ __('Aucun service pour le moment') }}" text="{{ __('Revenez plus tard : l\'annuaire est en cours de publication.') }}" />
     @else
         <ul class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             @foreach ($this->items as $item)
@@ -168,22 +168,22 @@ new #[Title('Services')] class extends Component {
                     </div>
                     <dl class="mt-4 space-y-1.5 border-t border-line pt-3 text-sm">
                         @if ($item->horaires)
-                            <div class="flex min-w-0 gap-2"><dt class="sr-only">Horaires</dt><flux:icon name="clock" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="min-w-0 truncate font-mono text-xs leading-5 text-ink-2">{{ \Illuminate\Support\Str::before(__($item->horaires), "\n") }}</dd></div>
+                            <div class="flex min-w-0 gap-2"><dt class="sr-only">{{ __('Horaires') }}</dt><flux:icon name="clock" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="min-w-0 truncate font-mono text-xs leading-5 text-ink-2">{{ \Illuminate\Support\Str::before(__($item->horaires), "\n") }}</dd></div>
                         @endif
                         @if ($item->telephone)
-                            <div class="flex gap-2"><dt class="sr-only">Téléphone</dt><flux:icon name="phone" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="font-mono text-xs leading-5 text-ink-2">{{ $item->telephone }}</dd></div>
+                            <div class="flex gap-2"><dt class="sr-only">{{ __('Téléphone') }}</dt><flux:icon name="phone" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="font-mono text-xs leading-5 text-ink-2">{{ $item->telephone }}</dd></div>
                         @endif
                     </dl>
                     @canany(['feature', 'update', 'delete'], $item)
                         <div class="relative z-10 mt-3 flex justify-end gap-1">
                             @can('feature', $item)
-                                <flux:button size="sm" variant="ghost" icon="star" :icon:variant="$item->mis_en_avant ? 'solid' : 'outline'" wire:click="toggleFeatured({{ $item->id }})" :aria-label="($item->mis_en_avant ? 'Retirer la mise en avant de ' : 'Mettre en avant ').$item->nom" :title="$item->mis_en_avant ? 'Retirer la mise en avant' : 'Mettre en avant'" />
+                                <flux:button size="sm" variant="ghost" icon="star" :icon:variant="$item->mis_en_avant ? 'solid' : 'outline'" wire:click="toggleFeatured({{ $item->id }})" :aria-label="$item->mis_en_avant ? __('Retirer la mise en avant de :nom', ['nom' => __($item->nom)]) : __('Mettre en avant :nom', ['nom' => __($item->nom)])" :title="$item->mis_en_avant ? __('Retirer la mise en avant') : __('Mettre en avant')" />
                             @endcan
                             @can('update', $item)
-                                <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('services.edit', $item)" wire:navigate aria-label="Modifier {{ $item->nom }}" />
+                                <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('services.edit', $item)" wire:navigate aria-label="{{ __('Modifier :nom', ['nom' => __($item->nom)]) }}" />
                             @endcan
                             @can('delete', $item)
-                                <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer ce service ?" aria-label="Supprimer {{ $item->nom }}" />
+                                <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="{{ __('Supprimer ce service ?') }}" aria-label="{{ __('Supprimer :nom', ['nom' => __($item->nom)]) }}" />
                             @endcan
                         </div>
                     @endcanany

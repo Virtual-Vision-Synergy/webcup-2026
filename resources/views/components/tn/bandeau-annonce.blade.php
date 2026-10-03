@@ -16,7 +16,7 @@
         'important' => ['icone' => 'exclamation-circle', 'classes' => 'border-amber/50 bg-amber/12 text-amber'],
         default => ['icone' => 'information-circle', 'classes' => 'border-cyan/40 bg-cyan/10 text-cyan'],
     };
-    $libelle = \App\Models\Annonce::NIVEAU_LIBELLES[$niveau] ?? 'Information';
+    $libelle = __(\App\Models\Annonce::NIVEAU_LIBELLES[$niveau] ?? 'Information');
 @endphp
 
 <div
@@ -43,7 +43,7 @@
             <button
                 type="button"
                 class="-me-2 -mt-1 flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-sm text-ink-2 hover:bg-black/5 hover:text-ink focus-visible:outline-2 dark:hover:bg-white/5"
-                aria-label="Fermer le message : {{ $titre }}"
+                aria-label="{{ __('Fermer le message :') }} {{ $titre }}"
                 x-on:click="ouvert = false; try { window.localStorage.setItem(cle, '1') } catch (e) {}"
             >
                 <flux:icon.x-mark class="size-5" aria-hidden="true" />

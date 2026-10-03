@@ -199,7 +199,7 @@ class AuditLog extends Model
 
     public function libelleAction(): string
     {
-        return self::ACTION_LABELS[$this->action] ?? $this->action;
+        return __(self::ACTION_LABELS[$this->action] ?? $this->action);
     }
 
     public function etatAction(): string
@@ -209,7 +209,7 @@ class AuditLog extends Model
 
     public static function libelleChamp(string $champ): string
     {
-        return self::FIELD_LABELS[$champ] ?? ucfirst(str_replace('_', ' ', $champ));
+        return __(self::FIELD_LABELS[$champ] ?? ucfirst(str_replace('_', ' ', $champ)));
     }
 
     /**
@@ -219,7 +219,7 @@ class AuditLog extends Model
     {
         return match (true) {
             $valeur === null, $valeur === '' => '—',
-            is_bool($valeur) => $valeur ? 'Oui' : 'Non',
+            is_bool($valeur) => $valeur ? __('Oui') : __('Non'),
             is_scalar($valeur) => (string) $valeur,
             default => (string) json_encode($valeur, JSON_UNESCAPED_UNICODE),
         };

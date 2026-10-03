@@ -27,7 +27,7 @@ new #[Title('Service')] class extends Component {
 
         $this->record->delete();
 
-        Flux::toast(variant: 'success', text: 'Service supprimé(e).');
+        Flux::toast(variant: 'success', text: __('Service supprimé(e).'));
 
         $this->redirectRoute('services.index', navigate: true);
     }
@@ -35,7 +35,7 @@ new #[Title('Service')] class extends Component {
 
 <section class="mx-auto w-full max-w-5xl space-y-6">
     <x-tn.page-header
-        :label="__(Service::labelCategorie($record->categorie) ?? 'Service municipal')"
+        :label="__(Service::labelCategorie($record->categorie) ?? __('Service municipal'))"
         :title="__($record->nom)"
         :breadcrumb="[__('Mon espace') => route('dashboard'), __('Services') => route('services.index'), __($record->nom) => null]"
     >
@@ -55,7 +55,7 @@ new #[Title('Service')] class extends Component {
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <x-tn.surface>
             <x-tn.section-label as="h2" class="mb-3">{{ __('Missions') }}</x-tn.section-label>
-            <p class="whitespace-pre-line leading-relaxed text-ink">{{ __($record->description ?? 'Description à venir.') }}</p>
+            <p class="whitespace-pre-line leading-relaxed text-ink">{{ __($record->description ?? __('Description à venir.')) }}</p>
         </x-tn.surface>
 
         <x-tn.panel :label="__('Infos pratiques')" padding="p-5 md:p-6">

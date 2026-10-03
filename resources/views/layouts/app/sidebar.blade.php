@@ -5,20 +5,20 @@
 --}}
 @section('tn-feature-nav')
                     <flux:sidebar.item icon="exclamation-triangle" :href="route('signalements.index')" :current="request()->routeIs('signalements.*')" wire:navigate>
-                        Signalements
+                        {{ __('Signalements') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="bus" :href="route('transports.index')" :current="request()->routeIs('transports.*')" wire:navigate>
-                        Transports
+                        {{ __('Transports') }}
                     </flux:sidebar.item>
                     {{-- make:feature:nav --}}
 @endsection
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-black antialiased" x-data>
-        <a href="#contenu" class="sr-only z-[60] rounded-sm bg-cyan px-4 py-2 text-on-cyan focus:not-sr-only focus:fixed focus:start-4 focus:top-4">Aller au contenu</a>
+        <a href="#contenu" class="sr-only z-[60] rounded-sm bg-cyan px-4 py-2 text-on-cyan focus:not-sr-only focus:fixed focus:start-4 focus:top-4">{{ __('Aller au contenu') }}</a>
 
         <div
             id="tn-page"
@@ -31,34 +31,34 @@
                 </flux:sidebar.header>
 
                 <flux:sidebar.nav>
-                    <flux:sidebar.group heading="Espace citoyen" class="grid">
+                    <flux:sidebar.group heading="{{ __('Espace citoyen') }}" class="grid">
                         <flux:sidebar.item icon="house" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                            Mon espace
+                            {{ __('Mon espace') }}
                         </flux:sidebar.item>
 
                         <flux:sidebar.item icon="landmark" :href="route('services.index')" :current="request()->routeIs('services.*')" wire:navigate>
-                            Services
+                            {{ __('Services') }}
                         </flux:sidebar.item>
 
                         <flux:sidebar.item icon="newspaper" :href="route('actualites.index')" :current="request()->routeIs('actualites.*')" wire:navigate>
-                            Actualités
+                            {{ __('Actualités') }}
                         </flux:sidebar.item>
 
                         <flux:sidebar.item icon="mail" :href="route('messages.index')" :current="request()->routeIs('messages.*')" wire:navigate>
-                            Messages
+                            {{ __('Messages') }}
                         </flux:sidebar.item>
 
                         <flux:sidebar.item icon="file-text" :href="route('demarches.index')" :current="request()->routeIs('demarches.*')" wire:navigate>
-                            Mes démarches
+                            {{ __('Mes démarches') }}
                         </flux:sidebar.item>
 
                         @yield('tn-feature-nav')
                     </flux:sidebar.group>
 
                     @can('viewAgentSpace')
-                        <flux:sidebar.group heading="Espace agent" class="grid">
+                        <flux:sidebar.group heading="{{ __('Espace agent') }}" class="grid">
                             <flux:sidebar.item icon="briefcase" :href="route('agent.index')" data-test="agent-space-link">
-                                Espace agent
+                                {{ __('Espace agent') }}
                             </flux:sidebar.item>
                         </flux:sidebar.group>
                     @endcan

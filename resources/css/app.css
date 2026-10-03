@@ -130,6 +130,15 @@ body { overflow-wrap: anywhere; }
         outline: none;
     }
 
+    /* F42 : astérisque visuelle sur les champs obligatoires (le lecteur d'écran annonce déjà « requis »). */
+    [data-flux-field]:has(> [data-flux-control]:required, > * > [data-flux-control]:required) > [data-flux-label]::after,
+    fieldset[data-requis] > legend::after {
+        content: ' *';
+        content: ' *' / '';
+        margin-inline-start: 0.125rem;
+        color: var(--color-magenta);
+    }
+
     @media (prefers-reduced-motion: reduce) {
         *,
         ::before,

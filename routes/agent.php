@@ -26,6 +26,9 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     Route::livewire('/citoyens/{user}', 'pages::agent.citizens.show')->name('citizens.show');
     Route::livewire('demandes', 'pages::agent.demandes')->name('demandes');
 
+    // F75 : signalements similaires regroupés, fusion et traitement par groupe (SignalementPolicy::changerStatut).
+    Route::livewire('signalements-similaires', 'pages::agent.signalements-similaires')->name('signalements.similaires');
+
     // F37 : journal des tentatives de connexion (LoginAttemptPolicy : viewAny agent/admin, unlock admin).
     Route::livewire('securite/connexions', 'pages::agent.security.index')->name('security.index');
 

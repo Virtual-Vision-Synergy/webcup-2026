@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
-use App\Models\Concerns\PrevientDuChangementDeStatut;
 use Database\Factories\DemarcheFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,12 +16,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Visible uniquement par son auteur et par le personnel (agents, admins) : voir DemarchePolicy.
  *
  * user_id et statut ne sont volontairement PAS remplissables : ils sont assignés dans le code.
+ *
+ * F70 : un agent ne voit que les démarches de ses services (scope visibleTo + DemarchePolicy) ;
+ * les coordonnées et la situation du demandeur sont confidentielles (confidentialFields).
  */
 #[Fillable(['titre', 'description', 'service_id'])]
 class Demarche extends Model
 {
     /** @use HasFactory<DemarcheFactory> */
-    use Auditable, HasAuditHistory, HasFactory, PrevientDuChangementDeStatut;
+    use Auditable, HasAuditHistory, HasFactory;
 
     public const STATUT_OPTIONS = ['deposee', 'en_cours', 'traitee', 'refusee'];
 
@@ -59,6 +61,39 @@ class Demarche extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+
+    /**
+     * F70 : démarches visibles par l'utilisateur. Admin : toutes ; agent : celles de ses services
+     * (une démarche sans service est réservée à l'admin) ; habitant : les siennes.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        match (true) {
+            $user->isAdmin() => null,
+            $user->isAgent() => $query->whereIn('service_id', $user->serviceIds()),
+            default => $query->where('user_id', $user->id),
+        };
+    }
+
+    /**
+     * F70 : coordonnées et situation du demandeur, masquées par défaut dans l'espace agent.
+     *
+     * @return array<string, array{label: string, valeur: \Closure(): (string|null)}>
+     */
+    public function confidentialFields(): array
+    {
+        return [
+            'telephone_demandeur' => ['label' => 'Téléphone du demandeur', 'valeur' => fn (): ?string => $this->user->telephone],
+            'email_demandeur' => ['label' => 'E-mail du demandeur', 'valeur' => fn (): ?string => $this->user->emailAffichable()],
+            'quartier_demandeur' => ['label' => 'Quartier du demandeur', 'valeur' => fn (): ?string => $this->user->quartierResidence->nom ?? $this->user->quartier],
+            'situation_demandeur' => ['label' => 'Situation déclarée', 'valeur' => fn (): string => collect($this->user->onboarding->situation ?? [])
+                ->map(fn (string $cle): ?string => ParOuCommencer::SITUATIONS[$cle]['label'] ?? null)
+                ->filter()
+                ->implode(', ')],
+        ];
     }
 
     /**

@@ -118,7 +118,8 @@ new #[Layout('layouts::agent'), Title('Historique')] class extends Component {
     {
         return AuditLog::query()
             ->where('subject_type', class_basename($this->subject))
-            ->where('subject_id', $this->subject->getKey());
+            ->where('subject_id', $this->subject->getKey())
+            ->modifications();
     }
 
     private function autoriser(): void

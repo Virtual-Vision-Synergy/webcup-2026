@@ -44,6 +44,7 @@ new #[Title('Messages')] class extends Component {
     protected function filteredQuery(): Builder
     {
         return Message::query()
+            ->when(! auth()->user()->can('viewAll', Message::class), fn ($query) => $query->whereBelongsTo(auth()->user()))
             ->when($this->search !== '', function ($query) {
                 $term = '%'.$this->search.'%';
                 $query->where(fn ($q) => $q->where('nom', 'like', $term)->orWhere('email', 'like', $term)->orWhere('sujet', 'like', $term)->orWhere('message', 'like', $term));
@@ -80,21 +81,23 @@ new #[Title('Messages')] class extends Component {
     >
         <x-slot:actions>
             @can('create', Message::class)
-                <flux:button variant="primary" icon="plus" :href="route('messages.create')" class="tn-cta" wire:navigate>Nouveau message</flux:button>
+                <flux:button variant="primary" icon="plus" :href="route('messages.create')" class="tn-cta" wire:navigate>Contacter la mairie</flux:button>
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher un message…" aria-label="Rechercher un message" class="sm:max-w-sm" />
-        <flux:checkbox wire:model.live="mine" label="Mes messages uniquement" />
-        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+        @can('viewAll', Message::class)
+            <flux:checkbox wire:model.live="mine" label="Mes messages uniquement" />
+        @endcan
+        <span wire:loading class="font-mono text-[11px] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
     </div>
 
     @if ($this->items->isEmpty())
-        <x-tn.empty icon="mail" title="Aucun message pour le moment" text="Écrivez à un service municipal : votre échange apparaîtra ici.">
+        <x-tn.empty icon="mail" title="Aucun message pour le moment" text="Écrivez à la mairie : vos messages envoyés apparaîtront ici.">
             @can('create', Message::class)
-                <flux:button variant="primary" icon="plus" :href="route('messages.create')" wire:navigate>Nouveau message</flux:button>
+                <flux:button variant="primary" icon="plus" :href="route('messages.create')" wire:navigate>Contacter la mairie</flux:button>
             @endcan
         </x-tn.empty>
     @else

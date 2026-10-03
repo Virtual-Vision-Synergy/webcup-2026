@@ -90,9 +90,9 @@
 
                 <div class="mt-5 space-x-0.5 text-sm leading-5 text-center">
                     <span class="opacity-50">{{ __('or you can') }}</span>
-                    <div class="inline font-medium underline cursor-pointer opacity-80">
-                        <span x-show="!showRecoveryInput" @click="toggleInput()">{{ __('login using a recovery code') }}</span>
-                        <span x-show="showRecoveryInput" @click="toggleInput()">{{ __('login using an authentication code') }}</span>
+                    <div class="inline font-medium underline opacity-80">
+                        <button type="button" x-show="!showRecoveryInput" @click="toggleInput()" class="cursor-pointer underline">{{ __('login using a recovery code') }}</button>
+                        <button type="button" x-show="showRecoveryInput" @click="toggleInput()" class="cursor-pointer underline">{{ __('login using an authentication code') }}</button>
                     </div>
                 </div>
             </form>

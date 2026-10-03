@@ -6,6 +6,7 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Auth\LoginThrottle;
 use App\Http\Middleware\EnsureAccountIsActive;
+use App\Http\Middleware\IgnorerEmailVide;
 use App\Http\Responses\LockoutResponse;
 use App\Http\Responses\ParcoursApresConnexionResponse;
 use App\Models\LoginAttempt;
@@ -67,8 +68,9 @@ class FortifyServiceProvider extends ServiceProvider
         // F37 : le blocage est vérifié AVANT ce rappel (EnsureLoginIsNotThrottled) ; ici on compte les échecs.
         // Ce rappel sert aussi au parcours 2FA (RedirectIfTwoFactorAuthenticatable).
         Fortify::authenticateUsing(function (Request $request): User {
+            // F71 : e-mail, identifiant d'habitant ou numéro de téléphone dans le même champ.
             $email = (string) $request->input(Fortify::username());
-            $user = User::where(Fortify::username(), $email)->first();
+            $user = User::trouverPourConnexion($email);
 
             if (! $user || ! Hash::check((string) $request->input('password'), $user->password)) {
                 $this->failLogin($request, $email, $user);
@@ -150,6 +152,10 @@ class FortifyServiceProvider extends ServiceProvider
                 if (in_array($route->getName(), ['register.store', 'password.email'], true)
                     && ! in_array('throttle:auth-sensible', $route->middleware(), true)) {
                     $route->middleware('throttle:auth-sensible');
+                }
+
+                if ($route->getName() === 'register.store' && ! in_array(IgnorerEmailVide::class, $route->middleware(), true)) {
+                    $route->middleware(IgnorerEmailVide::class);
                 }
             }
         });

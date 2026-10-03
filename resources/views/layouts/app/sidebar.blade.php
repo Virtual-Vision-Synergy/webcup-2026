@@ -38,6 +38,10 @@
                         Mes avis
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="light-bulb" :href="route('ideas.index')" :current="request()->routeIs('ideas.*')" wire:navigate>
+                        Boîte à idées
+                    </flux:sidebar.item>
+
                     {{-- make:feature:nav --}}
 @endsection
 @php

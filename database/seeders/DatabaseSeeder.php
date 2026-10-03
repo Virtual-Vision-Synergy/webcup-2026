@@ -206,6 +206,9 @@ class DatabaseSeeder extends Seeder
         // F70 : agents rattachés à leurs services (État civil, Action sociale) et dossiers aux données confidentielles.
         $this->call(PermissionsServicesSeeder::class);
 
+        // F68 : six idées de la boîte à idées (états variés, soutiens, deux réponses de la ville).
+        $this->call(IdeaSeeder::class);
+
         // make:feature:seeders
     }
 }

@@ -1,128 +1,194 @@
 @php
-    /*
-     * TEXTES DE LA LANDING — seul endroit à modifier le jour J.
-     * `icone` = nom d'une icône Heroicons (https://heroicons.com), ex. : shield-check, map-pin, bolt.
-     */
-    $landing = [
-        'accroche' => 'Une idée, une application, vingt-quatre heures.',
-        'sous_titre' => 'Créez votre compte et découvrez ce que notre équipe a construit pendant le 24h by Webcup 2026.',
-        'bouton' => 'Créer un compte',
-        'fonctionnalites' => [
-            [
-                'icone' => 'bolt',
-                'titre' => 'Rapide',
-                'texte' => 'Une interface légère qui s’affiche en un clin d’œil, même sur un réseau mobile.',
-            ],
-            [
-                'icone' => 'shield-check',
-                'titre' => 'Sécurisé',
-                'texte' => 'Connexion protégée, double authentification et accès limité à vos propres données.',
-            ],
-            [
-                'icone' => 'device-phone-mobile',
-                'titre' => 'Pensé pour le mobile',
-                'texte' => 'Une expérience confortable sur téléphone comme sur ordinateur, en clair ou en sombre.',
-            ],
-        ],
-    ];
+    use App\Models\Actualite;
+    use App\Models\Demarche;
+    use App\Models\Service;
+    use App\Models\User;
+    use Illuminate\Support\Facades\Route;
+    use Illuminate\Support\Str;
 
-    $nom = config('app.name');
     $connecte = auth()->check();
 
-    // Chiffres en direct : une seule requête, mise en cache 60 secondes.
-    $chiffres = Cache::remember('landing.chiffres', 60, fn (): array => [
-        ['valeur' => \App\Models\User::count(), 'libelle' => 'utilisateurs inscrits'],
+    // Données réelles de la base, mises en cache 60 s (tableaux simples, pas de modèles en cache).
+    $etat = Cache::remember('landing.etat', 60, fn (): array => [
+        'genere_le' => now()->timestamp,
+        'services' => Service::count(),
+        'actualites' => Actualite::count(),
+        'derniere_actualite' => Actualite::max('date'),
+        'demarches_en_cours' => Demarche::whereIn('statut', ['deposee', 'en_cours'])->count(),
+        'demarches_traitees' => Demarche::where('statut', 'traitee')->count(),
+        'inscrits' => User::count(),
+        'fil' => Actualite::query()->latest('date')->latest('id')->limit(3)->get(['id', 'titre', 'contenu', 'date'])
+            ->map(fn (Actualite $a): array => [
+                'id' => $a->id,
+                'titre' => $a->titre,
+                'extrait' => Str::limit(strip_tags((string) $a->contenu), 140),
+                'date' => $a->date?->toDateString(),
+            ])->all(),
+        'apercu_services' => Service::query()->orderBy('nom')->limit(4)->get(['nom', 'slug', 'horaires'])
+            ->map(fn (Service $s): array => ['nom' => $s->nom, 'slug' => $s->slug, 'horaires' => $s->horaires])->all(),
     ]);
+
+    $majIlYa = max(0, now()->timestamp - $etat['genere_le']);
+    $nombre = fn (int $n): string => number_format($n, 0, ',', ' ');
+
+    // Panneau « État de la plateforme » : une ligne par rubrique, avec un état (couleur = état, jamais catégorie).
+    $lignesEtat = [
+        ['icon' => 'landmark', 'label' => 'Services', 'detail' => $nombre($etat['services']).' services municipaux', 'etat' => $etat['services'] > 0 ? 'normal' : 'info', 'badge' => $etat['services'] > 0 ? 'En ligne' : 'À venir'],
+        ['icon' => 'newspaper', 'label' => 'Actualités', 'detail' => $etat['derniere_actualite'] ? 'Dernière : '.\Illuminate\Support\Carbon::parse($etat['derniere_actualite'])->translatedFormat('d M Y') : 'Aucune publication', 'etat' => 'info', 'badge' => $nombre($etat['actualites']).' publiées'],
+        ['icon' => 'file-text', 'label' => 'Démarches', 'detail' => $nombre($etat['demarches_traitees']).' traitées', 'etat' => $etat['demarches_en_cours'] > 0 ? 'perturbe' : 'normal', 'badge' => $nombre($etat['demarches_en_cours']).' en cours'],
+        ['icon' => 'users-round', 'label' => 'Habitants', 'detail' => 'Comptes inscrits sur le réseau', 'etat' => 'normal', 'badge' => $nombre($etat['inscrits'])],
+    ];
+
+    $rubriques = config('navigation.rubriques');
+
+    $illustration = file_exists(public_path('images/hero/ciel-nuit.webp')) ? asset('images/hero/ciel-nuit.webp') : null;
 @endphp
-<!DOCTYPE html>
-<html lang="fr">
-    <head>
-        @include('partials.head', ['title' => 'Accueil', 'description' => $landing['sous_titre']])
-    </head>
-    <body class="min-h-screen bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
-        <header class="border-b border-zinc-200 dark:border-zinc-800">
-            <div class="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
-                <a href="{{ route('home') }}" class="flex items-center gap-2 font-semibold" aria-label="{{ $nom }} — accueil">
-                    <span class="flex size-8 shrink-0 items-center justify-center rounded-md bg-accent text-accent-foreground">
-                        <x-app-logo-icon class="size-5 fill-current" width="20" height="20" aria-hidden="true" />
-                    </span>
-                    <span class="truncate">{{ $nom }}</span>
-                </a>
 
-                <nav class="flex items-center gap-2" aria-label="Compte">
-                    @if ($connecte)
-                        <flux:button :href="route('dashboard')" variant="primary" size="sm">Mon espace</flux:button>
-                    @else
-                        <flux:button :href="route('login')" variant="ghost" size="sm">Connexion</flux:button>
-                        @if (Route::has('register'))
-                            <flux:button :href="route('register')" variant="primary" size="sm">Inscription</flux:button>
-                        @endif
-                    @endif
-                </nav>
-            </div>
-        </header>
+<x-layouts::site title="Accueil" :fluid="true" description="Vos démarches, les actualités de la ville et le contact avec vos services municipaux, au même endroit : la plateforme civique officielle de la Mairie de Nova Terra.">
+    {{-- HERO --}}
+    <section class="tn-sky relative overflow-hidden" aria-labelledby="titre-hero">
+        @if ($illustration)
+            <img src="{{ $illustration }}" alt="" class="absolute inset-0 hidden size-full object-cover opacity-60 dark:block" fetchpriority="high">
+        @endif
+        <div class="tn-planet -top-32 -right-40 size-[340px] md:-top-40 md:-right-24 md:size-[520px]" aria-hidden="true"></div>
+        <div class="tn-grid" aria-hidden="true"></div>
 
-        <main>
-            <section class="mx-auto max-w-5xl px-4 py-16 text-center sm:py-24">
-                <h1 class="mx-auto max-w-3xl text-balance text-4xl font-bold tracking-tight sm:text-5xl">
-                    {{ $nom }} — Mairie de Nova Terra
-                </h1>
-                <p class="mx-auto mt-4 max-w-2xl text-lg text-zinc-600 dark:text-zinc-300">
+        <div class="relative mx-auto grid max-w-7xl items-center gap-10 px-4 pt-10 pb-14 sm:pt-16 lg:grid-cols-[1.1fr_1fr] lg:gap-16 lg:px-8 lg:pt-24 lg:pb-24">
+            <div>
+                <x-tn.section-label class="flex items-center gap-2 text-cyan!">
+                    <x-tn.live-dot class="text-green" /> Mairie de Nova Terra
+                </x-tn.section-label>
+                <h1 id="titre-hero" class="tn-h1 mt-4 text-ink">La ville en direct, au service de ses habitants.</h1>
+                <p class="mt-5 max-w-xl text-[17px] leading-[1.55] text-ink-2 sm:text-lg">
                     Vos démarches, les actualités de la ville et le contact avec vos services municipaux, au même endroit.
                 </p>
-                <div class="mt-8">
+                <div class="mt-8 flex flex-wrap items-center gap-3">
                     @if ($connecte)
-                        <flux:button :href="route('dashboard')" variant="primary">Mon espace</flux:button>
+                        <flux:button :href="route('dashboard')" variant="primary" class="tn-cta h-[52px]! px-6! text-base!">Mon espace</flux:button>
                     @elseif (Route::has('register'))
-                        <flux:button :href="route('register')" variant="primary">{{ $landing['bouton'] }}</flux:button>
-                    @else
-                        <flux:button :href="route('login')" variant="primary">Connexion</flux:button>
+                        <flux:button :href="route('register')" variant="primary" class="tn-cta h-[52px]! px-6! text-base!">Créer un compte</flux:button>
                     @endif
+                    @unless ($connecte)
+                        <a href="{{ route('login') }}" class="tn-btn-secondary h-[52px]">Connexion</a>
+                    @endunless
                 </div>
-            </section>
+            </div>
 
-            <section class="border-y border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900" aria-labelledby="titre-acces-rapide">
-                <h2 id="titre-acces-rapide" class="sr-only">Accès rapide</h2>
-                <div class="mx-auto flex max-w-5xl flex-wrap justify-center gap-3 px-4 py-8">
-                    <flux:button :href="route('services.index')" variant="primary">Services</flux:button>
-                    <flux:button :href="route('actualites.index')" variant="primary">Actualités</flux:button>
-                    <flux:button :href="route('messages.index')" variant="primary">Contact</flux:button>
-                    @if (! auth()->check())
-                        <flux:button :href="route('login')" variant="ghost">Connexion</flux:button>
-                    @endif
+            <x-tn.panel padding="p-5 md:p-7">
+                <div class="flex items-center justify-between gap-3">
+                    <x-tn.section-label as="h2" class="text-ink!">État de la plateforme</x-tn.section-label>
+                    <x-tn.status-badge etat="normal" :live="true">En direct</x-tn.status-badge>
                 </div>
-            </section>
 
-            <section class="mx-auto max-w-5xl px-4 pb-12" aria-labelledby="titre-fonctionnalites">
-                <h2 id="titre-fonctionnalites" class="sr-only">Fonctionnalités</h2>
-                <ul class="grid gap-4 sm:grid-cols-3">
-                    @foreach ($landing['fonctionnalites'] as $fonctionnalite)
+                <ul class="mt-4">
+                    @foreach ($lignesEtat as $ligne)
                         <li>
-                            <flux:card class="h-full">
-                                <flux:icon :name="$fonctionnalite['icone']" class="size-6 text-accent-content" aria-hidden="true" />
-                                <h3 class="mt-3 text-lg font-semibold">{{ $fonctionnalite['titre'] }}</h3>
-                                <p class="mt-1 text-zinc-600 dark:text-zinc-300">{{ $fonctionnalite['texte'] }}</p>
-                            </flux:card>
+                            <x-tn.list-row :icon="$ligne['icon']">
+                                <span class="block font-medium text-ink">{{ $ligne['label'] }}</span>
+                                <span class="block truncate text-sm text-ink-2">{{ $ligne['detail'] }}</span>
+                                <x-slot:aside>
+                                    <x-tn.status-badge :etat="$ligne['etat']">{{ $ligne['badge'] }}</x-tn.status-badge>
+                                </x-slot:aside>
+                            </x-tn.list-row>
                         </li>
                     @endforeach
                 </ul>
-            </section>
 
-            <section class="border-y border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900" aria-labelledby="titre-chiffres">
-                <h2 id="titre-chiffres" class="sr-only">La plateforme en chiffres</h2>
-                <dl class="mx-auto flex max-w-5xl flex-wrap justify-center gap-x-12 gap-y-4 px-4 py-8 text-center">
-                    @foreach ($chiffres as $chiffre)
-                        <div>
-                            <dt class="text-zinc-600 dark:text-zinc-300">{{ $chiffre['libelle'] }}</dt>
-                            <dd class="text-3xl font-bold text-accent-content">{{ number_format($chiffre['valeur'], 0, ',', ' ') }}</dd>
-                        </div>
+                <p class="mt-2 border-t border-line pt-3 font-mono text-[10.5px] uppercase tracking-[.06em] text-ink-2">
+                    MAJ il y a {{ $majIlYa }} s · Source : base municipale
+                </p>
+            </x-tn.panel>
+        </div>
+    </section>
+
+    {{-- LES 4 RUBRIQUES --}}
+    <section class="border-y border-line bg-night" aria-labelledby="titre-rubriques">
+        <h2 id="titre-rubriques" class="sr-only">Accès rapide aux rubriques</h2>
+        <ul class="mx-auto grid max-w-7xl sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
+            @foreach ($rubriques as $i => $rubrique)
+                <li class="border-line max-lg:border-b sm:max-lg:odd:border-e lg:border-e lg:first:border-s">
+                    <a href="{{ Route::has($rubrique['route']) ? route($rubrique['route']) : '#' }}" class="group flex h-full flex-col gap-3 px-4 py-7 transition-colors hover:bg-cyan/[.04] lg:px-6">
+                        <span class="flex items-center justify-between">
+                            <span class="font-mono text-sm text-cyan">{{ sprintf('%02d', $i + 1) }}</span>
+                            <flux:icon :name="$rubrique['icon']" class="size-5 text-ink-2 transition-colors group-hover:text-cyan" />
+                        </span>
+                        <span class="tn-display text-xl font-semibold text-ink">{{ $rubrique['label'] }}</span>
+                        <span class="text-[15px] text-ink-2">{{ $rubrique['texte'] }}</span>
+                    </a>
+                </li>
+            @endforeach
+        </ul>
+    </section>
+
+    {{-- FIL DU HAUT CONSEIL + SERVICES --}}
+    <section class="mx-auto grid max-w-7xl gap-10 px-4 py-14 lg:grid-cols-[1.4fr_1fr] lg:gap-14 lg:px-8 lg:py-20">
+        <div>
+            <div class="flex items-end justify-between gap-4">
+                <div>
+                    <x-tn.section-label>Fil du Haut Conseil</x-tn.section-label>
+                    <h2 class="tn-h2 mt-2 text-ink">Dernières annonces</h2>
+                </div>
+                @if (Route::has('actualites.index'))
+                    <a href="{{ route('actualites.index') }}" class="inline-flex min-h-11 items-center text-sm font-medium text-cyan hover:underline">Toutes les actualités</a>
+                @endif
+            </div>
+
+            @if (count($etat['fil']))
+                <ol class="mt-6">
+                    @foreach ($etat['fil'] as $article)
+                        <li class="grid gap-2 border-t border-line py-5 sm:grid-cols-[160px_1fr] sm:gap-6">
+                            <div class="flex items-center gap-3 sm:flex-col sm:items-start">
+                                @if ($article['date'])
+                                    <time datetime="{{ $article['date'] }}" class="font-mono text-sm text-ink-2">{{ \Illuminate\Support\Carbon::parse($article['date'])->translatedFormat('d M Y') }}</time>
+                                @endif
+                                <x-tn.domain-tag>Actualité</x-tn.domain-tag>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-ink">
+                                    <a href="{{ route('actualites.show', $article['id']) }}" class="hover:text-cyan">{{ $article['titre'] }}</a>
+                                </h3>
+                                <p class="mt-1 text-ink-2">{{ $article['extrait'] }}</p>
+                            </div>
+                        </li>
                     @endforeach
-                </dl>
-            </section>
-        </main>
+                </ol>
+            @else
+                <div class="mt-6 rounded-md border border-dashed border-line p-8 text-center">
+                    <flux:icon name="newspaper" class="mx-auto size-8 text-ink-2" />
+                    <p class="mt-3 font-medium text-ink">Aucune annonce pour le moment</p>
+                    <p class="mt-1 text-sm text-ink-2">Les publications du Haut Conseil apparaîtront ici.</p>
+                </div>
+            @endif
+        </div>
 
-        <footer class="mx-auto max-w-5xl px-4 py-8 text-center text-sm text-zinc-600 dark:text-zinc-300">
-            Virtual Vision Synergie — 24h by Webcup 2026
-        </footer>
-    </body>
-</html>
+        <aside aria-labelledby="titre-services">
+            <x-tn.panel padding="p-5 md:p-6">
+                <x-tn.section-label>Services municipaux</x-tn.section-label>
+                <h2 id="titre-services" class="tn-h2 mt-2 text-ink">À votre service</h2>
+
+                @if (count($etat['apercu_services']))
+                    <ul class="mt-4">
+                        @foreach ($etat['apercu_services'] as $service)
+                            <li>
+                                <x-tn.list-row icon="landmark" :href="route('services.show', $service['slug'])">
+                                    <span class="block truncate font-medium text-ink group-hover:text-cyan">{{ $service['nom'] }}</span>
+                                    @if ($service['horaires'])
+                                        <span class="block truncate font-mono text-xs text-ink-2">{{ $service['horaires'] }}</span>
+                                    @endif
+                                </x-tn.list-row>
+                            </li>
+                        @endforeach
+                    </ul>
+                @else
+                    <p class="mt-4 text-ink-2">Les services municipaux seront bientôt listés ici.</p>
+                @endif
+
+                @if (Route::has('messages.index'))
+                    <a href="{{ route('messages.index') }}" class="tn-btn-secondary mt-5 w-full">
+                        <flux:icon name="mail" class="size-4" /> Contact : écrire à un service
+                    </a>
+                @endif
+            </x-tn.panel>
+        </aside>
+    </section>
+</x-layouts::site>

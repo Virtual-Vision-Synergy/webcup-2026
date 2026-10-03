@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CarbonInterface|null $service_visited_at
  * @property CarbonInterface|null $completed_at
  * @property CarbonInterface|null $skipped_at
+ * @property list<string>|null $situation Situation déclarée pour « Par où commencer ? » (F72), null = pas encore répondu
  */
 class Onboarding extends Model
 {
@@ -35,6 +36,7 @@ class Onboarding extends Model
             'service_visited_at' => 'datetime',
             'completed_at' => 'datetime',
             'skipped_at' => 'datetime',
+            'situation' => 'array',
         ];
     }
 

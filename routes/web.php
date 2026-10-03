@@ -9,7 +9,8 @@ Route::view('/', 'welcome')->name('home');
 
 Route::post('langue', function (Request $request) {
     $validated = $request->validate(['langue' => ['required', Rule::in(array_keys(Traduction::LANGUES))]]);
-    session(['langue' => $validated['langue']]);
+    $request->session()->regenerate();
+    $request->session()->put('langue', $validated['langue']);
 
     return back(fallback: route('home'));
 })->name('langue');

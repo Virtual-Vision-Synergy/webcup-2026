@@ -133,12 +133,25 @@
                     </span>
                     <x-tn.contrast-toggle class="-me-2" />
                 </li>
+                <li class="flex min-h-12 flex-wrap items-center justify-between gap-3 px-3 py-1">
+                    <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
+                        <flux:icon name="magnifying-glass-plus" class="size-5 text-ink-2" />{{ __('Taille du texte') }}
+                    </span>
+                    <x-tn.text-size />
+                </li>
+                <li class="flex min-h-12 flex-wrap items-center justify-between gap-3 px-3 py-1">
+                    <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
+                        <flux:icon name="language" class="size-5 text-ink-2" />{{ __('Langue') }}
+                    </span>
+                    <x-tn.langue />
+                </li>
                 <li class="flex min-h-12 items-center justify-between gap-3 px-3">
                     <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
                         <flux:icon name="moon" class="size-5 text-ink-2" />{{ __('Apparence') }}
                     </span>
                     <x-tn.theme-toggle class="-me-2" />
                 </li>
+                <li><a href="{{ route('accessibility.show') }}" class="{{ $ligne }}"><flux:icon name="eye" class="size-5 text-ink-2" />{{ __('Accessibilité : toutes les aides') }}</a></li>
             </ul>
 
             @auth

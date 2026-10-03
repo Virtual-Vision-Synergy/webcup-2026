@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::middleware(['auth'])->group(function () {
+    Route::livewire('services/create', 'pages::services.form')->name('services.create');
+    Route::livewire('services/{service}/edit', 'pages::services.form')->name('services.edit');
+
     // make:feature:routes
 });
 
@@ -17,5 +20,8 @@ Route::middleware(['auth'])->group(function () {
 | Création, modification et suppression restent dans le groupe `auth` ci-dessus.
 */
 Route::group([], function () {
+    Route::livewire('services', 'pages::services.index')->name('services.index');
+    Route::livewire('services/{service}', 'pages::services.show')->name('services.show')->where('service', '[a-z0-9-]+');
+
     // make:feature:routes-public
 });

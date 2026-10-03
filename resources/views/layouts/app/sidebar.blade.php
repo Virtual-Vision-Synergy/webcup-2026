@@ -16,6 +16,10 @@
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="building-library" :href="route('services.index')" :current="request()->routeIs('services.*')" wire:navigate>
+                        Services municipaux
+                    </flux:sidebar.item>
+
                     {{-- make:feature:nav --}}
                 </flux:sidebar.group>
             </flux:sidebar.nav>

@@ -56,6 +56,7 @@ new #[Title('Services')] class extends Component {
     {
         return $this->filteredQuery()
             ->with('user')
+            ->avecTraduction()
             ->latest()
             ->paginate(10);
     }
@@ -105,16 +106,16 @@ new #[Title('Services')] class extends Component {
                         </span>
                         <div class="min-w-0">
                             <h2 class="font-semibold text-ink">
-                                <a href="{{ route('services.show', $item) }}" wire:navigate class="after:absolute after:inset-0 group-hover:text-cyan">{{ $item->nom }}</a>
+                                <a href="{{ route('services.show', $item) }}" wire:navigate class="after:absolute after:inset-0 group-hover:text-cyan">{{ $item->traduit('nom') }}</a>
                             </h2>
-                            @if ($item->description)
-                                <p class="mt-1 line-clamp-2 text-sm text-ink-2">{{ $item->description }}</p>
+                            @if ($item->traduit('description'))
+                                <p class="mt-1 line-clamp-2 text-sm text-ink-2">{{ $item->traduit('description') }}</p>
                             @endif
                         </div>
                     </div>
                     <dl class="mt-4 space-y-1.5 border-t border-line pt-3 text-sm">
-                        @if ($item->horaires)
-                            <div class="flex min-w-0 gap-2"><dt class="sr-only">Horaires</dt><flux:icon name="clock" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="min-w-0 truncate font-mono text-xs leading-5 text-ink-2">{{ \Illuminate\Support\Str::before($item->horaires, "\n") }}</dd></div>
+                        @if ($item->traduit('horaires'))
+                            <div class="flex min-w-0 gap-2"><dt class="sr-only">Horaires</dt><flux:icon name="clock" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="min-w-0 truncate font-mono text-xs leading-5 text-ink-2">{{ \Illuminate\Support\Str::before($item->traduit('horaires'), "\n") }}</dd></div>
                         @endif
                         @if ($item->telephone)
                             <div class="flex gap-2"><dt class="sr-only">Téléphone</dt><flux:icon name="phone" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="font-mono text-xs leading-5 text-ink-2">{{ $item->telephone }}</dd></div>
@@ -123,10 +124,10 @@ new #[Title('Services')] class extends Component {
                     @canany(['update', 'delete'], $item)
                         <div class="relative z-10 mt-3 flex justify-end gap-1">
                             @can('update', $item)
-                                <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('services.edit', $item)" wire:navigate aria-label="Modifier {{ $item->nom }}" />
+                                <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('services.edit', $item)" wire:navigate aria-label="Modifier {{ $item->traduit('nom') }}" />
                             @endcan
                             @can('delete', $item)
-                                <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer ce service ?" aria-label="Supprimer {{ $item->nom }}" />
+                                <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer ce service ?" aria-label="Supprimer {{ $item->traduit('nom') }}" />
                             @endcan
                         </div>
                     @endcanany

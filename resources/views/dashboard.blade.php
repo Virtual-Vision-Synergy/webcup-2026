@@ -90,7 +90,7 @@
                     </div>
                     @if ($totalDemarches > 0)
                         <a href="{{ route('demarches.index') }}" wire:navigate class="inline-flex min-h-11 items-center text-sm font-medium text-cyan hover:underline">Tout voir</a>
-                        <a href="{{ route('demarches.historique') }}" wire:navigate class="inline-flex min-h-11 items-center text-sm font-medium text-cyan hover:underline">Historique</a>
+                        <a href="{{ route('demarches.historique') }}" wire:navigate class="inline-flex min-h-11 items-center text-sm font-medium text-cyan hover:underline">Suivi de mes demandes</a>
                     @endif
                 </div>
 

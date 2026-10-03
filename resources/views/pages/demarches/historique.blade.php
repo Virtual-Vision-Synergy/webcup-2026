@@ -8,7 +8,7 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new #[Title('Historique de mes demandes')] class extends Component {
+new #[Title('Mes demandes')] class extends Component {
     use WithPagination;
 
     /** Filtre par état : « » (toutes), « en_cours » ou « terminees ». */
@@ -39,7 +39,7 @@ new #[Title('Historique de mes demandes')] class extends Component {
     public function items(): LengthAwarePaginator
     {
         return auth()->user()->demarches()
-            ->with('service')
+            ->with(['service', 'etapes'])
             ->when($this->etat === 'en_cours', fn ($query) => $query->whereNotIn('statut', self::STATUTS_TERMINES))
             ->when($this->etat === 'terminees', fn ($query) => $query->whereIn('statut', self::STATUTS_TERMINES))
             ->latest()
@@ -51,9 +51,9 @@ new #[Title('Historique de mes demandes')] class extends Component {
 <section class="mx-auto w-full max-w-4xl space-y-6">
     <x-tn.page-header
         label="Mon espace"
-        title="Historique de mes demandes"
-        :subtitle="$this->items->total().' demande(s)'"
-        :breadcrumb="['Mon espace' => route('dashboard'), 'Démarches' => route('demarches.index'), 'Historique' => null]"
+        title="Mes demandes"
+        :subtitle="$this->items->total().' demande(s) · état actuel et étapes réalisées'"
+        :breadcrumb="['Mon espace' => route('dashboard'), 'Démarches' => route('demarches.index'), 'Mes demandes' => null]"
     >
         <x-slot:actions>
             <flux:button variant="primary" icon="plus" :href="route('demarches.create')" class="tn-cta" wire:navigate>
@@ -82,6 +82,10 @@ new #[Title('Historique de mes demandes')] class extends Component {
                     <x-tn.list-row icon="file-text" :href="route('demarches.show', $item)" :stack="true">
                         <span class="block truncate font-medium text-ink">{{ $item->titre }}</span>
                         <span class="block truncate text-sm text-ink-2">{{ $item->service?->nom ?? 'Service non précisé' }} · <span class="font-mono text-xs">{{ $item->created_at->format('d.m.Y') }}</span></span>
+                        {{-- D11 : étapes déjà réalisées, datées --}}
+                        <span class="mt-1 block text-xs text-ink-2" data-test="etapes">
+                            <span class="sr-only">Étapes réalisées : </span>Déposée le <span class="font-mono">{{ $item->created_at->format('d.m') }}</span>@foreach ($item->etapes as $etape) → {{ Demarche::libelleStatut($etape->statut) }} le <span class="font-mono">{{ $etape->created_at?->format('d.m') }}</span>@endforeach
+                        </span>
                         <x-slot:aside>
                             <x-tn.status-badge :etat="$item->etatStatut()">{{ Demarche::libelleStatut($item->statut) }}</x-tn.status-badge>
                         </x-slot:aside>

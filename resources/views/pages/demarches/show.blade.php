@@ -11,10 +11,13 @@ new #[Title('Démarche')] class extends Component {
     #[Locked]
     public Demarche $record;
 
+    /** Message facultatif de l'agent, joint au changement d'état (affiché dans le suivi et la notification). */
+    public string $commentaire = '';
+
     public function mount(Demarche $demarche): void
     {
         $this->authorize('view', $demarche);
-        $this->record = $demarche->loadMissing(['service', 'user']);
+        $this->record = $demarche->loadMissing(['service', 'user', 'etapes']);
     }
 
     public function delete(): void
@@ -32,29 +35,21 @@ new #[Title('Démarche')] class extends Component {
     {
         $this->authorize('changerStatut', $this->record);
         abort_unless(in_array($statut, Demarche::STATUT_OPTIONS, true), 422);
+        $this->validate(['commentaire' => ['nullable', 'string', 'max:1000']]);
 
-        $this->record->changerStatut($statut);
+        $this->record->changerStatut($statut, $this->commentaire, auth()->user());
+        $this->record->load('etapes');
+        $this->reset('commentaire');
 
-        Flux::toast(variant: 'success', text: 'Statut mis à jour.');
+        Flux::toast(variant: 'success', text: 'Statut mis à jour. L’habitant a été prévenu.');
     }
 }; ?>
 
 @php
     $statut = $record->statut;
-    $avance = in_array($statut, ['en_cours', 'traitee', 'refusee'], true);
-    $termine = in_array($statut, ['traitee', 'refusee'], true);
-    // Chronologie : seules les dates réellement connues sont affichées (dépôt, dernière mise à jour).
-    $chronologie = [
-        ['label' => 'Démarche déposée', 'date' => $record->created_at, 'etat' => 'info', 'fait' => true],
-        ['label' => 'Prise en charge par le service', 'date' => $statut === 'en_cours' ? $record->updated_at : null, 'etat' => 'info', 'fait' => $avance, 'texte' => $avance ? null : 'En attente d’un agent municipal.'],
-        [
-            'label' => $termine ? 'Décision : '.Demarche::libelleStatut($statut) : 'Décision',
-            'date' => $termine ? $record->updated_at : null,
-            'etat' => $record->etatStatut(),
-            'fait' => $termine,
-            'texte' => $termine ? null : 'La décision apparaîtra ici.',
-        ],
-    ];
+    // D11 : chronologie datée (dépôt, chaque changement d'état, étape suivante attendue).
+    $chronologie = $record->chronologie();
+    $estAuteur = $record->user_id === auth()->id();
 @endphp
 
 <section class="mx-auto w-full max-w-5xl space-y-6">
@@ -93,16 +88,25 @@ new #[Title('Démarche')] class extends Component {
         </x-tn.surface>
 
         <div class="flex flex-col gap-6">
+            <flux:callout :icon="$statut === 'refusee' ? 'exclamation-triangle' : 'information-circle'" data-test="conseil-statut">
+                <flux:callout.heading>{{ $estAuteur ? 'Ce que vous devez savoir' : 'Ce que l’habitant voit' }}</flux:callout.heading>
+                <flux:callout.text>{{ Demarche::conseilStatut($statut) }}</flux:callout.text>
+            </flux:callout>
+
             <x-tn.panel label="Suivi" padding="p-5 md:p-6">
                 <x-tn.timeline :items="$chronologie" />
+                @if ($estAuteur && $record->etapes->isNotEmpty())
+                    <p class="mt-4 text-xs text-ink-2">Chaque changement d’état vous est aussi envoyé en notification et par e-mail.</p>
+                @endif
             </x-tn.panel>
 
             @can('changerStatut', $record)
                 <x-tn.surface>
                     <x-tn.section-label as="h2" class="mb-3">Changer le statut</x-tn.section-label>
+                    <flux:textarea wire:model="commentaire" label="Message pour l’habitant (facultatif)" rows="2" placeholder="Ex. : votre carte est prête, à retirer à l’accueil de la mairie." class="mb-3" />
                     <div class="grid grid-cols-2 gap-2">
                         @foreach (Demarche::STATUT_OPTIONS as $option)
-                            <flux:button size="sm" wire:click="changerStatut('{{ $option }}')" :disabled="$option === $statut" :variant="$option === $statut ? 'primary' : 'outline'">
+                            <flux:button size="sm" wire:click="changerStatut('{{ $option }}')" wire:loading.attr="disabled" :disabled="$option === $statut" :variant="$option === $statut ? 'primary' : 'outline'">
                                 {{ Demarche::libelleStatut($option) }}
                             </flux:button>
                         @endforeach

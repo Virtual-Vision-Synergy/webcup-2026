@@ -5,13 +5,13 @@
     $illustrationJour = file_exists(public_path('images/hero/ciel-jour.webp')) ? asset('images/hero/ciel-jour.webp') : null;
 @endphp
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-night text-ink antialiased">
         <x-tn.bandeau-annonces />
-        <div class="grid min-h-dvh lg:grid-cols-2">
+        <div class="grid min-h-dvh grid-cols-1 lg:grid-cols-2">
             {{-- Côté visuel : ciel, planète, grille --}}
             <div class="tn-sky relative hidden overflow-hidden lg:flex lg:flex-col lg:p-10">
                 @if ($illustrationNuit)
@@ -27,15 +27,15 @@
                 <x-app-logo href="{{ route('home') }}" class="relative z-10" />
 
                 <div class="relative z-10 mt-auto max-w-md">
-                    <x-tn.section-label>Mairie de Nova Terra</x-tn.section-label>
-                    <p class="tn-h2 mt-3 text-ink">La ville, en direct, au bout des doigts.</p>
-                    <p class="mt-3 text-ink-2">Vos démarches, les actualités du Haut Conseil et vos services municipaux, réunis sur le réseau civique officiel.</p>
+                    <x-tn.section-label>{{ __('Mairie de Nova Terra') }}</x-tn.section-label>
+                    <p class="tn-h2 mt-3 text-ink">{{ __('La ville, en direct, au bout des doigts.') }}</p>
+                    <p class="mt-3 text-ink-2">{{ __('Vos démarches, les actualités du Haut Conseil et vos services municipaux, réunis sur le réseau civique officiel.') }}</p>
                 </div>
             </div>
 
             {{-- Côté formulaire --}}
             <div class="relative flex flex-col px-4 py-6 sm:px-8 lg:p-10">
-                <div class="flex items-center justify-between lg:justify-end">
+                <div class="flex flex-wrap items-center justify-between gap-2 lg:justify-end">
                     <x-app-logo href="{{ route('home') }}" class="lg:hidden" />
                     <div class="flex items-center"><x-tn.contrast-toggle /><x-tn.theme-toggle /></div>
                 </div>

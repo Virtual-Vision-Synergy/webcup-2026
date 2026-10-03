@@ -83,7 +83,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
         $options = [];
 
         foreach ($this->allRows as $row) {
-            $options[$row['arrivee']] = $row['arrivee'] === 'debut' ? 'Dès le début' : 'Vague '.substr($row['arrivee'], 6);
+            $options[$row['arrivee']] = $row['arrivee'] === 'debut' ? __('Dès le début') : __('Vague').' '.substr($row['arrivee'], 6);
         }
 
         uksort($options, fn (string $a, string $b): int => $this->arriveeSortKey($a) <=> $this->arriveeSortKey($b));
@@ -125,7 +125,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
             'xp_total' => $xpTotal,
             'xp_disponible' => (int) ($demande['xp_available'] ?? $xpTotal),
             'arrivee' => $estDebut ? 'debut' : 'vague-'.$vague,
-            'arrivee_libelle' => $estDebut ? 'Dès le début' : 'Vague '.$vague.($delai !== '' ? ' · '.$delai : ''),
+            'arrivee_libelle' => $estDebut ? __('Dès le début') : __('Vague').' '.$vague.($delai !== '' ? ' · '.$delai : ''),
             'ia' => (bool) ($demande['is_ai_request'] ?? false) || (bool) ($demande['is_ai_related'] ?? false),
             'groupe' => (string) ($demande['group_name'] ?? ''),
             'ordre' => (int) ($demande['sort_order'] ?? PHP_INT_MAX),
@@ -159,10 +159,13 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
 <section class="w-full space-y-6">
     <x-tn.breadcrumb :items="['Espace agent' => null]" />
 
+    {{-- D17 : charge de travail en un coup d'œil --}}
+    <livewire:compteur-demandes-attente />
+
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
-            <flux:heading size="xl" level="1">Demandes Nova Terra</flux:heading>
-            <flux:text class="mt-1">Les demandes reçues de la plateforme de la Ville de Nova Terra : difficulté, XP et arrivée.</flux:text>
+            <flux:heading size="xl" level="1">{{ __('Demandes Nova Terra') }}</flux:heading>
+            <flux:text class="mt-1">{{ __('Les demandes reçues de la plateforme de la Ville de Nova Terra : difficulté, XP et arrivée.') }}</flux:text>
         </div>
 
         @if ($majLe && ! $result->stale)
@@ -172,8 +175,8 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
 
     @if (! $result->available)
         <flux:callout variant="danger" icon="exclamation-triangle" data-test="api-unavailable">
-            <flux:callout.heading>L'API Nova Terra ne répond pas.</flux:callout.heading>
-            <flux:callout.text>Aucune donnée n'a encore été reçue. Réessayez dans quelques minutes.</flux:callout.text>
+            <flux:callout.heading>{{ __('L\'API Nova Terra ne répond pas.') }}</flux:callout.heading>
+            <flux:callout.text>{{ __('Aucune donnée n\'a encore été reçue. Réessayez dans quelques minutes.') }}</flux:callout.text>
         </flux:callout>
     @elseif ($result->stale)
         <flux:callout variant="warning" icon="exclamation-triangle" data-test="api-stale">
@@ -184,30 +187,30 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
     @if ($result->available && $session !== [])
         <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
             <flux:card class="space-y-1">
-                <flux:text size="sm">Concours</flux:text>
+                <flux:text size="sm">{{ __('Concours') }}</flux:text>
                 <flux:heading size="lg">
                     @if (($session['status'] ?? 'none') === 'none')
-                        Pas encore démarré
+                        {{ __('Pas encore démarré') }}
                     @elseif (! empty($session['is_running']))
-                        En cours
+                        {{ __('En cours') }}
                     @else
-                        Terminé
+                        {{ __('Terminé') }}
                     @endif
                 </flux:heading>
             </flux:card>
             <flux:card class="space-y-1">
-                <flux:text size="sm">Vague actuelle</flux:text>
+                <flux:text size="sm">{{ __('Vague actuelle') }}</flux:text>
                 <flux:heading size="lg">{{ (int) ($session['current_wave'] ?? 0) }}</flux:heading>
             </flux:card>
             <flux:card class="space-y-1">
-                <flux:text size="sm">Demandes visibles</flux:text>
+                <flux:text size="sm">{{ __('Demandes visibles') }}</flux:text>
                 <flux:heading size="lg">{{ (int) ($session['visible_requests_count'] ?? count($result->requests)) }}</flux:heading>
             </flux:card>
             <flux:card class="space-y-1">
-                <flux:text size="sm">Prochaine vague</flux:text>
+                <flux:text size="sm">{{ __('Prochaine vague') }}</flux:text>
                 <flux:heading size="lg">
                     @if ((int) ($session['next_wave_number'] ?? 0) === 0)
-                        Plus de vague prévue
+                        {{ __('Plus de vague prévue') }}
                     @else
                         Vague {{ (int) $session['next_wave_number'] }} dans {{ (int) ($session['minutes_until_next_wave'] ?? 0) }} min
                     @endif
@@ -218,22 +221,22 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
 
     @if ($result->available)
         <div class="flex flex-wrap items-end gap-3">
-            <flux:select wire:model.live="difficulte" label="Difficulté" class="max-w-48">
-                <flux:select.option value="">Toutes</flux:select.option>
+            <flux:select wire:model.live="difficulte" label="{{ __('Difficulté') }}" class="max-w-48">
+                <flux:select.option value="">{{ __('Toutes') }}</flux:select.option>
                 @foreach ($this::DIFFICULTES as $niveau => $option)
-                    <flux:select.option value="{{ $niveau }}">{{ $option['label'] }}</flux:select.option>
+                    <flux:select.option value="{{ $niveau }}">{{ __($option['label']) }}</flux:select.option>
                 @endforeach
             </flux:select>
 
-            <flux:select wire:model.live="arrivee" label="Arrivée" class="max-w-48">
-                <flux:select.option value="">Toutes</flux:select.option>
+            <flux:select wire:model.live="arrivee" label="{{ __('Arrivée') }}" class="max-w-48">
+                <flux:select.option value="">{{ __('Toutes') }}</flux:select.option>
                 @foreach ($this->arriveeOptions as $valeur => $libelle)
-                    <flux:select.option value="{{ $valeur }}">{{ $libelle }}</flux:select.option>
+                    <flux:select.option value="{{ $valeur }}">{{ __($libelle) }}</flux:select.option>
                 @endforeach
             </flux:select>
 
             @if ($difficulte !== '' || $arrivee !== '')
-                <flux:button variant="ghost" icon="x-mark" wire:click="resetFilters">Effacer les filtres</flux:button>
+                <flux:button variant="ghost" icon="x-mark" wire:click="resetFilters">{{ __('Effacer les filtres') }}</flux:button>
             @endif
 
             <div wire:loading class="pb-2">
@@ -244,12 +247,12 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
         @if ($this->rows === [])
             <flux:card class="py-10 text-center">
                 <flux:icon.inbox class="mx-auto size-10 text-zinc-400" />
-                <flux:heading class="mt-3">Aucune demande à afficher</flux:heading>
+                <flux:heading class="mt-3">{{ __('Aucune demande à afficher') }}</flux:heading>
                 <flux:text class="mt-1">
                     @if ($difficulte !== '' || $arrivee !== '')
-                        Aucune demande ne correspond aux filtres choisis.
+                        {{ __('Aucune demande ne correspond aux filtres choisis.') }}
                     @else
-                        L'API n'a encore publié aucune demande.
+                        {{ __('L\'API n\'a encore publié aucune demande.') }}
                     @endif
                 </flux:text>
             </flux:card>
@@ -257,13 +260,13 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
             <flux:card class="overflow-x-auto p-0">
                 <flux:table>
                     <flux:table.columns>
-                        <flux:table.column>Code</flux:table.column>
-                        <flux:table.column>Demandeur</flux:table.column>
-                        <flux:table.column class="min-w-72">Besoin</flux:table.column>
-                        <flux:table.column>Difficulté</flux:table.column>
+                        <flux:table.column>{{ __('Code') }}</flux:table.column>
+                        <flux:table.column>{{ __('Demandeur') }}</flux:table.column>
+                        <flux:table.column class="min-w-72">{{ __('Besoin') }}</flux:table.column>
+                        <flux:table.column>{{ __('Difficulté') }}</flux:table.column>
                         <flux:table.column>XP</flux:table.column>
-                        <flux:table.column>Arrivée</flux:table.column>
-                        <flux:table.column>Groupe</flux:table.column>
+                        <flux:table.column>{{ __('Arrivée') }}</flux:table.column>
+                        <flux:table.column>{{ __('Groupe') }}</flux:table.column>
                     </flux:table.columns>
 
                     <flux:table.rows>
@@ -281,9 +284,9 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
                                 </flux:table.cell>
                                 <flux:table.cell>
                                     @if (isset($this::DIFFICULTES[$row['niveau']]))
-                                        <flux:badge size="sm" :color="$this::DIFFICULTES[$row['niveau']]['color']">{{ $this::DIFFICULTES[$row['niveau']]['label'] }}</flux:badge>
+                                        <flux:badge size="sm" :color="$this::DIFFICULTES[$row['niveau']]['color']">{{ __($this::DIFFICULTES[$row['niveau']]['label']) }}</flux:badge>
                                     @else
-                                        <flux:badge size="sm" color="zinc">Inconnue</flux:badge>
+                                        <flux:badge size="sm" color="zinc">{{ __('Inconnue') }}</flux:badge>
                                     @endif
                                 </flux:table.cell>
                                 <flux:table.cell class="whitespace-nowrap">

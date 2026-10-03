@@ -7,6 +7,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 
+// F51 : page publique décidée — un habitant doit comprendre l'usage de ses données avant de créer un compte.
+Route::view('vos-donnees', 'vos-donnees')->name('privacy.show');
+
 Route::get('langue/{code}', function (string $code, Request $request) {
     abort_unless(array_key_exists($code, DefinirLangue::LANGUES), 404);
 

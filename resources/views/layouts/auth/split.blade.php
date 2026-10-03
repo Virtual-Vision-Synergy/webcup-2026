@@ -36,7 +36,7 @@
             <div class="relative flex flex-col px-4 py-6 sm:px-8 lg:p-10">
                 <div class="flex items-center justify-between lg:justify-end">
                     <x-app-logo href="{{ route('home') }}" class="lg:hidden" />
-                    <x-tn.theme-toggle />
+                    <div class="flex items-center"><x-tn.contrast-toggle /><x-tn.theme-toggle /></div>
                 </div>
 
                 <main id="contenu" class="flex flex-1 items-center justify-center py-8">

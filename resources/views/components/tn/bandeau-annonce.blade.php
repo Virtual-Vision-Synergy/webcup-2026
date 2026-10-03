@@ -8,6 +8,8 @@
     'lien' => null,
     'cle' => null,
     'inviterQuartier' => false,
+    'officiel' => false,
+    'date' => null,
 ])
 
 {{--
@@ -18,6 +20,8 @@
       - renforce : l'alerte vise le quartier de l'habitant → consignes affichées, mention « Concerne votre quartier » ;
                    pour Alerte et Danger, « Replier » remplace « Fermer » : le bandeau reste visible tant que l'alerte est active ;
       - compact  : alerte d'un autre quartier → une ligne, « Quartier X uniquement » et lien vers les consignes.
+    Officiel (F73) : message du Haut Conseil, reconnaissable sans la couleur (icône, mention « Message officiel du Haut Conseil »,
+    rubriques « Ce qu'il faut savoir » / « Ce qu'il faut faire », date et signature) ; toujours fermable, jamais replié.
 
     Avec une clé : « Fermer » est mémorisé dans un cookie lu par le serveur (le message n'est plus rendu ensuite),
     « Replier » dans le navigateur. Sans clé : aperçu (formulaire agent, tableau de bord), sans bouton.
@@ -32,9 +36,12 @@
     };
     $libelle = \App\Models\Annonce::NIVEAU_LIBELLES[$niveau] ?? 'Information';
     $grave = in_array($niveau, \App\Models\Annonce::NIVEAUX_GRAVES, true);
-    $repliable = $cle && $variante === 'renforce' && $grave;
+    if ($officiel) {
+        $style['icone'] = 'building-library';
+    }
+    $repliable = $cle && $variante === 'renforce' && $grave && ! $officiel;
     $fermable = $cle && ! $repliable;
-    $long = $variante !== 'compact' && mb_strlen((string) $contenu) > 140;
+    $long = ! $officiel && $variante !== 'compact' && mb_strlen((string) $contenu) > 140;
     $bouton = 'flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-sm hover:bg-black/5 focus-visible:outline-2 dark:hover:bg-white/5';
 @endphp
 
@@ -42,9 +49,12 @@
     {{ $attributes->class([
         'tn-bandeau-annonce',
         'border-b px-4 lg:px-8',
-        $variante === 'renforce' ? 'border-y-2 py-3' : 'py-2',
+        'tn-bandeau-officiel border-y-4 border-double border-ink py-3' => $officiel,
+        'border-y-2 py-3' => ! $officiel && $variante === 'renforce',
+        'py-2' => ! $officiel && $variante !== 'renforce',
         $style['fond'],
     ]) }}
+    @if ($officiel) data-officiel @endif
     data-variante="{{ $variante }}"
     @if ($fermable)
         x-data="{
@@ -71,18 +81,26 @@
     @endif
 >
     <div class="mx-auto flex max-w-7xl items-start gap-3">
-        <flux:icon :name="$style['icone']" @class(['mt-0.5 shrink-0', $style['accent'], $variante === 'renforce' ? 'size-6' : 'size-5']) aria-hidden="true" />
+        <flux:icon :name="$style['icone']" @class(['mt-0.5 shrink-0', $officiel ? 'text-ink' : $style['accent'], $officiel || $variante === 'renforce' ? 'size-6' : 'size-5']) aria-hidden="true" />
 
         <div class="min-w-0 flex-1" role="{{ $grave ? 'alert' : 'status' }}">
             <p class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                @if ($officiel)
+                    <span class="rounded-xs bg-ink px-1.5 font-mono text-[10.5px] font-semibold uppercase leading-5 tracking-[.06em] text-surface">Message officiel du Haut Conseil</span>
+                @endif
                 <span @class(['rounded-xs border border-current px-1.5 font-mono text-[10.5px] font-semibold uppercase leading-5 tracking-[.06em]', $style['accent']])>{{ $libelle }}</span>
                 @if ($variante === 'renforce' && $quartier)
                     <span @class(['rounded-xs px-1.5 font-mono text-[10.5px] font-semibold uppercase leading-5 tracking-[.06em] ring-1 ring-current', $style['accent']])>Concerne votre quartier : {{ $quartier }}</span>
                 @elseif ($quartier)
                     <span @class(['font-mono text-[11px] uppercase tracking-[.06em]', $style['texte2']])>Quartier {{ $quartier }} uniquement</span>
                 @endif
-                <span @class(['font-semibold', $style['texte'], 'text-lg' => $variante === 'renforce'])>{{ $titre }}</span>
+                <span @class(['font-semibold', $style['texte'], 'text-lg' => $officiel || $variante === 'renforce'])>{{ $titre }}</span>
             </p>
+            @if ($officiel && $date)
+                <p @class(['mt-0.5 text-xs', $style['texte2']])>
+                    Publié le <time datetime="{{ $date->toIso8601String() }}">{{ $date->copy()->timezone(\App\Models\Annonce::FUSEAU)->translatedFormat('d F Y à H\hi') }}</time> (heure de Madagascar)
+                </p>
+            @endif
 
             @if ($variante === 'compact')
                 @if ($lien)
@@ -90,6 +108,9 @@
                 @endif
             @else
                 <div @if ($repliable) x-show="! replie" @endif>
+                    @if ($officiel)
+                        <p @class(['mt-3 text-sm font-semibold', $style['texte']])>Ce qu’il faut savoir</p>
+                    @endif
                     <p @class(['mt-1 whitespace-pre-line text-sm', $style['texte2'], 'line-clamp-2' => $long]) @if ($long) x-bind:class="deplie && 'line-clamp-none'" @endif>{{ $contenu }}</p>
                     @if ($long)
                         <button type="button" @class(['cursor-pointer text-sm font-medium underline underline-offset-2', $style['texte']]) x-on:click="deplie = ! deplie" x-bind:aria-expanded="deplie ? 'true' : 'false'">
@@ -99,7 +120,7 @@
                     @endif
 
                     @if (count($consignes))
-                        <p @class(['mt-3 text-sm font-semibold', $style['texte']])>Consignes à suivre</p>
+                        <p @class(['mt-3 text-sm font-semibold', $style['texte']])>{{ $officiel ? 'Ce qu’il faut faire' : 'Consignes à suivre' }}</p>
                         <ul @class(['mt-1 list-disc space-y-1 ps-5 text-sm', $style['texte']])>
                             @foreach ($consignes as $consigne)
                                 <li>{{ $consigne }}</li>
@@ -107,10 +128,14 @@
                         </ul>
                     @endif
 
+                    @if ($officiel)
+                        <p @class(['mt-3 text-sm font-semibold italic', $style['texte']])>Le Haut Conseil de la Ville de Nova Terra</p>
+                    @endif
+
                     @if ($lien || $inviterQuartier)
                         <p class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                             @if ($lien)
-                                <a href="{{ $lien }}" @class(['font-medium underline underline-offset-2', $style['texte']])>Page de l’alerte (lien à partager)</a>
+                                <a href="{{ $lien }}" @class(['font-medium underline underline-offset-2', $style['texte']])>{{ $officiel ? 'Page du message officiel (lien à partager)' : 'Page de l’alerte (lien à partager)' }}</a>
                             @endif
                             @if ($inviterQuartier)
                                 <a href="{{ route('profile.edit') }}" @class(['font-medium underline underline-offset-2', $style['texte']])>Indiquez votre quartier pour recevoir les alertes qui vous concernent</a>

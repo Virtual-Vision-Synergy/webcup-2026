@@ -356,8 +356,53 @@ body { overflow-wrap: anywhere; }
     }
 }
 
+/*
+ * F44 : contenu agrandi (zoom navigateur 200 % / 400 %, taille du texte A+ / A++) sans casser l'affichage.
+ * - La zone de défilement des tableaux Flux est le repère des éléments positionnés qu'elle contient
+ *   (sinon un libellé sr-only du tableau sort de la zone et crée un défilement horizontal de toute la page).
+ * - En dessous de 64rem de large (soit 1280 px zoomés à 200 %), aucun texte n'est tronqué par « … » :
+ *   il passe à la ligne.
+ */
+ui-table-scroll-area {
+    position: relative;
+}
+
+@media (max-width: 64rem) {
+    .truncate {
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+}
+
+/* Très petite largeur (zoom 400 %, ou texte A++ sur téléphone) : boutons et badges passent à la ligne au lieu de déborder. */
+@media (max-width: 40rem) {
+    [data-flux-button],
+    [data-flux-badge] {
+        max-width: 100%;
+        height: auto;
+        min-height: 2.5rem;
+        white-space: normal;
+        text-align: center;
+    }
+
+    [data-flux-badge] {
+        min-height: 0;
+    }
+}
+
 [data-flux-field]:not(ui-radio, ui-checkbox) {
     @apply grid gap-2;
+    /* F44 : une seule colonne qui peut rétrécir (les champs date ne forcent plus la largeur de la page). */
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+}
+
+input[type='date'],
+input[type='datetime-local'],
+input[type='time'] {
+    min-width: 0;
 }
 
 [data-flux-label] {

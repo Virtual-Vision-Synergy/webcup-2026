@@ -87,9 +87,11 @@
 
         <x-tn.bandeau-annonces />
 
-        <flux:main container>
+        {{-- F44 : pas de <flux:main> (grille Flux) : le bandeau d'alerte y devenait une colonne étroite à côté du contenu.
+             min-w-0 : un tableau large défile dans son conteneur au lieu d'élargir la page. --}}
+        <main id="contenu" class="mx-auto w-full min-w-0 max-w-7xl px-4 py-6 sm:px-6 lg:p-8">
             {{ $slot }}
-        </flux:main>
+        </main>
 
         @persist('toast')
             <flux:toast.group>

@@ -27,12 +27,9 @@
 
         <div class="ms-auto flex items-center gap-2">
             <x-tn.api-status class="max-lg:hidden" />
-<<<<<<< HEAD
             <x-tn.langue />
-=======
             <x-tn.contrast-toggle class="max-lg:hidden" />
             <x-tn.text-size class="max-lg:hidden" />
->>>>>>> origin/main
             <x-tn.theme-toggle class="max-lg:hidden" />
 
             @if ($connecte)

@@ -129,6 +129,8 @@ new #[Title('Mes démarches')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    <x-tn.aide id="demarches-index">Suivez ici l'avancement de vos démarches. Pour en lancer une, utilisez « Nouvelle démarche ».</x-tn.aide>
+
     {{-- Filtres --}}
     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher…" aria-label="Rechercher une démarche" class="sm:max-w-xs" />

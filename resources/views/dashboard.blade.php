@@ -30,6 +30,8 @@
             </x-slot:actions>
         </x-tn.page-header>
 
+        <x-tn.aide id="dashboard-accueil">Bienvenue à Nova Terra ! Commencez par « Nouvelle démarche », ou parcourez les rubriques Services, Actualités et Contact.</x-tn.aide>
+
         {{-- ALERTES --}}
         @if ($alertes->isNotEmpty())
             <section aria-labelledby="titre-alertes" class="flex flex-col gap-2">

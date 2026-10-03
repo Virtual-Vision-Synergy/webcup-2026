@@ -95,6 +95,8 @@ new #[Title('Actualites')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    <x-tn.aide id="actualites-index">Ce fil regroupe les annonces officielles du Haut Conseil. Ouvrez une annonce pour lire le détail.</x-tn.aide>
+
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher une annonce…" aria-label="Rechercher une annonce" class="sm:max-w-sm" />
         @can('create', Actualite::class)

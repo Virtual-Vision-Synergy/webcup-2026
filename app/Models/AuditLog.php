@@ -115,6 +115,7 @@ class AuditLog extends Model
         'Message' => ['classe' => Message::class, 'libelle' => 'Message', 'article' => 'le message', 'route' => 'messages.show', 'droit' => 'view'],
         'LigneTransport' => ['classe' => LigneTransport::class, 'libelle' => 'Ligne de transport', 'article' => 'la ligne', 'route' => 'transports.show', 'droit' => 'view'],
         'Remontee' => ['classe' => Remontee::class, 'libelle' => 'Remontée', 'article' => 'la remontée', 'route' => 'agent.concerns.show', 'droit' => 'traiter'],
+        'Idea' => ['classe' => Idea::class, 'libelle' => 'Idée', 'article' => 'l’idée', 'route' => null, 'droit' => 'updateStatus'],
         'RendezVous' => ['classe' => RendezVous::class, 'libelle' => 'Rendez-vous', 'article' => 'le rendez-vous', 'route' => null, 'droit' => 'viewConfidential'],
         'AuditLog' => ['classe' => AuditLog::class, 'libelle' => 'Journal', 'article' => 'le journal', 'route' => null, 'droit' => 'viewAny'],
     ];
@@ -202,6 +203,7 @@ class AuditLog extends Model
         'message' => 'Message',
         'transport' => 'LigneTransport',
         'remontee' => 'Remontee',
+        'idee' => 'Idea',
     ];
 
     /** Valeur affichée pour un champ vide dans l'historique d'un élément. */

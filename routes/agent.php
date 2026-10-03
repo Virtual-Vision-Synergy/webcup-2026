@@ -46,6 +46,10 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     // F66 : synthèse des avis des habitants sur un projet (ProjetPolicy::voirAvis).
     Route::livewire('projets/{projet}/avis', 'pages::agent.projets.avis')->name('projets.avis');
 
+    // F68 : boîte à idées — tri par soutiens, état, réponse et masquage (IdeaPolicy dans chaque action).
+    Route::livewire('idees', 'pages::agent.ideas.index')->name('ideas.index');
+    Route::livewire('idees/{idea:reference}', 'pages::agent.ideas.show')->where('idea', 'IDE-\d{4}-\d{6}')->name('ideas.show');
+
     // F48 : historique d'un élément (lecture seule). {type} passe par la liste blanche AuditLog::HISTORY_TYPES (sinon 404).
     Route::livewire('historique/{type}/{id}', 'pages::agent.audit.history')
         ->whereIn('type', array_keys(AuditLog::HISTORY_TYPES))

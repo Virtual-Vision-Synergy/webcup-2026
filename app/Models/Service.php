@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 /**
@@ -21,6 +22,11 @@ use Illuminate\Support\Str;
  * user_id et slug ne sont volontairement PAS remplissables : ils sont assignés dans le code.
  * Le slug est généré à la création depuis le nom et ne change plus (URL stables).
  * mis_en_avant n'est pas remplissable non plus : réservé aux agents et admins (ServicePolicy::feature).
+ * indisponible_* (F38) non plus : posés par marquerIndisponible() / retablir() (ServicePolicy::changerDisponibilite).
+ *
+ * @property string|null $indisponible_motif
+ * @property Carbon|null $indisponible_jusqu_au
+ * @property string|null $indisponible_alternative
  */
 #[Fillable(['nom', 'categorie', 'description', 'horaires', 'telephone', 'email', 'adresse', 'lieu_rendez_vous', 'pieces_a_fournir', 'duree_rendez_vous'])]
 class Service extends Model
@@ -54,6 +60,7 @@ class Service extends Model
         return [
             'mis_en_avant' => 'boolean',
             'duree_rendez_vous' => 'integer',
+            'indisponible_jusqu_au' => 'datetime',
         ];
     }
 
@@ -66,6 +73,58 @@ class Service extends Model
     protected function prioritaires(Builder $query): void
     {
         $query->orderByDesc('mis_en_avant')->orderBy('nom');
+    }
+
+    /**
+     * Services utilisables maintenant (F38) : pas de motif d'indisponibilité, ou date de retour dépassée.
+     *
+     * @param  Builder<Service>  $query
+     */
+    #[Scope]
+    protected function disponibles(Builder $query): void
+    {
+        $query->where(fn (Builder $q) => $q->whereNull('indisponible_motif')
+            ->orWhere(fn (Builder $q) => $q->whereNotNull('indisponible_jusqu_au')->where('indisponible_jusqu_au', '<=', now())));
+    }
+
+    /**
+     * F38 : le service est interrompu (maintenance, incident). Il redevient disponible tout seul
+     * une fois la date de retour prévue passée.
+     */
+    public function estIndisponible(): bool
+    {
+        if ($this->indisponible_motif === null) {
+            return false;
+        }
+
+        return $this->indisponible_jusqu_au === null || $this->indisponible_jusqu_au->isFuture();
+    }
+
+    /**
+     * Seul point de passage pour signaler une interruption (agents et admins : policy changerDisponibilite).
+     */
+    public function marquerIndisponible(string $motif, ?Carbon $jusquAu = null, ?string $alternative = null): void
+    {
+        $this->indisponible_motif = trim($motif);
+        $this->indisponible_jusqu_au = $jusquAu;
+        $this->indisponible_alternative = filled($alternative) ? trim((string) $alternative) : null;
+        $this->save();
+    }
+
+    public function retablir(): void
+    {
+        $this->indisponible_motif = null;
+        $this->indisponible_jusqu_au = null;
+        $this->indisponible_alternative = null;
+        $this->save();
+    }
+
+    /**
+     * « Retour prévu le 5 octobre 2026 à 14 h 00 » en heure de Madagascar, ou null si non communiqué.
+     */
+    public function retourPrevu(): ?string
+    {
+        return $this->indisponible_jusqu_au?->copy()->timezone(Annonce::FUSEAU)->locale('fr')->translatedFormat('j F Y à H \\h i');
     }
 
     protected static function booted(): void

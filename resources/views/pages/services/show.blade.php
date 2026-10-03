@@ -2,7 +2,9 @@
 
 use App\Models\Service;
 use App\Services\OnboardingProgress;
+use App\Models\Annonce;
 use Flux\Flux;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
@@ -12,6 +14,14 @@ new #[Title('Service')] class extends Component {
     #[Locked]
     public Service $record;
 
+    /** F38 : formulaire « Signaler une indisponibilité » (agents et admins). */
+    public string $motif = '';
+
+    /** Date de retour prévue, saisie en heure de Madagascar (champ datetime-local). */
+    public string $retourPrevu = '';
+
+    public string $alternative = '';
+
     public function mount(Service $service): void
     {
         $this->authorize('view', $service);
@@ -19,6 +29,40 @@ new #[Title('Service')] class extends Component {
 
         // Parcours de prise en main (D12), étape « Trouver un service » : sans effet hors parcours en cours.
         OnboardingProgress::pour(auth()->user())->marquerServiceVisite($service);
+    }
+
+    public function marquerIndisponible(): void
+    {
+        $this->authorize('changerDisponibilite', $this->record);
+
+        $validated = $this->validate([
+            'motif' => ['required', 'string', 'max:255'],
+            'retourPrevu' => ['nullable', 'date', 'after:now'],
+            'alternative' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'motif.required' => 'Indiquez pourquoi le service est indisponible (ex. : maintenance du logiciel).',
+            'retourPrevu.date' => 'La date de retour n’est pas valide.',
+            'retourPrevu.after' => 'La date de retour doit être dans le futur.',
+        ]);
+
+        $this->record->marquerIndisponible(
+            $validated['motif'],
+            filled($validated['retourPrevu']) ? Carbon::parse($validated['retourPrevu'], Annonce::FUSEAU)->utc() : null,
+            $validated['alternative'] ?? null,
+        );
+        $this->reset('motif', 'retourPrevu', 'alternative');
+
+        Flux::modal('indisponibilite')->close();
+        Flux::toast(variant: 'success', text: 'Service signalé indisponible. Les habitants sont prévenus avant toute démarche.');
+    }
+
+    public function retablir(): void
+    {
+        $this->authorize('changerDisponibilite', $this->record);
+
+        $this->record->retablir();
+
+        Flux::toast(variant: 'success', text: 'Service de nouveau disponible.');
     }
 
     public function delete(): void
@@ -53,6 +97,52 @@ new #[Title('Service')] class extends Component {
     </x-tn.page-header>
 
     <x-audit-history :subject="$record" variant="resume" />
+
+    {{-- F38 : prévenir avant de commencer une démarche --}}
+    @if ($record->estIndisponible())
+        <flux:callout variant="warning" icon="exclamation-triangle" data-test="service-indisponible">
+            <flux:callout.heading>Service momentanément indisponible</flux:callout.heading>
+            <flux:callout.text>
+                <span class="block">Motif : {{ $record->indisponible_motif }}</span>
+                <span class="block">{{ $record->retourPrevu() ? 'Retour prévu le '.$record->retourPrevu().' (heure de Madagascar).' : 'Date de retour pas encore connue : revenez consulter cette page.' }}</span>
+                @if ($record->indisponible_alternative)
+                    <span class="mt-1 block">En attendant : {{ $record->indisponible_alternative }}</span>
+                @endif
+                <span class="mt-1 block">Les nouvelles démarches pour ce service sont suspendues pendant l’interruption.</span>
+            </flux:callout.text>
+            @can('changerDisponibilite', $record)
+                <x-slot name="actions">
+                    <flux:button size="sm" icon="check" wire:click="retablir" wire:confirm="Le service fonctionne de nouveau ?">Rétablir le service</flux:button>
+                </x-slot>
+            @endcan
+        </flux:callout>
+    @else
+        @can('changerDisponibilite', $record)
+            <div class="flex justify-end">
+                <flux:modal.trigger name="indisponibilite">
+                    <flux:button size="sm" icon="exclamation-triangle">Signaler une indisponibilité</flux:button>
+                </flux:modal.trigger>
+            </div>
+        @endcan
+    @endif
+
+    @can('changerDisponibilite', $record)
+        <flux:modal name="indisponibilite" class="w-full max-w-lg">
+            <form wire:submit="marquerIndisponible" class="space-y-4">
+                <flux:heading size="lg">Signaler une indisponibilité</flux:heading>
+                <flux:text>Les habitants verront ce message sur le catalogue et la fiche du service, et ne pourront pas commencer de démarche tant qu’il est affiché.</flux:text>
+                <flux:input wire:model="motif" label="Motif" placeholder="Ex. : maintenance du logiciel d’état civil" required />
+                <flux:input wire:model="retourPrevu" type="datetime-local" label="Retour prévu (heure de Madagascar, facultatif)" />
+                <flux:textarea wire:model="alternative" label="Que faire à la place ? (facultatif)" rows="2" placeholder="Ex. : rendez-vous à la mairie annexe Nord, 8 h - 12 h" />
+                <div class="flex justify-end gap-2">
+                    <flux:modal.close>
+                        <flux:button variant="ghost">Annuler</flux:button>
+                    </flux:modal.close>
+                    <flux:button type="submit" variant="primary" wire:loading.attr="disabled">Enregistrer</flux:button>
+                </div>
+            </form>
+        </flux:modal>
+    @endcan
 
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <x-tn.surface>

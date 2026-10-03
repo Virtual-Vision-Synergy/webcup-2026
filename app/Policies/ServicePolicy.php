@@ -44,4 +44,12 @@ class ServicePolicy
     {
         return $user->isAdmin() || $user->isAgent();
     }
+
+    /**
+     * F38 : signaler un service indisponible (maintenance, incident) ou le rétablir : agents et admins uniquement.
+     */
+    public function changerDisponibilite(User $user, Service $service): bool
+    {
+        return $user->isAdmin() || $user->isAgent();
+    }
 }

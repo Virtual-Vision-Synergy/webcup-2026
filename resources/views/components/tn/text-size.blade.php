@@ -1,7 +1,7 @@
 {{-- Taille du texte A / A+ / A++ : mémorisée dans le navigateur (localStorage), appliquée à <html data-text-size>. --}}
 <div
     x-data="{
-        size: document.documentElement.dataset.textSize || 'md',
+        size: (() => { try { return window.localStorage.getItem('tn.text-size') || 'md'; } catch (e) { return 'md'; } })(),
         set(value) {
             this.size = value;
             document.documentElement.dataset.textSize = value;

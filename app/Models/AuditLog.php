@@ -55,6 +55,7 @@ class AuditLog extends Model
         'deactivated' => 'Compte désactivé',
         'reactivated' => 'Compte réactivé',
         'exported' => 'Export',
+        'device_reported' => 'Appareil signalé',
     ];
 
     /** @var array<string, string> */
@@ -67,6 +68,7 @@ class AuditLog extends Model
         'deactivated' => 'a désactivé',
         'reactivated' => 'a réactivé',
         'exported' => 'a exporté',
+        'device_reported' => 'a signalé un appareil inconnu sur',
     ];
 
     /** État du badge (couleur + texte, voir <x-tn.status-badge>). */
@@ -79,6 +81,7 @@ class AuditLog extends Model
         'deactivated' => 'alerte',
         'reactivated' => 'normal',
         'exported' => 'info',
+        'device_reported' => 'alerte',
     ];
 
     /**
@@ -158,6 +161,7 @@ class AuditLog extends Model
         'repondue_le' => 'Répondue le',
         'repondue_par' => 'Répondue par (n°)',
         'cloturee_le' => 'Clôturée le',
+        'appareil' => 'Appareil',
     ];
 
     /**

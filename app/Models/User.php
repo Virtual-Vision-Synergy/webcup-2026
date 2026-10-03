@@ -133,6 +133,16 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasOne(Onboarding::class);
     }
 
+    /**
+     * Appareils depuis lesquels l'utilisateur s'est connecté (F54). Écrits uniquement par DeviceRecognizer.
+     *
+     * @return HasMany<KnownDevice, $this>
+     */
+    public function knownDevices(): HasMany
+    {
+        return $this->hasMany(KnownDevice::class);
+    }
+
     public function hasRole(string $code): bool
     {
         return $this->role_id === Role::idFor($code);

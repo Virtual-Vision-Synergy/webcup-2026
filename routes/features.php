@@ -29,6 +29,11 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('roles/{role}', 'pages::roles.show')->name('roles.show');
     Route::livewire('roles/{role}/edit', 'pages::roles.form')->name('roles.edit');
 
+    Route::livewire('demarches', 'pages::demarches.index')->name('demarches.index');
+    Route::livewire('demarches/create', 'pages::demarches.form')->name('demarches.create');
+    Route::livewire('demarches/{demarche}', 'pages::demarches.show')->name('demarches.show');
+    Route::livewire('demarches/{demarche}/edit', 'pages::demarches.form')->name('demarches.edit');
+
     // make:feature:routes
 });
 

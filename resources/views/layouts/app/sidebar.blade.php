@@ -28,6 +28,10 @@
                         Messages
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="document-text" :href="route('demarches.index')" :current="request()->routeIs('demarches.*')" wire:navigate>
+                        Mes démarches
+                    </flux:sidebar.item>
+
                     {{-- make:feature:nav --}}
                 </flux:sidebar.group>
 

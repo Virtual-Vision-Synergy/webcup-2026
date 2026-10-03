@@ -4,14 +4,12 @@
     $courante = app()->getLocale();
 @endphp
 
-{{-- Choix de la langue (fichiers lang/{code}.json). Le français est la langue de repli. --}}
-<form method="POST" action="{{ route('langue') }}" {{ $attributes->class('flex items-center gap-1') }} aria-label="{{ __('Langue') }}">
-    @csrf
+{{-- Choix de la langue (fichiers lang/{code}.json). Simples liens GET : aucune interférence avec Livewire. --}}
+<nav {{ $attributes->class('flex items-center gap-1') }} aria-label="{{ __('Langue') }}">
     @foreach (DefinirLangue::LANGUES as $code => $libelle)
-        <button
-            type="submit"
-            name="langue"
-            value="{{ $code }}"
+        <a
+            href="{{ route('langue', $code) }}"
+            data-navigate-ignore
             lang="{{ $code }}"
             title="{{ $libelle }}"
             @if ($code === $courante) aria-current="true" @endif
@@ -20,6 +18,6 @@
                 'bg-cyan/12 text-cyan' => $code === $courante,
                 'text-ink-2 hover:bg-cyan/8 hover:text-ink' => $code !== $courante,
             ])
-        >{{ $code }}<span class="sr-only"> {{ $libelle }}</span></button>
+        >{{ $code }}<span class="sr-only"> {{ $libelle }}</span></a>
     @endforeach
-</form>
+</nav>

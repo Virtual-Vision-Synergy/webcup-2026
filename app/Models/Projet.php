@@ -157,8 +157,8 @@ class Projet extends Model
 
         return match (true) {
             $debut !== null && $fin !== null => $debut.' → '.$fin,
-            $debut !== null => (string) __('Depuis :date', ['date' => $debut]),
-            $fin !== null => (string) __('Fin prévue :date', ['date' => $fin]),
+            $debut !== null => 'Depuis '.$debut,
+            $fin !== null => 'Fin prévue '.$fin,
             default => null,
         };
     }

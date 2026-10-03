@@ -6,6 +6,7 @@ use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
 use Database\Factories\DemarcheFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,6 +34,9 @@ class Demarche extends Model
     /** Libellés affichés (avec accents). */
     public const STATUT_LABELS = ['deposee' => 'Déposée', 'en_cours' => 'En cours', 'traitee' => 'Traitée', 'refusee' => 'Refusée'];
 
+    /** États « en attente de prise en charge » : aucun agent ne s'en occupe encore (D17). */
+    public const STATUTS_EN_ATTENTE_PRISE_EN_CHARGE = ['deposee'];
+
     /**
      * Valeur par défaut du statut : la première de STATUT_OPTIONS.
      *
@@ -54,6 +58,16 @@ class Demarche extends Model
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
+    }
+
+    /**
+     * Demandes qui attendent encore une prise en charge par un agent.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeAwaitingHandling(Builder $query): void
+    {
+        $query->whereIn('statut', self::STATUTS_EN_ATTENTE_PRISE_EN_CHARGE);
     }
 
     public static function libelleStatut(string $statut): string

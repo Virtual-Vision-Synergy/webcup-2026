@@ -103,6 +103,25 @@ new #[Title('Services')] class extends Component {
     }
 
     /**
+     * Services prioritaires (F28) : mis en avant par un agent, affichés en tête du catalogue.
+     *
+     * @return Collection<int, Service>
+     */
+    #[Computed]
+    public function prioritaires(): Collection
+    {
+        return Service::query()->where('mis_en_avant', true)->orderBy('nom')->limit(6)->get();
+    }
+
+    /**
+     * Bloc « Services prioritaires » : seulement sur la liste complète, en première page.
+     */
+    public function afficherPrioritaires(): bool
+    {
+        return ! $this->enCarte() && ! $this->hasFilters() && (int) $this->getPage() === 1 && $this->prioritaires->isNotEmpty();
+    }
+
+    /**
      * Lieux d'accueil localisés qui correspondent aux filtres (carte et liste textuelle équivalente).
      *
      * @return Collection<int, Service>
@@ -194,6 +213,29 @@ new #[Title('Services')] class extends Component {
         <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">{{ __('Mise à jour…') }}</span>
     </div>
 
+    @if ($this->afficherPrioritaires())
+        <section aria-labelledby="titre-prioritaires" class="rounded-md border border-cyan/40 bg-cyan/5 p-4 md:p-5">
+            <h2 id="titre-prioritaires" class="flex items-center gap-2 font-semibold text-ink">
+                <flux:icon name="star" variant="solid" class="size-5 text-cyan" aria-hidden="true" />
+                {{ __('Services prioritaires') }}
+            </h2>
+            <p class="mt-1 text-sm text-ink-2">{{ __('Les démarches les plus demandées, à portée de main.') }}</p>
+            <ul class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach ($this->prioritaires as $prioritaire)
+                    <li wire:key="prioritaire-{{ $prioritaire->id }}">
+                        <a href="{{ route('services.show', $prioritaire) }}" wire:navigate class="group flex min-h-11 items-center gap-3 rounded-sm border border-line bg-surface px-3 py-2 transition-colors hover:border-cyan/40">
+                            <flux:icon name="landmark" class="size-4 shrink-0 text-cyan" aria-hidden="true" />
+                            <span class="min-w-0 flex-1 truncate font-medium text-ink group-hover:text-cyan">{{ __($prioritaire->nom) }}</span>
+                            @if ($prioritaire->estIndisponible())
+                                <flux:badge size="sm" color="red">{{ __('Indisponible') }}</flux:badge>
+                            @endif
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
+
     @if ($this->enCarte())
         @if ($this->lieux->isEmpty())
             <x-tn.empty icon="map" title="{{ __('Aucun lieu à afficher') }}" text="{{ $this->hasFilters() ? __('Aucun service localisé ne correspond à cette recherche ou cette catégorie.') : __('Les lieux d\'accueil des services seront bientôt placés sur la carte.') }}">
@@ -249,7 +291,7 @@ new #[Title('Services')] class extends Component {
                             <flux:badge size="sm" color="green" icon="check-circle">{{ __('Disponible') }}</flux:badge>
                         @endif
                         @if ($item->mis_en_avant)
-                            <flux:badge size="sm" color="cyan" icon="star">{{ __('Mis en avant') }}</flux:badge>
+                            <flux:badge size="sm" color="cyan" icon="star">{{ __('Prioritaire') }}</flux:badge>
                         @endif
                     </div>
                     <div class="flex items-start gap-3">

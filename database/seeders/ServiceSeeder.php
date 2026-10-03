@@ -66,6 +66,19 @@ class ServiceSeeder extends Seeder
             return;
         }
 
+        // F46 : hôpitaux et services d'urgence (catégorie santé, déjà localisés).
+        foreach (Service::ETABLISSEMENTS_SANTE as $data) {
+            if (Service::query()->where('nom', $data['nom'])->exists()) {
+                continue;
+            }
+
+            $service = new Service($data);
+            $service->categorie = 'sante';
+            $service->slug = Service::uniqueSlug($data['nom']);
+            $service->user()->associate($auteur);
+            $service->save();
+        }
+
         foreach ($this->services() as $data) {
             $data['categorie'] = self::CATEGORIES[$data['nom']] ?? null;
             [$data['latitude'], $data['longitude']] = self::COORDONNEES[$data['nom']] ?? [null, null];

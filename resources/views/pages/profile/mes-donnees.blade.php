@@ -241,7 +241,7 @@ new #[Layout('layouts::imprimable'), Title('Mes données personnelles')] class e
             ['Signalements que je soutiens', $d['soutiens'], fn ($x) => [$x['signalement'], $x['lieu'] ?? '—', $x['etat'] ?? '—', $x['soutenu_le']]],
             ['Mes remontées', $d['remontees']['liste'], fn ($x) => [$x['reference'].' · '.$x['objet'], $x['categorie'], $x['etat'], $x['envoyee_le']]],
             ['Mes rendez-vous', $d['rendez_vous'], fn ($x) => [$x['service'] ?? '—', $x['motif'] ?? '—', $x['etat'], $x['date']]],
-            ['Mes avis sur les projets', $d['avis_projets'], fn ($x) => [$x['projet'] ?? 'Projet supprimé', $x['commentaire'] ?? '—', $x['position'], $x['donne_le']]],
+            ['Mes avis sur les projets', $d['avis_projets'], fn ($x) => [$x['projet'], $x['commentaire'] ?? '—', $x['position'], $x['donne_le']]],
             ['Mes messages à la mairie', $d['messages'], fn ($x) => [$x['sujet'], '', '', $x['envoye_le']]],
             ['Connexions récentes', $d['connexions_recentes'], fn ($x) => [$x['adresse_ip'] ?? 'Adresse inconnue', $x['navigateur'] ?? '—', $x['resultat'], $x['date']]],
             ['Mes appareils', $d['appareils'], fn ($x) => [$x['appareil'], 'Adresse ≈ '.$x['adresse_approx'], $x['revoque'] ? 'Révoqué' : 'Actif', $x['derniere_connexion']]],

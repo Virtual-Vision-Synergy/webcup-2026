@@ -26,6 +26,9 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     Route::livewire('/citoyens/{user}', 'pages::agent.citizens.show')->name('citizens.show');
     Route::livewire('demandes', 'pages::agent.demandes')->name('demandes');
 
+    // F75 : signalements similaires regroupés, fusion et traitement par groupe (SignalementPolicy::changerStatut).
+    Route::livewire('signalements-similaires', 'pages::agent.signalements-similaires')->name('signalements.similaires');
+
     // F37 : journal des tentatives de connexion (LoginAttemptPolicy : viewAny agent/admin, unlock admin).
     Route::livewire('securite/connexions', 'pages::agent.security.index')->name('security.index');
 
@@ -39,6 +42,9 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     // F51 : remontées des habitants sur leurs données (RemonteePolicy::traiter dans chaque action).
     Route::livewire('donnees/remontees', 'pages::agent.remontees.index')->name('concerns.index');
     Route::livewire('donnees/remontees/{remontee}', 'pages::agent.remontees.show')->name('concerns.show');
+
+    // F66 : synthèse des avis des habitants sur un projet (ProjetPolicy::voirAvis).
+    Route::livewire('projets/{projet}/avis', 'pages::agent.projets.avis')->name('projets.avis');
 
     // F48 : historique d'un élément (lecture seule). {type} passe par la liste blanche AuditLog::HISTORY_TYPES (sinon 404).
     Route::livewire('historique/{type}/{id}', 'pages::agent.audit.history')

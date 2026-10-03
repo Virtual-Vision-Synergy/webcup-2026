@@ -87,7 +87,13 @@ new #[Title('Démarche')] class extends Component {
             $record->save();
         }
 
-        Flux::toast(variant: 'success', text: 'Démarche enregistrée.');
+        if ($this->record) {
+            Flux::toast(variant: 'success', text: 'Démarche enregistrée.');
+        } else {
+            // Confirmation claire après l'envoi (D16) : affichée sur la page de suivi de la démarche.
+            session()->flash('demarche_envoyee', $record->numeroSuivi());
+            Flux::toast(variant: 'success', text: 'Démarche envoyée. Numéro de suivi : '.$record->numeroSuivi());
+        }
 
         // Parcours de prise en main (D12) : la première démarche termine le parcours, on affiche les félicitations.
         if ($depuisParcours) {
@@ -187,9 +193,9 @@ new #[Title('Démarche')] class extends Component {
             </div>
 
             <flux:button type="button" variant="primary" icon:trailing="arrow-right" x-show="etape < 3" x-on:click="suivant()">Continuer</flux:button>
-            <flux:button type="submit" variant="primary" class="tn-cta" x-show="etape === 3" x-cloak>
+            <flux:button type="submit" variant="primary" class="tn-cta" x-show="etape === 3" x-cloak wire:loading.attr="disabled" wire:target="save">
                 <span wire:loading.remove wire:target="save">{{ $record ? 'Enregistrer' : 'Envoyer la démarche' }}</span>
-                <span wire:loading wire:target="save">Enregistrement…</span>
+                <span wire:loading wire:target="save">Envoi en cours…</span>
             </flux:button>
         </div>
     </form>

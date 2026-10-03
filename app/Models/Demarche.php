@@ -55,6 +55,14 @@ class Demarche extends Model
         return $this->belongsTo(Service::class);
     }
 
+    /**
+     * Numéro de suivi communiqué à l'habitant après l'envoi (D16), dérivé de l'identifiant.
+     */
+    public function numeroSuivi(): string
+    {
+        return 'DEM-'.str_pad((string) $this->getKey(), 6, '0', STR_PAD_LEFT);
+    }
+
     public static function libelleStatut(string $statut): string
     {
         return self::STATUT_LABELS[$statut] ?? ucfirst(str_replace('_', ' ', $statut));

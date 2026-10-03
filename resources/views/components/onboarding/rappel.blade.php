@@ -13,10 +13,10 @@
                 <h2 id="titre-rappel-onboarding" class="font-medium text-ink">
                     Reprendre la prise en main — {{ $progress->nombreFaites() }}/{{ OnboardingProgress::TOTAL_ETAPES }}
                 </h2>
-                <p class="mt-1 text-sm text-ink-2">Quelques minutes pour découvrir les services de la ville et déposer votre première démarche.</p>
+                <p class="mt-1 text-sm text-ink-2">{{ __('Quelques minutes pour découvrir les services de la ville et déposer votre première démarche.') }}</p>
                 <x-onboarding.progression :progress="$progress" compact class="mt-3 max-w-md" />
             </div>
-            <flux:button variant="primary" icon:trailing="arrow-right" :href="route('onboarding.show')" wire:navigate>Reprendre</flux:button>
+            <flux:button variant="primary" icon:trailing="arrow-right" :href="route('onboarding.show')" wire:navigate>{{ __('Reprendre') }}</flux:button>
         </div>
     </section>
 @endif

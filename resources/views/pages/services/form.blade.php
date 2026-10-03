@@ -86,7 +86,7 @@ new #[Title('Service')] class extends Component {
 
         Cache::forget('landing.etat');
 
-        Flux::toast(variant: 'success', text: 'Service enregistré(e).');
+        Flux::toast(variant: 'success', text: __('Service enregistré(e).'));
 
         $this->redirectRoute('services.show', $record, navigate: true);
     }
@@ -94,21 +94,21 @@ new #[Title('Service')] class extends Component {
 
 <section class="mx-auto w-full max-w-2xl space-y-6">
     <x-tn.page-header
-        label="Annuaire"
-        :title="$record ? 'Modifier le service' : 'Ajouter un service'"
+        label="{{ __('Annuaire') }}"
+        :title="$record ? __('Modifier le service') : __('Ajouter un service')"
         :breadcrumb="$record
             ? ['Mon espace' => route('dashboard'), 'Services' => route('services.index'), $record->nom => route('services.show', $record), 'Modifier' => null]
             : ['Mon espace' => route('dashboard'), 'Services' => route('services.index'), 'Nouveau' => null]"
     />
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
-        <flux:input wire:model="nom" label="Nom" required />
+        <flux:input wire:model="nom" label="{{ __('Nom') }}" required />
 
-        <flux:textarea wire:model="description" label="Description" rows="5" required />
+        <flux:textarea wire:model="description" label="{{ __('Description') }}" rows="5" required />
 
-        <flux:select wire:model="categorie" label="Catégorie" placeholder="Choisir une catégorie…" required>
+        <flux:select wire:model="categorie" label="{{ __('Catégorie') }}" placeholder="{{ __('Choisir une catégorie…') }}" required>
             @foreach (Service::CATEGORIE_LABELS as $valeur => $label)
-                <flux:select.option value="{{ $valeur }}">{{ $label }}</flux:select.option>
+                <flux:select.option value="{{ $valeur }}">{{ __($label) }}</flux:select.option>
             @endforeach
         </flux:select>
 
@@ -124,12 +124,12 @@ new #[Title('Service')] class extends Component {
         </fieldset>
 
         @can('feature', $record ?? Service::class)
-            <flux:checkbox wire:model="mis_en_avant" label="Mettre en avant" description="Le service apparaît en tête du catalogue et sur la page d'accueil." />
+            <flux:checkbox wire:model="mis_en_avant" label="{{ __('Mettre en avant') }}" description="{{ __('Le service apparaît en tête du catalogue et sur la page d\'accueil.') }}" />
         @endcan
 
         <div class="flex items-center gap-3">
-            <flux:button type="submit" variant="primary">Enregistrer</flux:button>
-            <flux:button :href="route('services.index')" wire:navigate variant="ghost">Annuler</flux:button>
+            <flux:button type="submit" variant="primary">{{ __('Enregistrer') }}</flux:button>
+            <flux:button :href="route('services.index')" wire:navigate variant="ghost">{{ __('Annuler') }}</flux:button>
         </div>
     </form>
 </section>

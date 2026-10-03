@@ -109,20 +109,20 @@ new #[Title('Transports')] class extends Component {
 
         $record->delete();
 
-        Flux::toast(variant: 'success', text: 'Ligne supprimée.');
+        Flux::toast(variant: 'success', text: __('Ligne supprimée.'));
     }
 }; ?>
 
 <section class="mx-auto w-full max-w-6xl space-y-6">
     <x-tn.page-header
-        label="Mobilité"
-        title="Transports municipaux"
-        :subtitle="$this->perturbations->isEmpty() ? 'Trafic normal sur tout le réseau' : $this->perturbations->count().' ligne(s) perturbée(s) en ce moment'"
+        label="{{ __('Mobilité') }}"
+        title="{{ __('Transports municipaux') }}"
+        :subtitle="$this->perturbations->isEmpty() ? __('Trafic normal sur tout le réseau') : __(':n ligne(s) perturbée(s) en ce moment', ['n' => $this->perturbations->count()])"
         :breadcrumb="['Mon espace' => route('dashboard'), 'Transports' => null]"
     >
         <x-slot:actions>
             @can('create', LigneTransport::class)
-                <flux:button variant="primary" icon="plus" :href="route('transports.create')" wire:navigate>Ajouter une ligne</flux:button>
+                <flux:button variant="primary" icon="plus" :href="route('transports.create')" wire:navigate>{{ __('Ajouter une ligne') }}</flux:button>
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
@@ -131,7 +131,7 @@ new #[Title('Transports')] class extends Component {
         <div role="alert" class="space-y-2 rounded-md border border-amber/40 bg-amber/8 p-4">
             <p class="flex items-center gap-2 font-semibold text-amber">
                 <flux:icon name="exclamation-triangle" class="size-5" />
-                Perturbations en cours
+                {{ __('Perturbations en cours') }}
             </p>
             <ul class="space-y-2">
                 @foreach ($this->perturbations as $ligne)
@@ -140,7 +140,7 @@ new #[Title('Transports')] class extends Component {
                             <x-tn.status-badge :etat="$ligne->etatBadge()">{{ $ligne->etatLabel() }}</x-tn.status-badge>
                             <a href="{{ route('transports.show', $ligne) }}" wire:navigate class="font-mono font-semibold text-ink hover:text-cyan">Ligne {{ $ligne->numero }}</a>
                         </span>
-                        <span class="text-ink-2">{{ $ligne->perturbation ?? 'Perturbation signalée, informations à venir.' }}</span>
+                        <span class="text-ink-2">{{ $ligne->perturbation ?? __('Perturbation signalée, informations à venir.') }}</span>
                     </li>
                 @endforeach
             </ul>
@@ -148,21 +148,21 @@ new #[Title('Transports')] class extends Component {
     @endif
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Ligne ou arrêt (ex. 4, Marché, Université)…" aria-label="Rechercher une ligne ou un arrêt" class="sm:max-w-sm" />
-        <flux:select wire:model.live="mode" aria-label="Mode de transport" class="sm:max-w-44">
-            <flux:select.option value="">Tous les modes</flux:select.option>
+        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="{{ __('Ligne ou arrêt (ex. 4, Marché, Université)…') }}" aria-label="{{ __('Rechercher une ligne ou un arrêt') }}" class="sm:max-w-sm" />
+        <flux:select wire:model.live="mode" aria-label="{{ __('Mode de transport') }}" class="sm:max-w-44">
+            <flux:select.option value="">{{ __('Tous les modes') }}</flux:select.option>
             @foreach (LigneTransport::MODE_LABELS as $value => $label)
-                <flux:select.option :value="$value">{{ $label }}</flux:select.option>
+                <flux:select.option :value="$value">{{ __($label) }}</flux:select.option>
             @endforeach
         </flux:select>
-        <flux:checkbox wire:model.live="perturbees" label="Lignes perturbées uniquement" />
-        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+        <flux:checkbox wire:model.live="perturbees" label="{{ __('Lignes perturbées uniquement') }}" />
+        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">{{ __('Mise à jour…') }}</span>
     </div>
 
     @if ($this->items->isEmpty())
-        <x-tn.empty icon="bus" title="Aucune ligne trouvée" text="Vérifiez l'orthographe de l'arrêt ou retirez un filtre.">
+        <x-tn.empty icon="bus" title="{{ __('Aucune ligne trouvée') }}" text="{{ __('Vérifiez l\'orthographe de l\'arrêt ou retirez un filtre.') }}">
             @if ($search !== '' || $mode !== '' || $perturbees)
-                <flux:button size="sm" wire:click="resetFilters">Réinitialiser la recherche</flux:button>
+                <flux:button size="sm" wire:click="resetFilters">{{ __('Réinitialiser la recherche') }}</flux:button>
             @endif
         </x-tn.empty>
     @else
@@ -209,7 +209,7 @@ new #[Title('Transports')] class extends Component {
 
                     @if ($trouves !== [])
                         <p class="mt-2 flex flex-wrap gap-1.5 text-xs">
-                            <span class="text-ink-2">Dessert :</span>
+                            <span class="text-ink-2">{{ __('Dessert :') }}</span>
                             @foreach ($trouves as $arret)
                                 <span class="rounded-xs border border-cyan/35 bg-cyan/8 px-1.5 py-0.5 text-cyan">{{ $arret }}</span>
                             @endforeach
@@ -217,19 +217,19 @@ new #[Title('Transports')] class extends Component {
                     @endif
 
                     <dl class="mt-4 space-y-1.5 border-t border-line pt-3 text-sm">
-                        <div class="flex min-w-0 gap-2"><dt class="sr-only">Horaires</dt><flux:icon name="clock" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="min-w-0 truncate font-mono text-xs leading-5 text-ink-2">{{ \Illuminate\Support\Str::before($item->horaires, "\n") }}</dd></div>
+                        <div class="flex min-w-0 gap-2"><dt class="sr-only">{{ __('Horaires') }}</dt><flux:icon name="clock" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="min-w-0 truncate font-mono text-xs leading-5 text-ink-2">{{ \Illuminate\Support\Str::before($item->horaires, "\n") }}</dd></div>
                         @if ($item->frequence)
-                            <div class="flex min-w-0 gap-2"><dt class="sr-only">Fréquence</dt><flux:icon name="arrow-path" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="min-w-0 truncate font-mono text-xs leading-5 text-ink-2">{{ $item->frequence }}</dd></div>
+                            <div class="flex min-w-0 gap-2"><dt class="sr-only">{{ __('Fréquence') }}</dt><flux:icon name="arrow-path" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="min-w-0 truncate font-mono text-xs leading-5 text-ink-2">{{ $item->frequence }}</dd></div>
                         @endif
                     </dl>
 
                     @canany(['update', 'delete'], $item)
                         <div class="relative z-10 mt-3 flex justify-end gap-1">
                             @can('update', $item)
-                                <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('transports.edit', $item)" wire:navigate aria-label="Modifier la ligne {{ $item->numero }}" />
+                                <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('transports.edit', $item)" wire:navigate aria-label="{{ __('Modifier la ligne :numero', ['numero' => $item->numero]) }}" />
                             @endcan
                             @can('delete', $item)
-                                <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer cette ligne ?" aria-label="Supprimer la ligne {{ $item->numero }}" />
+                                <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="{{ __('Supprimer cette ligne ?') }}" aria-label="{{ __('Supprimer la ligne :numero', ['numero' => $item->numero]) }}" />
                             @endcan
                         </div>
                     @endcanany

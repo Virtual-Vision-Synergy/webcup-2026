@@ -112,6 +112,35 @@ test('un jour sans créneau libre propose le prochain jour disponible', function
         ->assertSee('09 h 30 à 10 h 00');
 });
 
+test('un service sans aucun créneau génère son agenda à la volée', function () {
+    expect(CreneauRendezVous::count())->toBe(0);
+
+    Livewire::actingAs(User::factory()->citoyen()->create())
+        ->test('pages::rendez-vous.form')
+        ->call('choisirService', $this->etatCivil->slug)
+        ->assertDontSee('Aucun créneau')
+        ->assertSet('jour', '2026-10-05')
+        ->assertSee('14 h 00 à 14 h 30');
+
+    expect(CreneauRendezVous::whereBelongsTo($this->etatCivil)->count())->toBeGreaterThan(0);
+});
+
+test('le message distingue « tout est réservé » de « aucun créneau ouvert »', function () {
+    config(['rendez_vous.plages' => []]);
+
+    Livewire::actingAs(User::factory()->citoyen()->create())
+        ->test('pages::rendez-vous.form', ['serviceSlug' => $this->etatCivil->slug])
+        ->assertSee('Aucun créneau ouvert')
+        ->assertDontSee('sont réservés');
+
+    $pris = creneauDe($this->etatCivil, '2026-10-06 06:30:00');
+    RendezVous::factory()->create(['creneau_id' => $pris->id]);
+
+    Livewire::actingAs(User::factory()->citoyen()->create())
+        ->test('pages::rendez-vous.form', ['serviceSlug' => $this->etatCivil->slug])
+        ->assertSee('Tous les créneaux de ce service sont réservés');
+});
+
 test('la seconde réservation d’un même créneau échoue avec un message clair', function () {
     $creneau = creneauDe($this->etatCivil, '2026-10-06 06:30:00');
     $premier = User::factory()->citoyen()->create();

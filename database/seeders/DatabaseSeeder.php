@@ -2,6 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Actualite;
+use App\Models\Message;
+use App\Models\Service;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -37,6 +40,12 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $users = User::all();
+
+        Service::factory(20)->recycle($users)->create();
+
+        Actualite::factory(20)->recycle($users)->create();
+
+        Message::factory(20)->recycle($users)->create();
 
         // make:feature:seeders
     }

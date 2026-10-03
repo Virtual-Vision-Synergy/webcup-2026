@@ -56,12 +56,12 @@
             <button
                 type="button"
                 x-ref="boutonMenu"
-                x-on:click="$store.menu.ouvrir()"
-                x-bind:aria-expanded="$store.menu.ouvert ? 'true' : 'false'"
+                x-on:click="$store.menu?.ouvrir()"
+                x-bind:aria-expanded="$store.menu?.ouvert ? 'true' : 'false'"
                 aria-expanded="false"
                 aria-controls="tn-menu"
                 class="flex h-full min-h-12 w-full flex-col items-center justify-center gap-1 text-[11px] font-medium text-ink-2"
-                x-bind:class="$store.menu.ouvert && 'text-cyan!'"
+                x-bind:class="$store.menu?.ouvert && 'text-cyan!'"
             >
                 <flux:icon name="layout-grid" class="size-[22px]" />
                 Menu

@@ -75,8 +75,9 @@
                         <div class="ms-auto flex items-center gap-2">
                             <x-tn.api-status class="max-sm:hidden" />
                             <x-tn.theme-toggle class="max-lg:hidden" />
-                            <a href="{{ route('profile.edit') }}" class="flex size-11 items-center justify-center lg:hidden" aria-label="Mon compte : {{ auth()->user()->name }}" wire:navigate>
+                            <a href="{{ route('profile.edit') }}" class="flex size-11 items-center justify-center lg:hidden" wire:navigate>
                                 <flux:avatar size="sm" :name="auth()->user()->name" :initials="auth()->user()->initials()" />
+                                <span class="sr-only">Mon compte : {{ auth()->user()->name }}</span>
                             </a>
                         </div>
                     </div>

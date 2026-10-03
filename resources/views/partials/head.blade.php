@@ -26,7 +26,9 @@
 {{-- Saira par Google Fonts : le plugin de polices de Vite ne gère pas l'axe de largeur (wdth). --}}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira:wdth,wght@75..125,400..700&display=swap">
+{{-- Chargée sans bloquer le premier rendu : les titres s'affichent d'abord dans la police de secours. --}}
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Saira:wdth,wght@75..125,400..700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira:wdth,wght@75..125,400..700&display=swap"></noscript>
 
 @fonts
 

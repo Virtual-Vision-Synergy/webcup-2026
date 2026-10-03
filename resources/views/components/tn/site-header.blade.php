@@ -31,8 +31,9 @@
 
             @if ($connecte)
                 <flux:button :href="route('dashboard')" variant="primary" class="h-10! max-lg:hidden">Mon espace</flux:button>
-                <a href="{{ route('profile.edit') }}" class="flex size-11 items-center justify-center lg:hidden" aria-label="Mon compte : {{ auth()->user()->name }}">
+                <a href="{{ route('profile.edit') }}" class="flex size-11 items-center justify-center lg:hidden">
                     <flux:avatar size="sm" :name="auth()->user()->name" :initials="auth()->user()->initials()" />
+                    <span class="sr-only">Mon compte : {{ auth()->user()->name }}</span>
                 </a>
             @else
                 <a href="{{ route('login') }}" class="inline-flex h-11 items-center rounded-sm px-3 text-[15px] font-medium text-ink-2 hover:text-ink">Connexion</a>

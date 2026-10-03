@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
+use App\Models\Concerns\HasCoordinates;
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -22,11 +23,11 @@ use Illuminate\Support\Str;
  * Le slug est généré à la création depuis le nom et ne change plus (URL stables).
  * mis_en_avant n'est pas remplissable non plus : réservé aux agents et admins (ServicePolicy::feature).
  */
-#[Fillable(['nom', 'categorie', 'description', 'horaires', 'telephone', 'email', 'adresse', 'lieu_rendez_vous', 'pieces_a_fournir', 'duree_rendez_vous'])]
+#[Fillable(['nom', 'categorie', 'description', 'horaires', 'telephone', 'email', 'adresse', 'lieu_rendez_vous', 'pieces_a_fournir', 'duree_rendez_vous', 'latitude', 'longitude'])]
 class Service extends Model
 {
     /** @use HasFactory<ServiceFactory> */
-    use Auditable, HasAuditHistory, HasFactory;
+    use Auditable, HasAuditHistory, HasCoordinates, HasFactory;
 
     /** Catégories du catalogue (filtre et recherche). */
     public const CATEGORIE_OPTIONS = ['administratif', 'sante', 'social', 'education', 'culture', 'urbanisme', 'securite', 'economie'];
@@ -54,6 +55,8 @@ class Service extends Model
         return [
             'mis_en_avant' => 'boolean',
             'duree_rendez_vous' => 'integer',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
         ];
     }
 

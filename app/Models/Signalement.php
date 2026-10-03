@@ -6,6 +6,7 @@ use App\Events\SignalementEtapeAjoutee;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
 use App\Models\Concerns\PrevientDuChangementDeStatut;
+use App\Models\Concerns\Soutenable;
 use Database\Factories\SignalementFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,7 +14,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 
 /**
@@ -28,7 +28,7 @@ use Illuminate\Support\Carbon;
 class Signalement extends Model
 {
     /** @use HasFactory<SignalementFactory> */
-    use Auditable, HasAuditHistory, HasFactory, PrevientDuChangementDeStatut;
+    use Auditable, HasAuditHistory, HasFactory, PrevientDuChangementDeStatut, Soutenable;
 
     public const CATEGORIE_OPTIONS = ['eclairage', 'voirie', 'proprete', 'eau', 'espaces_verts', 'mobilier', 'autre'];
 
@@ -269,35 +269,16 @@ class Signalement extends Model
         return in_array($this->statut, self::STATUTS_OUVERTS, true);
     }
 
-    public function estSoutenuPar(User $user): bool
-    {
-        return $this->soutiens()->whereBelongsTo($user)->exists();
-    }
-
     /**
-     * Enregistre le soutien de l'habitant (sans effet s'il soutient déjà). Seul point de passage :
-     * user_id et signalement_id sont assignés ici, jamais depuis le navigateur.
+     * Soutien non enregistré rattaché à ce signalement : user_id est assigné par le trait Soutenable
+     * (estSoutenuPar, ajouterSoutien, retirerSoutien), jamais depuis le navigateur.
      */
-    public function ajouterSoutien(User $user): void
+    protected function nouveauSoutien(): Soutien
     {
-        if ($this->estSoutenuPar($user)) {
-            return;
-        }
-
         $soutien = new Soutien;
-        $soutien->user()->associate($user);
         $soutien->signalement()->associate($this);
 
-        try {
-            $soutien->save();
-        } catch (UniqueConstraintViolationException) {
-            // Double clic simultané : la contrainte unique a déjà enregistré le soutien.
-        }
-    }
-
-    public function retirerSoutien(User $user): void
-    {
-        $this->soutiens()->whereBelongsTo($user)->delete();
+        return $soutien;
     }
 
     /**

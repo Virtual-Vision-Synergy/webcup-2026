@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Laravel\Fortify\Features;
 
 beforeEach(function () {
@@ -24,4 +25,50 @@ test('new users can register', function () {
         ->assertRedirect(route('dashboard', absolute: false));
 
     $this->assertAuthenticated();
+});
+
+test('après inscription, l\'habitant arrive sur son espace personnel', function () {
+    $this->followingRedirects()
+        ->post(route('register.store'), [
+            'name' => 'Hery Rakoto',
+            'email' => 'hery@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])
+        ->assertOk()
+        ->assertSee('Bonjour Hery Rakoto')
+        ->assertSee('hery@example.com')
+        ->assertSee('Citoyen');
+});
+
+test('un formulaire vide est refusé', function () {
+    $this->post(route('register.store'), [])
+        ->assertSessionHasErrors(['name', 'email', 'password']);
+
+    $this->assertGuest();
+});
+
+test('un e-mail déjà utilisé est refusé avec un message en français', function () {
+    app()->setLocale('fr');
+    User::factory()->create(['email' => 'pris@example.com']);
+
+    $this->post(route('register.store'), [
+        'name' => 'Doublon',
+        'email' => 'pris@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+    ])->assertSessionHasErrors(['email' => 'Cette valeur de adresse e-mail est déjà utilisée.']);
+
+    expect(User::where('email', 'pris@example.com')->count())->toBe(1);
+    $this->assertGuest();
+});
+
+test('l\'espace personnel n\'affiche que les données du compte connecté', function () {
+    $autre = User::factory()->create(['name' => 'Autre Habitant', 'email' => 'autre@example.com']);
+
+    $this->actingAs(User::factory()->create())
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertDontSee($autre->name)
+        ->assertDontSee($autre->email);
 });

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Console\Command;
 
@@ -28,8 +29,7 @@ class PromouvoirAdmin extends Command
             return self::SUCCESS;
         }
 
-        $user->role = 'admin';
-        $user->save();
+        $user->changerRole(Role::where('code', Role::ADMIN)->firstOrFail());
 
         $this->info("{$email} est maintenant administrateur.");
 

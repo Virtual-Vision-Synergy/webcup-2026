@@ -39,6 +39,7 @@ new #[Layout('layouts::public'), Title('Alerte')] class extends Component {
                     <x-tn.status-badge etat="alerte">Concerne votre quartier : {{ $record->nomQuartier() }}</x-tn.status-badge>
                 @endif
             </div>
+            <x-tn.mots-utiles class="mt-3" :slugs="['alerte', 'quartier']" />
         </x-slot:meta>
     </x-tn.page-header>
 

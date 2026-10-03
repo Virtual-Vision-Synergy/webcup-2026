@@ -134,6 +134,7 @@ new #[Title('Security settings')] class extends Component {
             <section class="mt-12">
                 <flux:heading>{{ __('Two-factor authentication') }}</flux:heading>
                 <flux:subheading>{{ __('Manage your two-factor authentication settings') }}</flux:subheading>
+                <x-tn.mots-utiles class="mt-2 mb-4" :slugs="['verification-deux-etapes', 'code-de-secours']" />
 
                 <div class="flex flex-col w-full mx-auto space-y-6 text-sm" wire:cloak>
                     @if ($twoFactorEnabled)

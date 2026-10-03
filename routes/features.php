@@ -75,5 +75,8 @@ Route::group([], function () {
     // F29 : page d'une alerte en cours, consultable sans compte (lien partageable) ; 404 hors période (AnnoncePolicy::view).
     Route::livewire('alertes/{annonce}', 'pages::alertes.show')->name('alertes.show');
 
+    // D13 : lexique des mots administratifs, consultable sans compte (informations générales, aucune donnée personnelle, lecture seule).
+    Route::livewire('lexique', 'pages::lexique.index')->name('lexique');
+
     // make:feature:routes-public
 });

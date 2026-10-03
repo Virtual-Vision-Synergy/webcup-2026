@@ -61,6 +61,9 @@ new #[Title('Mes rendez-vous')] class extends Component {
         subtitle="Vos rendez-vous avec les agents de la mairie, en heure de Nova Terra."
         :breadcrumb="['Mon espace' => route('dashboard'), 'Rendez-vous' => null]"
     >
+        <x-slot:meta>
+            <x-tn.mots-utiles class="mt-3" :slugs="['rendez-vous', 'etat-civil', 'urbanisme', 'ccas']" />
+        </x-slot:meta>
         <x-slot:actions>
             @can('create', RendezVous::class)
                 <flux:button variant="primary" icon="plus" :href="route('appointments.create')" class="tn-cta" wire:navigate>

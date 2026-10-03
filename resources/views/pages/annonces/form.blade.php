@@ -103,7 +103,7 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
     <x-tn.page-header
         label="Haut Conseil de la Ville"
         :title="$record ? 'Modifier le message' : 'Publier un message général'"
-        :breadcrumb="['Messages généraux' => route('agent.annonces.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
+        :breadcrumb="['Espace agent' => route('agent.index'), 'Messages généraux' => route('agent.annonces.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
     />
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">

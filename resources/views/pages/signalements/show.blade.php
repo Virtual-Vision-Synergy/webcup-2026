@@ -52,7 +52,7 @@ new #[Title('Signalement')] class extends Component {
     <x-tn.page-header
         label="Signalement"
         :title="$categorie"
-        :breadcrumb="['Signalements' => route('signalements.index'), $categorie => null]"
+        :breadcrumb="['Mon espace' => route('dashboard'), 'Signalements' => route('signalements.index'), $categorie => null]"
     >
         <x-slot:meta>
             <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink-2">

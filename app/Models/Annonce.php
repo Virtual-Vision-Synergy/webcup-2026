@@ -61,6 +61,12 @@ class Annonce extends Model
 
     public const CACHE_KEY = 'annonces.en-diffusion';
 
+    /**
+     * Cookie (non chiffré, écrit par le navigateur) listant les messages fermés : « id-version,id-version ».
+     * Lu côté serveur : un message fermé n'est plus rendu du tout, même après un changement de page.
+     */
+    public const COOKIE_FERMES = 'tn_annonces_fermees';
+
     protected static function booted(): void
     {
         static::saved(fn () => Cache::forget(self::CACHE_KEY));
@@ -129,6 +135,21 @@ class Annonce extends Model
                 fn (Annonce $a, Annonce $b): int => $b->debut <=> $a->debut,
             ])
             ->values();
+    }
+
+    /**
+     * Clés des messages fermés, lues dans le cookie (format strictement contrôlé, 50 au maximum).
+     *
+     * @return list<string>
+     */
+    public static function clesFermees(?string $cookie): array
+    {
+        $cles = array_filter(
+            array_map(trim(...), explode(',', (string) $cookie)),
+            fn (string $cle): bool => preg_match('/^\d{1,10}-\d{1,12}$/', $cle) === 1,
+        );
+
+        return array_slice(array_values($cles), -50);
     }
 
     public function gravite(): int
@@ -205,11 +226,11 @@ class Annonce extends Model
     }
 
     /**
-     * Clé de fermeture côté navigateur : un message modifié réapparaît.
+     * Clé de fermeture (cookie) et de repli (navigateur) : un message modifié réapparaît.
      */
     public function cleFermeture(): string
     {
-        return 'tn.annonce.'.$this->id.'.'.($this->updated_at->timestamp ?? 0);
+        return $this->id.'-'.($this->updated_at->timestamp ?? 0);
     }
 
     /**

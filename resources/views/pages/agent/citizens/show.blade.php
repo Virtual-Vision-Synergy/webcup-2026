@@ -27,7 +27,7 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
         $this->account->deactivate();
 
         Flux::modal('confirmer-desactivation')->close();
-        Flux::toast(variant: 'success', text: 'Compte désactivé : '.$this->account->name.' ne peut plus se connecter.');
+        Flux::toast(variant: 'success', text: __('Compte désactivé : :nom ne peut plus se connecter.', ['nom' => $this->account->name]));
     }
 
     public function reactivate(): void
@@ -36,7 +36,7 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
 
         $this->account->reactivate();
 
-        Flux::toast(variant: 'success', text: 'Compte réactivé : '.$this->account->name.' peut de nouveau se connecter.');
+        Flux::toast(variant: 'success', text: __('Compte réactivé : :nom peut de nouveau se connecter.', ['nom' => $this->account->name]));
     }
 
     /**
@@ -61,16 +61,16 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
 
 <section class="mx-auto w-full max-w-4xl space-y-6">
     <x-tn.page-header
-        label="Fiche du compte"
+        label="{{ __('Fiche du compte') }}"
         :title="$account->name"
         :breadcrumb="['Espace agent' => route('agent.index'), 'Comptes citoyens' => route('agent.citizens.index'), $account->name => null]"
     >
         <x-slot:meta>
             <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink-2">
                 @if ($account->isActive())
-                    <x-tn.status-badge etat="normal">Actif</x-tn.status-badge>
+                    <x-tn.status-badge etat="normal">{{ __('Actif') }}</x-tn.status-badge>
                 @else
-                    <x-tn.status-badge etat="alerte">Désactivé</x-tn.status-badge>
+                    <x-tn.status-badge etat="alerte">{{ __('Désactivé') }}</x-tn.status-badge>
                 @endif
                 <span>Inscrit le {{ $account->created_at?->format('d/m/Y') }}</span>
             </div>
@@ -78,25 +78,25 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
         <x-slot:actions>
             @can('deactivate', $account)
                 <flux:modal.trigger name="confirmer-desactivation">
-                    <flux:button variant="danger" icon="no-symbol">Désactiver le compte</flux:button>
+                    <flux:button variant="danger" icon="no-symbol">{{ __('Désactiver le compte') }}</flux:button>
                 </flux:modal.trigger>
             @endcan
             @can('reactivate', $account)
-                <flux:button variant="primary" icon="arrow-path" wire:click="reactivate" wire:loading.attr="disabled">Réactiver le compte</flux:button>
+                <flux:button variant="primary" icon="arrow-path" wire:click="reactivate" wire:loading.attr="disabled">{{ __('Réactiver le compte') }}</flux:button>
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
 
     <x-tn.surface>
-        <x-tn.section-label as="h2" class="mb-2">Informations du compte</x-tn.section-label>
+        <x-tn.section-label as="h2" class="mb-2">{{ __('Informations du compte') }}</x-tn.section-label>
         <dl>
-            <x-tn.field label="Nom">{{ $account->name }}</x-tn.field>
-            <x-tn.field label="E-mail">{{ $account->email }}</x-tn.field>
-            <x-tn.field label="Profil">{{ $account->role?->label ?? '—' }}</x-tn.field>
-            <x-tn.field label="Inscription">{{ $account->created_at?->format('d/m/Y à H:i') }}</x-tn.field>
-            <x-tn.field label="Statut">
+            <x-tn.field label="{{ __('Nom') }}">{{ $account->name }}</x-tn.field>
+            <x-tn.field label="{{ __('E-mail') }}">{{ $account->email }}</x-tn.field>
+            <x-tn.field label="{{ __('Profil') }}">{{ $account->role?->label ?? '—' }}</x-tn.field>
+            <x-tn.field label="{{ __('Inscription') }}">{{ $account->created_at?->format('d/m/Y à H:i') }}</x-tn.field>
+            <x-tn.field label="{{ __('Statut') }}">
                 @if ($account->isActive())
-                    Actif : la personne peut se connecter à son espace.
+                    {{ __('Actif : la personne peut se connecter à son espace.') }}
                 @else
                     Désactivé le {{ $account->deactivated_at->format('d/m/Y à H:i') }} : la connexion est bloquée.
                 @endif
@@ -105,9 +105,9 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
     </x-tn.surface>
 
     <x-tn.surface>
-        <x-tn.section-label as="h2" class="mb-3">Journal des actions</x-tn.section-label>
+        <x-tn.section-label as="h2" class="mb-3">{{ __('Journal des actions') }}</x-tn.section-label>
         @if ($this->journal->isEmpty())
-            <flux:text>Aucune désactivation ni réactivation pour ce compte.</flux:text>
+            <flux:text>{{ __('Aucune désactivation ni réactivation pour ce compte.') }}</flux:text>
         @else
             <ul class="divide-y divide-line">
                 @foreach ($this->journal as $entree)
@@ -128,13 +128,13 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
             <div class="space-y-6">
                 <div>
                     <flux:heading size="lg">Désactiver le compte de {{ $account->name }} ?</flux:heading>
-                    <flux:text class="mt-2">Ce citoyen ne pourra plus se connecter. Confirmer ? Vous pourrez réactiver le compte à tout moment.</flux:text>
+                    <flux:text class="mt-2">{{ __('Ce citoyen ne pourra plus se connecter. Confirmer ? Vous pourrez réactiver le compte à tout moment.') }}</flux:text>
                 </div>
                 <div class="flex justify-end gap-2">
                     <flux:modal.close>
-                        <flux:button variant="ghost">Annuler</flux:button>
+                        <flux:button variant="ghost">{{ __('Annuler') }}</flux:button>
                     </flux:modal.close>
-                    <flux:button variant="danger" wire:click="deactivate" wire:loading.attr="disabled">Confirmer la désactivation</flux:button>
+                    <flux:button variant="danger" wire:click="deactivate" wire:loading.attr="disabled">{{ __('Confirmer la désactivation') }}</flux:button>
                 </div>
             </div>
         </flux:modal>

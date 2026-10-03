@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 class DefinirLangue
 {
     /** Langues proposées (code => libellé dans sa propre langue). Les textes sont dans lang/{code}.json. */
-    public const LANGUES = ['fr' => 'Français', 'en' => 'English', 'mg' => 'Malagasy'];
+    public const LANGUES = ['fr' => 'Français', 'en' => 'English'];
 
     /**
      * Applique la langue choisie par le visiteur (session) ; le français est la langue de référence :

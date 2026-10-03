@@ -77,9 +77,9 @@ new #[Title('Profile settings')] class extends Component {
 
             </div>
 
-            <flux:input wire:model="telephone" label="Téléphone" type="tel" autocomplete="tel" placeholder="Ex. 034 12 345 67" />
+            <flux:input wire:model="telephone" label="{{ __('Téléphone') }}" type="tel" autocomplete="tel" placeholder="Ex. 034 12 345 67" />
 
-            <flux:input wire:model="quartier" label="Quartier" type="text" autocomplete="address-level3" placeholder="Ex. Ambohitra" />
+            <flux:input wire:model="quartier" label="{{ __('Quartier') }}" type="text" autocomplete="address-level3" placeholder="{{ __('Ex. Ambohitra') }}" />
 
             <div class="flex items-center gap-4">
                 <div class="flex items-center justify-end">
@@ -93,8 +93,8 @@ new #[Title('Profile settings')] class extends Component {
 
             @can('view', \App\Models\Onboarding::class)
                 <p class="mb-6 text-sm text-ink-2">
-                    Nouveau à Nova Terra ?
-                    <a href="{{ route('onboarding.show') }}" wire:navigate class="font-medium text-cyan hover:underline" data-test="revoir-onboarding">Revoir la prise en main</a>
+                    {{ __('Nouveau à Nova Terra ?') }}
+                    <a href="{{ route('onboarding.show') }}" wire:navigate class="font-medium text-cyan hover:underline" data-test="revoir-onboarding">{{ __('Revoir la prise en main') }}</a>
                 </p>
             @endcan
 

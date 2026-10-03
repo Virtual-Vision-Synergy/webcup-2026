@@ -20,12 +20,12 @@
                 <span @class(['size-2.5 rounded-full', $couleur => $fait, 'border border-ink-2/50' => ! $fait])></span>
             </span>
             <div class="min-w-0">
-                <p @class(['font-medium', 'text-ink' => $fait, 'text-ink-2' => ! $fait])>{{ $etape['label'] }}</p>
+                <p @class(['font-medium', 'text-ink' => $fait, 'text-ink-2' => ! $fait])>{{ __($etape['label']) }}</p>
                 @if (! empty($etape['date']))
                     <time datetime="{{ $etape['date']->toIso8601String() }}" class="font-mono text-xs text-ink-2">{{ $etape['date']->translatedFormat('d M Y · H:i') }}</time>
                 @endif
                 @if (! empty($etape['texte']))
-                    <p class="mt-1 text-sm text-ink-2">{{ $etape['texte'] }}</p>
+                    <p class="mt-1 text-sm text-ink-2">{{ __($etape['texte']) }}</p>
                 @endif
             </div>
         </li>

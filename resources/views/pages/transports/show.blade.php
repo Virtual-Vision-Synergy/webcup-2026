@@ -22,7 +22,7 @@ new #[Title('Ligne de transport')] class extends Component {
 
         $this->record->delete();
 
-        Flux::toast(variant: 'success', text: 'Ligne supprimée.');
+        Flux::toast(variant: 'success', text: __('Ligne supprimée.'));
 
         $this->redirectRoute('transports.index', navigate: true);
     }
@@ -32,16 +32,16 @@ new #[Title('Ligne de transport')] class extends Component {
     @php($arrets = $record->listeArrets())
 
     <x-tn.page-header
-        :label="$record->modeLabel().' · Ligne '.$record->numero"
+        :label="$record->modeLabel().' · '.__('Ligne :numero', ['numero' => $record->numero])"
         :title="$record->nom"
         :breadcrumb="['Mon espace' => route('dashboard'), 'Transports' => route('transports.index'), 'Ligne '.$record->numero => null]"
     >
         <x-slot:actions>
             @can('update', $record)
-                <flux:button icon="pencil-square" :href="route('transports.edit', $record)" wire:navigate>Modifier</flux:button>
+                <flux:button icon="pencil-square" :href="route('transports.edit', $record)" wire:navigate>{{ __('Modifier') }}</flux:button>
             @endcan
             @can('delete', $record)
-                <flux:button variant="danger" icon="trash" wire:click="delete" wire:confirm="Supprimer définitivement cette ligne ?">Supprimer</flux:button>
+                <flux:button variant="danger" icon="trash" wire:click="delete" wire:confirm="{{ __('Supprimer définitivement cette ligne ?') }}">{{ __('Supprimer') }}</flux:button>
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
@@ -55,23 +55,23 @@ new #[Title('Ligne de transport')] class extends Component {
             <flux:icon name="exclamation-triangle" class="mt-0.5 size-5 shrink-0" />
             <div>
                 <p class="font-semibold">{{ $record->etatLabel() }}</p>
-                <p class="mt-1 whitespace-pre-line text-sm">{{ $record->perturbation ?? 'Perturbation signalée, informations à venir.' }}</p>
+                <p class="mt-1 whitespace-pre-line text-sm">{{ $record->perturbation ?? __('Perturbation signalée, informations à venir.') }}</p>
             </div>
         </div>
     @endif
 
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-        <x-tn.panel label="Horaires et fréquence" padding="p-5 md:p-6">
+        <x-tn.panel label="{{ __('Horaires et fréquence') }}" padding="p-5 md:p-6">
             <dl>
-                <x-tn.field label="État">
+                <x-tn.field label="{{ __('État') }}">
                     <x-tn.status-badge :etat="$record->etatBadge()" :live="$record->estPerturbee()">{{ $record->etatLabel() }}</x-tn.status-badge>
                 </x-tn.field>
-                <x-tn.field label="Horaires"><p class="whitespace-pre-line font-mono text-sm leading-6">{{ $record->horaires }}</p></x-tn.field>
+                <x-tn.field label="{{ __('Horaires') }}"><p class="whitespace-pre-line font-mono text-sm leading-6">{{ $record->horaires }}</p></x-tn.field>
                 @if ($record->frequence)
-                    <x-tn.field label="Fréquence"><p class="font-mono text-sm">{{ $record->frequence }}</p></x-tn.field>
+                    <x-tn.field label="{{ __('Fréquence') }}"><p class="font-mono text-sm">{{ $record->frequence }}</p></x-tn.field>
                 @endif
                 @if (count($arrets) > 0)
-                    <x-tn.field label="Trajet"><p class="text-sm">{{ $arrets[0] }} → {{ end($arrets) }}</p></x-tn.field>
+                    <x-tn.field label="{{ __('Trajet') }}"><p class="text-sm">{{ $arrets[0] }} → {{ end($arrets) }}</p></x-tn.field>
                 @endif
             </dl>
         </x-tn.panel>
@@ -81,11 +81,11 @@ new #[Title('Ligne de transport')] class extends Component {
             @if (count($arrets) > 0)
                 <x-tn.timeline :items="collect($arrets)->map(fn (string $arret, int $i) => [
                     'label' => $arret,
-                    'texte' => $i === 0 ? 'Départ' : ($i === count($arrets) - 1 ? 'Terminus' : null),
+                    'texte' => $i === 0 ? __('Départ') : ($i === count($arrets) - 1 ? __('Terminus') : null),
                     'etat' => $record->etatBadge(),
                 ])->all()" />
             @else
-                <p class="text-ink-2">La liste des arrêts sera publiée prochainement.</p>
+                <p class="text-ink-2">{{ __('La liste des arrêts sera publiée prochainement.') }}</p>
             @endif
         </x-tn.surface>
     </div>

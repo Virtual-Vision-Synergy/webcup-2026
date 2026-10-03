@@ -61,10 +61,10 @@ new #[Title('Ligne de transport')] class extends Component {
     protected function validationAttributes(): array
     {
         return [
-            'numero' => 'numéro',
-            'arrets' => 'arrêts',
-            'etat' => 'état du trafic',
-            'frequence' => 'fréquence',
+            'numero' => __('numéro'),
+            'arrets' => __('arrêts'),
+            'etat' => __('état du trafic'),
+            'frequence' => __('fréquence'),
         ];
     }
 
@@ -95,7 +95,7 @@ new #[Title('Ligne de transport')] class extends Component {
 
         $record->save();
 
-        Flux::toast(variant: 'success', text: 'Ligne enregistrée.');
+        Flux::toast(variant: 'success', text: __('Ligne enregistrée.'));
 
         $this->redirectRoute('transports.show', $record, navigate: true);
     }
@@ -103,8 +103,8 @@ new #[Title('Ligne de transport')] class extends Component {
 
 <section class="mx-auto w-full max-w-2xl space-y-6">
     <x-tn.page-header
-        label="Mobilité"
-        :title="$record ? 'Modifier la ligne '.$record->numero : 'Ajouter une ligne'"
+        label="{{ __('Mobilité') }}"
+        :title="$record ? __('Modifier la ligne :numero', ['numero' => $record->numero]) : __('Ajouter une ligne')"
         :breadcrumb="$record
             ? ['Mon espace' => route('dashboard'), 'Transports' => route('transports.index'), 'Ligne '.$record->numero => route('transports.show', $record), 'Modifier' => null]
             : ['Mon espace' => route('dashboard'), 'Transports' => route('transports.index'), 'Nouvelle ligne' => null]"
@@ -112,38 +112,38 @@ new #[Title('Ligne de transport')] class extends Component {
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
         <div class="grid gap-4 sm:grid-cols-[8rem_minmax(0,1fr)]">
-            <flux:input wire:model="numero" label="Numéro" placeholder="4, N1…" required />
-            <flux:input wire:model="nom" label="Nom de la ligne" placeholder="Port – Hôpital régional" required />
+            <flux:input wire:model="numero" label="{{ __('Numéro') }}" placeholder="4, N1…" required />
+            <flux:input wire:model="nom" label="{{ __('Nom de la ligne') }}" placeholder="{{ __('Port – Hôpital régional') }}" required />
         </div>
 
-        <flux:select wire:model="mode" label="Mode de transport" required>
+        <flux:select wire:model="mode" label="{{ __('Mode de transport') }}" required>
             @foreach (LigneTransport::MODE_LABELS as $value => $label)
-                <flux:select.option :value="$value">{{ $label }}</flux:select.option>
+                <flux:select.option :value="$value">{{ __($label) }}</flux:select.option>
             @endforeach
         </flux:select>
 
-        <flux:textarea wire:model="arrets" label="Arrêts (un par ligne, dans l'ordre du parcours)" rows="6" required />
+        <flux:textarea wire:model="arrets" label="{{ __('Arrêts (un par ligne, dans l\'ordre du parcours)') }}" rows="6" required />
 
-        <flux:textarea wire:model="horaires" label="Horaires" rows="3" placeholder="Lundi au vendredi : 5 h 30 – 21 h 00" required />
+        <flux:textarea wire:model="horaires" label="{{ __('Horaires') }}" rows="3" placeholder="{{ __('Lundi au vendredi : 5 h 30 – 21 h 00') }}" required />
 
-        <flux:input wire:model="frequence" label="Fréquence" placeholder="Toutes les 10 min" />
+        <flux:input wire:model="frequence" label="{{ __('Fréquence') }}" placeholder="{{ __('Toutes les 10 min') }}" />
 
-        <flux:select wire:model.live="etat" label="État du trafic" required>
+        <flux:select wire:model.live="etat" label="{{ __('État du trafic') }}" required>
             @foreach (LigneTransport::ETAT_LABELS as $value => $label)
-                <flux:select.option :value="$value">{{ $label }}</flux:select.option>
+                <flux:select.option :value="$value">{{ __($label) }}</flux:select.option>
             @endforeach
         </flux:select>
 
         @if ($etat !== 'normal')
-            <flux:textarea wire:model="perturbation" label="Message de perturbation" rows="3" placeholder="Cause, arrêts concernés, durée, itinéraire conseillé…" required />
+            <flux:textarea wire:model="perturbation" label="{{ __('Message de perturbation') }}" rows="3" placeholder="{{ __('Cause, arrêts concernés, durée, itinéraire conseillé…') }}" required />
         @endif
 
         <div class="flex items-center gap-3">
             <flux:button type="submit" variant="primary">
-                <span wire:loading.remove wire:target="save">Enregistrer</span>
-                <span wire:loading wire:target="save">Enregistrement…</span>
+                <span wire:loading.remove wire:target="save">{{ __('Enregistrer') }}</span>
+                <span wire:loading wire:target="save">{{ __('Enregistrement…') }}</span>
             </flux:button>
-            <flux:button :href="$record ? route('transports.show', $record) : route('transports.index')" wire:navigate variant="ghost">Annuler</flux:button>
+            <flux:button :href="$record ? route('transports.show', $record) : route('transports.index')" wire:navigate variant="ghost">{{ __('Annuler') }}</flux:button>
         </div>
     </form>
 </section>

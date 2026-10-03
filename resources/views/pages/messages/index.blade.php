@@ -68,36 +68,36 @@ new #[Title('Messages')] class extends Component {
 
         $record->delete();
 
-        Flux::toast(variant: 'success', text: 'Message supprimé(e).');
+        Flux::toast(variant: 'success', text: __('Message supprimé(e).'));
     }
 }; ?>
 
 <section class="mx-auto w-full max-w-5xl space-y-6">
     <x-tn.page-header
-        label="Contact"
-        title="Messages"
-        :subtitle="$this->items->total().' message(s)'"
+        label="{{ __('Contact') }}"
+        title="{{ __('Messages') }}"
+        :subtitle="__(':n message(s)', ['n' => $this->items->total()])"
         :breadcrumb="['Mon espace' => route('dashboard'), 'Messages' => null]"
     >
         <x-slot:actions>
             @can('create', Message::class)
-                <flux:button variant="primary" icon="plus" :href="route('messages.create')" class="tn-cta" wire:navigate>Contacter la mairie</flux:button>
+                <flux:button variant="primary" icon="plus" :href="route('messages.create')" class="tn-cta" wire:navigate>{{ __('Contacter la mairie') }}</flux:button>
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher un message…" aria-label="Rechercher un message" class="sm:max-w-sm" />
+        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="{{ __('Rechercher un message…') }}" aria-label="{{ __('Rechercher un message') }}" class="sm:max-w-sm" />
         @can('viewAll', Message::class)
-            <flux:checkbox wire:model.live="mine" label="Mes messages uniquement" />
+            <flux:checkbox wire:model.live="mine" label="{{ __('Mes messages uniquement') }}" />
         @endcan
-        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">{{ __('Mise à jour…') }}</span>
     </div>
 
     @if ($this->items->isEmpty())
-        <x-tn.empty icon="mail" title="Aucun message pour le moment" text="Écrivez à la mairie : vos messages envoyés apparaîtront ici.">
+        <x-tn.empty icon="mail" title="{{ __('Aucun message pour le moment') }}" text="{{ __('Écrivez à la mairie : vos messages envoyés apparaîtront ici.') }}">
             @can('create', Message::class)
-                <flux:button variant="primary" icon="plus" :href="route('messages.create')" wire:navigate>Contacter la mairie</flux:button>
+                <flux:button variant="primary" icon="plus" :href="route('messages.create')" wire:navigate>{{ __('Contacter la mairie') }}</flux:button>
             @endcan
         </x-tn.empty>
     @else
@@ -108,7 +108,7 @@ new #[Title('Messages')] class extends Component {
                         <flux:avatar size="sm" :name="$item->nom" class="mt-0.5" />
                         <span class="min-w-0">
                             <span class="flex flex-wrap items-baseline gap-x-3">
-                                <span class="font-semibold text-ink group-hover:text-cyan">{{ $item->sujet ?? 'Sans objet' }}</span>
+                                <span class="font-semibold text-ink group-hover:text-cyan">{{ $item->sujet ?? __('Sans objet') }}</span>
                                 <span class="font-mono text-xs text-ink-2">{{ $item->created_at->format('d.m.Y · H:i') }}</span>
                             </span>
                             <span class="block truncate text-sm text-ink-2">{{ $item->nom }} — {{ \Illuminate\Support\Str::limit((string) $item->message, 120) }}</span>
@@ -116,10 +116,10 @@ new #[Title('Messages')] class extends Component {
                     </a>
                     <div class="flex gap-1">
                         @can('update', $item)
-                            <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('messages.edit', $item)" wire:navigate aria-label="Modifier" />
+                            <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('messages.edit', $item)" wire:navigate aria-label="{{ __('Modifier') }}" />
                         @endcan
                         @can('delete', $item)
-                            <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer ce message ?" aria-label="Supprimer" />
+                            <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="{{ __('Supprimer ce message ?') }}" aria-label="{{ __('Supprimer') }}" />
                         @endcan
                     </div>
                 </li>

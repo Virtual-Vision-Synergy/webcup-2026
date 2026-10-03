@@ -9,8 +9,8 @@
 
     @if ($mode === 'choix')
         <div class="flex flex-wrap items-center gap-3">
-            <flux:button type="button" size="sm" icon="map-pin" data-carte-localiser>Me localiser</flux:button>
-            <flux:text class="text-sm">Ou cliquez sur la carte pour placer le repère.</flux:text>
+            <flux:button type="button" size="sm" icon="map-pin" data-carte-localiser>{{ __('Me localiser') }}</flux:button>
+            <flux:text class="text-sm">{{ __('Ou cliquez sur la carte pour placer le repère.') }}</flux:text>
         </div>
     @endif
 

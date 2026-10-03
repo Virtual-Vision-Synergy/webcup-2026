@@ -12,11 +12,11 @@
             <x-tn.breadcrumb :items="$breadcrumb" class="mb-3" />
         @endif
         @if ($label)
-            <x-tn.section-label class="mb-2 text-cyan!">{{ $label }}</x-tn.section-label>
+            <x-tn.section-label class="mb-2 text-cyan!">{{ is_string($label) ? __($label) : $label }}</x-tn.section-label>
         @endif
-        <h1 class="tn-display text-[1.75rem] leading-[1.1] font-semibold text-ink md:text-[2.25rem]">{{ $title }}</h1>
+        <h1 class="tn-display text-[1.75rem] leading-[1.1] font-semibold text-ink md:text-[2.25rem]">{{ is_string($title) ? __($title) : $title }}</h1>
         @if ($subtitle)
-            <p class="mt-2 text-ink-2">{{ $subtitle }}</p>
+            <p class="mt-2 text-ink-2">{{ is_string($subtitle) ? __($subtitle) : $subtitle }}</p>
         @endif
         {{ $meta ?? '' }}
     </div>

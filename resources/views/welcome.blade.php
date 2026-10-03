@@ -65,10 +65,10 @@
         <main>
             <section class="mx-auto max-w-5xl px-4 py-16 text-center sm:py-24">
                 <h1 class="mx-auto max-w-3xl text-balance text-4xl font-bold tracking-tight sm:text-5xl">
-                    {{ $landing['accroche'] }}
+                    {{ $nom }} — Mairie de Nova Terra
                 </h1>
                 <p class="mx-auto mt-4 max-w-2xl text-lg text-zinc-600 dark:text-zinc-300">
-                    {{ $landing['sous_titre'] }}
+                    Vos démarches, les actualités de la ville et le contact avec vos services municipaux, au même endroit.
                 </p>
                 <div class="mt-8">
                     @if ($connecte)
@@ -77,6 +77,18 @@
                         <flux:button :href="route('register')" variant="primary">{{ $landing['bouton'] }}</flux:button>
                     @else
                         <flux:button :href="route('login')" variant="primary">Connexion</flux:button>
+                    @endif
+                </div>
+            </section>
+
+            <section class="border-y border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900" aria-labelledby="titre-acces-rapide">
+                <h2 id="titre-acces-rapide" class="sr-only">Accès rapide</h2>
+                <div class="mx-auto flex max-w-5xl flex-wrap justify-center gap-3 px-4 py-8">
+                    <flux:button :href="route('services.index')" variant="primary">Services</flux:button>
+                    <flux:button :href="route('actualites.index')" variant="primary">Actualités</flux:button>
+                    <flux:button :href="route('messages.index')" variant="primary">Contact</flux:button>
+                    @if (! auth()->check())
+                        <flux:button :href="route('login')" variant="ghost">Connexion</flux:button>
                     @endif
                 </div>
             </section>

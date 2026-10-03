@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Service;
+use App\Models\Actualite;
 use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,7 +11,7 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new #[Title('Services')] class extends Component {
+new #[Title('Actualites')] class extends Component {
     use WithPagination;
 
     #[Url(except: '')]
@@ -23,7 +23,7 @@ new #[Title('Services')] class extends Component {
 
     public function mount(): void
     {
-        $this->authorize('viewAny', Service::class);
+        $this->authorize('viewAny', Actualite::class);
     }
 
     public function updatedSearch(): void
@@ -39,14 +39,14 @@ new #[Title('Services')] class extends Component {
     /**
      * Recherche et filtres, partagés par la liste (et la carte si l'entité a des coordonnées).
      *
-     * @return Builder<Service>
+     * @return Builder<Actualite>
      */
     protected function filteredQuery(): Builder
     {
-        return Service::query()
+        return Actualite::query()
             ->when($this->search !== '', function ($query) {
                 $term = '%'.$this->search.'%';
-                $query->where(fn ($q) => $q->where('nom', 'like', $term)->orWhere('description', 'like', $term)->orWhere('icone', 'like', $term));
+                $query->where(fn ($q) => $q->where('titre', 'like', $term)->orWhere('contenu', 'like', $term));
             })
             ->when($this->mine, fn ($query) => $query->whereBelongsTo(auth()->user()));
     }
@@ -62,24 +62,26 @@ new #[Title('Services')] class extends Component {
 
     public function delete(int $id): void
     {
-        $record = Service::findOrFail($id);
+        $record = Actualite::findOrFail($id);
         $this->authorize('delete', $record);
-
+        if ($record->image) {
+            Storage::disk('public')->delete($record->image);
+        }
         $record->delete();
 
-        Flux::toast(variant: 'success', text: 'Service supprimé(e).');
+        Flux::toast(variant: 'success', text: 'Actualite supprimé(e).');
     }
 }; ?>
 
 <section class="w-full space-y-6">
     <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
-            <flux:heading size="xl" level="1">Services</flux:heading>
+            <flux:heading size="xl" level="1">Actualites</flux:heading>
             <flux:text class="mt-1">{{ $this->items->total() }} élément(s)</flux:text>
         </div>
 
-        @can('create', \App\Models\Service::class)
-            <flux:button variant="primary" icon="plus" :href="route('services.create')" wire:navigate>
+        @can('create', \App\Models\Actualite::class)
+            <flux:button variant="primary" icon="plus" :href="route('actualites.create')" wire:navigate>
                 Ajouter
             </flux:button>
         @endcan
@@ -99,8 +101,9 @@ new #[Title('Services')] class extends Component {
     @else
         <flux:table :paginate="$this->items">
             <flux:table.columns>
-                <flux:table.column>Nom</flux:table.column>
-                <flux:table.column>Icone</flux:table.column>
+                <flux:table.column>Titre</flux:table.column>
+                <flux:table.column>Date</flux:table.column>
+                <flux:table.column>Image</flux:table.column>
                 <flux:table.column>Auteur</flux:table.column>
                 <flux:table.column>Créé le</flux:table.column>
                 <flux:table.column></flux:table.column>
@@ -109,15 +112,16 @@ new #[Title('Services')] class extends Component {
             <flux:table.rows>
                 @foreach ($this->items as $item)
                     <flux:table.row wire:key="row-{{ $item->id }}">
-                        <flux:table.cell><flux:link :href="route('services.show', $item)" wire:navigate class="font-medium">{{ $item->nom }}</flux:link></flux:table.cell>
-                        <flux:table.cell>{{ $item->icone ?? '—' }}</flux:table.cell>
+                        <flux:table.cell><flux:link :href="route('actualites.show', $item)" wire:navigate class="font-medium">{{ $item->titre }}</flux:link></flux:table.cell>
+                        <flux:table.cell>{{ $item->date?->format('d/m/Y') ?? '—' }}</flux:table.cell>
+                        <flux:table.cell>@if ($item->image)<img src="{{ Storage::url($item->image) }}" alt="" class="size-10 rounded object-cover" />@endif</flux:table.cell>
                         <flux:table.cell>{{ $item->user?->name }}</flux:table.cell>
                         <flux:table.cell>{{ $item->created_at->format('d/m/Y') }}</flux:table.cell>
                         <flux:table.cell>
                             <div class="flex justify-end gap-1">
-                                <flux:button size="sm" variant="ghost" icon="eye" :href="route('services.show', $item)" wire:navigate />
+                                <flux:button size="sm" variant="ghost" icon="eye" :href="route('actualites.show', $item)" wire:navigate />
                                 @can('update', $item)
-                                    <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('services.edit', $item)" wire:navigate />
+                                    <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('actualites.edit', $item)" wire:navigate />
                                 @endcan
                                 @can('delete', $item)
                                     <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer cet élément ?" />

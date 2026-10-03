@@ -2,6 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Actualite;
+use App\Models\Message;
+use App\Models\Service;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -14,36 +17,20 @@ class DatabaseSeeder extends Seeder
     /**
      * Données de démonstration.
      *
-     * En local, un compte par rôle (mot de passe : password) :
-     *   - admin@example.com       Administrateur
-     *   - agent@example.com       Agent municipal
-     *   - jury.agent@example.com  Agent municipal (compte jury agent)
-     *   - user@example.com        Citoyen
+     * En local : comptes admin@example.com / user@example.com (mot de passe : password).
      * En production : aucun compte avec un mot de passe connu n'est créé ;
-     * les comptes jury sont créés à la main (/register) puis passés agent ou admin dans /admin/users.
+     * les comptes jury sont créés à la main.
      */
     public function run(): void
     {
-        $this->call(RoleSeeder::class);
-
         if (! app()->isProduction()) {
             User::factory()->admin()->create([
                 'name' => 'Admin Démo',
                 'email' => 'admin@example.com',
             ]);
 
-            User::factory()->agent()->create([
-                'name' => 'Agent Démo',
-                'email' => 'agent@example.com',
-            ]);
-
-            User::factory()->agent()->create([
-                'name' => 'Jury Agent',
-                'email' => 'jury.agent@example.com',
-            ]);
-
             User::factory()->create([
-                'name' => 'Citoyen Démo',
+                'name' => 'Utilisateur Démo',
                 'email' => 'user@example.com',
             ]);
         }
@@ -54,7 +41,11 @@ class DatabaseSeeder extends Seeder
 
         $users = User::all();
 
-        $this->call(ServiceSeeder::class);
+        Service::factory(20)->recycle($users)->create();
+
+        Actualite::factory(20)->recycle($users)->create();
+
+        Message::factory(20)->recycle($users)->create();
 
         // make:feature:seeders
     }

@@ -11,6 +11,9 @@ use Illuminate\Database\Seeder;
  */
 class ServiceSeeder extends Seeder
 {
+    /** Services mis en avant en tête du catalogue et sur l'accueil. */
+    private const MIS_EN_AVANT = ['État civil', 'Accueil de la Mairie', 'Urbanisme', 'Action sociale (CCAS)'];
+
     public function run(): void
     {
         $auteur = User::query()->where('role', 'admin')->first() ?? User::query()->first();
@@ -30,6 +33,9 @@ class ServiceSeeder extends Seeder
             $service->user()->associate($auteur);
             $service->save();
         }
+
+        // Démarches les plus courantes mises en avant (F28).
+        Service::query()->whereIn('nom', self::MIS_EN_AVANT)->update(['mis_en_avant' => true]);
     }
 
     /**

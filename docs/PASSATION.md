@@ -10,7 +10,7 @@ _Mis à jour le vendredi 2 octobre 2026. À lire en premier (humains et Claude).
 
 ## Stack
 
-Laravel 13 / PHP 8.4, Livewire 4 (composants ⚡), Flux (gratuit), Tailwind 4, Filament 5 (`/admin`), Fortify, Pest / Pint / PHPStan. Local : SQLite (Herd). Production : MariaDB 10.11, sessions et cache en base, `QUEUE_CONNECTION=sync`, e-mails par `sendmail`. Pas de Redis ni de worker ; temps réel par `wire:poll`.
+Laravel 13 / PHP 8.4, Livewire 4 (composants ), Flux (gratuit), Tailwind 4, Filament 5 (`/admin`), Fortify, Pest / Pint / PHPStan. Local : SQLite (Herd). Production : MariaDB 10.11, sessions et cache en base, `QUEUE_CONNECTION=sync`, e-mails par `sendmail`. Pas de Redis ni de worker ; temps réel par `wire:poll`.
 
 ## Ce qui est prêt dans le dépôt
 

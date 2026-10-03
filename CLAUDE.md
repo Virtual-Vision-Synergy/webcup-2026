@@ -44,9 +44,9 @@ supprimer ces marqueurs ni éditer ces trois endroits à la main (conflits entre
 `Signalement` est l'exemple de référence : copier son style.
 
 **Livewire 4 en composants single-file.** Pas de classes dans `app/Livewire` : la logique et la vue sont dans
-`resources/views/pages/<slug>/⚡index|⚡form|⚡show.blade.php` (`new #[Title('…')] class extends Component {}` en
+`resources/views/pages/<slug>/index|form|show.blade.php` (`new #[Title('…')] class extends Component {}` en
 tête de fichier). Les routes les montent par leur chemin de vue : `Route::livewire('signalements', 'pages::signalements.index')`.
-Les noms de fichiers contiennent un `⚡` : les citer dans le shell.
+Les noms de fichiers contiennent un `` : les citer dans le shell.
 
 **Trois fichiers de routes** : `routes/web.php` (accueil, dashboard, et `require` des deux autres),
 `routes/settings.php` (profil / apparence / sécurité, Fortify), `routes/features.php` (tout le métier, groupe `auth`).

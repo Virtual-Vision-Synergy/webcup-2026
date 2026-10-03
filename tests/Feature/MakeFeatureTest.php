@@ -44,15 +44,15 @@ test('le générateur ajoute trait et cartes quand l\'entité a latitude et long
         ->toContain('use App\Models\Concerns\HasCoordinates;')
         ->toContain('use HasCoordinates;');
 
-    expect(File::get("{$pages}/⚡form.blade.php"))
+    expect(File::get("{$pages}/form.blade.php"))
         ->toContain('<x-carte mode="choix"')
         ->toContain("'latitude' => ['nullable', 'numeric', 'between:-90,90']")
         ->toContain("'longitude' => ['nullable', 'numeric', 'between:-180,180']");
 
-    expect(File::get("{$pages}/⚡show.blade.php"))
+    expect(File::get("{$pages}/show.blade.php"))
         ->toContain('<x-carte :points="[$record->pointCarte((string) $record->nom)]"');
 
-    expect(File::get("{$pages}/⚡index.blade.php"))
+    expect(File::get("{$pages}/index.blade.php"))
         ->toContain('public function points(): array')
         ->toContain('->geolocalises()')
         ->toContain('<details wire:ignore.self')
@@ -67,9 +67,9 @@ test('le générateur n\'ajoute ni trait ni carte sans coordonnées', function (
 
     $pages = resource_path('views/pages/gen-test-notes');
     $generated = File::get(app_path('Models/GenTestNote.php'))
-        .File::get("{$pages}/⚡index.blade.php")
-        .File::get("{$pages}/⚡form.blade.php")
-        .File::get("{$pages}/⚡show.blade.php");
+        .File::get("{$pages}/index.blade.php")
+        .File::get("{$pages}/form.blade.php")
+        .File::get("{$pages}/show.blade.php");
 
     expect($generated)
         ->not->toContain('HasCoordinates')

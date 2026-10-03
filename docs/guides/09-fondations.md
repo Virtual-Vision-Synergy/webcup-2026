@@ -82,7 +82,7 @@ routes/web.php → routes/features.php ..... 5. quelle URL = quel composant
    │  Route::livewire('signalements', 'pages::signalements.index')
    ▼
 composant Livewire ....................... 6. mount() : notre code démarre
-   │  resources/views/pages/signalements/⚡index.blade.php
+   │  resources/views/pages/signalements/index.blade.php
    ▼
 Policy ................................... 7. a-t-il le droit ? sinon 403
    │  app/Policies/SignalementPolicy.php
@@ -220,7 +220,7 @@ Le mécanisme est dans `vendor/livewire/livewire/src/Mechanisms/HandleComponents
 
 **1. Toute méthode publique d'un composant est une route POST déguisée.** N'importe qui peut ouvrir la console du navigateur et appeler `delete(42)` avec le `42` qu'il veut — sans jamais voir le bouton. Un bouton caché par `@can` n'est **pas** une protection : c'est du confort d'affichage.
 
-D'où la règle : **chaque méthode publique appelle `$this->authorize()` avant de toucher aux données**. Notre `⚡index.blade.php` en est l'illustration exacte :
+D'où la règle : **chaque méthode publique appelle `$this->authorize()` avant de toucher aux données**. Notre `index.blade.php` en est l'illustration exacte :
 
 ```php
 public function delete(int $id): void
@@ -231,13 +231,13 @@ public function delete(int $id): void
 }
 ```
 
-L'identifiant vient du navigateur, donc il est **suspect par nature** : on le résout, puis on demande la permission. Jamais l'inverse, jamais l'un sans l'autre. Même raison dans `⚡form.blade.php`, où `authorize()` est appelé **deux fois** : dans `mount()` (à l'ouverture de la page) **et** dans `save()` (à l'enregistrement). Les deux sont des requêtes distinctes, séparées par le temps : entre les deux, les droits ont pu changer, et surtout rien ne garantit que `mount()` a été exécuté avant l'appel à `save()`.
+L'identifiant vient du navigateur, donc il est **suspect par nature** : on le résout, puis on demande la permission. Jamais l'inverse, jamais l'un sans l'autre. Même raison dans `form.blade.php`, où `authorize()` est appelé **deux fois** : dans `mount()` (à l'ouverture de la page) **et** dans `save()` (à l'enregistrement). Les deux sont des requêtes distinctes, séparées par le temps : entre les deux, les droits ont pu changer, et surtout rien ne garantit que `mount()` a été exécuté avant l'appel à `save()`.
 
 **2. Toute propriété publique est modifiable par le client.** Elle fait partie du snapshot ; le navigateur peut tenter de la changer. Pour l'enregistrement d'un composant, ce serait catastrophique : changer `record` reviendrait à modifier le signalement de quelqu'un d'autre. D'où `#[Locked]` :
 
 ```php
 #[Locked]
-public ?Signalement $record = null;     // resources/views/pages/signalements/⚡form.blade.php
+public ?Signalement $record = null;     // resources/views/pages/signalements/form.blade.php
 ```
 
 `#[Locked]` dit à Livewire : « cette propriété ne peut être changée que par le serveur ». Toute tentative venant du client lève une exception. **Tout modèle porté par un composant doit être `#[Locked]`.**
@@ -256,7 +256,7 @@ class Signalement extends Model
 
 ### Le cycle de vie d'un composant, vu de notre code
 
-`resources/views/pages/signalements/⚡index.blade.php` contient tout le vocabulaire utile :
+`resources/views/pages/signalements/index.blade.php` contient tout le vocabulaire utile :
 
 | Élément | Rôle | Quand il s'exécute |
 |---|---|---|
@@ -302,7 +302,7 @@ tests/Feature/             « la preuve que ça marche »        → chapitre 11
 Dans beaucoup de projets Laravel, une page = une route + un **contrôleur** + une **vue** (trois fichiers). Ici, **une page = un seul fichier** : le composant Livewire *single-file*, qui contient sa logique PHP en haut et son HTML en bas.
 
 ```php
-// resources/views/pages/signalements/⚡index.blade.php
+// resources/views/pages/signalements/index.blade.php
 <?php
 new #[Title('Signalements')] class extends Component {
     // toute la logique : propriétés, mount(), méthodes
@@ -319,7 +319,7 @@ La route les relie par leur **chemin de vue**, pas par un nom de classe :
 Route::livewire('signalements', 'pages::signalements.index')->name('signalements.index');
 ```
 
-`'pages::signalements.index'` se lit : le dossier `resources/views/pages/`, puis `signalements/`, puis le fichier `⚡index.blade.php`. Le préfixe `⚡` dans le nom de fichier est la marque qui dit à Livewire « ceci est un composant, pas une vue ordinaire » (voir `vendor/livewire/livewire/src/Finder/Finder.php`). C'est inhabituel mais pratique : tout ce qui concerne une page est à un seul endroit. Conséquence shell : ces noms de fichiers contiennent un caractère spécial, **mettez-les entre guillemets** dans vos commandes.
+`'pages::signalements.index'` se lit : le dossier `resources/views/pages/`, puis `signalements/`, puis le fichier `index.blade.php`. Le préfixe `` dans le nom de fichier est la marque qui dit à Livewire « ceci est un composant, pas une vue ordinaire » (voir `vendor/livewire/livewire/src/Finder/Finder.php`). C'est inhabituel mais pratique : tout ce qui concerne une page est à un seul endroit. Conséquence shell : ces noms de fichiers contiennent un caractère spécial, **mettez-les entre guillemets** dans vos commandes.
 
 Il n'y a donc **ni API REST ni front séparé** : pas de JSON à produire, pas de CORS, pas de jetons à gérer. En contrepartie, tout le dialogue passe par l'unique route `livewire.update` — relire le chapitre 3.
 
@@ -387,7 +387,7 @@ $signalements = Signalement::latest()->paginate(10);   // 1 requête
 foreach ($signalements as $s) { echo $s->user->name; } //  + 10 requêtes !
 ```
 
-Chaque `$s->user` déclenche sa propre requête : 11 requêtes au lieu de 2. Avec 200 lignes, la page s'écroule. La solution est `with()`, et c'est ce que fait notre `⚡index.blade.php` :
+Chaque `$s->user` déclenche sa propre requête : 11 requêtes au lieu de 2. Avec 200 lignes, la page s'écroule. La solution est `with()`, et c'est ce que fait notre `index.blade.php` :
 
 ```php
 return $this->filteredQuery()->with('user')->latest()->paginate(10);
@@ -585,7 +585,7 @@ Types disponibles : `string`, `text`, `integer`, `decimal`, `boolean`, `date`, `
 
 ### Ce qu'il écrit
 
-Migration, modèle (avec `#[Fillable]`, casts, relation `user`), factory, ligne de seeder, **Policy**, les trois pages `⚡index` / `⚡form` / `⚡show`, et **6 tests Pest** — dont « un autre utilisateur ne peut pas modifier » et « un autre utilisateur ne peut pas supprimer ».
+Migration, modèle (avec `#[Fillable]`, casts, relation `user`), factory, ligne de seeder, **Policy**, les trois pages `index` / `form` / `show`, et **6 tests Pest** — dont « un autre utilisateur ne peut pas modifier » et « un autre utilisateur ne peut pas supprimer ».
 
 ### Les trois marqueurs, et la règle qui va avec
 

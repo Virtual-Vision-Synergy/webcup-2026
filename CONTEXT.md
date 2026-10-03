@@ -20,7 +20,7 @@ Consignes officielles Laravel Boost (versions, skills, outils) : @AGENTS.md
 
 ## Stack (versions installées — ne pas en supposer d'autres)
 
-- Laravel 13, PHP 8.4, Livewire 4 (composants **single-file** `resources/views/pages/**/⚡nom.blade.php`),
+- Laravel 13, PHP 8.4, Livewire 4 (composants **single-file** `resources/views/pages/**/nom.blade.php`),
   UI **Flux** (version gratuite : button, input, select, textarea, checkbox, table, card, badge, modal, pagination,
   heading, text, link, sidebar…), Tailwind 4, Vite.
 - Auth : starter kit Livewire + Fortify (inscription, 2FA, confirmation de mot de passe).

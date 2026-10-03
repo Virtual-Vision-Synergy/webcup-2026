@@ -16,6 +16,8 @@
         ->get();
     // F29 : alertes en cours qui visent le quartier de l'habitant, affichées en tête.
     $alertesQuartier = \App\Models\Annonce::enDiffusion($user)->filter(fn ($annonce) => $annonce->concerne($user));
+    // F28 : services prioritaires (mis en avant par un agent), proposés dans l'accès rapide.
+    $servicesPrioritaires = \App\Models\Service::query()->where('mis_en_avant', true)->orderBy('nom')->limit(4)->get(['id', 'nom', 'slug', 'indisponible_depuis']);
     $rubriques = array_filter(config('navigation.rubriques'), fn (array $r): bool => Route::has($r['route']));
 @endphp
 
@@ -158,6 +160,27 @@
                         </li>
                     </ul>
                 </section>
+
+                {{-- SERVICES PRIORITAIRES (F28) --}}
+                @if ($servicesPrioritaires->isNotEmpty())
+                    <section aria-labelledby="titre-services-prioritaires">
+                        <x-tn.section-label as="h2" id="titre-services-prioritaires" class="mb-3">Services prioritaires</x-tn.section-label>
+                        <ul class="flex flex-col gap-2">
+                            @foreach ($servicesPrioritaires as $servicePrioritaire)
+                                <li>
+                                    <a href="{{ route('services.show', $servicePrioritaire) }}" wire:navigate class="group flex min-h-11 items-center gap-3 rounded-md border border-cyan/40 bg-surface px-3 py-2 transition-colors hover:border-cyan">
+                                        <flux:icon name="star" variant="solid" class="size-4 shrink-0 text-cyan" aria-hidden="true" />
+                                        <span class="min-w-0 flex-1 truncate font-medium text-ink group-hover:text-cyan">{{ __($servicePrioritaire->nom) }}</span>
+                                        @if ($servicePrioritaire->estIndisponible())
+                                            <flux:badge size="sm" color="red">Indisponible</flux:badge>
+                                        @endif
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                        <a href="{{ route('services.index') }}" wire:navigate class="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-cyan hover:underline">Tous les services</a>
+                    </section>
+                @endif
 
                 {{-- MON COMPTE --}}
                 <x-tn.surface>

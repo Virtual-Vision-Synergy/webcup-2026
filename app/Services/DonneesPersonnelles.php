@@ -57,7 +57,7 @@ class DonneesPersonnelles
                 'email' => $user->emailAffichable(),
                 'identifiant' => $user->identifiant,
                 'telephone' => $user->telephone,
-                'quartier' => $user->quartierResidence?->nom ?? $user->quartier,
+                'quartier' => $user->quartierResidence->nom ?? $user->quartier,
                 'role' => $user->role->label,
                 'langue' => $user->langue,
                 'alertes_par_email' => $user->notifier_par_email,
@@ -176,7 +176,7 @@ class DonneesPersonnelles
             $phrases[] = "Vous avez fait {$nbRemontees} remontée(s) sur vos données.";
         }
 
-        $echecs = collect($donnees['connexions_recentes'])->where('resultat', '!=', 'Réussie')->count();
+        $echecs = count(array_filter($donnees['connexions_recentes'], fn (array $connexion): bool => $connexion['resultat'] !== 'Réussie'));
         $phrases[] = $echecs > 0
             ? "Attention : {$echecs} tentative(s) de connexion échouée(s) parmi les dernières. Si ce n’était pas vous, changez votre mot de passe."
             : 'Aucune tentative de connexion échouée récente sur votre compte.';

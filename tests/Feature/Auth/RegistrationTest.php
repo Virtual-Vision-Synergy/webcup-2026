@@ -21,13 +21,14 @@ test('new users can register', function () {
         'password_confirmation' => 'password',
     ]);
 
+    // Nouvel habitant : parcours de prise en main (D12) avant l'espace personnel.
     $response->assertSessionHasNoErrors()
-        ->assertRedirect(route('dashboard', absolute: false));
+        ->assertRedirect(route('onboarding.show', absolute: false));
 
     $this->assertAuthenticated();
 });
 
-test('après inscription, l\'habitant arrive sur son espace personnel', function () {
+test('après inscription, l\'habitant passe par la prise en main puis retrouve son espace personnel', function () {
     $this->followingRedirects()
         ->post(route('register.store'), [
             'name' => 'Hery Rakoto',
@@ -35,6 +36,10 @@ test('après inscription, l\'habitant arrive sur son espace personnel', function
             'password' => 'password',
             'password_confirmation' => 'password',
         ])
+        ->assertOk()
+        ->assertSee('Bienvenue à Nova Terra');
+
+    $this->get(route('dashboard'))
         ->assertOk()
         ->assertSee('Bonjour Hery Rakoto')
         ->assertSee('hery@example.com')

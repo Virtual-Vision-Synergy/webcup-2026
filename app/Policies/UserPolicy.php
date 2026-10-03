@@ -86,4 +86,14 @@ class UserPolicy
         return $this->viewAccount($user, $model) && $model->isCitoyen() && ! $model->aUnEmail()
             && ! $user->is($model) && $model->isActive();
     }
+
+    /*
+    | F55 : téléchargement de ses données personnelles. Uniquement les siennes, quel que soit le rôle
+    | (même un admin ne télécharge pas l'export d'un autre habitant par cette voie).
+    */
+
+    public function exportPersonalData(User $user, User $model): bool
+    {
+        return $user->is($model);
+    }
 }

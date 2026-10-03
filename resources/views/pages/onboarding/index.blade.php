@@ -82,6 +82,7 @@ new #[Title('Bienvenue à Nova Terra')] class extends Component {
         {{-- PARCOURS --}}
         <x-tn.page-header
             label="Bienvenue à Nova Terra"
+            :breadcrumb="['Mon espace' => route('dashboard'), 'Bienvenue' => null]"
             :title="'Bonjour '.$prenom.', bienvenue chez vous !'"
             subtitle="Votre mairie est désormais en ligne. Trois étapes simples pour bien démarrer : comptez cinq minutes."
         />

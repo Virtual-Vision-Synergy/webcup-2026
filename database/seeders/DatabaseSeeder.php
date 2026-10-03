@@ -157,6 +157,13 @@ class DatabaseSeeder extends Seeder
             $this->call(LoginAttemptSeeder::class);
         }
 
+        if (! app()->isProduction()) {
+            // Journal d'audit de démo (F47). Les autres seeders n'écrivent rien dans le journal (WithoutModelEvents).
+            $this->call(AuditLogSeeder::class);
+        }
+
+        $this->call(LigneTransportSeeder::class);
+
         // make:feature:seeders
     }
 }

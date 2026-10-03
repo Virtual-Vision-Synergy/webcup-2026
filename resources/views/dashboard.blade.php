@@ -19,7 +19,7 @@
 
 <x-layouts::app :title="__('Dashboard')">
     <div class="mx-auto flex w-full max-w-6xl flex-col gap-8">
-        <x-tn.page-header label="Mon espace" :title="'Bonjour '.$user->name" subtitle="Vos démarches et l'activité de la ville, en un coup d'œil.">
+        <x-tn.page-header label="Mon espace" :breadcrumb="['Mon espace' => null]" :title="'Bonjour '.$user->name" subtitle="Vos démarches et l'activité de la ville, en un coup d'œil.">
             <x-slot:actions>
                 <span class="inline-flex items-center gap-2 rounded-xs border border-line px-2.5 py-1 font-mono text-[11px] uppercase tracking-[.06em] text-ink-2">
                     <flux:icon name="users-round" class="size-3.5" /> {{ $user->role->label }}

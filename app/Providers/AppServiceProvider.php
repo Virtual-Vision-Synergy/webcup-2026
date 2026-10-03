@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\User;
+use App\Policies\DatabaseNotificationPolicy;
 use Carbon\CarbonImmutable;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -29,6 +31,9 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
 
         Gate::define('viewAgentSpace', fn (User $user): bool => $user->isAgent() || $user->isAdmin());
+
+        // F30 : une notification n'est accessible qu'à son destinataire.
+        Gate::policy(DatabaseNotification::class, DatabaseNotificationPolicy::class);
     }
 
     /**

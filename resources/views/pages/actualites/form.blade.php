@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\Actualite;
+use App\Services\OptimiseurImage;
 use Flux\Flux;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
@@ -55,10 +55,10 @@ new #[Title('Actualite')] class extends Component {
         $validated = $this->validate();
 
         if ($this->image) {
-            if ($this->record?->image) {
-                Storage::disk('public')->delete($this->record->image);
-            }
-            $validated['image'] = $this->image->store('actualites', 'public');
+            $optimiseur = app(OptimiseurImage::class);
+            $optimiseur->supprimer($this->record?->image);
+            // F60 : redimensionnée (1600 px max) et compressée en WebP à l'enregistrement.
+            $validated['image'] = $optimiseur->enregistrer($this->image, 'actualites');
         } else {
             unset($validated['image']);
         }
@@ -100,7 +100,7 @@ new #[Title('Actualite')] class extends Component {
             @if ($image)
                 <img src="{{ $image->temporaryUrl() }}" alt="{{ __('Aperçu') }}" class="h-40 rounded-lg object-cover" />
             @elseif ($record?->image)
-                <img src="{{ Storage::url($record->image) }}" alt="{{ __('Image') }}" class="h-40 rounded-lg object-cover" />
+                <x-tn.image :chemin="$record->image" :alt="__('Image')" sizes="320px" class="h-40 w-auto rounded-lg object-cover" />
             @endif
         </div>
 

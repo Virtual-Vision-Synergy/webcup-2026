@@ -60,6 +60,17 @@ class UserFactory extends Factory
         ]);
     }
 
+    /**
+     * Profil complet (étape 1 du parcours de prise en main).
+     */
+    public function profilComplet(): static
+    {
+        return $this->state(fn () => [
+            'telephone' => fake()->numerify('034 ## ### ##'),
+            'quartier' => fake()->randomElement(['Analakely', 'Isoraka', 'Ambohijatovo', 'Andohalo', 'Faravohitra']),
+        ]);
+    }
+
     public function admin(): static
     {
         return $this->state(fn () => ['role_id' => Role::idFor(Role::ADMIN)]);
@@ -73,5 +84,10 @@ class UserFactory extends Factory
     public function agent(): static
     {
         return $this->state(fn () => ['role_id' => Role::idFor(Role::AGENT)]);
+    }
+
+    public function deactivated(): static
+    {
+        return $this->state(fn () => ['deactivated_at' => now()]);
     }
 }

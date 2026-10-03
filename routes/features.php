@@ -45,6 +45,11 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('can:view,'.Onboarding::class)
         ->name('onboarding.show');
 
+    Route::livewire('transports', 'pages::transports.index')->name('transports.index');
+    Route::livewire('transports/create', 'pages::transports.form')->name('transports.create');
+    Route::livewire('transports/{ligneTransport}', 'pages::transports.show')->name('transports.show');
+    Route::livewire('transports/{ligneTransport}/edit', 'pages::transports.form')->name('transports.edit');
+
     // make:feature:routes
 });
 

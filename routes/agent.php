@@ -13,4 +13,5 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     Route::livewire('annonces', 'pages::annonces.index')->name('annonces.index');
     Route::livewire('annonces/create', 'pages::annonces.form')->name('annonces.create');
     Route::livewire('annonces/{annonce}/edit', 'pages::annonces.form')->name('annonces.edit');
+    Route::livewire('demandes', 'pages::agent.demandes')->name('demandes');
 });

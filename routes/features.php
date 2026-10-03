@@ -77,5 +77,8 @@ Route::group([], function () {
     // F29 : page d'une alerte en cours, consultable sans compte (lien partageable) ; 404 hors période (AnnoncePolicy::view).
     Route::livewire('alertes/{annonce}', 'pages::alertes.show')->name('alertes.show');
 
+    // F46 : urgences et santé, consultable sans compte (numéros d'urgence, hôpitaux) ; lecture seule, aucune action.
+    Route::livewire('urgences', 'pages::urgences.index')->name('urgences.index');
+
     // make:feature:routes-public
 });

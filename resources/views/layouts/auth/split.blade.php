@@ -40,7 +40,7 @@
             <div class="relative flex flex-col px-4 py-6 sm:px-8 lg:p-10">
                 <div class="flex flex-wrap items-center justify-between gap-2 lg:justify-end">
                     <x-app-logo href="{{ route('home') }}" class="lg:hidden" />
-                    <div class="flex items-center gap-1"><x-tn.langue /><x-tn.contrast-toggle /><x-tn.theme-toggle /></div>
+                    <div class="flex flex-wrap items-center gap-1"><x-tn.langue /><x-tn.contrast-toggle /><x-tn.text-size /><x-tn.theme-toggle /></div>
                 </div>
 
                 <main id="contenu" tabindex="-1" class="flex flex-1 items-center justify-center py-8">
@@ -50,6 +50,10 @@
                         </div>
                     </x-tn.panel>
                 </main>
+
+                <p class="text-center text-sm text-ink-2">
+                    <a href="{{ route('accessibility.show') }}" class="text-cyan hover:underline">{{ __('Accessibilité : les aides disponibles') }}</a>
+                </p>
             </div>
         </div>
 

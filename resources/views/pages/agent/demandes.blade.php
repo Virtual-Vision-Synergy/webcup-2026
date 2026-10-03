@@ -127,14 +127,15 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
             <button
                 type="button"
                 wire:click="$set('filterStatut', '{{ $filterStatut === $statut ? '' : $statut }}')"
-                @class(['rounded-md border p-4 text-start transition hover:border-cyan', 'border-cyan' => $filterStatut === $statut, 'border-line' => $filterStatut !== $statut])
+                aria-pressed="{{ $filterStatut === $statut ? 'true' : 'false' }}"
+                @class(['rounded-md border p-4 text-start transition hover:border-cyan', 'border-cyan ring-2 ring-cyan' => $filterStatut === $statut, 'border-line' => $filterStatut !== $statut])
             >
                 <x-tn.status-badge :etat="Demarche::STATUT_ETATS[$statut]">{{ Demarche::libelleStatut($statut) }}</x-tn.status-badge>
                 <span class="tn-display mt-2 block text-2xl font-semibold text-ink">{{ $this->compteurs[$statut] }}</span>
                 @if (in_array($statut, $this::STATUTS_EN_ATTENTE, true))
-                    <span class="text-xs text-amber">Action attendue</span>
+                    <span class="inline-flex items-center gap-1 text-xs text-amber"><flux:icon.exclamation-triangle variant="micro" class="size-3.5" aria-hidden="true" />Action attendue</span>
                 @else
-                    <span class="text-xs text-ink-2">Clôturée</span>
+                    <span class="inline-flex items-center gap-1 text-xs text-ink-2"><flux:icon.check variant="micro" class="size-3.5" aria-hidden="true" />Clôturée</span>
                 @endif
             </button>
         @endforeach

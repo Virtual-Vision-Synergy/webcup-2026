@@ -192,7 +192,10 @@ new #[Title('Transports')] class extends Component {
                     </div>
 
                     @if ($item->estPerturbee() && $item->perturbation)
-                        <p class="mt-3 line-clamp-3 text-sm {{ $item->etat === 'interrompu' ? 'text-magenta' : 'text-amber' }}">{{ $item->perturbation }}</p>
+                        <p class="mt-3 flex items-start gap-1.5 text-sm {{ $item->etat === 'interrompu' ? 'text-magenta' : 'text-amber' }}">
+                            <flux:icon :name="$item->etat === 'interrompu' ? 'x-circle' : 'exclamation-triangle'" variant="micro" class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                            <span class="line-clamp-3">{{ $item->perturbation }}</span>
+                        </p>
                     @endif
 
                     @if (count($arrets) > 0)

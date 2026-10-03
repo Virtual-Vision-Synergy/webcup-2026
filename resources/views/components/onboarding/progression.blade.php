@@ -16,18 +16,18 @@
 {{-- Indicateur de progression du parcours de prise en main : texte + barre accessible + statut écrit de chaque étape. --}}
 <div {{ $attributes->class('w-full') }} data-test="onboarding-progression">
     <div class="flex items-center justify-between gap-3 font-mono text-[0.6875rem] uppercase tracking-[.06em] text-ink-2">
-        <span>Étape <span class="text-ink">{{ $etapeAffichee }}</span> sur {{ $total }}</span>
-        <span><span class="text-ink">{{ $faites }}</span>/{{ $total }} faite(s)</span>
+        <span>{{ __('Étape') }} <span class="text-ink">{{ $etapeAffichee }}</span> {{ __('sur') }} {{ $total }}</span>
+        <span><span class="text-ink">{{ $faites }}</span>/{{ $total }} {{ __('faite(s)') }}</span>
     </div>
 
     <div
         class="mt-2 h-2 w-full overflow-hidden rounded-full bg-line"
         role="progressbar"
-        aria-label="Progression de la prise en main"
+        aria-label="{{ __('Progression de la prise en main') }}"
         aria-valuemin="0"
         aria-valuemax="{{ $total }}"
         aria-valuenow="{{ $faites }}"
-        aria-valuetext="{{ $faites }} étape(s) faite(s) sur {{ $total }}"
+        aria-valuetext="{{ __(':faites étape(s) faite(s) sur :total', ['faites' => $faites, 'total' => $total]) }}"
     >
         <div class="h-full rounded-full bg-cyan transition-all duration-500" style="width: {{ $progress->pourcentage() }}%"></div>
     </div>
@@ -54,9 +54,9 @@
                         @class(['size-4 shrink-0', 'text-green' => $statut === 'faite', 'text-cyan' => $statut === 'en_cours'])
                     />
                     <span class="min-w-0 flex-1">
-                        <span class="block font-medium">{{ $numero }}. {{ $etape['titre'] }}</span>
+                        <span class="block font-medium">{{ $numero }}. {{ __($etape['titre']) }}</span>
                         <span class="block font-mono text-[0.65625rem] uppercase tracking-[.06em]">
-                            {{ match ($statut) { 'faite' => 'Faite', 'en_cours' => 'En cours', default => 'À faire' } }}
+                            {{ __(match ($statut) { 'faite' => 'Faite', 'en_cours' => 'En cours', default => 'À faire' }) }}
                         </span>
                     </span>
                 </li>

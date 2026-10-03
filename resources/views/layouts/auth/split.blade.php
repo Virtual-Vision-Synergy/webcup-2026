@@ -5,7 +5,7 @@
     $illustrationJour = file_exists(public_path('images/hero/ciel-jour.webp')) ? asset('images/hero/ciel-jour.webp') : null;
 @endphp
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         @include('partials.head')
     </head>
@@ -26,9 +26,9 @@
                 <x-app-logo href="{{ route('home') }}" class="relative z-10" />
 
                 <div class="relative z-10 mt-auto max-w-md">
-                    <x-tn.section-label>Mairie de Nova Terra</x-tn.section-label>
-                    <p class="tn-h2 mt-3 text-ink">La ville, en direct, au bout des doigts.</p>
-                    <p class="mt-3 text-ink-2">Vos démarches, les actualités du Haut Conseil et vos services municipaux, réunis sur le réseau civique officiel.</p>
+                    <x-tn.section-label>{{ __('Mairie de Nova Terra') }}</x-tn.section-label>
+                    <p class="tn-h2 mt-3 text-ink">{{ __('La ville, en direct, au bout des doigts.') }}</p>
+                    <p class="mt-3 text-ink-2">{{ __('Vos démarches, les actualités du Haut Conseil et vos services municipaux, réunis sur le réseau civique officiel.') }}</p>
                 </div>
             </div>
 

@@ -27,7 +27,7 @@ new #[Title('Service')] class extends Component {
 
         $this->record->delete();
 
-        Flux::toast(variant: 'success', text: 'Service supprimé(e).');
+        Flux::toast(variant: 'success', text: __('Service supprimé(e).'));
 
         $this->redirectRoute('services.index', navigate: true);
     }
@@ -35,47 +35,51 @@ new #[Title('Service')] class extends Component {
 
 <section class="mx-auto w-full max-w-5xl space-y-6">
     <x-tn.page-header
-        :label="Service::labelCategorie($record->categorie) ?? 'Service municipal'"
-        :title="$record->nom"
-        :breadcrumb="['Mon espace' => route('dashboard'), 'Services' => route('services.index'), $record->nom => null]"
+        :label="__(Service::labelCategorie($record->categorie) ?? __('Service municipal'))"
+        :title="__($record->nom)"
+        :breadcrumb="[__('Mon espace') => route('dashboard'), __('Services') => route('services.index'), __($record->nom) => null]"
     >
         <x-slot:actions>
             @if (Route::has('messages.create'))
-                <flux:button variant="primary" icon="mail" :href="route('messages.create')" class="tn-cta" wire:navigate>Écrire au service</flux:button>
+                <flux:button variant="primary" icon="mail" :href="route('messages.create')" class="tn-cta" wire:navigate>{{ __('Écrire au service') }}</flux:button>
             @endif
             @can('update', $record)
-                <flux:button icon="pencil-square" :href="route('services.edit', $record)" wire:navigate>Modifier</flux:button>
+                <flux:button icon="pencil-square" :href="route('services.edit', $record)" wire:navigate>{{ __('Modifier') }}</flux:button>
             @endcan
             @can('delete', $record)
-                <flux:button variant="danger" icon="trash" wire:click="delete" wire:confirm="Supprimer définitivement ce service ?">Supprimer</flux:button>
+                <flux:button variant="danger" icon="trash" wire:click="delete" wire:confirm="{{ __('Supprimer définitivement ce service ?') }}">{{ __('Supprimer') }}</flux:button>
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
 
+    <x-audit-history :subject="$record" variant="resume" />
+
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <x-tn.surface>
-            <x-tn.section-label as="h2" class="mb-3">Missions</x-tn.section-label>
-            <p class="whitespace-pre-line leading-relaxed text-ink">{{ $record->description ?? 'Description à venir.' }}</p>
+            <x-tn.section-label as="h2" class="mb-3">{{ __('Missions') }}</x-tn.section-label>
+            <p class="whitespace-pre-line leading-relaxed text-ink">{{ __($record->description ?? __('Description à venir.')) }}</p>
         </x-tn.surface>
 
-        <x-tn.panel label="Infos pratiques" padding="p-5 md:p-6">
+        <x-tn.panel :label="__('Infos pratiques')" padding="p-5 md:p-6">
             <dl>
                 @if ($record->horaires)
-                    <x-tn.field label="Horaires"><p class="whitespace-pre-line font-mono text-sm leading-6">{{ $record->horaires }}</p></x-tn.field>
+                    <x-tn.field :label="__('Horaires')"><p class="whitespace-pre-line font-mono text-sm leading-6">{{ __($record->horaires) }}</p></x-tn.field>
                 @endif
                 @if ($record->telephone)
-                    <x-tn.field label="Téléphone"><a href="tel:{{ preg_replace('/[^0-9+]/', '', $record->telephone) }}" class="font-mono text-sm text-cyan hover:underline">{{ $record->telephone }}</a></x-tn.field>
+                    <x-tn.field :label="__('Téléphone')"><a href="tel:{{ preg_replace('/[^0-9+]/', '', $record->telephone) }}" class="font-mono text-sm text-cyan hover:underline">{{ $record->telephone }}</a></x-tn.field>
                 @endif
                 @if ($record->email)
-                    <x-tn.field label="E-mail"><a href="mailto:{{ $record->email }}" class="break-all text-sm text-cyan hover:underline">{{ $record->email }}</a></x-tn.field>
+                    <x-tn.field :label="__('E-mail')"><a href="mailto:{{ $record->email }}" class="break-all text-sm text-cyan hover:underline">{{ $record->email }}</a></x-tn.field>
                 @endif
                 @if ($record->adresse)
-                    <x-tn.field label="Adresse"><p class="whitespace-pre-line text-sm">{{ $record->adresse }}</p></x-tn.field>
+                    <x-tn.field :label="__('Adresse')"><p class="whitespace-pre-line text-sm">{{ __($record->adresse) }}</p></x-tn.field>
                 @endif
             </dl>
             @if (! $record->horaires && ! $record->telephone && ! $record->email && ! $record->adresse)
-                <p class="text-ink-2">Les informations pratiques seront publiées prochainement.</p>
+                <p class="text-ink-2">{{ __('Les informations pratiques seront publiées prochainement.') }}</p>
             @endif
         </x-tn.panel>
     </div>
+
+    <x-audit-history :subject="$record" />
 </section>

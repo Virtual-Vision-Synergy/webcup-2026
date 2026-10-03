@@ -38,6 +38,14 @@ test('le propriétaire peut ouvrir la modification', function () {
         ->assertOk();
 });
 
+test("un agent peut modifier le service d'un autre", function () {
+    $record = Service::factory()->create();
+
+    $this->actingAs(User::factory()->agent()->create())
+        ->get(route('services.edit', $record))
+        ->assertOk();
+});
+
 test('un autre utilisateur ne peut pas modifier', function () {
     $record = Service::factory()->create();
 

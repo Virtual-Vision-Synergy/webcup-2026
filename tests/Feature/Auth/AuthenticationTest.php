@@ -25,6 +25,7 @@ test('users can authenticate using the login screen', function () {
 });
 
 test('users can not authenticate with invalid password', function () {
+    app()->setLocale('fr');
     $user = User::factory()->create();
 
     $response = $this->post(route('login.store'), [
@@ -32,7 +33,7 @@ test('users can not authenticate with invalid password', function () {
         'password' => 'wrong-password',
     ]);
 
-    $response->assertSessionHasErrorsIn('email');
+    $response->assertSessionHasErrors(['email' => 'Ces identifiants ne correspondent à aucun compte.']);
 
     $this->assertGuest();
 });

@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\Demarche;
+use App\Models\Service;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -55,6 +57,14 @@ class DatabaseSeeder extends Seeder
         $users = User::all();
 
         $this->call(ServiceSeeder::class);
+
+        $services = Service::all();
+        Demarche::factory(20)->recycle($users)->recycle($services)->create();
+
+        if (! app()->isProduction()) {
+            // Quelques démarches pour le compte citoyen de démo : son espace personnel n'est pas vide.
+            Demarche::factory(4)->recycle($services)->for(User::where('email', 'user@example.com')->firstOrFail())->create();
+        }
 
         // make:feature:seeders
     }

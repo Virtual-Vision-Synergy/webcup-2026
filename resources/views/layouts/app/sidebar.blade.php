@@ -26,6 +26,10 @@
                         </flux:sidebar.item>
                     @endcan
 
+                    <flux:sidebar.item icon="document-text" :href="route('demarches.index')" :current="request()->routeIs('demarches.*')" wire:navigate>
+                        Mes démarches
+                    </flux:sidebar.item>
+
                     {{-- make:feature:nav --}}
                 </flux:sidebar.group>
             </flux:sidebar.nav>

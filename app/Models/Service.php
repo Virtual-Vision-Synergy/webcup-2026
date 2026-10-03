@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -23,7 +24,7 @@ use Illuminate\Support\Str;
 class Service extends Model
 {
     /** @use HasFactory<ServiceFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
 
     /** Catégories du catalogue (filtre et recherche). */
     public const CATEGORIE_OPTIONS = ['administratif', 'sante', 'social', 'education', 'culture', 'urbanisme', 'securite', 'economie'];

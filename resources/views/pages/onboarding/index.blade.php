@@ -85,7 +85,11 @@ new #[Title('Bienvenue à Nova Terra')] class extends Component {
             :breadcrumb="['Mon espace' => route('dashboard'), 'Bienvenue' => null]"
             :title="__('Bonjour :prenom, bienvenue chez vous !', ['prenom' => $prenom])"
             subtitle="{{ __('Votre mairie est désormais en ligne. Trois étapes simples pour bien démarrer : comptez cinq minutes.') }}"
-        />
+        >
+            <x-slot:meta>
+                <x-tn.mots-utiles class="mt-3" :slugs="['demarche', 'quartier', 'notification']" />
+            </x-slot:meta>
+        </x-tn.page-header>
 
         <x-tn.panel padding="p-5 md:p-6">
             <x-onboarding.progression :progress="$progress" />

@@ -24,6 +24,10 @@ new #[Title('Services')] class extends Component {
     #[Url(except: false)]
     public bool $mine = false;
 
+    /** F38 : masquer les services interrompus (maintenance, incident). */
+    #[Url(except: false)]
+    public bool $disponibles = false;
+
     public function mount(): void
     {
         $this->authorize('viewAny', Service::class);
@@ -44,15 +48,20 @@ new #[Title('Services')] class extends Component {
         $this->resetPage();
     }
 
+    public function updatedDisponibles(): void
+    {
+        $this->resetPage();
+    }
+
     public function resetFilters(): void
     {
-        $this->reset('search', 'categorie', 'mine');
+        $this->reset('search', 'categorie', 'mine', 'disponibles');
         $this->resetPage();
     }
 
     public function hasFilters(): bool
     {
-        return trim($this->search) !== '' || $this->categorie !== '' || $this->mine;
+        return trim($this->search) !== '' || $this->categorie !== '' || $this->mine || $this->disponibles;
     }
 
     /**
@@ -73,14 +82,15 @@ new #[Title('Services')] class extends Component {
             })
             // Une valeur inconnue (URL modifiée à la main) est ignorée.
             ->when(in_array($this->categorie, Service::CATEGORIE_OPTIONS, true), fn ($query) => $query->where('categorie', $this->categorie))
-            ->when($this->mine, fn ($query) => $query->whereBelongsTo(auth()->user()));
+            ->when($this->mine, fn ($query) => $query->whereBelongsTo(auth()->user()))
+            ->when($this->disponibles, fn ($query) => $query->disponibles());
     }
 
     #[Computed]
     public function items(): LengthAwarePaginator
     {
         return $this->filteredQuery()
-            ->with('user')
+            ->with(['user', 'interruptionCourante'])
             ->prioritaires()
             ->paginate(10);
     }
@@ -131,6 +141,7 @@ new #[Title('Services')] class extends Component {
                 <flux:select.option value="{{ $valeur }}">{{ __($label) }}</flux:select.option>
             @endforeach
         </flux:select>
+        <flux:checkbox wire:model.live="disponibles" label="{{ __('Disponibles seulement') }}" />
         @can('create', Service::class)
             <flux:checkbox wire:model.live="mine" label="{{ __('Mes services uniquement') }}" />
         @endcan
@@ -160,6 +171,13 @@ new #[Title('Services')] class extends Component {
                             </h2>
                             @if ($item->categorie)
                                 <flux:badge size="sm" class="mt-1">{{ __(Service::labelCategorie($item->categorie)) }}</flux:badge>
+                            @endif
+                            @if ($interruption = $item->interruptionEnCours())
+                                {{-- F38 : statut écrit en texte (pas seulement en couleur) ; le service reste listé. --}}
+                                <div class="mt-2 space-y-1">
+                                    <x-tn.status-badge :etat="$interruption->etatBadge()">Indisponible · {{ $interruption->libelleType() }}</x-tn.status-badge>
+                                    <p class="text-sm font-medium text-ink">{{ $interruption->libelleRetour() }}</p>
+                                </div>
                             @endif
                             @if ($item->description)
                                 <p class="mt-1 line-clamp-2 text-sm text-ink-2">{{ __($item->description) }}</p>

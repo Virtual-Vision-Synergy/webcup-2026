@@ -36,6 +36,9 @@
                 <flux:navbar.item icon="calendar-days" :href="route('agent.appointments.index')" :current="request()->routeIs('agent.appointments.*')">
                     Rendez-vous
                 </flux:navbar.item>
+                <flux:navbar.item icon="wrench-screwdriver" :href="route('agent.services.index')" :current="request()->routeIs('agent.services.*')">
+                    Services
+                </flux:navbar.item>
                 <flux:navbar.item icon="document-text" :href="route('agent.audit.index')" :current="request()->routeIs('agent.audit.*')">
                     Journal
                 </flux:navbar.item>
@@ -69,6 +72,7 @@
                     <flux:menu.item icon="megaphone" :href="route('agent.annonces.index')" class="md:hidden">Messages généraux</flux:menu.item>
                     <flux:menu.item icon="clipboard-document-list" :href="route('agent.demandes')" class="md:hidden">Demandes des habitants</flux:menu.item>
                     <flux:menu.item icon="calendar-days" :href="route('agent.appointments.index')" class="md:hidden">Rendez-vous du jour</flux:menu.item>
+                    <flux:menu.item icon="wrench-screwdriver" :href="route('agent.services.index')" class="md:hidden">Disponibilité des services</flux:menu.item>
                     <flux:menu.item icon="document-text" :href="route('agent.audit.index')" class="md:hidden">Journal</flux:menu.item>
                     <flux:menu.item icon="arrow-uturn-left" :href="route('dashboard')">Retour à l'espace citoyen</flux:menu.item>
                     <flux:menu.item icon="cog" :href="route('profile.edit')">{{ __('Settings') }}</flux:menu.item>

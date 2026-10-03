@@ -12,7 +12,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 /**
  * user_id n'est volontairement PAS remplissable : il est assigné dans le code.
@@ -158,6 +160,64 @@ class Service extends Model
     public function creneaux(): HasMany
     {
         return $this->hasMany(CreneauRendezVous::class);
+    }
+
+    /**
+     * Interruptions du service, de la plus récente à la plus ancienne (F38, historique conservé).
+     *
+     * @return HasMany<ServiceInterruption, $this>
+     */
+    public function interruptions(): HasMany
+    {
+        return $this->hasMany(ServiceInterruption::class)->latest('debut_at')->latest('id');
+    }
+
+    /**
+     * Interruption en cours (commencée, non rétablie). Relation pour le chargement groupé du catalogue :
+     * Service::with('interruptionCourante') évite une requête par carte.
+     *
+     * @return HasOne<ServiceInterruption, $this>
+     */
+    public function interruptionCourante(): HasOne
+    {
+        return $this->hasOne(ServiceInterruption::class)->enCours()->latest('debut_at')->latest('id');
+    }
+
+    public function interruptionEnCours(): ?ServiceInterruption
+    {
+        return $this->interruptionCourante;
+    }
+
+    public function estIndisponible(): bool
+    {
+        return $this->interruptionEnCours() !== null;
+    }
+
+    /**
+     * Services sans interruption en cours.
+     *
+     * @param  Builder<Service>  $query
+     */
+    #[Scope]
+    protected function disponibles(Builder $query): void
+    {
+        $query->whereDoesntHave('interruptionCourante');
+    }
+
+    /**
+     * Seul point de contrôle côté serveur avant de démarrer une démarche sur ce service (F38).
+     * Lève une erreur de validation en français (jamais de 500) si le service est interrompu.
+     *
+     * @throws ValidationException
+     */
+    public function assertDisponible(string $champ = 'service'): void
+    {
+        // Relecture depuis la base : le statut a pu changer depuis le chargement de la page.
+        $this->unsetRelation('interruptionCourante');
+
+        if ($this->estIndisponible()) {
+            throw ValidationException::withMessages([$champ => ServiceInterruption::MESSAGE_DEMARCHE_SUSPENDUE]);
+        }
     }
 
     /**

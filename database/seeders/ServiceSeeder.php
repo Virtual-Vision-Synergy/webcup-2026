@@ -32,6 +32,7 @@ class ServiceSeeder extends Seeder
         'Culture et festivités' => 'culture',
         'Police municipale' => 'securite',
         'Marchés et commerce' => 'economie',
+        'Mairie annexe du quartier Nord' => 'administratif',
     ];
 
     public function run(): void
@@ -199,6 +200,14 @@ class ServiceSeeder extends Seeder
                 'telephone' => null,
                 'email' => 'jeunesse@mairie-novaterra.mg',
                 'adresse' => 'Maison des jeunes, 7 avenue de la Jeunesse, Nova Terra',
+            ],
+            [
+                'nom' => 'Mairie annexe du quartier Nord',
+                'description' => "Antenne de proximité de la mairie : actes d'état civil, certificats de résidence, légalisation de signature et accueil des habitants du quartier Nord.\nPrend le relais de l'hôtel de ville lorsqu'un service central est interrompu.",
+                'horaires' => "Lundi au vendredi : 8 h 00 – 12 h 00\nMercredi : 14 h 00 – 16 h 00",
+                'telephone' => '+261 20 22 402 30',
+                'email' => 'annexe-nord@mairie-novaterra.mg',
+                'adresse' => '12 rue du Port, quartier Nord, Nova Terra',
             ],
         ];
     }

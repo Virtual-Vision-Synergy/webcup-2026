@@ -38,6 +38,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(RoleSeeder::class);
+        $this->call(QuartierSeeder::class);
 
         if (! app()->isProduction()) {
             User::factory()->admin()->create([
@@ -126,18 +127,21 @@ class DatabaseSeeder extends Seeder
         Annonce::factory()->active()->for($auteur)->create([
             'titre' => 'Coupure d’eau à Ambohijanahary',
             'contenu' => 'Travaux sur le réseau : l’eau sera coupée dans le quartier Ambohijanahary aujourd’hui de 9 h à 16 h. Faites une réserve et évitez les lessives ; un camion-citerne stationne place des Pionniers.',
-            'niveau' => 'important',
+            'niveau' => 'vigilance',
         ]);
         Annonce::factory()->programmee()->for($auteur)->create([
             'titre' => 'Alerte météo : vents violents demain',
             'contenu' => 'Rafales jusqu’à 110 km/h attendues. Rentrez le mobilier extérieur, limitez vos déplacements et suivez les consignes du Haut Conseil sur cette plateforme.',
-            'niveau' => 'urgent',
+            'niveau' => 'alerte',
         ]);
         Annonce::factory()->expiree()->for($auteur)->create([
             'titre' => 'Fermeture exceptionnelle de la mairie annexe',
             'contenu' => 'La mairie annexe du secteur Nord était fermée pour inventaire. Les démarches restaient possibles en ligne.',
             'niveau' => 'information',
         ]);
+
+        // Alerte ciblée F29 « Montée des eaux — quartier sud » + habitants sud@example.com et nord@example.com.
+        $this->call(AlerteMonteeDesEauxSeeder::class);
 
         Signalement::factory(15)->recycle($users)->create();
         Signalement::factory(5)->nouveau()->recycle($users)->create();
@@ -154,6 +158,9 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call(LigneTransportSeeder::class);
+
+        // F39 : services ouverts aux rendez-vous, créneaux sur 14 jours ouvrés, agenda du jour pour agent@example.com.
+        $this->call(RendezVousSeeder::class);
 
         // make:feature:seeders
     }

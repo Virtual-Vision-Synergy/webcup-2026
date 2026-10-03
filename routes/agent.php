@@ -18,4 +18,7 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     Route::livewire('/citoyens', 'pages::agent.citizens.index')->name('citizens.index');
     Route::livewire('/citoyens/{user}', 'pages::agent.citizens.show')->name('citizens.show');
     Route::livewire('demandes', 'pages::agent.demandes')->name('demandes');
+
+    // F39 : rendez-vous du jour (RendezVousPolicy::viewAgenda).
+    Route::livewire('rendez-vous', 'pages::agent.rendez-vous')->name('appointments.index');
 });

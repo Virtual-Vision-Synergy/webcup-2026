@@ -2,6 +2,7 @@
 
 use App\Models\Demarche;
 use App\Models\Onboarding;
+use App\Models\Quartier;
 use App\Models\Service;
 use App\Models\User;
 use App\Services\OnboardingProgress;
@@ -96,7 +97,7 @@ test('la progression suit les vraies actions du citoyen jusqu\'à la fin du parc
     Livewire::actingAs($user)
         ->test('pages::settings.profile')
         ->set('telephone', '034 12 345 67')
-        ->set('quartier', 'Ambohitra')
+        ->set('quartier_id', (string) Quartier::idPour('sud'))
         ->call('updateProfileInformation')
         ->assertHasNoErrors()
         ->assertRedirect(route('onboarding.show'));

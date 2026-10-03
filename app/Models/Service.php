@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 /**
@@ -16,7 +18,7 @@ use Illuminate\Support\Str;
  * user_id et slug ne sont volontairement PAS remplissables : ils sont assignés dans le code.
  * Le slug est généré à la création depuis le nom et ne change plus (URL stables).
  */
-#[Fillable(['nom', 'categorie', 'description', 'horaires', 'telephone', 'email', 'adresse'])]
+#[Fillable(['nom', 'categorie', 'description', 'horaires', 'telephone', 'email', 'adresse', 'lieu_rendez_vous', 'pieces_a_fournir', 'duree_rendez_vous'])]
 class Service extends Model
 {
     /** @use HasFactory<ServiceFactory> */
@@ -94,6 +96,52 @@ class Service extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'duree_rendez_vous' => 'integer',
+        ];
+    }
+
+    /**
+     * Services ouverts à la prise de rendez-vous (F39) : une durée de rendez-vous est renseignée.
+     *
+     * @param  Builder<Service>  $query
+     */
+    public function scopePrendRendezVous(Builder $query): void
+    {
+        $query->whereNotNull('duree_rendez_vous')->where('duree_rendez_vous', '>', 0);
+    }
+
+    /**
+     * Lieu du rendez-vous : le guichet précis, sinon l'adresse du service.
+     */
+    public function lieuRendezVous(): ?string
+    {
+        return $this->lieu_rendez_vous ?: $this->adresse;
+    }
+
+    /**
+     * Pièces à apporter, une par ligne dans la saisie.
+     *
+     * @return array<int, string>
+     */
+    public function piecesAFournir(): array
+    {
+        return array_values(array_filter(array_map('trim', preg_split('/\R/', (string) $this->pieces_a_fournir) ?: [])));
+    }
+
+    /**
+     * @return HasMany<CreneauRendezVous, $this>
+     */
+    public function creneaux(): HasMany
+    {
+        return $this->hasMany(CreneauRendezVous::class);
     }
 
     /**

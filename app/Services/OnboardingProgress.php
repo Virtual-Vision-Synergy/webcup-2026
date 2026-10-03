@@ -42,7 +42,7 @@ class OnboardingProgress
     public function profilComplet(): bool
     {
         return filled($this->user->name) && filled($this->user->email)
-            && filled($this->user->telephone) && filled($this->user->quartier);
+            && filled($this->user->telephone) && filled($this->user->quartier_id);
     }
 
     public function serviceTrouve(): bool

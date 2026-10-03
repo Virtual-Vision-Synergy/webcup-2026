@@ -1,11 +1,13 @@
 <?php
 
+use App\Models\RendezVous;
 use App\Models\Service;
+use App\Models\ServiceInterruption;
 use App\Services\OnboardingProgress;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
-use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\Storage;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -17,7 +19,7 @@ new #[Title('Service')] class extends Component {
     public function mount(Service $service): void
     {
         $this->authorize('view', $service);
-        $this->record = $service;
+        $this->record = $service->load('interruptionCourante.alternativeService');
 
         // Parcours de prise en main (D12), étape « Trouver un service » : sans effet hors parcours en cours.
         OnboardingProgress::pour(auth()->user())->marquerServiceVisite($service);
@@ -54,6 +56,21 @@ new #[Title('Service')] class extends Component {
 
         $this->redirectRoute('services.index', navigate: true);
     }
+
+    /**
+     * Interruption en cours (F38) : seules les informations publiques sont envoyées à la vue (jamais l'agent).
+     */
+    #[Computed]
+    public function interruption(): ?ServiceInterruption
+    {
+        return $this->record->interruptionEnCours();
+    }
+
+    #[Computed]
+    public function prendRendezVous(): bool
+    {
+        return (int) $this->record->duree_rendez_vous > 0;
+    }
 }; ?>
 
 <section class="mx-auto w-full max-w-5xl space-y-6">
@@ -78,7 +95,62 @@ new #[Title('Service')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
-    @if ($record->estIndisponible())
+    @if (session('service-indisponible'))
+        <flux:callout variant="danger" icon="exclamation-triangle" role="alert">
+            <flux:callout.text>{{ session('service-indisponible') }}</flux:callout.text>
+        </flux:callout>
+    @endif
+
+    @php($interruption = $this->interruption)
+
+    {{-- F38 : statut du service, AVANT tout bouton de démarche. --}}
+    @if ($interruption)
+        <div role="status" @class([
+            'space-y-4 rounded-md border p-5 md:p-6',
+            'border-magenta/35 bg-magenta/8' => $interruption->type === 'incident',
+            'border-amber/35 bg-amber/8' => $interruption->type !== 'incident',
+        ]) data-test="interruption">
+            <div class="flex flex-wrap items-center gap-2">
+                <x-tn.status-badge :etat="$interruption->etatBadge()">Indisponible · {{ $interruption->libelleType() }}</x-tn.status-badge>
+                <span class="text-sm text-ink-2">Depuis le {{ ServiceInterruption::libelleDate($interruption->debut_at) }}</span>
+            </div>
+            <div>
+                <h2 class="tn-display text-lg font-semibold text-ink">Ce service est momentanément indisponible</h2>
+                <p class="mt-1 text-ink">{{ $interruption->motif }}</p>
+                <p class="mt-2 font-medium text-ink">{{ $interruption->libelleRetour() }}</p>
+            </div>
+            <div class="rounded-sm border border-line bg-surface p-4">
+                <h3 class="font-semibold text-ink">Que faire en attendant ?</h3>
+                <p class="mt-1 whitespace-pre-line text-ink">{{ $interruption->alternative }}</p>
+                @if ($interruption->alternativeService)
+                    <flux:link :href="route('services.show', $interruption->alternativeService)" wire:navigate class="mt-2 inline-flex items-center gap-1">
+                        Voir le service {{ $interruption->alternativeService->nom }}
+                    </flux:link>
+                @endif
+            </div>
+            <p class="text-sm text-ink-2">Les rendez-vous déjà pris pendant cette période seront confirmés par la mairie. Les démarches déjà déposées restent enregistrées.</p>
+        </div>
+    @endif
+
+    {{-- Démarches possibles depuis ce service (F39, D12) : suspendues pendant une interruption (contrôle serveur aussi). --}}
+    <div class="flex flex-wrap items-center gap-3">
+        @if ($record->estIndisponible())
+            @if ($this->prendRendezVous)
+                <flux:button icon="calendar-days" disabled>Prendre rendez-vous</flux:button>
+            @endif
+            <flux:button icon="document-plus" disabled>Faire une demande</flux:button>
+            <p class="text-sm font-medium text-ink-2">Démarche suspendue pendant l’interruption</p>
+        @else
+            @if ($this->prendRendezVous)
+                @can('create', RendezVous::class)
+                    <flux:button variant="primary" icon="calendar-days" :href="route('appointments.create', ['service' => $record->slug])" wire:navigate>Prendre rendez-vous</flux:button>
+                @endcan
+            @endif
+        @endif
+    </div>
+
+    {{-- F63 : service désactivé par un administrateur. --}}
+    @if ($record->indisponible_depuis)
         <div class="rounded-md border border-magenta/35 bg-magenta/8 p-5 md:p-6" role="status">
             <div class="flex items-start gap-3">
                 <flux:icon name="no-symbol" class="mt-0.5 size-6 shrink-0 text-magenta" aria-hidden="true" />

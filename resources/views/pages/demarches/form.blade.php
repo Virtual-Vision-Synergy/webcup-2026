@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\BloqueSiServiceIndisponible;
 use App\Models\Demarche;
 use App\Models\Service;
 use App\Services\OnboardingProgress;
@@ -13,6 +14,8 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Démarche')] class extends Component {
+    use BloqueSiServiceIndisponible;
+
     #[Locked]
     public ?Demarche $record = null;
 
@@ -33,8 +36,15 @@ new #[Title('Démarche')] class extends Component {
 
             // Pré-sélection du service (lien « Commencer une démarche » du parcours de prise en main, D12).
             $serviceId = request()->integer('service');
-            if ($serviceId > 0 && Service::query()->disponibles()->whereKey($serviceId)->exists()) {
-                $this->service_id = (string) $serviceId;
+            $service = $serviceId > 0 ? Service::query()->find($serviceId) : null;
+
+            // F38 : démarche sur un service interrompu → retour à sa fiche, qui explique quand revenir.
+            if ($this->redirigerSiServiceIndisponible($service)) {
+                return;
+            }
+
+            if ($service !== null) {
+                $this->service_id = (string) $service->id;
             }
         }
     }
@@ -70,7 +80,7 @@ new #[Title('Démarche')] class extends Component {
     #[Computed]
     public function serviceOptions(): Collection
     {
-        return Service::query()->orderBy('nom')->get(['id', 'nom', 'indisponible_depuis', 'motif_indisponibilite', 'retour_prevu_le']);
+        return Service::query()->with('interruptionCourante')->orderBy('nom')->get(['id', 'nom', 'indisponible_depuis', 'motif_indisponibilite', 'retour_prevu_le']);
     }
 
     public function save(): void
@@ -80,6 +90,12 @@ new #[Title('Démarche')] class extends Component {
             : $this->authorize('create', Demarche::class);
 
         $validated = $this->validate();
+
+        // F38 : pas de nouvelle démarche sur un service interrompu (une démarche déjà déposée reste modifiable sur son service).
+        $serviceChoisi = filled($validated['service_id'] ?? null) ? Service::query()->find((int) $validated['service_id']) : null;
+        if ($serviceChoisi !== null && (! $this->record || (int) $this->record->service_id !== $serviceChoisi->id)) {
+            $serviceChoisi->assertDisponible('service_id');
+        }
 
         foreach (['service_id'] as $field) {
             if (($validated[$field] ?? null) === '') {
@@ -150,22 +166,25 @@ new #[Title('Démarche')] class extends Component {
                         <span class="font-medium text-ink">Je ne sais pas</span>
                     </label>
                     @foreach ($this->serviceOptions as $option)
-                        @if ($option->estIndisponible())
-                            <div wire:key="service-{{ $option->id }}" class="flex min-h-14 items-start gap-3 rounded-md border border-dashed border-line bg-surface px-4 py-3 opacity-75">
-                                <input type="radio" disabled aria-describedby="service-{{ $option->id }}-indispo" class="mt-1 size-4">
-                                <span class="min-w-0">
-                                    <span class="block font-medium text-ink-2">{{ $option->nom }}</span>
-                                    <span id="service-{{ $option->id }}-indispo" class="block text-xs text-magenta">
-                                        Indisponible{{ $option->retour_prevu_le ? ' · retour prévu le '.$option->retour_prevu_le->translatedFormat('j F') : '' }}
-                                    </span>
-                                </span>
-                            </div>
-                        @else
-                            <label wire:key="service-{{ $option->id }}" class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
-                                <input type="radio" wire:model="service_id" name="service_id" value="{{ $option->id }}" class="size-4 accent-[var(--color-cyan)]">
-                                <span class="font-medium text-ink">{{ $option->nom }}</span>
-                            </label>
-                        @endif
+                        @php($bloque = $option->indisponible_depuis !== null || ($option->estIndisponible() && (! $record || (int) $record->service_id !== $option->id)))
+                        <label wire:key="service-{{ $option->id }}" @class([
+                            'flex min-h-14 items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors',
+                            'cursor-pointer hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8' => ! $bloque,
+                            'cursor-not-allowed opacity-70' => $bloque,
+                        ])>
+                            <input type="radio" wire:model="service_id" name="service_id" value="{{ $option->id }}" class="size-4 accent-[var(--color-cyan)]" @disabled($bloque)>
+                            <span class="min-w-0">
+                                <span class="block font-medium text-ink">{{ $option->nom }}</span>
+                                @if ($bloque)
+                                    {{-- F38 / F63 : service indisponible, statut écrit en texte (pas seulement en couleur). --}}
+                                    @if ($option->indisponible_depuis)
+                                        <span class="block text-sm text-ink-2">Indisponible{{ $option->retour_prevu_le ? ' · retour prévu le '.$option->retour_prevu_le->translatedFormat('j F') : '' }}</span>
+                                    @else
+                                        <span class="block text-sm text-ink-2">Indisponible · démarche suspendue pendant l’interruption</span>
+                                    @endif
+                                @endif
+                            </span>
+                        </label>
                     @endforeach
                 </div>
                 <flux:error name="service_id" />

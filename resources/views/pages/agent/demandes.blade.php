@@ -105,7 +105,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
         $record->changerStatut($statut);
         unset($this->items, $this->compteurs);
 
-        Flux::toast(variant: 'success', text: 'Statut mis à jour : '.Demarche::libelleStatut($statut).'.');
+        Flux::toast(variant: 'success', text: __('Statut mis à jour : :statut.', ['statut' => Demarche::libelleStatut($statut)]));
     }
 }; ?>
 
@@ -115,10 +115,10 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
 
 <section class="mx-auto w-full max-w-6xl space-y-6">
     <x-tn.page-header
-        label="Espace agent"
+        label="{{ __('Espace agent') }}"
         :breadcrumb="['Espace agent' => route('agent.index'), 'Demandes des habitants' => null]"
-        title="Demandes des habitants"
-        :subtitle="$enAttenteTotal.' demande(s) en attente d’une action sur '.array_sum($this->compteurs).' au total'"
+        title="{{ __('Demandes des habitants') }}"
+        :subtitle="__(':n demande(s) en attente d’une action sur :total au total', ['n' => $enAttenteTotal, 'total' => array_sum($this->compteurs)])"
     />
 
     {{-- Compteurs par état --}}
@@ -132,9 +132,9 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
                 <x-tn.status-badge :etat="Demarche::STATUT_ETATS[$statut]">{{ Demarche::libelleStatut($statut) }}</x-tn.status-badge>
                 <span class="tn-display mt-2 block text-2xl font-semibold text-ink">{{ $this->compteurs[$statut] }}</span>
                 @if (in_array($statut, $this::STATUTS_EN_ATTENTE, true))
-                    <span class="text-xs text-amber">Action attendue</span>
+                    <span class="text-xs text-amber">{{ __('Action attendue') }}</span>
                 @else
-                    <span class="text-xs text-ink-2">Clôturée</span>
+                    <span class="text-xs text-ink-2">{{ __('Clôturée') }}</span>
                 @endif
             </button>
         @endforeach
@@ -142,22 +142,22 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
 
     {{-- Filtres --}}
     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher…" aria-label="Rechercher une demande" class="sm:max-w-xs" />
-        <flux:select wire:model.live="filterStatut" aria-label="Filtrer par état" class="sm:max-w-52">
-            <flux:select.option value="">État : tous</flux:select.option>
+        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="{{ __('Rechercher…') }}" aria-label="{{ __('Rechercher une demande') }}" class="sm:max-w-xs" />
+        <flux:select wire:model.live="filterStatut" aria-label="{{ __('Filtrer par état') }}" class="sm:max-w-52">
+            <flux:select.option value="">{{ __('État : tous') }}</flux:select.option>
             @foreach (Demarche::STATUT_OPTIONS as $option)
                 <flux:select.option :value="$option">{{ Demarche::libelleStatut($option) }}</flux:select.option>
             @endforeach
         </flux:select>
-        <flux:checkbox wire:model.live="enAttente" label="En attente d’action uniquement" />
+        <flux:checkbox wire:model.live="enAttente" label="{{ __('En attente d’action uniquement') }}" />
         @if ($search !== '' || $filterStatut !== '' || $enAttente)
-            <flux:button variant="ghost" size="sm" icon="x-mark" wire:click="resetFilters">Effacer les filtres</flux:button>
+            <flux:button variant="ghost" size="sm" icon="x-mark" wire:click="resetFilters">{{ __('Effacer les filtres') }}</flux:button>
         @endif
-        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">{{ __('Mise à jour…') }}</span>
     </div>
 
     @if ($this->items->isEmpty())
-        <x-tn.empty icon="inbox" title="Aucune demande à afficher" :text="($search !== '' || $filterStatut !== '' || $enAttente) ? 'Aucune demande ne correspond aux filtres choisis.' : 'Les habitants n’ont encore déposé aucune demande.'" />
+        <x-tn.empty icon="inbox" title="{{ __('Aucune demande à afficher') }}" :text="($search !== '' || $filterStatut !== '' || $enAttente) ? 'Aucune demande ne correspond aux filtres choisis.' : __('Les habitants n’ont encore déposé aucune demande.')" />
     @else
         <ul class="space-y-3">
             @foreach ($this->items as $item)
@@ -168,12 +168,12 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
                             <div class="flex flex-wrap items-center gap-2">
                                 <x-tn.status-badge :etat="$item->etatStatut()">{{ Demarche::libelleStatut($item->statut) }}</x-tn.status-badge>
                                 @if ($attente)
-                                    <x-tn.status-badge etat="perturbe">Action attendue</x-tn.status-badge>
+                                    <x-tn.status-badge etat="perturbe">{{ __('Action attendue') }}</x-tn.status-badge>
                                 @endif
                             </div>
                             <a href="{{ route('demarches.show', $item) }}" class="block font-medium text-ink hover:text-cyan">{{ $item->titre }}</a>
                             <p class="text-sm text-ink-2">
-                                {{ $item->user?->name ?? 'Habitant inconnu' }} · {{ $item->service?->nom ?? 'Service non précisé' }} ·
+                                {{ $item->user?->name ?? __('Habitant inconnu') }} · {{ $item->service?->nom ?? __('Service non précisé') }} ·
                                 <span class="font-mono text-xs">Déposée le {{ $item->created_at->format('d.m.Y') }}</span>
                             </p>
                             @if ($item->description)
@@ -182,7 +182,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
                         </div>
 
                         @can('changerStatut', $item)
-                            <div class="flex flex-wrap gap-1 md:shrink-0 md:justify-end" role="group" aria-label="Changer l’état de la demande">
+                            <div class="flex flex-wrap gap-1 md:shrink-0 md:justify-end" role="group" aria-label="{{ __('Changer l’état de la demande') }}">
                                 @foreach (Demarche::STATUT_OPTIONS as $option)
                                     <flux:button
                                         size="xs"

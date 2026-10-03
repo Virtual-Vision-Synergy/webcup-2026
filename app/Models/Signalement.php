@@ -72,7 +72,7 @@ class Signalement extends Model
 
     public static function libelleStatut(string $statut): string
     {
-        return self::STATUT_LABELS[$statut] ?? ucfirst(str_replace('_', ' ', $statut));
+        return __(self::STATUT_LABELS[$statut] ?? ucfirst(str_replace('_', ' ', $statut)));
     }
 
     public function etatStatut(): string

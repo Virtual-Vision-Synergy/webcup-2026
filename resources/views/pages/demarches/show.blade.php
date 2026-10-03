@@ -23,7 +23,7 @@ new #[Title('Démarche')] class extends Component {
 
         $this->record->delete();
 
-        Flux::toast(variant: 'success', text: 'Démarche supprimée.');
+        Flux::toast(variant: 'success', text: __('Démarche supprimée.'));
 
         $this->redirectRoute('demarches.index', navigate: true);
     }
@@ -35,7 +35,7 @@ new #[Title('Démarche')] class extends Component {
 
         $this->record->changerStatut($statut);
 
-        Flux::toast(variant: 'success', text: 'Statut mis à jour.');
+        Flux::toast(variant: 'success', text: __('Statut mis à jour.'));
     }
 }; ?>
 

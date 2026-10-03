@@ -87,7 +87,7 @@ new #[Title('Démarche')] class extends Component {
             $record->save();
         }
 
-        Flux::toast(variant: 'success', text: 'Démarche enregistrée.');
+        Flux::toast(variant: 'success', text: __('Démarche enregistrée.'));
 
         // Parcours de prise en main (D12) : la première démarche termine le parcours, on affiche les félicitations.
         if ($depuisParcours) {
@@ -101,7 +101,7 @@ new #[Title('Démarche')] class extends Component {
 }; ?>
 
 @php
-    $etapes = ['Service', 'Votre demande', 'Récapitulatif'];
+    $etapes = ['Service', __('Votre demande'), __('Récapitulatif')];
     $nomsServices = $this->serviceOptions->pluck('nom', 'id')->mapWithKeys(fn ($nom, $id) => [(string) $id => $nom]);
     // Après une erreur de validation, on revient sur l'étape qui contient le champ fautif.
     $etapeErreur = $errors->has('service_id') ? 1 : ($errors->hasAny(['titre', 'description']) ? 2 : null);
@@ -117,8 +117,8 @@ new #[Title('Démarche')] class extends Component {
     }"
 >
     <x-tn.page-header
-        label="Démarches"
-        :title="$record ? 'Modifier la démarche' : 'Nouvelle démarche'"
+        label="{{ __('Démarches') }}"
+        :title="$record ? __('Modifier la démarche') : __('Nouvelle démarche')"
         :breadcrumb="$record
             ? ['Mon espace' => route('dashboard'), 'Démarches' => route('demarches.index'), ($record->titre ?: 'Démarche') => route('demarches.show', $record), 'Modifier' => null]
             : ['Mon espace' => route('dashboard'), 'Démarches' => route('demarches.index'), 'Nouvelle' => null]"
@@ -130,13 +130,13 @@ new #[Title('Démarche')] class extends Component {
         <div x-ref="contenu" tabindex="-1" class="outline-none">
             {{-- ÉTAPE 1 : SERVICE --}}
             <fieldset x-show="etape === 1" class="space-y-3">
-                <legend class="tn-display mb-1 text-xl font-semibold text-ink">Quel service est concerné ?</legend>
-                <p class="mb-4 text-ink-2">Choisissez le service municipal. En cas de doute, la mairie orientera votre demande.</p>
+                <legend class="tn-display mb-1 text-xl font-semibold text-ink">{{ __('Quel service est concerné ?') }}</legend>
+                <p class="mb-4 text-ink-2">{{ __('Choisissez le service municipal. En cas de doute, la mairie orientera votre demande.') }}</p>
 
                 <div class="grid gap-2 sm:grid-cols-2">
                     <label class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
                         <input type="radio" wire:model="service_id" value="" class="size-4 accent-[var(--color-cyan)]">
-                        <span class="font-medium text-ink">Je ne sais pas</span>
+                        <span class="font-medium text-ink">{{ __('Je ne sais pas') }}</span>
                     </label>
                     @foreach ($this->serviceOptions as $option)
                         <label wire:key="service-{{ $option->id }}" class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
@@ -151,21 +151,21 @@ new #[Title('Démarche')] class extends Component {
             {{-- ÉTAPE 2 : DEMANDE --}}
             <div x-show="etape === 2" x-cloak class="space-y-6">
                 <div>
-                    <h2 class="tn-display text-xl font-semibold text-ink">Décrivez votre demande</h2>
-                    <p class="mt-1 text-ink-2">Un objet court, puis les détails utiles au traitement.</p>
+                    <h2 class="tn-display text-xl font-semibold text-ink">{{ __('Décrivez votre demande') }}</h2>
+                    <p class="mt-1 text-ink-2">{{ __('Un objet court, puis les détails utiles au traitement.') }}</p>
                 </div>
-                <flux:input wire:model="titre" label="Objet de la démarche" placeholder="Ex. Demande d'acte de naissance" required />
-                <flux:textarea wire:model="description" label="Détails" placeholder="Précisez votre demande (personnes concernées, dates, pièces disponibles…)" rows="6" required />
+                <flux:input wire:model="titre" label="{{ __('Objet de la démarche') }}" placeholder="{{ __('Ex. Demande d\'acte de naissance') }}" required />
+                <flux:textarea wire:model="description" label="{{ __('Détails') }}" placeholder="{{ __('Précisez votre demande (personnes concernées, dates, pièces disponibles…)') }}" rows="6" required />
             </div>
 
             {{-- ÉTAPE 3 : RÉCAPITULATIF --}}
             <div x-show="etape === 3" x-cloak class="space-y-4">
-                <h2 class="tn-display text-xl font-semibold text-ink">Vérifiez avant d'envoyer</h2>
+                <h2 class="tn-display text-xl font-semibold text-ink">{{ __('Vérifiez avant d\'envoyer') }}</h2>
                 <x-tn.panel padding="p-5">
                     <dl>
-                        <x-tn.field label="Service"><span x-text="services[$wire.service_id] ?? 'Je ne sais pas'"></span></x-tn.field>
-                        <x-tn.field label="Objet"><span x-text="$wire.titre"></span></x-tn.field>
-                        <x-tn.field label="Détails"><p class="whitespace-pre-line" x-text="$wire.description"></p></x-tn.field>
+                        <x-tn.field label="{{ __('Service') }}"><span x-text="services[$wire.service_id] ?? @js(__('Je ne sais pas'))"></span></x-tn.field>
+                        <x-tn.field label="{{ __('Objet') }}"><span x-text="$wire.titre"></span></x-tn.field>
+                        <x-tn.field label="{{ __('Détails') }}"><p class="whitespace-pre-line" x-text="$wire.description"></p></x-tn.field>
                     </dl>
                 </x-tn.panel>
                 @if ($errors->any())
@@ -175,20 +175,20 @@ new #[Title('Démarche')] class extends Component {
                 @endif
             </div>
 
-            <p x-ref="erreurEtape" hidden class="mt-4 text-sm text-magenta" role="alert">Renseignez l'objet et les détails pour continuer.</p>
+            <p x-ref="erreurEtape" hidden class="mt-4 text-sm text-magenta" role="alert">{{ __('Renseignez l\'objet et les détails pour continuer.') }}</p>
         </div>
 
         {{-- Un seul CTA par étape --}}
         <div class="flex items-center justify-between gap-3 border-t border-line pt-5">
             <div>
-                <flux:button type="button" variant="ghost" icon="arrow-left" x-show="etape > 1" x-on:click="precedent()">Retour</flux:button>
-                <flux:button :href="route('demarches.index')" wire:navigate variant="ghost" x-show="etape === 1">Annuler</flux:button>
+                <flux:button type="button" variant="ghost" icon="arrow-left" x-show="etape > 1" x-on:click="precedent()">{{ __('Retour') }}</flux:button>
+                <flux:button :href="route('demarches.index')" wire:navigate variant="ghost" x-show="etape === 1">{{ __('Annuler') }}</flux:button>
             </div>
 
-            <flux:button type="button" variant="primary" icon:trailing="arrow-right" x-show="etape < 3" x-on:click="suivant()">Continuer</flux:button>
+            <flux:button type="button" variant="primary" icon:trailing="arrow-right" x-show="etape < 3" x-on:click="suivant()">{{ __('Continuer') }}</flux:button>
             <flux:button type="submit" variant="primary" class="tn-cta" x-show="etape === 3" x-cloak>
-                <span wire:loading.remove wire:target="save">{{ $record ? 'Enregistrer' : 'Envoyer la démarche' }}</span>
-                <span wire:loading wire:target="save">Enregistrement…</span>
+                <span wire:loading.remove wire:target="save">{{ $record ? __('Enregistrer') : __('Envoyer la démarche') }}</span>
+                <span wire:loading wire:target="save">{{ __('Enregistrement…') }}</span>
             </flux:button>
         </div>
     </form>

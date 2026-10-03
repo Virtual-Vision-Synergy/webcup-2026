@@ -68,7 +68,7 @@ class ActionLog extends Model
      */
     public function libelle(): string
     {
-        return self::ACTION_LABELS[$this->action] ?? $this->action;
+        return __(self::ACTION_LABELS[$this->action] ?? $this->action);
     }
 
     /**

@@ -97,21 +97,21 @@ new #[Title('Signalements')] class extends Component {
 
         $record->delete();
 
-        Flux::toast(variant: 'success', text: 'Signalement supprimé.');
+        Flux::toast(variant: 'success', text: __('Signalement supprimé.'));
     }
 }; ?>
 
 <section class="mx-auto w-full max-w-6xl space-y-6">
     <x-tn.page-header
-        label="Signalements"
-        :title="$this->voitTousLesSignalements ? 'Signalements' : 'Mes signalements'"
-        :subtitle="$this->items->total().' signalement(s)'.($this->voitTousLesSignalements ? ' au total' : '')"
+        label="{{ __('Signalements') }}"
+        :title="$this->voitTousLesSignalements ? __('Signalements') : __('Mes signalements')"
+        :subtitle="__(($this->voitTousLesSignalements ? ':n signalement(s) au total' : ':n signalement(s)'), ['n' => $this->items->total()])"
         :breadcrumb="['Mon espace' => route('dashboard'), 'Signalements' => null]"
     >
         <x-slot:actions>
             @can('create', Signalement::class)
                 <flux:button variant="primary" icon="plus" :href="route('signalements.create')" class="tn-cta" wire:navigate>
-                    Signaler un problème
+                    {{ __('Signaler un problème') }}
                 </flux:button>
             @endcan
         </x-slot:actions>
@@ -119,28 +119,28 @@ new #[Title('Signalements')] class extends Component {
 
     {{-- Filtres --}}
     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher (lieu, description)…" aria-label="Rechercher un signalement" class="sm:max-w-xs" />
-        <flux:select wire:model.live="filterCategorie" aria-label="Filtrer par catégorie" class="sm:max-w-56">
-            <flux:select.option value="">Catégorie : toutes</flux:select.option>
+        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="{{ __('Rechercher (lieu, description)…') }}" aria-label="{{ __('Rechercher un signalement') }}" class="sm:max-w-xs" />
+        <flux:select wire:model.live="filterCategorie" aria-label="{{ __('Filtrer par catégorie') }}" class="sm:max-w-56">
+            <flux:select.option value="">{{ __('Catégorie : toutes') }}</flux:select.option>
             @foreach (Signalement::CATEGORIE_OPTIONS as $option)
-                <flux:select.option :value="$option">{{ Signalement::libelleCategorie($option) }}</flux:select.option>
+                <flux:select.option :value="$option">{{ __(Signalement::libelleCategorie($option)) }}</flux:select.option>
             @endforeach
         </flux:select>
-        <flux:select wire:model.live="filterStatut" aria-label="Filtrer par état" class="sm:max-w-52">
-            <flux:select.option value="">État : tous</flux:select.option>
+        <flux:select wire:model.live="filterStatut" aria-label="{{ __('Filtrer par état') }}" class="sm:max-w-52">
+            <flux:select.option value="">{{ __('État : tous') }}</flux:select.option>
             @foreach (Signalement::STATUT_OPTIONS as $option)
                 <flux:select.option :value="$option">{{ Signalement::libelleStatut($option) }}</flux:select.option>
             @endforeach
         </flux:select>
         @if ($this->voitTousLesSignalements)
-            <flux:checkbox wire:model.live="mine" label="Mes signalements uniquement" />
+            <flux:checkbox wire:model.live="mine" label="{{ __('Mes signalements uniquement') }}" />
         @endif
-        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">{{ __('Mise à jour…') }}</span>
     </div>
 
     @if ($this->items->isEmpty())
-        <x-tn.empty icon="exclamation-triangle" title="Aucun signalement pour le moment" text="Un lampadaire cassé, un nid-de-poule, un dépôt sauvage ? Signalez-le à la mairie.">
-            <flux:button variant="primary" icon="plus" :href="route('signalements.create')" wire:navigate>Signaler un problème</flux:button>
+        <x-tn.empty icon="exclamation-triangle" title="{{ __('Aucun signalement pour le moment') }}" text="{{ __('Un lampadaire cassé, un nid-de-poule, un dépôt sauvage ? Signalez-le à la mairie.') }}">
+            <flux:button variant="primary" icon="plus" :href="route('signalements.create')" wire:navigate>{{ __('Signaler un problème') }}</flux:button>
         </x-tn.empty>
     @else
         {{-- Mobile : liste --}}
@@ -148,7 +148,7 @@ new #[Title('Signalements')] class extends Component {
             @foreach ($this->items as $item)
                 <li wire:key="m-{{ $item->id }}">
                     <x-tn.list-row icon="exclamation-triangle" :href="route('signalements.show', $item)" :stack="true">
-                        <span class="block truncate font-medium text-ink">{{ Signalement::libelleCategorie($item->categorie) }}</span>
+                        <span class="block truncate font-medium text-ink">{{ __(Signalement::libelleCategorie($item->categorie)) }}</span>
                         <span class="block truncate text-sm text-ink-2">{{ $item->lieu }} · <span class="font-mono text-xs">{{ $item->created_at->format('d.m.Y') }}</span></span>
                         <x-slot:aside>
                             <x-tn.status-badge :etat="$item->etatStatut()">{{ Signalement::libelleStatut($item->statut) }}</x-tn.status-badge>
@@ -163,20 +163,20 @@ new #[Title('Signalements')] class extends Component {
         <x-tn.surface padding="px-4 py-2" class="max-md:hidden">
             <flux:table :paginate="$this->items">
                 <flux:table.columns>
-                    <flux:table.column>Catégorie</flux:table.column>
-                    <flux:table.column>Lieu</flux:table.column>
-                    <flux:table.column>État</flux:table.column>
+                    <flux:table.column>{{ __('Catégorie') }}</flux:table.column>
+                    <flux:table.column>{{ __('Lieu') }}</flux:table.column>
+                    <flux:table.column>{{ __('État') }}</flux:table.column>
                     @if ($this->voitTousLesSignalements)
-                        <flux:table.column>Signalé par</flux:table.column>
+                        <flux:table.column>{{ __('Signalé par') }}</flux:table.column>
                     @endif
-                    <flux:table.column>Signalé le</flux:table.column>
-                    <flux:table.column><span class="sr-only">Actions</span></flux:table.column>
+                    <flux:table.column>{{ __('Signalé le') }}</flux:table.column>
+                    <flux:table.column><span class="sr-only">{{ __('Actions') }}</span></flux:table.column>
                 </flux:table.columns>
 
                 <flux:table.rows>
                     @foreach ($this->items as $item)
                         <flux:table.row wire:key="row-{{ $item->id }}">
-                            <flux:table.cell><a href="{{ route('signalements.show', $item) }}" wire:navigate class="font-medium text-ink hover:text-cyan">{{ Signalement::libelleCategorie($item->categorie) }}</a></flux:table.cell>
+                            <flux:table.cell><a href="{{ route('signalements.show', $item) }}" wire:navigate class="font-medium text-ink hover:text-cyan">{{ __(Signalement::libelleCategorie($item->categorie)) }}</a></flux:table.cell>
                             <flux:table.cell class="max-w-72 truncate">{{ $item->lieu }}</flux:table.cell>
                             <flux:table.cell><x-tn.status-badge :etat="$item->etatStatut()">{{ Signalement::libelleStatut($item->statut) }}</x-tn.status-badge></flux:table.cell>
                             @if ($this->voitTousLesSignalements)
@@ -185,12 +185,12 @@ new #[Title('Signalements')] class extends Component {
                             <flux:table.cell class="font-mono text-xs">{{ $item->created_at->format('d.m.Y') }}</flux:table.cell>
                             <flux:table.cell>
                                 <div class="flex justify-end gap-1">
-                                    <flux:button size="sm" variant="ghost" icon="eye" :href="route('signalements.show', $item)" wire:navigate aria-label="Voir" />
+                                    <flux:button size="sm" variant="ghost" icon="eye" :href="route('signalements.show', $item)" wire:navigate aria-label="{{ __('Voir') }}" />
                                     @can('update', $item)
-                                        <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('signalements.edit', $item)" wire:navigate aria-label="Modifier" />
+                                        <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('signalements.edit', $item)" wire:navigate aria-label="{{ __('Modifier') }}" />
                                     @endcan
                                     @can('delete', $item)
-                                        <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer ce signalement ?" aria-label="Supprimer" />
+                                        <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="{{ __('Supprimer ce signalement ?') }}" aria-label="{{ __('Supprimer') }}" />
                                     @endcan
                                 </div>
                             </flux:table.cell>

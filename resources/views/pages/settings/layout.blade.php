@@ -15,7 +15,7 @@
                         ])
                     >
                         <flux:icon :name="$icone" class="size-4" />
-                        {{ $libelle }}
+                        {{ __($libelle) }}
                     </a>
                 </li>
             @endforeach

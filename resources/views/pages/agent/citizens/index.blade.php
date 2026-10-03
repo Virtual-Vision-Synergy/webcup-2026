@@ -64,32 +64,32 @@ new #[Layout('layouts::agent'), Title('Comptes citoyens')] class extends Compone
 
 <section class="w-full space-y-6">
     <x-tn.page-header
-        label="Espace agent"
-        title="Comptes citoyens"
-        :subtitle="$this->items->total().' compte(s)'"
+        label="{{ __('Espace agent') }}"
+        title="{{ __('Comptes citoyens') }}"
+        :subtitle="__(':n compte(s)', ['n' => $this->items->total()])"
         :breadcrumb="['Espace agent' => route('agent.index'), 'Comptes citoyens' => null]"
     />
 
     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" label="Rechercher" placeholder="Nom ou e-mail…" class="sm:max-w-xs" />
+        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" label="{{ __('Rechercher') }}" placeholder="{{ __('Nom ou e-mail…') }}" class="sm:max-w-xs" />
 
-        <flux:select wire:model.live="statut" label="Statut" class="sm:max-w-44">
-            <flux:select.option value="">Tous</flux:select.option>
+        <flux:select wire:model.live="statut" label="{{ __('Statut') }}" class="sm:max-w-44">
+            <flux:select.option value="">{{ __('Tous') }}</flux:select.option>
             @foreach ($this::STATUT_OPTIONS as $valeur => $libelle)
-                <flux:select.option value="{{ $valeur }}">{{ $libelle }}</flux:select.option>
+                <flux:select.option value="{{ $valeur }}">{{ __($libelle) }}</flux:select.option>
             @endforeach
         </flux:select>
 
         @if (auth()->user()->isAdmin())
-            <flux:select wire:model.live="profil" label="Profil" class="sm:max-w-44">
-                <flux:select.option value="">Citoyens et agents</flux:select.option>
-                <flux:select.option value="citoyen">Citoyens</flux:select.option>
-                <flux:select.option value="agent">Agents</flux:select.option>
+            <flux:select wire:model.live="profil" label="{{ __('Profil') }}" class="sm:max-w-44">
+                <flux:select.option value="">{{ __('Citoyens et agents') }}</flux:select.option>
+                <flux:select.option value="citoyen">{{ __('Citoyens') }}</flux:select.option>
+                <flux:select.option value="agent">{{ __('Agents') }}</flux:select.option>
             </flux:select>
         @endif
 
         @if ($search !== '' || $statut !== '' || $profil !== '')
-            <flux:button variant="ghost" icon="x-mark" wire:click="resetFilters">Effacer les filtres</flux:button>
+            <flux:button variant="ghost" icon="x-mark" wire:click="resetFilters">{{ __('Effacer les filtres') }}</flux:button>
         @endif
 
         <div wire:loading class="pb-2">
@@ -98,18 +98,18 @@ new #[Layout('layouts::agent'), Title('Comptes citoyens')] class extends Compone
     </div>
 
     @if ($this->items->isEmpty())
-        <x-tn.empty icon="users" title="Aucun compte trouvé" :text="$search !== '' || $statut !== '' || $profil !== '' ? 'Aucun compte ne correspond à votre recherche.' : 'Aucun compte citoyen pour le moment.'" />
+        <x-tn.empty icon="users" title="{{ __('Aucun compte trouvé') }}" :text="$search !== '' || $statut !== '' || $profil !== '' ? __('Aucun compte ne correspond à votre recherche.') : __('Aucun compte citoyen pour le moment.')" />
     @else
         <div class="overflow-x-auto">
             <flux:table :paginate="$this->items">
                 <flux:table.columns>
-                    <flux:table.column>Nom</flux:table.column>
-                    <flux:table.column>E-mail</flux:table.column>
+                    <flux:table.column>{{ __('Nom') }}</flux:table.column>
+                    <flux:table.column>{{ __('E-mail') }}</flux:table.column>
                     @if (auth()->user()->isAdmin())
-                        <flux:table.column>Profil</flux:table.column>
+                        <flux:table.column>{{ __('Profil') }}</flux:table.column>
                     @endif
-                    <flux:table.column>Inscrit le</flux:table.column>
-                    <flux:table.column>Statut</flux:table.column>
+                    <flux:table.column>{{ __('Inscrit le') }}</flux:table.column>
+                    <flux:table.column>{{ __('Statut') }}</flux:table.column>
                     <flux:table.column></flux:table.column>
                 </flux:table.columns>
 
@@ -126,14 +126,14 @@ new #[Layout('layouts::agent'), Title('Comptes citoyens')] class extends Compone
                             <flux:table.cell class="whitespace-nowrap">{{ $item->created_at?->format('d/m/Y') }}</flux:table.cell>
                             <flux:table.cell>
                                 @if ($item->isActive())
-                                    <x-tn.status-badge etat="normal">Actif</x-tn.status-badge>
+                                    <x-tn.status-badge etat="normal">{{ __('Actif') }}</x-tn.status-badge>
                                 @else
-                                    <x-tn.status-badge etat="alerte">Désactivé</x-tn.status-badge>
+                                    <x-tn.status-badge etat="alerte">{{ __('Désactivé') }}</x-tn.status-badge>
                                 @endif
                             </flux:table.cell>
                             <flux:table.cell>
                                 <div class="flex justify-end">
-                                    <flux:button size="sm" variant="ghost" icon="eye" :href="route('agent.citizens.show', $item)" wire:navigate aria-label="Voir la fiche de {{ $item->name }}" />
+                                    <flux:button size="sm" variant="ghost" icon="eye" :href="route('agent.citizens.show', $item)" wire:navigate aria-label="{{ __('Voir la fiche de :nom', ['nom' => $item->name]) }}" />
                                 </div>
                             </flux:table.cell>
                         </flux:table.row>

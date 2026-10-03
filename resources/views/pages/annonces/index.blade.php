@@ -64,7 +64,7 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
         }
         $annonce->save();
 
-        Flux::toast(variant: 'success', text: 'Message dépublié : il n’apparaît plus dans le bandeau.');
+        Flux::toast(variant: 'success', text: __('Message dépublié : il n’apparaît plus dans le bandeau.'));
     }
 
     public function delete(int $id): void
@@ -74,48 +74,48 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
 
         $annonce->delete();
 
-        Flux::toast(variant: 'success', text: 'Message supprimé.');
+        Flux::toast(variant: 'success', text: __('Message supprimé.'));
     }
 }; ?>
 
 <section class="w-full space-y-6">
     <x-tn.page-header
-        label="Haut Conseil de la Ville"
+        label="{{ __('Haut Conseil de la Ville') }}"
         :breadcrumb="['Espace agent' => route('agent.index'), 'Messages généraux' => null]"
-        title="Messages généraux"
-        subtitle="Diffusez une information à tous les habitants : elle s’affiche en bandeau sur toutes les pages pendant sa période de validité."
+        title="{{ __('Messages généraux') }}"
+        subtitle="{{ __('Diffusez une information à tous les habitants : elle s’affiche en bandeau sur toutes les pages pendant sa période de validité.') }}"
     >
         <x-slot:actions>
             @can('create', \App\Models\Annonce::class)
                 <flux:button variant="primary" icon="megaphone" :href="route('agent.annonces.create')" wire:navigate>
-                    Publier un message
+                    {{ __('Publier un message') }}
                 </flux:button>
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <flux:select wire:model.live="filterStatut" class="sm:max-w-52" aria-label="Filtrer par statut">
-            <flux:select.option value="">Statut : tous</flux:select.option>
+        <flux:select wire:model.live="filterStatut" class="sm:max-w-52" aria-label="{{ __('Filtrer par statut') }}">
+            <flux:select.option value="">{{ __('Statut : tous') }}</flux:select.option>
             @foreach ($this::STATUTS as $code => $statut)
-                <flux:select.option :value="$code">{{ $statut['label'] }}</flux:select.option>
+                <flux:select.option :value="$code">{{ __($statut['label']) }}</flux:select.option>
             @endforeach
         </flux:select>
-        <div wire:loading wire:target="filterStatut"><flux:text>Chargement…</flux:text></div>
+        <div wire:loading wire:target="filterStatut"><flux:text>{{ __('Chargement…') }}</flux:text></div>
     </div>
 
     @if ($this->items->isEmpty())
-        <x-tn.empty icon="megaphone" title="Aucun message" text="Publiez un premier message : il apparaîtra en bandeau pour tous les habitants.">
-            <flux:button variant="primary" :href="route('agent.annonces.create')" wire:navigate>Publier un message</flux:button>
+        <x-tn.empty icon="megaphone" title="{{ __('Aucun message') }}" text="{{ __('Publiez un premier message : il apparaîtra en bandeau pour tous les habitants.') }}">
+            <flux:button variant="primary" :href="route('agent.annonces.create')" wire:navigate>{{ __('Publier un message') }}</flux:button>
         </x-tn.empty>
     @else
         <flux:table :paginate="$this->items">
             <flux:table.columns>
-                <flux:table.column>Message</flux:table.column>
-                <flux:table.column>Niveau</flux:table.column>
-                <flux:table.column>Diffusion (heure de Madagascar)</flux:table.column>
-                <flux:table.column>Statut</flux:table.column>
-                <flux:table.column><span class="sr-only">Actions</span></flux:table.column>
+                <flux:table.column>{{ __('Message') }}</flux:table.column>
+                <flux:table.column>{{ __('Niveau') }}</flux:table.column>
+                <flux:table.column>{{ __('Diffusion (heure de Madagascar)') }}</flux:table.column>
+                <flux:table.column>{{ __('Statut') }}</flux:table.column>
+                <flux:table.column><span class="sr-only">{{ __('Actions') }}</span></flux:table.column>
             </flux:table.columns>
 
             <flux:table.rows>
@@ -136,20 +136,20 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
                             → {{ $item->fin->timezone(\App\Models\Annonce::FUSEAU)->format('d/m/Y H:i') }}
                         </flux:table.cell>
                         <flux:table.cell>
-                            <x-tn.status-badge :etat="$statut['etat']" :live="$item->statut() === 'en_cours'">{{ $statut['label'] }}</x-tn.status-badge>
+                            <x-tn.status-badge :etat="$statut['etat']" :live="$item->statut() === 'en_cours'">{{ __($statut['label']) }}</x-tn.status-badge>
                         </flux:table.cell>
                         <flux:table.cell>
                             <div class="flex justify-end gap-1">
                                 @can('update', $item)
                                     @if ($item->statut() !== 'expire')
-                                        <flux:button size="sm" variant="ghost" icon="stop-circle" wire:click="depublier({{ $item->id }})" wire:confirm="Arrêter la diffusion de ce message maintenant ?">
-                                            Dépublier
+                                        <flux:button size="sm" variant="ghost" icon="stop-circle" wire:click="depublier({{ $item->id }})" wire:confirm="{{ __('Arrêter la diffusion de ce message maintenant ?') }}">
+                                            {{ __('Dépublier') }}
                                         </flux:button>
                                     @endif
-                                    <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('agent.annonces.edit', $item)" wire:navigate aria-label="Modifier le message : {{ $item->titre }}" />
+                                    <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('agent.annonces.edit', $item)" wire:navigate aria-label="{{ __('Modifier le message : :titre', ['titre' => $item->titre]) }}" />
                                 @endcan
                                 @can('delete', $item)
-                                    <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer définitivement ce message ?" aria-label="Supprimer le message : {{ $item->titre }}" />
+                                    <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="{{ __('Supprimer définitivement ce message ?') }}" aria-label="{{ __('Supprimer le message : :titre', ['titre' => $item->titre]) }}" />
                                 @endcan
                             </div>
                         </flux:table.cell>

@@ -71,6 +71,9 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('projets/create', 'pages::projets.form')->name('projets.create');
     Route::livewire('projets/{projet}/edit', 'pages::projets.form')->name('projets.edit');
 
+    // F66 : avis de l'habitant connecté sur les projets (donner son avis : action sur la fiche projet, ProjetPolicy::donnerAvis).
+    Route::livewire('mes-avis', 'pages::avis.index')->name('avis.index');
+
     // F51 : remontées d'inquiétudes sur les données (RemonteePolicy : l'auteur seul, sinon 403 ; traitement dans routes/agent.php).
     Route::livewire('mes-remontees', 'pages::remontees.index')->name('concerns.index');
     Route::livewire('mes-remontees/nouvelle', 'pages::remontees.form')->name('concerns.create');

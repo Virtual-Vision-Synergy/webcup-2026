@@ -1,6 +1,6 @@
 @props(['items' => []])
 
-{{-- Chronologie : [['date' => Carbon|null, 'label' => '…', 'texte' => '…'|null, 'etat' => 'normal'|…, 'fait' => bool]] --}}
+{{-- Chronologie : [['date' => Carbon|null, 'label' => '…', 'texte' => '…'|null, 'etat' => 'normal'|…, 'fait' => bool, 'courant' => bool (facultatif : étape actuelle mise en évidence)]] --}}
 <ol {{ $attributes->class('relative') }}>
     @foreach ($items as $etape)
         @php
@@ -12,8 +12,9 @@
                 default => ['text-cyan', 'information-circle', 'information'],
             };
             $fait = $etape['fait'] ?? true;
+            $courant = $etape['courant'] ?? false;
         @endphp
-        <li class="relative grid grid-cols-[20px_minmax(0,1fr)] gap-3 pb-6 last:pb-0">
+        <li class="relative grid grid-cols-[20px_minmax(0,1fr)] gap-3 pb-6 last:pb-0" @if ($courant) aria-current="step" @endif>
             @unless ($loop->last)
                 <span class="absolute top-6 bottom-0 left-[9px] w-px bg-line" aria-hidden="true"></span>
             @endunless
@@ -25,8 +26,11 @@
                 @endif
             </span>
             <div class="min-w-0">
-                <p @class(['font-medium', 'text-ink' => $fait, 'text-ink-2' => ! $fait])>
+                <p @class(['font-medium', 'text-ink' => $fait && ! $courant, 'text-ink-2' => ! $fait, 'text-cyan' => $courant])>
                     {{ $etape['label'] }}
+                    @if ($courant)
+                        <span class="ms-1 rounded-xs border border-cyan/35 bg-cyan/8 px-1.5 py-0.5 font-mono text-[0.625rem] uppercase tracking-[.06em] text-cyan">Étape actuelle</span>
+                    @endif
                     <span class="sr-only">({{ $fait ? 'étape franchie, état : '.$libelleEtat : 'étape à venir' }})</span>
                 </p>
                 @if (! empty($etape['date']))

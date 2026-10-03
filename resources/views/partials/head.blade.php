@@ -45,4 +45,12 @@
         }
     } catch (e) {}
 </script>
+{{-- Contraste élevé : préférence mémorisée, appliquée avant l'affichage (pas de flash). --}}
+<script>
+    try {
+        if (window.localStorage.getItem('tn.contrast') === 'high') {
+            document.documentElement.classList.add('hc');
+        }
+    } catch (e) {}
+</script>
 @fluxAppearance

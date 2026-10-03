@@ -33,6 +33,7 @@
 
             <flux:spacer />
 
+            <x-tn.contrast-toggle class="max-md:hidden" />
             <x-tn.theme-toggle class="max-md:hidden" />
             <flux:button :href="route('dashboard')" variant="ghost" size="sm" icon="arrow-uturn-left" class="max-md:hidden">
                 Espace citoyen

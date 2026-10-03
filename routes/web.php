@@ -11,6 +11,9 @@ Route::view('/', 'welcome')->name('home');
 // F51 : page publique décidée — un habitant doit comprendre l'usage de ses données avant de créer un compte.
 Route::view('vos-donnees', 'vos-donnees')->name('privacy.show');
 
+// D20 : page publique décidée — les aides d'accessibilité doivent être connues et réglables avant l'inscription.
+Route::view('accessibilite', 'accessibilite')->name('accessibility.show');
+
 Route::get('langue/{code}', function (string $code, Request $request) {
     abort_unless(array_key_exists($code, DefinirLangue::LANGUES), 404);
 

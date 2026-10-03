@@ -65,18 +65,14 @@
                             <flux:input
                                 type="text"
                                 name="recovery_code"
+                                :label="__('Recovery code')"
+                                label:sr-only
                                 x-ref="recovery_code"
                                 x-bind:required="showRecoveryInput"
                                 autocomplete="one-time-code"
                                 x-model="recovery_code"
                             />
                         </div>
-
-                        @error('recovery_code')
-                            <flux:text color="red">
-                                {{ $message }}
-                            </flux:text>
-                        @enderror
                     </div>
 
                     <flux:button

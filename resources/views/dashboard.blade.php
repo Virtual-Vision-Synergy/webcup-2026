@@ -19,6 +19,9 @@
     // F28 : services prioritaires (mis en avant par un agent), proposés dans l'accès rapide.
     $servicesPrioritaires = \App\Models\Service::query()->where('mis_en_avant', true)->orderBy('nom')->limit(4)->get(['id', 'nom', 'slug', 'indisponible_depuis']);
     $rubriques = array_filter(config('navigation.rubriques'), fn (array $r): bool => Route::has($r['route']));
+    // D11 : résumé de « Mes demandes » (signalements de l'utilisateur connecté uniquement).
+    $totalMesDemandes = \App\Models\Signalement::duCitoyen($user)->count();
+    $mesDemandesEnCours = \App\Models\Signalement::duCitoyen($user)->whereNotIn('statut', \App\Models\Signalement::STATUTS_TERMINES)->count();
 @endphp
 
 <x-layouts::app :title="__('Dashboard')">
@@ -139,6 +142,24 @@
             </x-tn.panel>
 
             <div class="flex flex-col gap-6">
+                {{-- MES DEMANDES (D11) --}}
+                <x-tn.surface>
+                    <div class="flex items-center justify-between gap-3">
+                        <x-tn.section-label as="h2">Mes demandes</x-tn.section-label>
+                        <flux:icon name="clipboard-document-list" class="size-5 text-cyan" aria-hidden="true" />
+                    </div>
+                    <p class="mt-2 text-ink-2">
+                        @if ($totalMesDemandes === 0)
+                            Vous n'avez encore déposé aucune demande.
+                        @else
+                            <strong class="text-ink">{{ $mesDemandesEnCours }}</strong> en cours sur {{ $totalMesDemandes }} demande(s) déposée(s).
+                        @endif
+                    </p>
+                    <a href="{{ route('mes-demandes.index') }}" wire:navigate class="tn-btn-secondary mt-4 w-full">
+                        <flux:icon name="clipboard-document-list" class="size-4" /> Suivre mes demandes
+                    </a>
+                </x-tn.surface>
+
                 {{-- RACCOURCIS --}}
                 <section aria-labelledby="titre-raccourcis">
                     <x-tn.section-label as="h2" id="titre-raccourcis" class="mb-3">Accès rapide</x-tn.section-label>

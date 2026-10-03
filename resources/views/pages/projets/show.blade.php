@@ -194,26 +194,22 @@ new #[Layout('layouts::public'), Title('Projet de la ville')] class extends Comp
                     @else
                         @can('donnerAvis', $record)
                             <form wire:submit="donnerAvis" class="space-y-4">
-                                <fieldset>
+                                <fieldset data-requis>
                                     <legend class="mb-2 text-sm font-medium text-ink">{{ __('Êtes-vous favorable à ce projet ?') }}</legend>
                                     <div class="grid grid-cols-3 gap-2">
                                         @foreach (AvisProjet::POSITION_LABELS as $valeur => $libelle)
                                             <label wire:key="position-{{ $valeur }}" class="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-line p-3 text-sm has-[:checked]:border-cyan has-[:checked]:ring-2 has-[:checked]:ring-cyan">
-                                                <input type="radio" wire:model="position" name="position" value="{{ $valeur }}" class="size-4 accent-[var(--color-cyan)]">
+                                                <input type="radio" wire:model="position" name="position" value="{{ $valeur }}" required class="size-4 accent-[var(--color-cyan)]">
                                                 <span>{{ __($libelle) }}</span>
                                             </label>
                                         @endforeach
                                     </div>
-                                    @error('position')
-                                        <flux:text class="mt-2 text-magenta">{{ $message }}</flux:text>
-                                    @enderror
+                                    <flux:error name="position" class="mt-2" />
                                 </fieldset>
 
                                 <flux:textarea wire:model="commentaire" label="{{ __('Commentaire (facultatif)') }}" rows="3" maxlength="2000" placeholder="{{ __('Une remarque, une idée, une inquiétude…') }}" />
 
-                                @error('throttle')
-                                    <flux:text class="text-magenta">{{ $message }}</flux:text>
-                                @enderror
+                                <flux:error name="throttle" />
 
                                 <div class="flex flex-wrap items-center gap-3">
                                     <flux:button type="submit" variant="primary">

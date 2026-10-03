@@ -22,6 +22,11 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
     #[Url(except: '')]
     public string $filterStatut = '';
 
+    /** Annonce dont on met à jour la situation (vérifiée par findOrFail + authorize à l'enregistrement). */
+    public ?int $miseAJourId = null;
+
+    public string $miseAJour = '';
+
     public function mount(): void
     {
         $this->authorize('viewAny', Annonce::class);
@@ -38,7 +43,7 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
         $this->authorize('viewAny', Annonce::class);
 
         return Annonce::query()
-            ->with('user:id,name')
+            ->with(['user:id,name', 'quartier:id,nom'])
             ->when($this->filterStatut === 'en_cours', fn ($query) => $query->active())
             ->when($this->filterStatut === 'programme', fn ($query) => $query->where('debut', '>', now()))
             ->when($this->filterStatut === 'expire', fn ($query) => $query->where('fin', '<=', now()))
@@ -65,6 +70,37 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
         $annonce->save();
 
         Flux::toast(variant: 'success', text: __('Message dépublié : il n’apparaît plus dans le bandeau.'));
+    }
+
+    public function ouvrirMiseAJour(int $id): void
+    {
+        $annonce = Annonce::findOrFail($id);
+        $this->authorize('update', $annonce);
+
+        $this->miseAJourId = $annonce->id;
+        $this->reset('miseAJour');
+        $this->resetValidation();
+        Flux::modal('mise-a-jour')->show();
+    }
+
+    /**
+     * Ajoute une ligne horodatée au message en cours, sans le recréer (F29).
+     */
+    public function enregistrerMiseAJour(): void
+    {
+        $annonce = Annonce::findOrFail($this->miseAJourId);
+        $this->authorize('update', $annonce);
+
+        $this->validate(
+            ['miseAJour' => ['required', 'string', 'max:500']],
+            ['miseAJour.required' => 'Décrivez la nouvelle situation.', 'miseAJour.max' => 'La mise à jour ne doit pas dépasser 500 caractères.'],
+        );
+
+        $annonce->ajouterMiseAJour($this->miseAJour);
+
+        $this->reset('miseAJour', 'miseAJourId');
+        Flux::modal('mise-a-jour')->close();
+        Flux::toast(variant: 'success', text: 'Situation mise à jour : le bandeau affiche la nouvelle ligne.');
     }
 
     public function delete(int $id): void
@@ -124,10 +160,10 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
                     <flux:table.row wire:key="annonce-{{ $item->id }}">
                         <flux:table.cell class="max-w-xs">
                             <p class="truncate font-medium text-ink">{{ $item->titre }}</p>
-                            <p class="truncate text-xs text-ink-2">Par {{ $item->user?->name ?? '—' }}</p>
+                            <p class="truncate text-xs text-ink-2">{{ $item->quartier ? 'Quartier '.$item->quartier->nom : 'Toute la ville' }} · Par {{ $item->user?->name ?? '—' }}</p>
                         </flux:table.cell>
                         <flux:table.cell>
-                            <x-tn.status-badge :etat="match ($item->niveau) { 'urgent' => 'alerte', 'important' => 'perturbe', default => 'info' }">
+                            <x-tn.status-badge :etat="match ($item->niveau) { 'danger', 'alerte' => 'alerte', 'vigilance' => 'perturbe', default => 'info' }">
                                 {{ $item->libelleNiveau() }}
                             </x-tn.status-badge>
                         </flux:table.cell>
@@ -141,6 +177,11 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
                         <flux:table.cell>
                             <div class="flex justify-end gap-1">
                                 @can('update', $item)
+                                    @if ($item->statut() === 'en_cours')
+                                        <flux:button size="sm" variant="ghost" icon="clock" wire:click="ouvrirMiseAJour({{ $item->id }})">
+                                            Mettre à jour
+                                        </flux:button>
+                                    @endif
                                     @if ($item->statut() !== 'expire')
                                         <flux:button size="sm" variant="ghost" icon="stop-circle" wire:click="depublier({{ $item->id }})" wire:confirm="{{ __('Arrêter la diffusion de ce message maintenant ?') }}">
                                             {{ __('Dépublier') }}
@@ -158,4 +199,19 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
             </flux:table.rows>
         </flux:table>
     @endif
+
+    <flux:modal name="mise-a-jour" class="w-full max-w-lg">
+        <form wire:submit="enregistrerMiseAJour" class="space-y-5">
+            <div>
+                <flux:heading size="lg">Mettre à jour la situation</flux:heading>
+                <flux:text class="mt-1">Une ligne « Mise à jour {{ now(\App\Models\Annonce::FUSEAU)->format('G \h i') }} : … » est ajoutée au message, sans le recréer.</flux:text>
+            </div>
+            <flux:textarea wire:model="miseAJour" label="Nouvelle situation" rows="3" maxlength="500" required
+                placeholder="Ex. Le niveau de l’eau se stabilise, restez éloignés des berges." />
+            <div class="flex justify-end gap-2">
+                <flux:modal.close><flux:button variant="ghost">Annuler</flux:button></flux:modal.close>
+                <flux:button type="submit" variant="primary">Publier la mise à jour</flux:button>
+            </div>
+        </form>
+    </flux:modal>
 </section>

@@ -157,6 +157,16 @@ class DatabaseSeeder extends Seeder
             Signalement::factory(2)->for($citoyen)->create();
         }
 
+        // Soutiens d'habitants aux demandes encore ouvertes (F52) : chaque citoyen soutient au plus une fois.
+        $citoyens = $users->filter(fn (User $user): bool => $user->isCitoyen());
+        Signalement::query()->whereIn('statut', Signalement::STATUTS_OUVERTS)->get()
+            ->each(function (Signalement $signalement) use ($citoyens): void {
+                $citoyens->reject(fn (User $user): bool => $user->id === $signalement->user_id)
+                    ->shuffle()
+                    ->take(random_int(0, 5))
+                    ->each(fn (User $user) => $signalement->ajouterSoutien($user));
+            });
+
         if (! app()->isProduction()) {
             // Journal d'audit de démo (F47). Les autres seeders n'écrivent rien dans le journal (WithoutModelEvents).
             $this->call(AuditLogSeeder::class);

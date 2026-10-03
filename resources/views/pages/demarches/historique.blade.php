@@ -56,6 +56,7 @@ new #[Title('Historique de mes demandes')] class extends Component {
         :breadcrumb="['Mon espace' => route('dashboard'), 'Démarches' => route('demarches.index'), 'Historique' => null]"
     >
         <x-slot:actions>
+            <flux:button icon="arrow-down-tray" :href="route('demarches.recapitulatif')">Télécharger le récapitulatif</flux:button>
             <flux:button variant="primary" icon="plus" :href="route('demarches.create')" class="tn-cta" wire:navigate>
                 Nouvelle démarche
             </flux:button>

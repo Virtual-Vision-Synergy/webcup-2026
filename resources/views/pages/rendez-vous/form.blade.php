@@ -50,6 +50,7 @@ new #[Title('Prendre rendez-vous')] class extends Component {
             $this->erreurCreneau = CreneauIndisponible::INVALIDE;
         }
 
+        $this->assurerCreneaux();
         $this->jour = (string) $this->jourAffiche;
     }
 
@@ -59,7 +60,7 @@ new #[Title('Prendre rendez-vous')] class extends Component {
     #[Computed]
     public function services(): Collection
     {
-        return Service::query()->prendRendezVous()->orderBy('nom')->get();
+        return Service::query()->prendRendezVous()->disponibles()->orderBy('nom')->get();
     }
 
     #[Computed]
@@ -69,7 +70,7 @@ new #[Title('Prendre rendez-vous')] class extends Component {
             return null;
         }
 
-        return Service::query()->prendRendezVous()->where('slug', $this->serviceSlug)->first();
+        return Service::query()->prendRendezVous()->disponibles()->where('slug', $this->serviceSlug)->first();
     }
 
     /**
@@ -109,6 +110,17 @@ new #[Title('Prendre rendez-vous')] class extends Component {
             ->limit(400)
             ->get()
             ->groupBy(fn (CreneauRendezVous $creneau): string => $creneau->jourLocal());
+    }
+
+    /**
+     * Le service a-t-il des créneaux à venir, libres ou déjà réservés ? Distingue « tout est réservé »
+     * de « aucun créneau ouvert ».
+     */
+    #[Computed]
+    public function aDesCreneauxAVenir(): bool
+    {
+        return $this->service !== null
+            && CreneauRendezVous::query()->whereBelongsTo($this->service)->reservables()->exists();
     }
 
     /**
@@ -200,6 +212,7 @@ new #[Title('Prendre rendez-vous')] class extends Component {
             $this->serviceSlug = '';
         }
 
+        $this->assurerCreneaux();
         $this->jour = (string) $this->jourAffiche;
     }
 
@@ -263,9 +276,24 @@ new #[Title('Prendre rendez-vous')] class extends Component {
         $this->redirectRoute('appointments.show', $rendezVous, navigate: true);
     }
 
+    /**
+     * Filet de sécurité : si le service n'a aucun créneau à venir (génération planifiée pas encore
+     * passée, base neuve…), on génère son agenda à la volée. Idempotent.
+     */
+    private function assurerCreneaux(): void
+    {
+        if ($this->service === null || $this->aDesCreneauxAVenir) {
+            return;
+        }
+
+        if (CreneauRendezVous::genererPour($this->service, (int) config('rendez_vous.jours', 14)) > 0) {
+            $this->resetComputed();
+        }
+    }
+
     private function resetComputed(): void
     {
-        unset($this->service, $this->creneau, $this->creneauxParJour, $this->etape, $this->jourAffiche, $this->creneauxDuJour, $this->prochainJourLibre);
+        unset($this->aDesCreneauxAVenir, $this->service, $this->creneau, $this->creneauxParJour, $this->etape, $this->jourAffiche, $this->creneauxDuJour, $this->prochainJourLibre);
     }
 }; ?>
 
@@ -343,9 +371,15 @@ new #[Title('Prendre rendez-vous')] class extends Component {
         </flux:text>
 
         @if ($this->creneauxParJour->isEmpty())
-            <x-tn.empty icon="calendar-days" title="Aucun créneau disponible" text="Tous les créneaux de ce service sont réservés. Essayez un autre service ou revenez plus tard.">
-                <flux:button wire:click="retourServices" icon="arrow-left">Choisir un autre service</flux:button>
-            </x-tn.empty>
+            @if ($this->aDesCreneauxAVenir)
+                <x-tn.empty icon="calendar-days" title="Aucun créneau disponible" text="Tous les créneaux de ce service sont réservés. Essayez un autre service ou revenez plus tard.">
+                    <flux:button wire:click="retourServices" icon="arrow-left">Choisir un autre service</flux:button>
+                </x-tn.empty>
+            @else
+                <x-tn.empty icon="calendar-days" title="Aucun créneau ouvert" text="Ce service n’a pas encore ouvert de créneaux à la réservation. Essayez un autre service ou revenez plus tard.">
+                    <flux:button wire:click="retourServices" icon="arrow-left">Choisir un autre service</flux:button>
+                </x-tn.empty>
+            @endif
         @else
             @php
                 $jourLibelle = \Illuminate\Support\Str::ucfirst(

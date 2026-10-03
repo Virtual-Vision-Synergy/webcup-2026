@@ -31,4 +31,7 @@ return [
     /** Délai minimum avant le début du rendez-vous pour pouvoir l'annuler. */
     'delai_annulation_minutes' => 60,
 
+    /** F40 : le rappel part dès que le rendez-vous commence dans moins de ce nombre d'heures. */
+    'rappel_heures_avant' => (int) env('RENDEZ_VOUS_RAPPEL_HEURES', 24),
+
 ];

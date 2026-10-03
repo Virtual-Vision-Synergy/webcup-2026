@@ -13,6 +13,17 @@
                     <flux:sidebar.item icon="calendar-days" :href="route('appointments.index')" :current="request()->routeIs('appointments.*')" wire:navigate>
                         Mes rendez-vous
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="heart" :href="route('urgences.index')" :current="request()->routeIs('urgences.*')" wire:navigate>
+                        Urgences / Santé
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="chat-bubble-left-ellipsis" :href="route('concerns.index')" :current="request()->routeIs('concerns.*')" wire:navigate>
+                        Mes remontées
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="shield-check" :href="route('privacy.show')" :current="request()->routeIs('privacy.show')" wire:navigate>
+                        Vos données
+                    </flux:sidebar.item>
 
                     <flux:sidebar.item icon="building-office-2" :href="route('projets.index')" :current="request()->routeIs('projets.*')" wire:navigate>
                         Projets de la ville
@@ -107,9 +118,9 @@
 
                 <x-tn.bandeau-annonces />
 
-                <div id="contenu" class="flex flex-1 flex-col">
+                <main id="contenu" tabindex="-1" class="flex flex-1 flex-col">
                     {{ $slot }}
-                </div>
+                </main>
             </div>
         </div>
 

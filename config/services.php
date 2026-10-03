@@ -39,6 +39,11 @@ return [
         'token' => env('ORGA_API_TOKEN'),
     ],
 
+    'novaterra' => [
+        'url' => env('WEB_CUP_API_URL'),
+        'key' => env('WEB_CUP_API_KEY'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

@@ -23,7 +23,7 @@ test('un utilisateur peut créer : Service', function () {
         ->test('pages::services.form')
         ->set('nom', 'Valeur de test')
         ->set('description', 'Valeur de test')
-        ->set('icone', 'Valeur de test')
+        ->set('categorie', 'sante')
         ->call('save')
         ->assertHasNoErrors();
 

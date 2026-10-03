@@ -24,8 +24,9 @@
                 'extrait' => Str::limit(strip_tags((string) $a->contenu), 140),
                 'date' => $a->date?->toDateString(),
             ])->all(),
-        'apercu_services' => Service::query()->orderBy('nom')->limit(4)->get(['nom', 'slug', 'horaires'])
-            ->map(fn (Service $s): array => ['nom' => $s->nom, 'slug' => $s->slug, 'horaires' => $s->horaires])->all(),
+        // Services mis en avant par les agents en premier, complétés par ordre alphabétique.
+        'apercu_services' => Service::query()->prioritaires()->limit(4)->get(['nom', 'slug', 'horaires', 'mis_en_avant'])
+            ->map(fn (Service $s): array => ['nom' => $s->nom, 'slug' => $s->slug, 'horaires' => $s->horaires, 'mis_en_avant' => $s->mis_en_avant])->all(),
     ]);
 
     $majIlYa = max(0, now()->timestamp - $etat['genere_le']);
@@ -59,7 +60,7 @@
                     <x-tn.live-dot class="text-green" /> Mairie de Nova Terra
                 </x-tn.section-label>
                 <h1 id="titre-hero" class="tn-h1 mt-4 text-ink">La ville en direct, au service de ses habitants.</h1>
-                <p class="mt-5 max-w-xl text-[17px] leading-[1.55] text-ink-2 sm:text-lg">
+                <p class="mt-5 max-w-xl text-[1.0625rem] leading-[1.55] text-ink-2 sm:text-lg">
                     Vos démarches, les actualités de la ville et le contact avec vos services municipaux, au même endroit.
                 </p>
                 <div class="mt-8 flex flex-wrap items-center gap-3">
@@ -94,7 +95,7 @@
                     @endforeach
                 </ul>
 
-                <p class="mt-2 border-t border-line pt-3 font-mono text-[10.5px] uppercase tracking-[.06em] text-ink-2">
+                <p class="mt-2 border-t border-line pt-3 font-mono text-[0.65625rem] uppercase tracking-[.06em] text-ink-2">
                     MAJ il y a {{ $majIlYa }} s · Source : base municipale
                 </p>
             </x-tn.panel>
@@ -113,7 +114,7 @@
                             <flux:icon :name="$rubrique['icon']" class="size-5 text-ink-2 transition-colors group-hover:text-cyan" />
                         </span>
                         <span class="tn-display text-xl font-semibold text-ink">{{ $rubrique['label'] }}</span>
-                        <span class="text-[15px] text-ink-2">{{ $rubrique['texte'] }}</span>
+                        <span class="text-[0.9375rem] text-ink-2">{{ $rubrique['texte'] }}</span>
                     </a>
                 </li>
             @endforeach
@@ -170,8 +171,11 @@
                     <ul class="mt-4">
                         @foreach ($etat['apercu_services'] as $service)
                             <li>
-                                <x-tn.list-row icon="landmark" :href="route('services.show', $service['slug'])">
+                                <x-tn.list-row :icon="($service['mis_en_avant'] ?? false) ? 'star' : 'landmark'" :href="route('services.show', $service['slug'])">
                                     <span class="block truncate font-medium text-ink group-hover:text-cyan">{{ $service['nom'] }}</span>
+                                    @if ($service['mis_en_avant'] ?? false)
+                                        <span class="sr-only">(service mis en avant)</span>
+                                    @endif
                                     @if ($service['horaires'])
                                         <span class="block truncate font-mono text-xs text-ink-2">{{ $service['horaires'] }}</span>
                                     @endif

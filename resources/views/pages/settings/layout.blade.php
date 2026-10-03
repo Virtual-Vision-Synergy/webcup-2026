@@ -9,7 +9,7 @@
                         wire:navigate
                         @if ($actif) aria-current="page" @endif
                         @class([
-                            'flex min-h-11 items-center gap-2.5 rounded-sm border px-3 text-[15px] font-medium transition-colors',
+                            'flex min-h-11 items-center gap-2.5 rounded-sm border px-3 text-[0.9375rem] font-medium transition-colors',
                             'border-cyan/30 bg-cyan/8 text-cyan' => $actif,
                             'border-transparent text-ink-2 hover:bg-surface-2 hover:text-ink' => ! $actif,
                         ])

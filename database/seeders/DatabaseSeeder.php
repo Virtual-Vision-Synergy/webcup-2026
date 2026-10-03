@@ -54,6 +54,8 @@ class DatabaseSeeder extends Seeder
 
         $users = User::all();
 
+        $this->call(ServiceSeeder::class);
+
         // make:feature:seeders
     }
 }

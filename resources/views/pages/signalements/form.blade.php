@@ -1,0 +1,135 @@
+<?php
+
+use App\Models\Signalement;
+use Flux\Flux;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Livewire\Attributes\Locked;
+use Livewire\Attributes\Title;
+use Livewire\Component;
+use Livewire\WithFileUploads;
+
+new #[Title('Signalement')] class extends Component {
+    use WithFileUploads;
+
+    #[Locked]
+    public ?Signalement $record = null;
+
+    public string $categorie = '';
+    public string $description = '';
+    public string $lieu = '';
+
+    /** @var \Livewire\Features\SupportFileUploads\TemporaryUploadedFile|null */
+    public $photo = null;
+
+    public function mount(?Signalement $signalement = null): void
+    {
+        if ($signalement?->exists) {
+            $this->authorize('update', $signalement);
+            $this->record = $signalement;
+            $this->categorie = (string) $signalement->categorie;
+            $this->description = (string) $signalement->description;
+            $this->lieu = (string) $signalement->lieu;
+        } else {
+            $this->authorize('create', Signalement::class);
+        }
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function rules(): array
+    {
+        return [
+            'categorie' => ['required', Rule::in(Signalement::CATEGORIE_OPTIONS)],
+            'description' => ['required', 'string', 'max:5000'],
+            'lieu' => ['required', 'string', 'max:255'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function validationAttributes(): array
+    {
+        return ['categorie' => 'catégorie', 'lieu' => 'adresse ou lieu'];
+    }
+
+    public function save(): void
+    {
+        $this->record
+            ? $this->authorize('update', $this->record)
+            : $this->authorize('create', Signalement::class);
+
+        $validated = $this->validate();
+
+        if ($this->photo) {
+            if ($this->record?->photo) {
+                Storage::disk('public')->delete($this->record->photo);
+            }
+            $validated['photo'] = $this->photo->store('signalements', 'public');
+        } else {
+            unset($validated['photo']);
+        }
+
+        if ($this->record) {
+            $this->record->update($validated);
+            $record = $this->record;
+        } else {
+            $record = new Signalement($validated);
+            $record->user()->associate(auth()->user());
+            $record->save();
+        }
+
+        Flux::toast(variant: 'success', text: $this->record ? 'Signalement mis à jour.' : 'Signalement envoyé à la mairie. Merci !');
+
+        $this->redirectRoute('signalements.show', $record, navigate: true);
+    }
+}; ?>
+
+<section class="mx-auto w-full max-w-2xl space-y-6">
+    <x-tn.page-header
+        label="Signalements"
+        :title="$record ? 'Modifier le signalement' : 'Signaler un problème'"
+        :subtitle="$record ? null : 'Lampadaire cassé, nid-de-poule, dépôt sauvage… Indiquez ce qui s’est passé et où : la mairie transmet au bon service.'"
+        :breadcrumb="['Signalements' => route('signalements.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
+    />
+
+    <form wire:submit="save" class="space-y-6">
+        <fieldset class="space-y-3">
+            <legend class="tn-display mb-1 text-lg font-semibold text-ink">Type de problème</legend>
+            <div class="grid gap-2 sm:grid-cols-2">
+                @foreach (Signalement::CATEGORIE_OPTIONS as $option)
+                    <label wire:key="categorie-{{ $option }}" class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
+                        <input type="radio" wire:model="categorie" value="{{ $option }}" class="size-4 accent-[var(--color-cyan)]">
+                        <span class="font-medium text-ink">{{ Signalement::libelleCategorie($option) }}</span>
+                    </label>
+                @endforeach
+            </div>
+            <flux:error name="categorie" />
+        </fieldset>
+
+        <flux:textarea wire:model="description" label="Que s'est-il passé ?" placeholder="Ex. Le lampadaire devant le n° 12 est cassé, la rue est dans le noir depuis trois jours." rows="5" required />
+
+        <flux:input wire:model="lieu" label="Adresse ou lieu" icon="map-pin" placeholder="Ex. Rue des Lumières, devant le n° 12" required />
+
+        <div class="space-y-3">
+            <flux:input type="file" wire:model="photo" label="Photo (facultative, 2 Mo max)" accept="image/jpeg,image/png,image/webp" />
+            <div wire:loading wire:target="photo"><flux:text>Envoi en cours…</flux:text></div>
+            @if ($photo && ! $errors->has('photo'))
+                <img src="{{ $photo->temporaryUrl() }}" alt="Aperçu de la photo" class="h-40 rounded-lg object-cover" />
+            @elseif ($record?->photo)
+                <img src="{{ Storage::url($record->photo) }}" alt="Photo du signalement" class="h-40 rounded-lg object-cover" />
+            @endif
+        </div>
+
+        <div class="flex items-center justify-between gap-3 border-t border-line pt-5">
+            <flux:button :href="route('signalements.index')" wire:navigate variant="ghost">Annuler</flux:button>
+            <flux:button type="submit" variant="primary" class="tn-cta">
+                <span wire:loading.remove wire:target="save">{{ $record ? 'Enregistrer' : 'Envoyer le signalement' }}</span>
+                <span wire:loading wire:target="save">Envoi…</span>
+            </flux:button>
+        </div>
+    </form>
+</section>

@@ -12,9 +12,9 @@
 <div class="lg:hidden" x-data>
     {{-- Fond --}}
     <div
-        x-show="$store.menu.ouvert"
+        x-show="$store.menu?.ouvert"
         x-cloak
-        x-on:click="$store.menu.fermer()"
+        x-on:click="$store.menu?.fermer()"
         x-transition:enter="transition-opacity duration-[400ms] ease-out"
         x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100"
@@ -28,10 +28,10 @@
     {{-- Feuille --}}
     <div
         id="tn-menu"
-        x-show="$store.menu.ouvert"
+        x-show="$store.menu?.ouvert"
         x-cloak
-        x-trap.inert.noscroll="$store.menu.ouvert"
-        x-on:keydown.escape.window="$store.menu.ouvert && $store.menu.fermer()"
+        x-trap.inert.noscroll="$store.menu?.ouvert"
+        x-on:keydown.escape.window="$store.menu?.ouvert && $store.menu?.fermer()"
         x-data="{
             depart: null,
             decalage: 0,
@@ -41,7 +41,7 @@
             fin() {
                 if (this.depart === null) return;
                 const vitesse = this.decalage / Math.max(1, Date.now() - this.instant);
-                if (this.decalage > 80 || vitesse > 0.5) { $store.menu.fermer(); }
+                if (this.decalage > 80 || vitesse > 0.5) { $store.menu?.fermer(); }
                 this.depart = null;
                 this.decalage = 0;
             },
@@ -71,7 +71,7 @@
                 <h2 id="tn-menu-titre" class="tn-label text-ink">Menu</h2>
                 <button
                     type="button"
-                    x-on:click="$store.menu.fermer()"
+                    x-on:click="$store.menu?.fermer()"
                     x-on:pointerdown.stop
                     class="-me-2 flex size-11 items-center justify-center rounded-sm text-ink-2 hover:text-ink"
                     aria-label="Fermer le menu"

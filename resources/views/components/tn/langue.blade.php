@@ -1,13 +1,13 @@
 @php
-    use App\Models\Traduction;
+    use App\Http\Middleware\DefinirLangue;
 
-    $courante = Traduction::langueCourante();
+    $courante = app()->getLocale();
 @endphp
 
-{{-- Choix de la langue des contenus (services, démarches). Le français est la langue de repli. --}}
-<form method="POST" action="{{ route('langue') }}" {{ $attributes->class('flex items-center gap-1') }} aria-label="Langue des contenus">
+{{-- Choix de la langue (fichiers lang/{code}.json). Le français est la langue de repli. --}}
+<form method="POST" action="{{ route('langue') }}" {{ $attributes->class('flex items-center gap-1') }} aria-label="{{ __('Langue') }}">
     @csrf
-    @foreach (Traduction::LANGUES as $code => $libelle)
+    @foreach (DefinirLangue::LANGUES as $code => $libelle)
         <button
             type="submit"
             name="langue"

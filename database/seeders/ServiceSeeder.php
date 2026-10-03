@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Service;
-use App\Models\Traduction;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -12,6 +11,29 @@ use Illuminate\Database\Seeder;
  */
 class ServiceSeeder extends Seeder
 {
+    /** Services mis en avant en tête du catalogue et sur l'accueil. */
+    private const MIS_EN_AVANT = ['État civil', 'Accueil de la Mairie', 'Urbanisme', 'Action sociale (CCAS)'];
+
+    /** Catégorie de chaque service de l'annuaire (voir Service::CATEGORIE_OPTIONS). */
+    private const CATEGORIES = [
+        'État civil' => 'administratif',
+        'Accueil de la Mairie' => 'administratif',
+        'Élections et recensement' => 'administratif',
+        'Cimetière et affaires funéraires' => 'administratif',
+        'Urbanisme' => 'urbanisme',
+        'Services techniques et voirie' => 'urbanisme',
+        'Environnement et propreté' => 'urbanisme',
+        'Santé publique' => 'sante',
+        'Action sociale (CCAS)' => 'social',
+        'Petite enfance et écoles' => 'education',
+        'Jeunesse' => 'education',
+        'Médiathèque Ravinala' => 'culture',
+        'Sports et associations' => 'culture',
+        'Culture et festivités' => 'culture',
+        'Police municipale' => 'securite',
+        'Marchés et commerce' => 'economie',
+    ];
+
     public function run(): void
     {
         $auteur = User::query()->where('role', 'admin')->first() ?? User::query()->first();
@@ -21,7 +43,15 @@ class ServiceSeeder extends Seeder
         }
 
         foreach ($this->services() as $data) {
-            if (Service::query()->where('nom', $data['nom'])->exists()) {
+            $data['categorie'] = self::CATEGORIES[$data['nom']] ?? null;
+
+            $existant = Service::query()->where('nom', $data['nom'])->first();
+
+            if ($existant !== null) {
+                if ($existant->categorie === null && $data['categorie'] !== null) {
+                    $existant->update(['categorie' => $data['categorie']]);
+                }
+
                 continue;
             }
 
@@ -32,86 +62,8 @@ class ServiceSeeder extends Seeder
             $service->save();
         }
 
-        $this->traduire();
-    }
-
-    /**
-     * Traductions de démonstration (anglais et malgache) pour quelques services ; les autres retombent sur le français.
-     */
-    public function traduire(): void
-    {
-        foreach ($this->traductions() as $nom => $parLangue) {
-            $service = Service::query()->where('nom', $nom)->first();
-
-            if ($service === null) {
-                continue;
-            }
-
-            foreach ($parLangue as $locale => $champs) {
-                $traduction = $service->traductions()->where('locale', $locale)->first() ?? new Traduction;
-                $traduction->fill($champs);
-                $traduction->locale = $locale;
-                $traduction->traduisible()->associate($service);
-                $traduction->save();
-            }
-        }
-    }
-
-    /**
-     * @return array<string, array<string, array{titre: string, description: string, horaires: string}>>
-     */
-    private function traductions(): array
-    {
-        return [
-            'État civil' => [
-                'en' => [
-                    'titre' => 'Civil registry',
-                    'description' => "Birth, marriage and death certificates, family record books, signature certification and residence certificates.\nAppointments are recommended for weddings and recognitions of paternity.",
-                    'horaires' => "Monday to Friday: 8:00 am – 4:00 pm\nSaturday: 8:00 am – 11:30 am (births and deaths desk)",
-                ],
-                'mg' => [
-                    'titre' => 'Sampan-draharaha momba ny zom-pirenena',
-                    'description' => "Taratasy fanamarinana ny fahaterahana, ny fanambadiana ary ny fahafatesana, bokin'ny fianakaviana, fanamarinana sonia ary taratasy fanamarinana fonenana.\nAmpiasaina ny fakana fotoana ho an'ny fanambadiana.",
-                    'horaires' => "Alatsinainy ka hatramin'ny Zoma: 8 ora – 16 ora\nSabotsy: 8 ora – 11 ora sy sasany",
-                ],
-            ],
-            'Action sociale (CCAS)' => [
-                'en' => [
-                    'titre' => 'Social action (CCAS)',
-                    'description' => 'The municipal social action centre supports families, older people and people with disabilities: emergency aid, meal delivery, mailing address registration and referral to partner associations.',
-                    'horaires' => "Monday to Friday: 8:00 am – 12:00 pm and 1:30 pm – 4:30 pm\nWalk-in welcome on Wednesday mornings",
-                ],
-                'mg' => [
-                    'titre' => 'Asa sosialy (CCAS)',
-                    'description' => "Ny foibe iraisam-paritra momba ny asa sosialy dia manampy ny fianakaviana, ny olona an-tana ary ny olona sembana: fanampiana maika, fitaterana sakafo, fanoratana adiresy ary fitarihana any amin'ny fikambanana mpiara-miasa.",
-                    'horaires' => "Alatsinainy ka hatramin'ny Zoma: 8 ora – 12 ora sy 13 ora 30 – 16 ora 30\nHandray tsy misy fakana fotoana ny alarobia maraina",
-                ],
-            ],
-            'Accueil de la Mairie' => [
-                'en' => [
-                    'titre' => 'Town hall reception',
-                    'description' => 'First point of contact for residents: information on all procedures, guidance to the right department, administrative forms and appointment booking.',
-                    'horaires' => "Monday to Friday: 7:30 am – 5:00 pm\nSaturday: 8:00 am – 12:00 pm",
-                ],
-                'mg' => [
-                    'titre' => "Fandraisana eny amin'ny Tananà",
-                    'description' => "Toerana voalohany iantsoan'ny mponina: fampahalalana momba ny fomba rehetra, fitarihana mankany amin'ny sampana mety, fakana taratasy sy fakana fotoana.",
-                    'horaires' => "Alatsinainy ka hatramin'ny Zoma: 7 ora 30 – 17 ora\nSabotsy: 8 ora – 12 ora",
-                ],
-            ],
-            'Santé publique' => [
-                'en' => [
-                    'titre' => 'Public health',
-                    'description' => 'Municipal health centre: general practice consultations, free vaccinations, infant follow-up and prevention campaigns (malaria, water hygiene).',
-                    'horaires' => "Monday to Friday: 7:30 am – 4:00 pm\nVaccinations: Wednesday mornings",
-                ],
-                'mg' => [
-                    'titre' => 'Fahasalamana ho an\'ny daholobe',
-                    'description' => "Toeram-pitsaboana ao an-tanànana: fisavana ankapobeny, vaksiny maimaim-poana, fanaraha-maso ny zaza vao teraka ary fanentanana fisorohana (tazo, fahadiovan'ny rano).",
-                    'horaires' => "Alatsinainy ka hatramin'ny Zoma: 7 ora 30 – 16 ora\nVaksiny: alarobia maraina",
-                ],
-            ],
-        ];
+        // Démarches les plus courantes mises en avant (F28).
+        Service::query()->whereIn('nom', self::MIS_EN_AVANT)->update(['mis_en_avant' => true]);
     }
 
     /**

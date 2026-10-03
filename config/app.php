@@ -84,6 +84,12 @@ return [
 
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
+    // Langues proposées dans le sélecteur (code => libellé affiché dans sa propre langue).
+    'available_locales' => [
+        'fr' => 'Français',
+        'en' => 'English',
+    ],
+
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
     /*

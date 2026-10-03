@@ -44,7 +44,7 @@
     $illustration = file_exists(public_path('images/hero/ciel-nuit.webp')) ? asset('images/hero/ciel-nuit.webp') : null;
 @endphp
 
-<x-layouts::site title="Accueil" :fluid="true" description="Vos démarches, les actualités de la ville et le contact avec vos services municipaux, au même endroit : la plateforme civique officielle de la Mairie de Nova Terra.">
+<x-layouts::site :title="__('Home')" :fluid="true" description="Vos démarches, les actualités de la ville et le contact avec vos services municipaux, au même endroit : la plateforme civique officielle de la Mairie de Nova Terra.">
     {{-- HERO --}}
     <section class="tn-sky relative overflow-hidden" aria-labelledby="titre-hero">
         @if ($illustration)
@@ -56,28 +56,28 @@
         <div class="relative mx-auto grid max-w-7xl items-center gap-10 px-4 pt-10 pb-14 sm:pt-16 lg:grid-cols-[1.1fr_1fr] lg:gap-16 lg:px-8 lg:pt-24 lg:pb-24">
             <div>
                 <x-tn.section-label class="flex items-center gap-2 text-cyan!">
-                    <x-tn.live-dot class="text-green" /> Mairie de Nova Terra
+                    <x-tn.live-dot class="text-green" /> {{ __('Nova Terra City Hall') }}
                 </x-tn.section-label>
-                <h1 id="titre-hero" class="tn-h1 mt-4 text-ink">La ville en direct, au service de ses habitants.</h1>
+                <h1 id="titre-hero" class="tn-h1 mt-4 text-ink">{{ __('The city live, serving its residents.') }}</h1>
                 <p class="mt-5 max-w-xl text-[17px] leading-[1.55] text-ink-2 sm:text-lg">
-                    Vos démarches, les actualités de la ville et le contact avec vos services municipaux, au même endroit.
+                    {{ __('Your procedures, city news and contact with your municipal services, all in one place.') }}
                 </p>
                 <div class="mt-8 flex flex-wrap items-center gap-3">
                     @if ($connecte)
-                        <flux:button :href="route('dashboard')" variant="primary" class="tn-cta h-[52px]! px-6! text-base!">Mon espace</flux:button>
+                        <flux:button :href="route('dashboard')" variant="primary" class="tn-cta h-[52px]! px-6! text-base!">{{ __('My area') }}</flux:button>
                     @elseif (Route::has('register'))
-                        <flux:button :href="route('register')" variant="primary" class="tn-cta h-[52px]! px-6! text-base!">Créer un compte</flux:button>
+                        <flux:button :href="route('register')" variant="primary" class="tn-cta h-[52px]! px-6! text-base!">{{ __('Create account') }}</flux:button>
                     @endif
                     @unless ($connecte)
-                        <a href="{{ route('login') }}" class="tn-btn-secondary h-[52px]">Connexion</a>
+                        <a href="{{ route('login') }}" class="tn-btn-secondary h-[52px]">{{ __('Log in') }}</a>
                     @endunless
                 </div>
             </div>
 
             <x-tn.panel padding="p-5 md:p-7">
                 <div class="flex items-center justify-between gap-3">
-                    <x-tn.section-label as="h2" class="text-ink!">État de la plateforme</x-tn.section-label>
-                    <x-tn.status-badge etat="normal" :live="true">En direct</x-tn.status-badge>
+                    <x-tn.section-label as="h2" class="text-ink!">{{ __('Platform status') }}</x-tn.section-label>
+                    <x-tn.status-badge etat="normal" :live="true">{{ __('Live') }}</x-tn.status-badge>
                 </div>
 
                 <ul class="mt-4">
@@ -103,7 +103,7 @@
 
     {{-- LES 4 RUBRIQUES --}}
     <section class="border-y border-line bg-night" aria-labelledby="titre-rubriques">
-        <h2 id="titre-rubriques" class="sr-only">Accès rapide aux rubriques</h2>
+        <h2 id="titre-rubriques" class="sr-only">{{ __('Quick access to sections') }}</h2>
         <ul class="mx-auto grid max-w-7xl sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
             @foreach ($rubriques as $i => $rubrique)
                 <li class="border-line max-lg:border-b sm:max-lg:odd:border-e lg:border-e lg:first:border-s">
@@ -112,8 +112,8 @@
                             <span class="font-mono text-sm text-cyan">{{ sprintf('%02d', $i + 1) }}</span>
                             <flux:icon :name="$rubrique['icon']" class="size-5 text-ink-2 transition-colors group-hover:text-cyan" />
                         </span>
-                        <span class="tn-display text-xl font-semibold text-ink">{{ $rubrique['label'] }}</span>
-                        <span class="text-[15px] text-ink-2">{{ $rubrique['texte'] }}</span>
+                        <span class="tn-display text-xl font-semibold text-ink">{{ __($rubrique['label']) }}</span>
+                        <span class="text-[15px] text-ink-2">{{ __($rubrique['texte']) }}</span>
                     </a>
                 </li>
             @endforeach
@@ -125,11 +125,11 @@
         <div>
             <div class="flex items-end justify-between gap-4">
                 <div>
-                    <x-tn.section-label>Fil du Haut Conseil</x-tn.section-label>
-                    <h2 class="tn-h2 mt-2 text-ink">Dernières annonces</h2>
+                    <x-tn.section-label>{{ __('High Council feed') }}</x-tn.section-label>
+                    <h2 class="tn-h2 mt-2 text-ink">{{ __('Latest announcements') }}</h2>
                 </div>
                 @if (Route::has('actualites.index'))
-                    <a href="{{ route('actualites.index') }}" class="inline-flex min-h-11 items-center text-sm font-medium text-cyan hover:underline">Toutes les actualités</a>
+                    <a href="{{ route('actualites.index') }}" class="inline-flex min-h-11 items-center text-sm font-medium text-cyan hover:underline">{{ __('All news') }}</a>
                 @endif
             </div>
 
@@ -155,7 +155,7 @@
             @else
                 <div class="mt-6 rounded-md border border-dashed border-line p-8 text-center">
                     <flux:icon name="newspaper" class="mx-auto size-8 text-ink-2" />
-                    <p class="mt-3 font-medium text-ink">Aucune annonce pour le moment</p>
+                    <p class="mt-3 font-medium text-ink">{{ __('No announcements yet') }}</p>
                     <p class="mt-1 text-sm text-ink-2">Les publications du Haut Conseil apparaîtront ici.</p>
                 </div>
             @endif
@@ -163,8 +163,8 @@
 
         <aside aria-labelledby="titre-services">
             <x-tn.panel padding="p-5 md:p-6">
-                <x-tn.section-label>Services municipaux</x-tn.section-label>
-                <h2 id="titre-services" class="tn-h2 mt-2 text-ink">À votre service</h2>
+                <x-tn.section-label>{{ __('Municipal services') }}</x-tn.section-label>
+                <h2 id="titre-services" class="tn-h2 mt-2 text-ink">{{ __('At your service') }}</h2>
 
                 @if (count($etat['apercu_services']))
                     <ul class="mt-4">
@@ -185,7 +185,7 @@
 
                 @if (Route::has('messages.index'))
                     <a href="{{ route('messages.index') }}" class="tn-btn-secondary mt-5 w-full">
-                        <flux:icon name="mail" class="size-4" /> Contact : écrire à un service
+                        <flux:icon name="mail" class="size-4" /> {{ __('Contact: write to a service') }}
                     </a>
                 @endif
             </x-tn.panel>

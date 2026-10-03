@@ -8,12 +8,12 @@
     'fluid' => false,
 ])
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         @include('partials.head', ['title' => $title, 'description' => $description])
     </head>
     <body class="min-h-screen bg-black antialiased" x-data>
-        <a href="#contenu" class="sr-only z-[60] rounded-sm bg-cyan px-4 py-2 text-on-cyan focus:not-sr-only focus:fixed focus:start-4 focus:top-4">Aller au contenu</a>
+        <a href="#contenu" class="sr-only z-[60] rounded-sm bg-cyan px-4 py-2 text-on-cyan focus:not-sr-only focus:fixed focus:start-4 focus:top-4">{{ __('Skip to content') }}</a>
 
         <div
             id="tn-page"
@@ -28,7 +28,7 @@
 
             <footer class="border-t border-line">
                 <div class="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-sm text-ink-2 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-                    <p>{{ config('app.name') }} · Mairie de Nova Terra · 24h by Webcup 2026</p>
+                    <p>{{ config('app.name') }} · {{ __('Nova Terra City Hall') }} · 24h by Webcup 2026</p>
                     <p class="font-mono text-xs uppercase tracking-[.06em]">Virtual Vision Synergie</p>
                 </div>
             </footer>

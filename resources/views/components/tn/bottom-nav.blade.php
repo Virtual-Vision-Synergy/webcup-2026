@@ -24,7 +24,7 @@
 <nav
     {{ $attributes->class('tn-glass fixed inset-x-0 bottom-0 z-40 border-t lg:hidden') }}
     style="padding-bottom: env(safe-area-inset-bottom)"
-    aria-label="Navigation mobile"
+    aria-label="{{ __('Mobile navigation') }}"
 >
     <ul class="mx-auto grid h-16 max-w-md grid-cols-5 items-stretch">
         @foreach ($onglets as $onglet)
@@ -43,7 +43,7 @@
                     <span class="tn-cta flex size-14 items-center justify-center rounded-full bg-cyan text-on-cyan ring-[5px] ring-night">
                         <flux:icon :name="$centre['icon']" class="size-6" />
                     </span>
-                    {{ $centre['label'] }}
+                    {{ __($centre['label']) }}
                 </a>
             @endif
         </li>
@@ -64,7 +64,7 @@
                 x-bind:class="$store.menu?.ouvert && 'text-cyan!'"
             >
                 <flux:icon name="layout-grid" class="size-[22px]" />
-                Menu
+                {{ __('Menu') }}
             </button>
         </li>
     </ul>

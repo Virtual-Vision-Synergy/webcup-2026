@@ -19,13 +19,13 @@
 
 <x-layouts::app :title="__('Dashboard')">
     <div class="mx-auto flex w-full max-w-6xl flex-col gap-8">
-        <x-tn.page-header label="Mon espace" :title="'Bonjour '.$user->name" subtitle="Vos démarches et l'activité de la ville, en un coup d'œil.">
+        <x-tn.page-header :label="__('My area')" :title="__('Hello').' '.$user->name" :subtitle="__('Your procedures and city activity at a glance.')">
             <x-slot:actions>
                 <span class="inline-flex items-center gap-2 rounded-xs border border-line px-2.5 py-1 font-mono text-[11px] uppercase tracking-[.06em] text-ink-2">
                     <flux:icon name="users-round" class="size-3.5" /> {{ $user->role->label }}
                 </span>
                 @can('create', Demarche::class)
-                    <flux:button variant="primary" icon="plus" :href="route('demarches.create')" class="tn-cta" wire:navigate>Nouvelle démarche</flux:button>
+                    <flux:button variant="primary" icon="plus" :href="route('demarches.create')" class="tn-cta" wire:navigate>{{ __('New procedure') }}</flux:button>
                 @endcan
             </x-slot:actions>
         </x-tn.page-header>
@@ -57,7 +57,7 @@
             <x-tn.panel padding="p-5 md:p-6">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <x-tn.section-label as="h2" class="text-ink!">Mes démarches</x-tn.section-label>
+                        <x-tn.section-label as="h2" class="text-ink!">{{ __('My procedures') }}</x-tn.section-label>
                         <p class="mt-1 text-sm text-ink-2">{{ $totalDemarches }} démarche(s) déposée(s)</p>
                     </div>
                     @if ($totalDemarches > 0)

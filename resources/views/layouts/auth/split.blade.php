@@ -5,7 +5,7 @@
     $illustrationJour = file_exists(public_path('images/hero/ciel-jour.webp')) ? asset('images/hero/ciel-jour.webp') : null;
 @endphp
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
         @include('partials.head')
     </head>

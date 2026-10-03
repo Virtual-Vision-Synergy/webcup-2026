@@ -142,7 +142,7 @@ class Projet extends Model
 
     public function nomQuartier(): string
     {
-        return $this->quartier?->nom ?? __('Toute la ville');
+        return $this->quartier->nom ?? __('Toute la ville');
     }
 
     public function budgetFormate(): ?string
@@ -157,8 +157,8 @@ class Projet extends Model
 
         return match (true) {
             $debut !== null && $fin !== null => $debut.' → '.$fin,
-            $debut !== null => __('Depuis :date', ['date' => $debut]),
-            $fin !== null => __('Fin prévue :date', ['date' => $fin]),
+            $debut !== null => (string) __('Depuis :date', ['date' => $debut]),
+            $fin !== null => (string) __('Fin prévue :date', ['date' => $fin]),
             default => null,
         };
     }

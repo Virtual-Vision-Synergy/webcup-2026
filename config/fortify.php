@@ -115,7 +115,8 @@ return [
     */
 
     'limiters' => [
-        'login' => 'login',
+        // F37 : pas de throttle de route (il comptait aussi les succès) ; voir App\Auth\LoginThrottle.
+        'login' => null,
         'two-factor' => 'two-factor',
     ],
 

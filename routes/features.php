@@ -33,6 +33,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::livewire('demarches', 'pages::demarches.index')->name('demarches.index');
     Route::livewire('demarches/historique', 'pages::demarches.historique')->name('demarches.historique');
+    // F56 : récapitulatif imprimable / CSV, limité aux demandes de l'utilisateur connecté.
+    Route::livewire('demarches/recapitulatif', 'pages::demarches.recapitulatif')->name('demarches.recapitulatif');
     Route::livewire('demarches/create', 'pages::demarches.form')->name('demarches.create');
     Route::livewire('demarches/{demarche}', 'pages::demarches.show')->name('demarches.show');
     Route::livewire('demarches/{demarche}/edit', 'pages::demarches.form')->name('demarches.edit');

@@ -500,3 +500,6 @@ html.hc .tn-planet,
 html.hc .tn-grid {
     opacity: 0.15;
 }
+
+/* Alpine : masque les éléments x-show avant l’initialisation (bandeau D18). */
+[x-cloak] { display: none !important; }

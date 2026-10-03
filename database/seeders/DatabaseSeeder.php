@@ -191,6 +191,9 @@ class DatabaseSeeder extends Seeder
             $this->call(KnownDeviceSeeder::class);
         }
 
+        // F40 : rendez-vous de démo rappelé automatiquement ~10 min après le seed (hors production).
+        $this->call(RappelRendezVousSeeder::class);
+
         // make:feature:seeders
     }
 }

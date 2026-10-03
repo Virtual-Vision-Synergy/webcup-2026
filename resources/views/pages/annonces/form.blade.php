@@ -2,6 +2,7 @@
 
 use App\Models\Annonce;
 use App\Models\Quartier;
+use App\Services\NotifierAnnonce;
 use Flux\Flux;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
@@ -112,14 +113,20 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
         $validated['consignes'] = trim((string) ($validated['consignes'] ?? '')) ?: null;
 
         if ($this->record) {
-            $this->record->update($validated);
+            $annonce = $this->record;
+            $annonce->update($validated);
         } else {
             $annonce = new Annonce($validated);
             $annonce->user()->associate(auth()->user());
             $annonce->save();
         }
 
-        Flux::toast(variant: 'success', text: $this->record ? 'Message modifié.' : 'Message publié.');
+        // F30 : annonce importante déjà visible → habitants prévenus tout de suite (une seule fois) ;
+        // programmée → la commande annonces:notify s'en charge à son début.
+        $notifiee = app(NotifierAnnonce::class)->notifierSiVisible($annonce);
+
+        Flux::toast(variant: 'success', text: ($this->record ? 'Message modifié.' : 'Message publié.')
+            .($notifiee ? ' Les habitants concernés sont prévenus.' : ''));
 
         $this->redirectRoute('agent.annonces.index', navigate: true);
     }

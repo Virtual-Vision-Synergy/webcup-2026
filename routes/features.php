@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\NotificationController;
 use App\Models\Onboarding;
 use Illuminate\Support\Facades\Route;
 
@@ -55,6 +56,13 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('rendez-vous', 'pages::rendez-vous.index')->name('appointments.index');
     Route::livewire('rendez-vous/prendre', 'pages::rendez-vous.form')->name('appointments.create');
     Route::livewire('rendez-vous/{rendezVous}', 'pages::rendez-vous.show')->name('appointments.show');
+
+    // F30 : notifications de l'utilisateur connecté (droits dans DatabaseNotificationPolicy : 403 pour celle d'un autre).
+    Route::livewire('notifications', 'pages::notifications.index')->name('notifications.index');
+    Route::get('notifications/compteur', [NotificationController::class, 'compteur'])->name('notifications.count');
+    Route::post('notifications/tout-lire', [NotificationController::class, 'toutLire'])->name('notifications.read-all');
+    Route::post('notifications/{notification}/lire', [NotificationController::class, 'lire'])->whereUuid('notification')->name('notifications.read');
+    Route::get('notifications/{notification}/ouvrir', [NotificationController::class, 'ouvrir'])->whereUuid('notification')->name('notifications.open');
 
     // make:feature:routes
 });

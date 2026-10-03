@@ -126,6 +126,28 @@ new class extends Component {
                             </div>
                         @endforeach
                     </div>
+                    <div
+                        class="flex flex-wrap gap-2"
+                        x-data="{
+                            telecharger() {
+                                // Lus dans la liste affichée : toujours à jour après « Régénérer les codes ».
+                                const codes = [...document.querySelectorAll('#recovery-codes-section [role=listitem]')].map((el) => el.textContent.trim());
+                                const contenu = 'Codes de récupération - ' + @js(config('app.name')) + '\n'
+                                    + 'Compte : ' + @js(auth()->user()->email) + '\n'
+                                    + 'Chaque code ne sert qu\'une fois. Gardez ce fichier en lieu sûr.\n\n'
+                                    + codes.join('\n') + '\n';
+                                const lien = document.createElement('a');
+                                lien.href = URL.createObjectURL(new Blob([contenu], { type: 'text/plain;charset=utf-8' }));
+                                lien.download = 'codes-recuperation.txt';
+                                lien.click();
+                                URL.revokeObjectURL(lien.href);
+                            },
+                        }"
+                    >
+                        <flux:button size="sm" icon="arrow-down-tray" @click="telecharger()" data-test="download-recovery-codes">
+                            Télécharger les codes (.txt)
+                        </flux:button>
+                    </div>
                     <flux:text variant="subtle" class="text-xs">
                         {{ __('Each recovery code can be used once to access your account and will be removed after use. If you need more, click Regenerate codes above.') }}
                     </flux:text>

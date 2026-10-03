@@ -46,6 +46,15 @@
             <form method="POST" action="{{ route('two-factor.login.store') }}">
                 @csrf
 
+                @error('code')
+                    <flux:callout variant="danger" icon="x-circle" class="mb-4 text-start" data-test="two-factor-code-error">
+                        <flux:callout.heading>Code incorrect, accès refusé</flux:callout.heading>
+                        <flux:callout.text>
+                            Ouvrez votre application d'authentification et saisissez le code à 6 chiffres affiché en ce moment (il change toutes les 30 secondes). Vérifiez aussi que l'heure de votre téléphone est automatique. Téléphone perdu ? Utilisez un code de récupération.
+                        </flux:callout.text>
+                    </flux:callout>
+                @enderror
+
                 <div class="space-y-5 text-center">
                     <div x-show="!showRecoveryInput">
                         <div class="flex items-center justify-center my-5" x-ref="otp">

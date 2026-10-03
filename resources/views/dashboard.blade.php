@@ -56,6 +56,15 @@
             </p>
         @endif
 
+        {{-- F53 : double authentification recommandée aux agents et administrateurs. --}}
+        @if (($user->isAgent() || $user->isAdmin()) && ! $user->hasEnabledTwoFactorAuthentication())
+            <p class="rounded-md border border-magenta/35 bg-magenta/8 px-4 py-3 text-sm text-ink">
+                <flux:icon name="shield-check" class="me-1 inline size-4 text-magenta" aria-hidden="true" />
+                Votre compte a des droits étendus : la double authentification est fortement recommandée.
+                <a href="{{ route('security.edit') }}" wire:navigate class="font-medium text-magenta underline underline-offset-2">Activer la double authentification</a>
+            </p>
+        @endif
+
         <x-onboarding.rappel />
 
         {{-- ALERTES --}}

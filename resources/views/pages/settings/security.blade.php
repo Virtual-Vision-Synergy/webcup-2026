@@ -7,6 +7,7 @@ use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Actions\DisableTwoFactorAuthentication;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\Attributes\On;
@@ -24,6 +25,16 @@ new #[Title('Security settings')] class extends Component {
 
     public bool $requiresConfirmation;
 
+    /**
+     * Agents et administrateurs : la double authentification leur est fortement recommandée.
+     */
+    #[Computed]
+    public function compteSensible(): bool
+    {
+        $user = auth()->user();
+
+        return $user->isAgent() || $user->isAdmin();
+    }
 
     /**
      * Mount the component.
@@ -131,11 +142,26 @@ new #[Title('Security settings')] class extends Component {
         </form>
 
         @if ($canManageTwoFactor)
-            <section class="mt-12">
-                <flux:heading>{{ __('Two-factor authentication') }}</flux:heading>
+            <section class="mt-12" id="double-authentification">
+                <div class="flex flex-wrap items-center gap-2">
+                    <flux:heading>{{ __('Two-factor authentication') }}</flux:heading>
+                    @if ($twoFactorEnabled)
+                        <flux:badge color="green" size="sm" icon="shield-check">Activée</flux:badge>
+                    @else
+                        <flux:badge color="zinc" size="sm">Désactivée</flux:badge>
+                    @endif
+                </div>
                 <flux:subheading>{{ __('Manage your two-factor authentication settings') }}</flux:subheading>
 
-                <div class="flex flex-col w-full mx-auto space-y-6 text-sm" wire:cloak>
+                <div class="flex flex-col w-full mx-auto mt-4 space-y-6 text-sm" wire:cloak>
+                    @if (! $twoFactorEnabled && $this->compteSensible)
+                        <flux:callout variant="warning" icon="shield-exclamation" heading="Fortement recommandée pour votre compte">
+                            <flux:callout.text>
+                                Votre compte {{ auth()->user()->role->label }} donne accès aux données d'autres habitants. Activez la double authentification pour qu'un mot de passe volé ne suffise pas à y entrer.
+                            </flux:callout.text>
+                        </flux:callout>
+                    @endif
+
                     @if ($twoFactorEnabled)
                         <div class="space-y-4">
                             <flux:text>
@@ -158,6 +184,19 @@ new #[Title('Security settings')] class extends Component {
                             <flux:text variant="subtle">
                                 {{ __('When you enable two-factor authentication, you will be prompted for a secure pin during login. This pin can be retrieved from a TOTP-supported application on your phone.') }}
                             </flux:text>
+
+                            <div class="rounded-lg border border-zinc-200 p-4 dark:border-white/10">
+                                <flux:heading size="sm" level="3">Comment ça marche ?</flux:heading>
+                                <ol class="mt-3 list-decimal space-y-2 ps-5 text-zinc-600 dark:text-zinc-300">
+                                    <li>Installez sur votre téléphone une application d'authentification gratuite : Google Authenticator, Microsoft Authenticator ou FreeOTP.</li>
+                                    <li>Cliquez sur « Activer la 2FA », puis scannez le QR code avec l'application (ou recopiez la clé affichée en dessous).</li>
+                                    <li>Saisissez le code à 6 chiffres affiché par l'application pour confirmer. Il change toutes les 30 secondes.</li>
+                                    <li>Téléchargez vos codes de récupération et gardez-les en lieu sûr : ils vous dépannent si vous perdez votre téléphone.</li>
+                                </ol>
+                                <flux:text variant="subtle" class="mt-3">
+                                    Ensuite, à chaque connexion, ce code vous sera demandé après votre mot de passe (ou après le lien de connexion reçu par e-mail). Sans lui, personne ne peut entrer dans votre espace.
+                                </flux:text>
+                            </div>
 
                             <flux:modal.trigger name="two-factor-setup-modal">
                                 <flux:button

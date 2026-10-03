@@ -120,5 +120,8 @@
     "Open": "Ouvrir",
     "Mark as read": "Marquer comme lu",
     "Reset your password": "Réinitialisation de votre mot de passe",
-    "Verify your email address": "Vérification de votre adresse e-mail"
+    "Verify your email address": "Vérification de votre adresse e-mail",
+    "Failed to fetch setup data.": "Impossible de charger les données de configuration. Fermez la fenêtre et réessayez.",
+    "OTP Code": "Code à usage unique",
+    "Failed to load recovery codes": "Impossible de charger les codes de récupération"
 }

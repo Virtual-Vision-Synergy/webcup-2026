@@ -200,6 +200,15 @@ new class extends Component {
                         />
                     </div>
 
+                    @error('code')
+                        <flux:callout variant="danger" icon="x-circle" data-test="two-factor-setup-code-error">
+                            <flux:callout.heading>Code incorrect</flux:callout.heading>
+                            <flux:callout.text>
+                                Saisissez le code à 6 chiffres affiché en ce moment dans votre application (il change toutes les 30 secondes). Si l'erreur persiste, revenez en arrière et scannez à nouveau le QR code.
+                            </flux:callout.text>
+                        </flux:callout>
+                    @enderror
+
                     <div class="flex items-center space-x-3">
                         <flux:button
                             variant="outline"

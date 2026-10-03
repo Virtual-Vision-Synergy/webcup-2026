@@ -1,0 +1,120 @@
+### Terra Nova API — 24H By Webcup
+### Fichier de requêtes HTTP pour IntelliJ / WebStorm (HTTP Client)
+### Doc source : https://app.notion.com/p/airbluefox/API-Plateforme-de-la-Ville-de-Terra-Nova-24H-By-Webcup
+
+### Variables globales
+@baseUrl = https://24h.webcup.fr/wp-json/webcup/v1
+@apiKey = s45f4ds5fgrtr4hytutyt45y4t54yty
+
+
+### 1. Récupérer les demandes — Authentification via header (recommandé)
+GET {{baseUrl}}/requests
+X-Webcup-Api-Key: {{apiKey}}
+Accept: application/json
+
+> {%
+    client.test("Statut 200", function() {
+        client.assert(response.status === 200, "Code reçu : " + response.status);
+    });
+
+    client.test("Structure de base présente", function() {
+        client.assert(response.body.hasOwnProperty("session"), "Pas de bloc session");
+        client.assert(response.body.hasOwnProperty("requests"), "Pas de bloc requests");
+    });
+
+    client.log("Statut session : " + JSON.stringify(response.body.session));
+    client.log("Nombre de demandes disponibles : " + response.body.requests.length);
+%}
+
+
+### 2. Récupérer les demandes — Authentification via query string (alternative)
+GET {{baseUrl}}/requests?api_key={{apiKey}}
+Accept: application/json
+
+
+### 3. Vérifier le comportement sans clé API (doit renvoyer 403)
+GET {{baseUrl}}/requests
+Accept: application/json
+
+> {%
+    client.test("Accès refusé sans clé (403)", function() {
+        client.assert(response.status === 403, "Code reçu : " + response.status);
+    });
+%}
+
+
+###
+# ============================================================
+# TODO — Tout ce qu'il reste à faire pour le concours
+# ============================================================
+#
+# [ ] 1. Authentification
+#     - Récupérer la vraie clé API (@apiKey) auprès des organisateurs
+#     - Choisir la méthode d'auth dans l'app : header X-Webcup-Api-Key
+#       (préférable, cache la clé dans l'URL) ou query string ?api_key=
+#     - Si l'app tourne côté navigateur : la clé sera visible côté client,
+#       prévoir une architecture adaptée (ex: proxy backend qui porte la clé)
+#
+# [ ] 2. Polling / rafraîchissement
+#     - Mettre en place un GET /requests répété toutes les 15-30 secondes
+#       (setInterval ou équivalent), pas plus souvent
+#     - Gérer les erreurs HTTP (403, 5xx, timeout réseau) proprement
+#     - Ne jamais supposer que l'API pousse les données : c'est à l'app
+#       d'interroger
+#
+# [ ] 3. Exploitation du bloc `session`
+#     - Afficher/utiliser : status, is_running, current_wave,
+#       elapsed_minutes, visible_requests_count, initial_requests_count,
+#       wave_requests_count, next_wave_number, minutes_until_next_wave
+#     - Gérer le cas "status": "none" (avant activation du concours)
+#     - Gérer le cas où next_wave_number = 0 (plus de vague prévue)
+#
+# [ ] 4. Exploitation du bloc `requests`
+#     - Utiliser request_code comme identifiant stable (PAS id)
+#     - Stocker/mettre à jour les demandes reçues dans son propre système
+#       (ex: Set/Map indexé sur request_code) pour détecter les doublons
+#     - Détecter l'arrivée de nouvelles demandes à chaque appel
+#       (comparer avec les request_code déjà connus)
+#
+# [ ] 5. Champs à traiter par demande
+#     - message_public      → besoin à interpréter et transformer en feature
+#     - difficulty / difficulty_level (1=Facile, 2=Moyenne, 3=Difficile, 4=Expert)
+#     - xp_base, xp_time_bonus, xp_total, xp_available
+#       (xp_total = xp_base + xp_time_bonus ; xp_available = xp_total)
+#     - is_initial, visible_since_wave, arrival_type, wave_number
+#     - arrival_time (délai depuis le DÉBUT du concours, ex "02:00:00" = H+2,
+#       pas une heure du jour !)
+#     - champs optionnels si présents : is_ai_related, is_ai_request,
+#       group_name, sort_order
+#
+# [ ] 6. Architecture applicative
+#     - Construire une app capable d'évoluer sans reconstruction complète
+#       à chaque nouvelle demande (pas de nombre de demandes codé en dur)
+#     - Ne pas recalculer soi-même les demandes visibles à partir de
+#       current_wave : utiliser directement data.requests
+#     - Prioriser le développement avec difficulty / xp (quick wins vs
+#       gros morceaux) selon la stratégie de l'équipe
+#
+# [ ] 7. Développement des fonctionnalités
+#     - Démarrage rapide : connecter l'app à l'API, afficher les demandes
+#       initiales, valider la structure des données reçues
+#     - Construire un socle solide : traiter les demandes initiales,
+#       développer des fonctionnalités réellement intégrées (pas juste
+#       de l'affichage), prévoir l'extensibilité
+#     - À chaque nouvelle demande détectée : analyser, choisir si on
+#       l'implémente, faire évoluer l'app, vérifier l'intégration globale
+#
+# [ ] 8. Choses à NE PAS faire (pièges identifiés dans la doc)
+#     - Ne pas supposer un nombre total de demandes fixe
+#     - Ne pas supposer un intervalle fixe entre les vagues
+#     - Ne pas précharger/deviner les demandes futures
+#     - Ne pas interpréter arrival_time comme une heure réelle de la journée
+#
+# [ ] 9. Avant la fin du concours
+#     - Vérifier que toutes les fonctionnalités développées sont bien
+#       intégrées à l'expérience globale de l'application (pas des features
+#       isolées)
+#     - Relire le règlement complet du concours pour les modalités
+#       d'évaluation (non détaillées dans la doc API)
+#
+###

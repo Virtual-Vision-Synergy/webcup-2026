@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 /**
+ * user_id n'est volontairement PAS remplissable : il est assigné dans le code.
  * Service municipal de Nova Terra (annuaire public).
  *
  * user_id et slug ne sont volontairement PAS remplissables : ils sont assignés dans le code.

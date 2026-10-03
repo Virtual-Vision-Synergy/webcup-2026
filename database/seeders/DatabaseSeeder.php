@@ -2,7 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Actualite;
 use App\Models\Demarche;
+use App\Models\Message;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -57,6 +59,10 @@ class DatabaseSeeder extends Seeder
         $users = User::all();
 
         $this->call(ServiceSeeder::class);
+
+        Actualite::factory(20)->recycle($users)->create();
+
+        Message::factory(20)->recycle($users)->create();
 
         $services = Service::all();
         Demarche::factory(20)->recycle($users)->recycle($services)->create();

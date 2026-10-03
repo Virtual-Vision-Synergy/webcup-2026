@@ -85,6 +85,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('profil/appareils/{knownDevice}/pas-moi', [KnownDeviceController::class, 'confirm'])->name('profile.devices.confirm');
     Route::post('profil/appareils/{knownDevice}/pas-moi', [KnownDeviceController::class, 'notMe'])->name('profile.devices.not-me');
 
+    // F55 : export des données personnelles de l'utilisateur connecté (aucun identifiant dans l'URL ; UserPolicy::exportPersonalData).
+    Route::livewire('profil/mes-donnees', 'pages::profile.mes-donnees')->name('profile.data');
+
     // F72 : « Par où commencer ? » — services recommandés selon la situation de l'habitant (OnboardingPolicy::parOuCommencer).
     Route::livewire('par-ou-commencer', 'pages::onboarding.par-ou-commencer')
         ->middleware('can:parOuCommencer,'.Onboarding::class)

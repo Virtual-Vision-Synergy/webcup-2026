@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Users\Tables;
 
+use App\Models\Role;
 use App\Models\User;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -22,11 +23,14 @@ class UsersTable
                 TextColumn::make('email')
                     ->label('E-mail')
                     ->searchable(),
-                TextColumn::make('role')
+                TextColumn::make('role.label')
                     ->label('Rôle')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => $state === 'admin' ? 'Administrateur' : 'Utilisateur')
-                    ->color(fn (string $state): string => $state === 'admin' ? 'warning' : 'gray'),
+                    ->color(fn (User $record): string => match ($record->role->code) {
+                        Role::ADMIN => 'warning',
+                        Role::AGENT => 'info',
+                        default => 'gray',
+                    }),
                 TextColumn::make('two_factor_confirmed_at')
                     ->label('2FA')
                     ->badge()
@@ -38,14 +42,12 @@ class UsersTable
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
             ])
+            ->modifyQueryUsing(fn ($query) => $query->with('role'))
             ->defaultSort('created_at', 'desc')
             ->filters([
-                SelectFilter::make('role')
+                SelectFilter::make('role_id')
                     ->label('Rôle')
-                    ->options([
-                        'user' => 'Utilisateur',
-                        'admin' => 'Administrateur',
-                    ]),
+                    ->relationship('role', 'label'),
             ])
             ->recordActions([
                 EditAction::make(),

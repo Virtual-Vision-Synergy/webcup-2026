@@ -12,6 +12,11 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('services/create', 'pages::services.form')->name('services.create');
     Route::livewire('services/{service}/edit', 'pages::services.form')->name('services.edit');
 
+    Route::livewire('roles', 'pages::roles.index')->name('roles.index');
+    Route::livewire('roles/create', 'pages::roles.form')->name('roles.create');
+    Route::livewire('roles/{role}', 'pages::roles.show')->name('roles.show');
+    Route::livewire('roles/{role}/edit', 'pages::roles.form')->name('roles.edit');
+
     // make:feature:routes
 });
 

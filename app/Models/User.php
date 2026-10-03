@@ -8,6 +8,7 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
@@ -16,6 +17,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 
 /**
  * @property int $id
+ * @property int $role_id
+ * @property-read Role $role
  * @property string $name
  * @property string $email
  * @property Carbon|null $email_verified_at
@@ -26,6 +29,9 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $remember_token
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ *
+ * role_id n'est volontairement PAS remplissable : il est assigné dans le code (inscription, admin).
+ * L'ancienne colonne texte « role » existe encore en base mais n'est plus utilisée.
  */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
@@ -64,8 +70,58 @@ class User extends Authenticatable implements FilamentUser
         return $this->isAdmin();
     }
 
+    /**
+     * L'ancienne colonne texte « role » existe encore en base : sans ceci, $user->role
+     * renverrait cette chaîne au lieu de la relation vers Role.
+     */
+    public function getAttribute($key): mixed
+    {
+        return $key === 'role' ? $this->getRelationValue('role') : parent::getAttribute($key);
+    }
+
+    /**
+     * @return BelongsTo<Role, $this>
+     */
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function hasRole(string $code): bool
+    {
+        return $this->role_id === Role::idFor($code);
+    }
+
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->hasRole(Role::ADMIN);
+    }
+
+    public function isAgent(): bool
+    {
+        return $this->hasRole(Role::AGENT);
+    }
+
+    public function isCitoyen(): bool
+    {
+        return $this->hasRole(Role::CITOYEN);
+    }
+
+    /**
+     * Seul point de passage pour changer un rôle (droits vérifiés par UserPolicy::updateRole).
+     *
+     * @throws \DomainException si on retire le rôle admin au dernier administrateur
+     */
+    public function changerRole(Role $role): void
+    {
+        $adminId = Role::idFor(Role::ADMIN);
+
+        if ($this->role_id === $adminId && $role->id !== $adminId
+            && self::where('role_id', $adminId)->count() <= 1) {
+            throw new \DomainException('Impossible de retirer le rôle du dernier administrateur.');
+        }
+
+        $this->role()->associate($role);
+        $this->save();
     }
 }

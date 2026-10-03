@@ -52,4 +52,13 @@ class ServicePolicy
     {
         return $user->isAdmin();
     }
+
+    /**
+     * F64 : mettre à jour l'état (disponible, perturbé, indisponible) depuis la fiche du service.
+     * F70 : agent rattaché à ce service ou administrateur ; jamais un citoyen.
+     */
+    public function updateStatus(User $user, Service $service): bool
+    {
+        return $user->isAdmin() || ($user->isAgent() && $user->canAccessService($service));
+    }
 }

@@ -1,11 +1,15 @@
 <?php
 
+use App\Models\ActionLog;
 use App\Models\Service;
 use App\Services\OnboardingProgress;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Computed;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -14,10 +18,22 @@ new #[Title('Service')] class extends Component {
     #[Locked]
     public Service $record;
 
+    /** F64 : formulaire « Mettre à jour l'état » (agent du service ou admin). */
+    public string $etat = '';
+
+    public string $motif = '';
+
+    public string $retourPrevuLe = '';
+
+    public string $alternativeTexte = '';
+
+    public string $alternativeUrl = '';
+
     public function mount(Service $service): void
     {
         $this->authorize('view', $service);
         $this->record = $service;
+        $this->remplirFormulaireEtat();
 
         // Parcours de prise en main (D12), étape « Trouver un service » : sans effet hors parcours en cours.
         OnboardingProgress::pour(auth()->user())->marquerServiceVisite($service);
@@ -44,6 +60,58 @@ new #[Title('Service')] class extends Component {
             ->get(['id', 'nom', 'slug']);
     }
 
+    /**
+     * F64 : change l'état du service (disponible, perturbé, indisponible), avec motif, retour prévu et alternative.
+     */
+    public function mettreAJourEtat(): void
+    {
+        $this->authorize('updateStatus', $this->record);
+
+        $this->validate([
+            'etat' => ['required', Rule::in(Service::ETAT_OPTIONS)],
+            'motif' => ['nullable', Rule::requiredIf($this->etat !== Service::ETAT_DISPONIBLE), 'string', 'max:255'],
+            'retourPrevuLe' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'alternativeTexte' => ['nullable', 'string', 'max:255'],
+            'alternativeUrl' => ['nullable', 'url:http,https', 'max:255'],
+        ], [
+            'motif.required' => __('Indiquez le motif : il est affiché aux habitants.'),
+            'retourPrevuLe.after_or_equal' => __('La date de retour prévue ne peut pas être passée.'),
+            'alternativeUrl.url' => __('Le lien doit être une adresse web commençant par http:// ou https://.'),
+        ], [
+            'etat' => __('état'),
+            'motif' => __('motif'),
+            'retourPrevuLe' => __('date de retour prévue'),
+            'alternativeTexte' => __('alternative'),
+            'alternativeUrl' => __('lien de l\'alternative'),
+        ]);
+
+        $this->record->mettreAJourEtat(
+            $this->etat,
+            $this->motif,
+            $this->retourPrevuLe !== '' ? Carbon::parse($this->retourPrevuLe) : null,
+            $this->alternativeTexte,
+            $this->alternativeUrl,
+        );
+        ActionLog::record('service_etat_modifie', $this->record);
+        Cache::forget('landing.etat');
+
+        unset($this->alternatives);
+        $this->remplirFormulaireEtat();
+        $this->modal('etat-service')->close();
+
+        Flux::toast(variant: 'success', text: __('État du service mis à jour : :etat.', ['etat' => __($this->record->libelleEtat())]));
+    }
+
+    private function remplirFormulaireEtat(): void
+    {
+        $this->resetValidation();
+        $this->etat = $this->record->etat();
+        $this->motif = (string) $this->record->motif_indisponibilite;
+        $this->retourPrevuLe = (string) $this->record->retour_prevu_le?->toDateString();
+        $this->alternativeTexte = (string) $this->record->alternative_texte;
+        $this->alternativeUrl = (string) $this->record->alternative_url;
+    }
+
     public function delete(): void
     {
         $this->authorize('delete', $this->record);
@@ -63,11 +131,8 @@ new #[Title('Service')] class extends Component {
         :breadcrumb="[__('Mon espace') => route('dashboard'), __('Services') => route('services.index'), __($record->nom) => null]"
     >
         <x-slot:actions>
-            @if (! $record->estIndisponible() && Route::has('demarches.create'))
-                <flux:button variant="primary" icon="document-plus" :href="route('demarches.create', ['service' => $record->id])" wire:navigate>{{ __('Commencer une démarche') }}</flux:button>
-            @endif
             @if (Route::has('messages.create'))
-                <flux:button variant="primary" icon="mail" :href="route('messages.create')" class="tn-cta" wire:navigate>{{ __('Écrire au service') }}</flux:button>
+                <flux:button icon="mail" :href="route('messages.create')" wire:navigate>{{ __('Écrire au service') }}</flux:button>
             @endif
             @can('update', $record)
                 <flux:button icon="pencil-square" :href="route('services.edit', $record)" wire:navigate>{{ __('Modifier') }}</flux:button>
@@ -78,49 +143,70 @@ new #[Title('Service')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
-    @if ($record->estIndisponible())
-        <div class="rounded-md border border-magenta/35 bg-magenta/8 p-5 md:p-6" role="status">
-            <div class="flex items-start gap-3">
-                <flux:icon name="no-symbol" class="mt-0.5 size-6 shrink-0 text-magenta" aria-hidden="true" />
-                <div class="min-w-0 space-y-3">
-                    <div>
-                        <flux:badge color="red" size="sm">{{ __('Indisponible') }}</flux:badge>
-                        <p class="mt-2 font-semibold text-ink">{{ $record->motif_indisponibilite ?: __('Ce service est momentanément indisponible.') }}</p>
-                        <p class="text-sm text-ink-2">{{ __('Les démarches et les rendez-vous en ligne sont suspendus pour ce service.') }}</p>
-                    </div>
-                    <div>
-                        <x-tn.section-label as="h2" class="mb-2">{{ __('Que faire maintenant ?') }}</x-tn.section-label>
-                        <ul class="space-y-2 text-sm text-ink">
-                            <li class="flex gap-2">
-                                <flux:icon name="calendar-days" class="mt-0.5 size-4 shrink-0 text-cyan" aria-hidden="true" />
-                                <span>{{ $record->retour_prevu_le ? __('Revenez à partir du :date : retour du service prévu ce jour-là.', ['date' => $record->retour_prevu_le->translatedFormat('l j F Y')]) : __('Revenez plus tard : la date de retour n\'est pas encore connue.') }}</span>
-                            </li>
-                            @if ($this->alternatives->isNotEmpty())
-                                <li class="flex gap-2">
-                                    <flux:icon name="arrow-right-circle" class="mt-0.5 size-4 shrink-0 text-cyan" aria-hidden="true" />
-                                    <span>
-                                        {{ __('Utilisez un autre service :') }}
-                                        @foreach ($this->alternatives as $alternative)
-                                            <a href="{{ route('services.show', $alternative) }}" wire:navigate class="text-cyan hover:underline">{{ __($alternative->nom) }}</a>@if (! $loop->last), @endif
-                                        @endforeach
-                                    </span>
-                                </li>
-                            @endif
-                            <li class="flex gap-2">
-                                <flux:icon name="phone" class="mt-0.5 size-4 shrink-0 text-cyan" aria-hidden="true" />
-                                <span>
-                                    {{ __('Contactez la mairie') }}@if ($record->telephone) {{ __('au') }} <a href="tel:{{ preg_replace('/[^0-9+]/', '', $record->telephone) }}" class="font-mono text-cyan hover:underline">{{ $record->telephone }}</a>@endif
-                                    @if (Route::has('messages.create'))
-                                        {{ __('ou') }} <a href="{{ route('messages.create') }}" wire:navigate class="text-cyan hover:underline">{{ __('envoyez un message') }}</a>
-                                    @endif
-                                </span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
+    @if (session('service-indisponible'))
+        <flux:callout variant="danger" icon="exclamation-triangle" role="alert">
+            <flux:callout.text>{{ session('service-indisponible') }}</flux:callout.text>
+        </flux:callout>
     @endif
+
+    {{-- F64 : état actuel, puis encart d'interruption, puis seulement les boutons de démarche et de rendez-vous. --}}
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <x-service-status :service="$record" />
+        @can('updateStatus', $record)
+            <flux:modal.trigger name="etat-service">
+                <flux:button size="sm" icon="arrow-path">{{ __('Mettre à jour l\'état') }}</flux:button>
+            </flux:modal.trigger>
+        @endcan
+    </div>
+
+    <x-service-interruption :service="$record" :alternatives="$this->alternatives" />
+
+    <div class="flex flex-wrap gap-2">
+        @if ($record->estIndisponible())
+            <flux:button variant="primary" icon="no-symbol" disabled aria-describedby="demarche-impossible">{{ __('Démarche momentanément impossible') }}</flux:button>
+            <p id="demarche-impossible" class="sr-only">{{ __('Le service est indisponible : consultez l\'alternative proposée ci-dessus.') }}</p>
+        @else
+            @if (Route::has('demarches.create'))
+                <flux:button variant="primary" icon="document-plus" :href="route('demarches.create', ['service' => $record->id])" class="tn-cta" wire:navigate>{{ __('Commencer une démarche') }}</flux:button>
+            @endif
+            @if ($record->duree_rendez_vous > 0 && Route::has('appointments.create'))
+                <flux:button icon="calendar-days" :href="route('appointments.create', ['service' => $record->slug])" wire:navigate>{{ __('Prendre rendez-vous') }}</flux:button>
+            @endif
+        @endif
+    </div>
+
+    @can('updateStatus', $record)
+        <flux:modal name="etat-service" class="md:w-lg">
+            <form wire:submit="mettreAJourEtat" class="space-y-5">
+                <div>
+                    <flux:heading size="lg">{{ __('Mettre à jour l\'état') }}</flux:heading>
+                    <flux:text class="mt-1">{{ __('L\'état est affiché aux habitants sur la fiche et dans le catalogue.') }}</flux:text>
+                </div>
+                <flux:select wire:model.live="etat" :label="__('État')">
+                    @foreach (Service::ETAT_LABELS as $valeur => $libelle)
+                        <flux:select.option value="{{ $valeur }}">{{ __($libelle) }}</flux:select.option>
+                    @endforeach
+                </flux:select>
+                @if ($etat !== Service::ETAT_DISPONIBLE)
+                    <flux:input wire:model="motif" :label="__('Motif affiché aux habitants')" :placeholder="__('Ex. Fermeture pour travaux')" required />
+                    <flux:input type="date" wire:model="retourPrevuLe" :label="__('Retour prévu le (facultatif)')" :min="now(\App\Models\CreneauRendezVous::fuseau())->toDateString()" />
+                    <flux:input wire:model="alternativeTexte" :label="__('Alternative proposée (facultatif)')" :placeholder="__('Ex. Point lecture de la mairie annexe')" />
+                    <flux:input type="url" wire:model="alternativeUrl" :label="__('Lien de l\'alternative (facultatif)')" placeholder="https://" />
+                @else
+                    <flux:text>{{ __('Le motif, la date de retour et l\'alternative seront effacés.') }}</flux:text>
+                @endif
+                <div class="flex justify-end gap-2">
+                    <flux:modal.close>
+                        <flux:button variant="ghost">{{ __('Annuler') }}</flux:button>
+                    </flux:modal.close>
+                    <flux:button type="submit" variant="primary">
+                        <span wire:loading.remove wire:target="mettreAJourEtat">{{ __('Enregistrer l\'état') }}</span>
+                        <span wire:loading wire:target="mettreAJourEtat">{{ __('Enregistrement…') }}</span>
+                    </flux:button>
+                </div>
+            </form>
+        </flux:modal>
+    @endcan
 
     <x-audit-history :subject="$record" variant="resume" />
 

@@ -33,8 +33,17 @@ new #[Title('Démarche')] class extends Component {
 
             // Pré-sélection du service (lien « Commencer une démarche » du parcours de prise en main, D12).
             $serviceId = request()->integer('service');
-            if ($serviceId > 0 && Service::query()->disponibles()->whereKey($serviceId)->exists()) {
-                $this->service_id = (string) $serviceId;
+            $service = $serviceId > 0 ? Service::query()->find($serviceId) : null;
+
+            // F64 : lien direct vers un service indisponible → retour sur sa fiche, avec le motif et l'alternative.
+            if ($service?->estIndisponible()) {
+                $this->refuserServiceIndisponible($service);
+
+                return;
+            }
+
+            if ($service !== null) {
+                $this->service_id = (string) $service->id;
             }
         }
     }
@@ -54,7 +63,10 @@ new #[Title('Démarche')] class extends Component {
                 function (string $attribute, mixed $value, \Closure $fail): void {
                     $service = filled($value) ? Service::query()->find($value) : null;
 
-                    if ($service?->estIndisponible()) {
+                    // F64 : une démarche déjà en cours n'est pas bloquée tant qu'elle ne change pas de service.
+                    $dejaRattachee = $this->record !== null && (string) $this->record->service_id === (string) $value;
+
+                    if ($service?->estIndisponible() && ! $dejaRattachee) {
                         $fail(__('Le service « :nom » est momentanément indisponible : choisissez un autre service ou « Je ne sais pas », la mairie orientera votre demande.', ['nom' => $service->nom]));
                     }
                 },
@@ -70,7 +82,7 @@ new #[Title('Démarche')] class extends Component {
     #[Computed]
     public function serviceOptions(): Collection
     {
-        return Service::query()->orderBy('nom')->get(['id', 'nom', 'indisponible_depuis', 'motif_indisponibilite', 'retour_prevu_le']);
+        return Service::query()->orderBy('nom')->get(['id', 'nom', 'indisponible_depuis', 'perturbe_depuis', 'motif_indisponibilite', 'retour_prevu_le']);
     }
 
     public function save(): void
@@ -78,6 +90,15 @@ new #[Title('Démarche')] class extends Component {
         $this->record
             ? $this->authorize('update', $this->record)
             : $this->authorize('create', Demarche::class);
+
+        // F64 : refus serveur d'une NOUVELLE démarche sur un service indisponible (le bouton masqué ne suffit pas).
+        $service = ! $this->record && filled($this->service_id) ? Service::query()->find($this->service_id) : null;
+
+        if ($service?->estIndisponible()) {
+            $this->refuserServiceIndisponible($service);
+
+            return;
+        }
 
         $validated = $this->validate();
 
@@ -108,6 +129,16 @@ new #[Title('Démarche')] class extends Component {
         }
 
         $this->redirectRoute('demarches.show', $record, navigate: true);
+    }
+
+    /**
+     * F64 : renvoie sur la fiche du service avec un message clair (motif, retour prévu, alternative).
+     */
+    private function refuserServiceIndisponible(Service $service): void
+    {
+        session()->flash('service-indisponible', $service->messageIndisponibilite());
+
+        $this->redirectRoute('services.show', $service, navigate: true);
     }
 }; ?>
 
@@ -163,7 +194,12 @@ new #[Title('Démarche')] class extends Component {
                         @else
                             <label wire:key="service-{{ $option->id }}" class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
                                 <input type="radio" wire:model="service_id" value="{{ $option->id }}" class="size-4 accent-[var(--color-cyan)]">
-                                <span class="font-medium text-ink">{{ $option->nom }}</span>
+                                <span class="min-w-0">
+                                    <span class="block font-medium text-ink">{{ $option->nom }}</span>
+                                    @if ($option->estPerturbe())
+                                        <span class="block text-xs text-amber">Perturbé · délais allongés</span>
+                                    @endif
+                                </span>
                             </label>
                         @endif
                     @endforeach

@@ -2,8 +2,8 @@
 
 use App\Models\Demarche;
 use App\Models\Signalement;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -25,9 +25,9 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
     /**
      * Début de la journée en cours, à l'heure locale des agents.
      */
-    protected function debutAujourdhui(): Carbon
+    protected function debutAujourdhui(): CarbonImmutable
     {
-        return now(self::FUSEAU_AFFICHAGE)->startOfDay();
+        return now(self::FUSEAU_AFFICHAGE)->toImmutable()->startOfDay();
     }
 
     /**
@@ -82,7 +82,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
         $parJour = Demarche::query()
             ->where('created_at', '>=', $debut->copy()->utc())
             ->pluck('created_at')
-            ->countBy(fn (mixed $date): string => Carbon::parse($date)->timezone(self::FUSEAU_AFFICHAGE)->toDateString());
+            ->countBy(fn (mixed $date): string => CarbonImmutable::parse($date)->timezone(self::FUSEAU_AFFICHAGE)->toDateString());
 
         $jours = [];
 

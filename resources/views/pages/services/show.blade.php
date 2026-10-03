@@ -52,6 +52,8 @@ new #[Title('Service')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    <x-audit-history :subject="$record" variant="resume" />
+
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <x-tn.surface>
             <x-tn.section-label as="h2" class="mb-3">{{ __('Missions') }}</x-tn.section-label>
@@ -78,4 +80,6 @@ new #[Title('Service')] class extends Component {
             @endif
         </x-tn.panel>
     </div>
+
+    <x-audit-history :subject="$record" />
 </section>

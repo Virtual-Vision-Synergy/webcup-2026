@@ -56,6 +56,8 @@ new #[Title('Actualite')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    <x-audit-history :subject="$record" variant="resume" />
+
     @if ($record->image)
         <img src="{{ Storage::url($record->image) }}" alt="{{ __('Illustration de l\'annonce : :titre', ['titre' => $record->titre]) }}" class="max-h-[420px] w-full rounded-md border border-line object-cover" />
     @endif
@@ -68,4 +70,6 @@ new #[Title('Actualite')] class extends Component {
         <span class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-ink-2">Mise en ligne · {{ $record->created_at->format('d.m.Y · H:i') }}</span>
         <a href="{{ route('actualites.index') }}" wire:navigate class="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-cyan hover:underline">{{ __('← Toutes les actualités') }}</a>
     </footer>
+
+    <x-audit-history :subject="$record" />
 </article>

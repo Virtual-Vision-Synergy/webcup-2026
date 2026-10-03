@@ -45,6 +45,8 @@ new #[Title('Message')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    <x-audit-history :subject="$record" variant="resume" />
+
     <x-tn.surface>
         <div class="flex items-center gap-3 border-b border-line pb-4">
             <flux:avatar :name="$record->nom" />
@@ -56,4 +58,6 @@ new #[Title('Message')] class extends Component {
         </div>
         <p class="mt-4 whitespace-pre-line leading-relaxed text-ink">{{ $record->message ?? '—' }}</p>
     </x-tn.surface>
+
+    <x-audit-history :subject="$record" />
 </section>

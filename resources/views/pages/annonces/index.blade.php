@@ -117,6 +117,7 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
 <section class="w-full space-y-6">
     <x-tn.page-header
         label="Haut Conseil de la Ville"
+        :breadcrumb="['Espace agent' => route('agent.index'), 'Messages généraux' => null]"
         title="Messages généraux"
         subtitle="Diffusez une information à tous les habitants : elle s’affiche en bandeau sur toutes les pages pendant sa période de validité."
     >

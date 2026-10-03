@@ -82,6 +82,7 @@ new #[Title('Bienvenue à Nova Terra')] class extends Component {
         {{-- PARCOURS --}}
         <x-tn.page-header
             label="Bienvenue à Nova Terra"
+            :breadcrumb="['Mon espace' => route('dashboard'), 'Bienvenue' => null]"
             :title="'Bonjour '.$prenom.', bienvenue chez vous !'"
             subtitle="Votre mairie est désormais en ligne. Trois étapes simples pour bien démarrer : comptez cinq minutes."
         />
@@ -119,7 +120,7 @@ new #[Title('Bienvenue à Nova Terra')] class extends Component {
                             <h2 class="flex flex-wrap items-center gap-2 font-semibold text-ink">
                                 <span>Étape {{ $numero }} · {{ $etape['titre'] }}</span>
                                 <span @class([
-                                    'rounded-xs border px-2 py-0.5 font-mono text-[10.5px] uppercase tracking-[.06em]',
+                                    'rounded-xs border px-2 py-0.5 font-mono text-[0.65625rem] uppercase tracking-[.06em]',
                                     'border-green/40 text-green' => $etape['faite'],
                                     'border-cyan text-cyan' => $enCours,
                                     'border-line text-ink-2' => ! $etape['faite'] && ! $enCours,

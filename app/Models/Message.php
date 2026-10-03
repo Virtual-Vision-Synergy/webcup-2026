@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Database\Factories\MessageFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +16,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Message extends Model
 {
     /** @use HasFactory<MessageFactory> */
-    use HasFactory;
+    use Auditable, HasFactory;
+
+    /**
+     * Nom lisible dans le journal d'audit (F47).
+     */
+    public function auditLabel(): string
+    {
+        return (string) $this->sujet;
+    }
 
     /**
      * @return BelongsTo<User, $this>

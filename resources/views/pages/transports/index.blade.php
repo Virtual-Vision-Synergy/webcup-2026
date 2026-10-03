@@ -156,7 +156,7 @@ new #[Title('Transports')] class extends Component {
             @endforeach
         </flux:select>
         <flux:checkbox wire:model.live="perturbees" label="Lignes perturbées uniquement" />
-        <span wire:loading class="font-mono text-[11px] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
     </div>
 
     @if ($this->items->isEmpty())
@@ -185,7 +185,7 @@ new #[Title('Transports')] class extends Component {
                                 </a>
                             </h2>
                             <div class="mt-1 flex flex-wrap items-center gap-2">
-                                <span class="font-mono text-[11px] uppercase tracking-[.06em] text-ink-2">{{ $item->modeLabel() }}</span>
+                                <span class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-ink-2">{{ $item->modeLabel() }}</span>
                                 <x-tn.status-badge :etat="$item->etatBadge()">{{ $item->etatLabel() }}</x-tn.status-badge>
                             </div>
                         </div>

@@ -100,7 +100,7 @@ new #[Title('Actualites')] class extends Component {
         @can('create', Actualite::class)
             <flux:checkbox wire:model.live="mine" label="Mes publications uniquement" />
         @endcan
-        <span wire:loading class="font-mono text-[11px] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
     </div>
 
     @if ($this->items->isEmpty())
@@ -120,7 +120,7 @@ new #[Title('Actualites')] class extends Component {
                 </div>
                 <div class="flex flex-col p-6 md:p-8">
                     <time datetime="{{ $aLaUne->date?->toDateString() }}" class="font-mono text-sm text-ink-2">{{ $aLaUne->date?->translatedFormat('l j F Y') }}</time>
-                    <h2 class="tn-display mt-3 text-2xl leading-tight font-semibold text-ink md:text-[30px]">
+                    <h2 class="tn-display mt-3 text-2xl leading-tight font-semibold text-ink md:text-[1.875rem]">
                         <a href="{{ route('actualites.show', $aLaUne) }}" wire:navigate class="hover:text-cyan">{{ $aLaUne->titre }}</a>
                     </h2>
                     <p class="mt-3 leading-relaxed text-ink-2">{{ Str::limit(strip_tags((string) $aLaUne->contenu), 260) }}</p>

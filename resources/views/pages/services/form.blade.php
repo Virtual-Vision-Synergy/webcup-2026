@@ -14,7 +14,7 @@ new #[Title('Service')] class extends Component {
 
     public string $nom = '';
     public string $description = '';
-    public string $icone = '';
+    public string $categorie = '';
 
     public function mount(?Service $service = null): void
     {
@@ -23,7 +23,7 @@ new #[Title('Service')] class extends Component {
             $this->record = $service;
             $this->nom = (string) ($service->nom ?? '');
             $this->description = (string) ($service->description ?? '');
-            $this->icone = (string) ($service->icone ?? '');
+            $this->categorie = (string) ($service->categorie ?? '');
         } else {
             $this->authorize('create', Service::class);
         }
@@ -37,7 +37,7 @@ new #[Title('Service')] class extends Component {
         return [
             'nom' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:5000'],
-            'icone' => ['required', 'string', 'max:255'],
+            'categorie' => ['required', Rule::in(Service::CATEGORIE_OPTIONS)],
         ];
     }
 
@@ -76,7 +76,11 @@ new #[Title('Service')] class extends Component {
 
         <flux:textarea wire:model="description" label="Description" rows="5" required />
 
-        <flux:input wire:model="icone" label="Icone" required />
+        <flux:select wire:model="categorie" label="Catégorie" placeholder="Choisir une catégorie…" required>
+            @foreach (Service::CATEGORIE_LABELS as $valeur => $label)
+                <flux:select.option value="{{ $valeur }}">{{ $label }}</flux:select.option>
+            @endforeach
+        </flux:select>
 
         <div class="flex items-center gap-3">
             <flux:button type="submit" variant="primary">Enregistrer</flux:button>

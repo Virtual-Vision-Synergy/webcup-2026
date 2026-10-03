@@ -78,15 +78,14 @@ new #[Title('Actualite')] class extends Component {
     }
 }; ?>
 
-<section class="w-full max-w-2xl space-y-6">
-    <div>
-        <flux:link :href="route('actualites.index')" wire:navigate class="text-sm">&larr; Actualites</flux:link>
-        <flux:heading size="xl" level="1" class="mt-2">
-            {{ $record ? 'Modifier' : 'Ajouter' }} : Actualite
-        </flux:heading>
-    </div>
+<section class="mx-auto w-full max-w-2xl space-y-6">
+    <x-tn.page-header
+        label="Fil du Haut Conseil"
+        :title="$record ? 'Modifier l’annonce' : 'Publier une annonce'"
+        :breadcrumb="['Actualités' => route('actualites.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
+    />
 
-    <form wire:submit="save" class="space-y-6">
+    <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
         <flux:input wire:model="titre" label="Titre" required />
 
         <flux:textarea wire:model="contenu" label="Contenu" rows="5" required />

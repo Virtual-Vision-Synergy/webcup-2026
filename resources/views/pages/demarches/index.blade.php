@@ -112,85 +112,104 @@ new #[Title('Mes démarches')] class extends Component {
     }
 }; ?>
 
-<section class="w-full space-y-6">
-    <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-            <flux:heading size="xl" level="1">Mes démarches</flux:heading>
-            <flux:text class="mt-1">{{ $this->items->total() }} démarche(s){{ $this->voitToutesLesDemarches ? ' au total' : '' }}</flux:text>
-        </div>
 
-        @can('create', \App\Models\Demarche::class)
-            <flux:button variant="primary" icon="plus" :href="route('demarches.create')" wire:navigate>
-                Nouvelle démarche
-            </flux:button>
-        @endcan
-    </div>
+<section class="mx-auto w-full max-w-6xl space-y-6">
+    <x-tn.page-header
+        label="Démarches"
+        title="Mes démarches"
+        :subtitle="$this->items->total().' démarche(s)'.($this->voitToutesLesDemarches ? ' au total' : '')"
+        :breadcrumb="['Mon espace' => route('dashboard'), 'Démarches' => null]"
+    >
+        <x-slot:actions>
+            @can('create', Demarche::class)
+                <flux:button variant="primary" icon="plus" :href="route('demarches.create')" class="tn-cta" wire:navigate>
+                    Nouvelle démarche
+                </flux:button>
+            @endcan
+        </x-slot:actions>
+    </x-tn.page-header>
 
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher…" class="sm:max-w-xs" />
-        <flux:select wire:model.live="filterServiceId" class="sm:max-w-52">
+    {{-- Filtres --}}
+    <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher…" aria-label="Rechercher une démarche" class="sm:max-w-xs" />
+        <flux:select wire:model.live="filterServiceId" aria-label="Filtrer par service" class="sm:max-w-52">
             <flux:select.option value="">Service : tous</flux:select.option>
             @foreach ($this->serviceOptions as $option)
                 <flux:select.option :value="$option->id">{{ $option->nom }}</flux:select.option>
             @endforeach
         </flux:select>
-        <flux:select wire:model.live="filterStatut" class="sm:max-w-52">
+        <flux:select wire:model.live="filterStatut" aria-label="Filtrer par statut" class="sm:max-w-52">
             <flux:select.option value="">Statut : tous</flux:select.option>
-            @foreach (\App\Models\Demarche::STATUT_OPTIONS as $option)
-                <flux:select.option :value="$option">{{ \App\Models\Demarche::libelleStatut($option) }}</flux:select.option>
+            @foreach (Demarche::STATUT_OPTIONS as $option)
+                <flux:select.option :value="$option">{{ Demarche::libelleStatut($option) }}</flux:select.option>
             @endforeach
         </flux:select>
         @if ($this->voitToutesLesDemarches)
             <flux:checkbox wire:model.live="mine" label="Mes démarches uniquement" />
         @endif
+        <span wire:loading class="font-mono text-[11px] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
     </div>
 
     @if ($this->items->isEmpty())
-        <flux:card class="py-12 text-center">
-            <flux:icon.document-text class="mx-auto size-10 text-zinc-400" />
-            <flux:heading class="mt-2">Aucune démarche pour le moment</flux:heading>
-            <flux:text class="mt-2">Modifiez les filtres ou déposez votre première démarche.</flux:text>
-            <flux:button variant="primary" icon="plus" :href="route('demarches.create')" class="mt-4" wire:navigate>
-                Nouvelle démarche
-            </flux:button>
-        </flux:card>
+        <x-tn.empty icon="file-text" title="Aucune démarche pour le moment" text="Modifiez les filtres ou déposez votre première démarche.">
+            <flux:button variant="primary" icon="plus" :href="route('demarches.create')" wire:navigate>Nouvelle démarche</flux:button>
+        </x-tn.empty>
     @else
-        <flux:table :paginate="$this->items">
-            <flux:table.columns>
-                <flux:table.column>Titre</flux:table.column>
-                <flux:table.column>Service</flux:table.column>
-                <flux:table.column>Statut</flux:table.column>
-                @if ($this->voitToutesLesDemarches)
-                    <flux:table.column>Auteur</flux:table.column>
-                @endif
-                <flux:table.column>Déposée le</flux:table.column>
-                <flux:table.column></flux:table.column>
-            </flux:table.columns>
+        {{-- Mobile : liste --}}
+        <ul class="md:hidden">
+            @foreach ($this->items as $item)
+                <li wire:key="m-{{ $item->id }}">
+                    <x-tn.list-row icon="file-text" :href="route('demarches.show', $item)" :stack="true">
+                        <span class="block truncate font-medium text-ink">{{ $item->titre }}</span>
+                        <span class="block truncate text-sm text-ink-2">{{ $item->service?->nom ?? 'Service non précisé' }} · <span class="font-mono text-xs">{{ $item->created_at->format('d.m.Y') }}</span></span>
+                        <x-slot:aside>
+                            <x-tn.status-badge :etat="$item->etatStatut()">{{ Demarche::libelleStatut($item->statut) }}</x-tn.status-badge>
+                        </x-slot:aside>
+                    </x-tn.list-row>
+                </li>
+            @endforeach
+        </ul>
+        <div class="md:hidden">{{ $this->items->links() }}</div>
 
-            <flux:table.rows>
-                @foreach ($this->items as $item)
-                    <flux:table.row wire:key="row-{{ $item->id }}">
-                        <flux:table.cell><flux:link :href="route('demarches.show', $item)" wire:navigate class="font-medium">{{ $item->titre }}</flux:link></flux:table.cell>
-                        <flux:table.cell>{{ $item->service?->nom ?? '—' }}</flux:table.cell>
-                        <flux:table.cell><flux:badge size="sm" :color="$item->couleurStatut()">{{ \App\Models\Demarche::libelleStatut($item->statut) }}</flux:badge></flux:table.cell>
-                        @if ($this->voitToutesLesDemarches)
-                            <flux:table.cell>{{ $item->user?->name }}</flux:table.cell>
-                        @endif
-                        <flux:table.cell>{{ $item->created_at->format('d/m/Y') }}</flux:table.cell>
-                        <flux:table.cell>
-                            <div class="flex justify-end gap-1">
-                                <flux:button size="sm" variant="ghost" icon="eye" :href="route('demarches.show', $item)" wire:navigate />
-                                @can('update', $item)
-                                    <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('demarches.edit', $item)" wire:navigate />
-                                @endcan
-                                @can('delete', $item)
-                                    <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer cette démarche ?" />
-                                @endcan
-                            </div>
-                        </flux:table.cell>
-                    </flux:table.row>
-                @endforeach
-            </flux:table.rows>
-        </flux:table>
+        {{-- Desktop : tableau --}}
+        <x-tn.surface padding="px-4 py-2" class="max-md:hidden">
+            <flux:table :paginate="$this->items">
+                <flux:table.columns>
+                    <flux:table.column>Objet</flux:table.column>
+                    <flux:table.column>Service</flux:table.column>
+                    <flux:table.column>Statut</flux:table.column>
+                    @if ($this->voitToutesLesDemarches)
+                        <flux:table.column>Auteur</flux:table.column>
+                    @endif
+                    <flux:table.column>Déposée le</flux:table.column>
+                    <flux:table.column><span class="sr-only">Actions</span></flux:table.column>
+                </flux:table.columns>
+
+                <flux:table.rows>
+                    @foreach ($this->items as $item)
+                        <flux:table.row wire:key="row-{{ $item->id }}">
+                            <flux:table.cell><a href="{{ route('demarches.show', $item) }}" wire:navigate class="font-medium text-ink hover:text-cyan">{{ $item->titre }}</a></flux:table.cell>
+                            <flux:table.cell>{{ $item->service?->nom ?? '—' }}</flux:table.cell>
+                            <flux:table.cell><x-tn.status-badge :etat="$item->etatStatut()">{{ Demarche::libelleStatut($item->statut) }}</x-tn.status-badge></flux:table.cell>
+                            @if ($this->voitToutesLesDemarches)
+                                <flux:table.cell>{{ $item->user?->name }}</flux:table.cell>
+                            @endif
+                            <flux:table.cell class="font-mono text-xs">{{ $item->created_at->format('d.m.Y') }}</flux:table.cell>
+                            <flux:table.cell>
+                                <div class="flex justify-end gap-1">
+                                    <flux:button size="sm" variant="ghost" icon="eye" :href="route('demarches.show', $item)" wire:navigate aria-label="Voir" />
+                                    @can('update', $item)
+                                        <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('demarches.edit', $item)" wire:navigate aria-label="Modifier" />
+                                    @endcan
+                                    @can('delete', $item)
+                                        <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer cette démarche ?" aria-label="Supprimer" />
+                                    @endcan
+                                </div>
+                            </flux:table.cell>
+                        </flux:table.row>
+                    @endforeach
+                </flux:table.rows>
+            </flux:table>
+        </x-tn.surface>
     @endif
 </section>

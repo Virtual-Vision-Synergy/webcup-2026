@@ -29,25 +29,22 @@ new #[Title('Rôle')] class extends Component {
     }
 }; ?>
 
-<section class="w-full max-w-3xl space-y-6">
-    <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-            <flux:link :href="route('roles.index')" wire:navigate class="text-sm">&larr; Rôles</flux:link>
-            <flux:heading size="xl" level="1" class="mt-2">{{ $record->code }}</flux:heading>
-            <flux:text class="mt-1">
-                {{ $record->label }} · {{ $record->users_count }} compte(s)
-            </flux:text>
-        </div>
-
-        <div class="flex gap-2">
+<section class="mx-auto w-full max-w-3xl space-y-6">
+    <x-tn.page-header
+        label="Administration"
+        :title="$record->code"
+        :subtitle="$record->label.' · '.$record->users_count.' compte(s)'"
+        :breadcrumb="['Rôles' => route('roles.index'), $record->code => null]"
+    >
+        <x-slot:actions>
             @can('update', $record)
                 <flux:button icon="pencil-square" :href="route('roles.edit', $record)" wire:navigate>Modifier</flux:button>
             @endcan
             @can('delete', $record)
                 <flux:button variant="danger" icon="trash" wire:click="delete" wire:confirm="Supprimer définitivement cet élément ?">Supprimer</flux:button>
             @endcan
-        </div>
-    </div>
+        </x-slot:actions>
+    </x-tn.page-header>
 
 
 

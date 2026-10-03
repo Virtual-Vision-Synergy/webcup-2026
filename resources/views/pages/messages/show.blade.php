@@ -29,46 +29,31 @@ new #[Title('Message')] class extends Component {
     }
 }; ?>
 
-<section class="w-full max-w-3xl space-y-6">
-    <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-            <flux:link :href="route('messages.index')" wire:navigate class="text-sm">&larr; Messages</flux:link>
-            <flux:heading size="xl" level="1" class="mt-2">{{ $record->nom }}</flux:heading>
-            <flux:text class="mt-1">
-                Par {{ $record->user?->name }} · {{ $record->created_at->format('d/m/Y à H:i') }}
-            </flux:text>
-        </div>
-
-        <div class="flex gap-2">
+<section class="mx-auto w-full max-w-3xl space-y-6">
+    <x-tn.page-header
+        label="Message"
+        :title="$record->sujet ?? 'Sans objet'"
+        :breadcrumb="['Messages' => route('messages.index'), 'Message' => null]"
+    >
+        <x-slot:actions>
             @can('update', $record)
                 <flux:button icon="pencil-square" :href="route('messages.edit', $record)" wire:navigate>Modifier</flux:button>
             @endcan
             @can('delete', $record)
-                <flux:button variant="danger" icon="trash" wire:click="delete" wire:confirm="Supprimer définitivement cet élément ?">Supprimer</flux:button>
+                <flux:button variant="danger" icon="trash" wire:click="delete" wire:confirm="Supprimer définitivement ce message ?">Supprimer</flux:button>
             @endcan
+        </x-slot:actions>
+    </x-tn.page-header>
+
+    <x-tn.surface>
+        <div class="flex items-center gap-3 border-b border-line pb-4">
+            <flux:avatar :name="$record->nom" />
+            <div class="min-w-0">
+                <p class="font-semibold text-ink">{{ $record->nom }}</p>
+                <p class="truncate text-sm text-ink-2">{{ $record->email ?? '—' }}</p>
+            </div>
+            <span class="ms-auto font-mono text-xs text-ink-2">{{ $record->created_at->format('d.m.Y · H:i') }}</span>
         </div>
-    </div>
-
-
-
-    <flux:card>
-        <dl class="divide-y divide-zinc-200 dark:divide-zinc-700">
-            <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Nom</dt>
-                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">{{ $record->nom ?? '—' }}</dd>
-            </div>
-            <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Email</dt>
-                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">{{ $record->email ?? '—' }}</dd>
-            </div>
-            <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Sujet</dt>
-                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0">{{ $record->sujet ?? '—' }}</dd>
-            </div>
-            <div class="py-3 sm:grid sm:grid-cols-3 sm:gap-4">
-                <dt class="text-sm font-medium text-zinc-500 dark:text-zinc-400">Message</dt>
-                <dd class="mt-1 text-sm sm:col-span-2 sm:mt-0"><p class="whitespace-pre-line">{{ $record->message ?? '—' }}</p></dd>
-            </div>
-        </dl>
-    </flux:card>
+        <p class="mt-4 whitespace-pre-line leading-relaxed text-ink">{{ $record->message ?? '—' }}</p>
+    </x-tn.surface>
 </section>

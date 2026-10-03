@@ -22,6 +22,15 @@ L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl });
 
 const cartes = new Map();
 
+// États reconnus : la couleur du marqueur indique un état (voir app/View/Components/Carte.php).
+const ETATS = ['normal', 'perturbe', 'alerte', 'info'];
+
+function urlTuiles() {
+    const style = document.documentElement.classList.contains('dark') ? 'dark_all' : 'light_all';
+
+    return `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`;
+}
+
 function urlSure(url) {
     if (typeof url !== 'string' || url === '') {
         return null;
@@ -85,13 +94,22 @@ function initialiser(el) {
     const carte = L.map(zone, { scrollWheelZoom: false }).setView(config.centre, config.zoom);
     cartes.set(el, carte);
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Tuiles claires (Positron) ou sombres (Dark Matter) selon le thème, échangées quand il change.
+    const tuiles = L.tileLayer(urlTuiles(), {
         maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        subdomains: 'abcd',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
     }).addTo(carte);
+    const observateurTheme = new MutationObserver(() => tuiles.setUrl(urlTuiles()));
+    observateurTheme.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    carte.on('unload', () => observateurTheme.disconnect());
 
     const marqueurs = points.map((p) => {
-        const marqueur = L.marker([nombre(p.lat), nombre(p.lng)], { title: p.titre ?? '', alt: p.titre ?? '' }).addTo(carte);
+        const options = { title: p.titre ?? '', alt: p.titre ?? '' };
+        if (ETATS.includes(p.etat)) {
+            options.icon = L.divIcon({ className: `tn-marqueur tn-marqueur-${p.etat}`, iconSize: [18, 18], iconAnchor: [9, 9], popupAnchor: [0, -10] });
+        }
+        const marqueur = L.marker([nombre(p.lat), nombre(p.lng)], options).addTo(carte);
         if (p.titre || p.url) {
             marqueur.bindPopup(contenuBulle(p));
         }

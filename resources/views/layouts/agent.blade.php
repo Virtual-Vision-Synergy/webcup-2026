@@ -7,26 +7,27 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-zinc-100 dark:bg-zinc-950">
-        <flux:header container class="border-b-4 border-emerald-500 bg-emerald-950 text-white">
-            <a href="{{ route('agent.index') }}" class="flex items-center gap-2 font-semibold">
-                <flux:icon.briefcase class="size-6 text-emerald-400" />
-                <span class="max-sm:hidden">Nova Terra</span>
-                <flux:badge color="emerald" size="sm">Espace agent</flux:badge>
+    <body class="min-h-screen bg-night text-ink antialiased">
+        {{-- Bandeau « poste agent » : même système Terra Nova, repérable par l'intitulé et le trait cyan. --}}
+        <flux:header container class="tn-glass sticky top-0 z-40 h-[72px]! border-b border-t-2 border-t-cyan">
+            <a href="{{ route('agent.index') }}" class="flex items-center gap-3" aria-label="Espace agent : demandes Nova Terra">
+                <x-app-logo-icon class="size-[26px] shrink-0" />
+                <span class="tn-display text-[15px] font-semibold tracking-[.16em] max-sm:hidden" style="font-stretch: 118%">TERRA NOVA</span>
+                <x-tn.status-badge etat="info">Espace agent</x-tn.status-badge>
             </a>
 
             <flux:navbar class="ms-6 max-md:hidden">
-                <flux:navbar.item icon="inbox-stack" :href="route('agent.index')" :current="request()->routeIs('agent.index')" class="!text-emerald-50">
+                <flux:navbar.item icon="inbox-stack" :href="route('agent.index')" :current="request()->routeIs('agent.index')">
                     Demandes Nova Terra
                 </flux:navbar.item>
             </flux:navbar>
 
             <flux:spacer />
 
-            <flux:button :href="route('dashboard')" variant="ghost" size="sm" icon="arrow-uturn-left" class="!text-emerald-50 max-md:hidden">
+            <x-tn.theme-toggle class="max-md:hidden" />
+            <flux:button :href="route('dashboard')" variant="ghost" size="sm" icon="arrow-uturn-left" class="max-md:hidden">
                 Espace citoyen
             </flux:button>
-
             <flux:dropdown position="bottom" align="end">
                 <flux:profile :initials="auth()->user()->initials()" icon-trailing="chevron-down" class="ms-2" />
 
@@ -36,7 +37,7 @@
                         <div class="grid flex-1 text-start text-sm leading-tight">
                             <flux:heading class="truncate">{{ auth()->user()->name }}</flux:heading>
                             <flux:text class="truncate">{{ auth()->user()->email }}</flux:text>
-                            <flux:badge size="sm" color="emerald" class="mt-1 w-fit">{{ auth()->user()->role->label }}</flux:badge>
+                            <flux:badge size="sm" class="mt-1 w-fit">{{ auth()->user()->role->label }}</flux:badge>
                         </div>
                     </div>
 

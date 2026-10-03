@@ -71,64 +71,58 @@ new #[Title('Messages')] class extends Component {
     }
 }; ?>
 
-<section class="w-full space-y-6">
-    <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
-            <flux:heading size="xl" level="1">Messages</flux:heading>
-            <flux:text class="mt-1">{{ $this->items->total() }} élément(s)</flux:text>
-        </div>
-
-        @can('create', \App\Models\Message::class)
-            <flux:button variant="primary" icon="plus" :href="route('messages.create')" wire:navigate>
-                Ajouter
-            </flux:button>
-        @endcan
-    </div>
+<section class="mx-auto w-full max-w-5xl space-y-6">
+    <x-tn.page-header
+        label="Contact"
+        title="Messages"
+        :subtitle="$this->items->total().' message(s)'"
+        :breadcrumb="['Mon espace' => route('dashboard'), 'Messages' => null]"
+    >
+        <x-slot:actions>
+            @can('create', Message::class)
+                <flux:button variant="primary" icon="plus" :href="route('messages.create')" class="tn-cta" wire:navigate>Nouveau message</flux:button>
+            @endcan
+        </x-slot:actions>
+    </x-tn.page-header>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher…" class="sm:max-w-xs" />
-
-        <flux:checkbox wire:model.live="mine" label="Mes éléments uniquement" />
+        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher un message…" aria-label="Rechercher un message" class="sm:max-w-sm" />
+        <flux:checkbox wire:model.live="mine" label="Mes messages uniquement" />
+        <span wire:loading class="font-mono text-[11px] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
     </div>
 
     @if ($this->items->isEmpty())
-        <flux:card class="py-12 text-center">
-            <flux:heading>Aucun élément pour le moment</flux:heading>
-            <flux:text class="mt-2">Modifie les filtres ou ajoute un premier élément.</flux:text>
-        </flux:card>
+        <x-tn.empty icon="mail" title="Aucun message pour le moment" text="Écrivez à un service municipal : votre échange apparaîtra ici.">
+            @can('create', Message::class)
+                <flux:button variant="primary" icon="plus" :href="route('messages.create')" wire:navigate>Nouveau message</flux:button>
+            @endcan
+        </x-tn.empty>
     @else
-        <flux:table :paginate="$this->items">
-            <flux:table.columns>
-                <flux:table.column>Nom</flux:table.column>
-                <flux:table.column>Email</flux:table.column>
-                <flux:table.column>Sujet</flux:table.column>
-                <flux:table.column>Auteur</flux:table.column>
-                <flux:table.column>Créé le</flux:table.column>
-                <flux:table.column></flux:table.column>
-            </flux:table.columns>
+        <ul>
+            @foreach ($this->items as $item)
+                <li wire:key="row-{{ $item->id }}" class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 border-t border-line py-4">
+                    <a href="{{ route('messages.show', $item) }}" wire:navigate class="group grid min-w-0 grid-cols-[40px_minmax(0,1fr)] gap-3">
+                        <flux:avatar size="sm" :name="$item->nom" class="mt-0.5" />
+                        <span class="min-w-0">
+                            <span class="flex flex-wrap items-baseline gap-x-3">
+                                <span class="font-semibold text-ink group-hover:text-cyan">{{ $item->sujet ?? 'Sans objet' }}</span>
+                                <span class="font-mono text-xs text-ink-2">{{ $item->created_at->format('d.m.Y · H:i') }}</span>
+                            </span>
+                            <span class="block truncate text-sm text-ink-2">{{ $item->nom }} — {{ \Illuminate\Support\Str::limit((string) $item->message, 120) }}</span>
+                        </span>
+                    </a>
+                    <div class="flex gap-1">
+                        @can('update', $item)
+                            <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('messages.edit', $item)" wire:navigate aria-label="Modifier" />
+                        @endcan
+                        @can('delete', $item)
+                            <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer ce message ?" aria-label="Supprimer" />
+                        @endcan
+                    </div>
+                </li>
+            @endforeach
+        </ul>
 
-            <flux:table.rows>
-                @foreach ($this->items as $item)
-                    <flux:table.row wire:key="row-{{ $item->id }}">
-                        <flux:table.cell><flux:link :href="route('messages.show', $item)" wire:navigate class="font-medium">{{ $item->nom }}</flux:link></flux:table.cell>
-                        <flux:table.cell>{{ $item->email ?? '—' }}</flux:table.cell>
-                        <flux:table.cell>{{ $item->sujet ?? '—' }}</flux:table.cell>
-                        <flux:table.cell>{{ $item->user?->name }}</flux:table.cell>
-                        <flux:table.cell>{{ $item->created_at->format('d/m/Y') }}</flux:table.cell>
-                        <flux:table.cell>
-                            <div class="flex justify-end gap-1">
-                                <flux:button size="sm" variant="ghost" icon="eye" :href="route('messages.show', $item)" wire:navigate />
-                                @can('update', $item)
-                                    <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('messages.edit', $item)" wire:navigate />
-                                @endcan
-                                @can('delete', $item)
-                                    <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer cet élément ?" />
-                                @endcan
-                            </div>
-                        </flux:table.cell>
-                    </flux:table.row>
-                @endforeach
-            </flux:table.rows>
-        </flux:table>
+        <div>{{ $this->items->links() }}</div>
     @endif
 </section>

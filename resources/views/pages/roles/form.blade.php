@@ -64,15 +64,14 @@ new #[Title('Rôle')] class extends Component {
     }
 }; ?>
 
-<section class="w-full max-w-2xl space-y-6">
-    <div>
-        <flux:link :href="route('roles.index')" wire:navigate class="text-sm">&larr; Rôles</flux:link>
-        <flux:heading size="xl" level="1" class="mt-2">
-            {{ $record ? 'Modifier' : 'Ajouter' }} : Rôle
-        </flux:heading>
-    </div>
+<section class="mx-auto w-full max-w-2xl space-y-6">
+    <x-tn.page-header
+        label="Administration"
+        :title="$record ? 'Modifier le rôle' : 'Ajouter un rôle'"
+        :breadcrumb="['Rôles' => route('roles.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
+    />
 
-    <form wire:submit="save" class="space-y-6">
+    <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
         <flux:input wire:model="code" label="Code" required :disabled="$record && in_array($record->code, \App\Models\Role::CODES, true)" />
 
         <flux:input wire:model="label" label="Libellé" required />

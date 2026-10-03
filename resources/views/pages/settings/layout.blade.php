@@ -1,19 +1,32 @@
-<div class="flex items-start max-md:flex-col">
-    <div class="me-10 w-full pb-4 md:w-[220px]">
-        <flux:navlist aria-label="{{ __('Settings') }}">
-            <flux:navlist.item :href="route('profile.edit')" wire:navigate>{{ __('Profile') }}</flux:navlist.item>
-            <flux:navlist.item :href="route('security.edit')" wire:navigate>{{ __('Security') }}</flux:navlist.item>
-            <flux:navlist.item :href="route('appearance.edit')" wire:navigate>{{ __('Appearance') }}</flux:navlist.item>
-        </flux:navlist>
-    </div>
+<div class="flex w-full max-w-5xl items-start gap-8 max-md:flex-col">
+    <nav class="w-full md:sticky md:top-24 md:w-[220px]" aria-label="{{ __('Settings') }}">
+        <ul class="flex gap-1 overflow-x-auto md:flex-col">
+            @foreach ([['profile.edit', __('Profile'), 'users-round'], ['security.edit', __('Security'), 'shield-check'], ['appearance.edit', __('Appearance'), 'moon']] as [$route, $libelle, $icone])
+                @php $actif = request()->routeIs($route); @endphp
+                <li class="shrink-0">
+                    <a
+                        href="{{ route($route) }}"
+                        wire:navigate
+                        @if ($actif) aria-current="page" @endif
+                        @class([
+                            'flex min-h-11 items-center gap-2.5 rounded-sm border px-3 text-[15px] font-medium transition-colors',
+                            'border-cyan/30 bg-cyan/8 text-cyan' => $actif,
+                            'border-transparent text-ink-2 hover:bg-surface-2 hover:text-ink' => ! $actif,
+                        ])
+                    >
+                        <flux:icon :name="$icone" class="size-4" />
+                        {{ $libelle }}
+                    </a>
+                </li>
+            @endforeach
+        </ul>
+    </nav>
 
-    <flux:separator class="md:hidden" />
+    <div class="w-full min-w-0 flex-1 rounded-md border border-line bg-surface p-5 md:p-6">
+        <h2 class="tn-display text-xl font-semibold text-ink">{{ $heading ?? '' }}</h2>
+        <p class="mt-1 text-ink-2">{{ $subheading ?? '' }}</p>
 
-    <div class="flex-1 self-stretch max-md:pt-6">
-        <flux:heading>{{ $heading ?? '' }}</flux:heading>
-        <flux:subheading>{{ $subheading ?? '' }}</flux:subheading>
-
-        <div class="mt-5 w-full max-w-lg">
+        <div class="mt-6 w-full max-w-lg">
             {{ $slot }}
         </div>
     </div>

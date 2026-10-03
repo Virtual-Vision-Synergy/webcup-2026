@@ -21,7 +21,10 @@ class Carte extends Component
     /** Antananarivo. */
     public const CENTRE_DEFAUT = [-18.91, 47.52];
 
-    /** @var array<int, array{lat: float, lng: float, titre: string, url: string|null}> */
+    /** États reconnus pour colorer un marqueur. */
+    public const ETATS = ['normal', 'perturbe', 'alerte', 'info'];
+
+    /** @var array<int, array{lat: float, lng: float, titre: string, url: string|null, etat: string|null}> */
     public array $points;
 
     /**
@@ -78,7 +81,7 @@ class Carte extends Component
      * Garde les points aux coordonnées valides et les liens sûrs (relatifs ou http/https).
      *
      * @param  iterable<int, array<string, mixed>|null>  $points
-     * @return array<int, array{lat: float, lng: float, titre: string, url: string|null}>
+     * @return array<int, array{lat: float, lng: float, titre: string, url: string|null, etat: string|null}>
      */
     private function normaliser(iterable $points): array
     {
@@ -107,6 +110,8 @@ class Carte extends Component
                 'lng' => (float) $lng,
                 'titre' => (string) ($point['titre'] ?? ''),
                 'url' => $url,
+                // État affiché par la couleur du marqueur (liste fermée, sinon marqueur standard).
+                'etat' => in_array($point['etat'] ?? null, self::ETATS, true) ? $point['etat'] : null,
             ];
         }
 

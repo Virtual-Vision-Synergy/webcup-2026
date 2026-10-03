@@ -35,7 +35,7 @@ test('route actualités est accessible (authentifié)', function () {
     $response = $this->actingAs($user)->get(route('actualites.index'));
 
     $response->assertStatus(200);
-    $response->assertSeeText('Actualites');
+    $response->assertSeeText('Actualités');
 });
 
 test('route messages est accessible (authentifié)', function () {

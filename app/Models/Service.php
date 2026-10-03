@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
-use App\Models\Concerns\HasCoordinates;
 use App\Models\Concerns\HasAuditHistory;
+use App\Models\Concerns\HasCoordinates;
 use Database\Factories\ServiceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;

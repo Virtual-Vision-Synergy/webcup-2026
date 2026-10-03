@@ -160,7 +160,7 @@ new #[Title('Transports')] class extends Component {
     </div>
 
     @if ($this->items->isEmpty())
-        <x-tn.empty icon="bus" title="{{ __('Aucune ligne trouvée') }}" text="{{ __('Vérifiez l\'orthographe de l\'arrêt ou retirez un filtre.') }}">
+        <x-tn.empty icon="bus" title="{{ __('Aucune ligne trouvée') }}" :text="__('Vérifiez l\'orthographe de l\'arrêt ou retirez un filtre.')">
             @if ($search !== '' || $mode !== '' || $perturbees)
                 <flux:button size="sm" wire:click="resetFilters">{{ __('Réinitialiser la recherche') }}</flux:button>
             @endif

@@ -22,7 +22,7 @@ test('un utilisateur peut créer : Message', function () {
     Livewire::actingAs($user)
         ->test('pages::messages.form')
         ->set('nom', 'Valeur de test')
-        ->set('email', 'Valeur de test')
+        ->set('email', 'citoyen@example.com')
         ->set('sujet', 'Valeur de test')
         ->set('message', 'Valeur de test')
         ->call('save')
@@ -47,15 +47,12 @@ test('un autre utilisateur ne peut pas modifier', function () {
         ->assertForbidden();
 });
 
-test('un autre utilisateur ne peut pas supprimer', function () {
+test('un autre utilisateur ne peut pas voir le message', function () {
     $record = Message::factory()->create();
 
-    Livewire::actingAs(User::factory()->create())
-        ->test('pages::messages.show', ['message' => $record])
-        ->call('delete')
+    $this->actingAs(User::factory()->create())
+        ->get(route('messages.show', $record))
         ->assertForbidden();
-
-    expect(Message::find($record->id))->not->toBeNull();
 });
 
 test('un admin peut supprimer', function () {

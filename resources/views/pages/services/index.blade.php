@@ -247,7 +247,7 @@ new #[Title('Services')] class extends Component {
                     @endif
                     <div class="flex items-start gap-3">
                         <span class="flex size-10 shrink-0 items-center justify-center rounded-sm border border-cyan/18 bg-cyan/8 text-cyan" aria-hidden="true">
-                            <flux:icon name="landmark" class="size-5" />
+                            <flux:icon :name="Service::iconeCategorie($item->categorie)" class="size-5" />
                         </span>
                         <div class="min-w-0">
                             <h2 class="font-semibold text-ink">

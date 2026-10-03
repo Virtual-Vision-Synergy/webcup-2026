@@ -43,7 +43,7 @@
                     <span class="tn-cta flex size-14 items-center justify-center rounded-full bg-cyan text-on-cyan ring-[5px] ring-night">
                         <flux:icon :name="$centre['icon']" class="size-6" />
                     </span>
-                    {{ $centre['label'] }}
+                    {{ __($centre['label']) }}
                 </a>
             @endif
         </li>

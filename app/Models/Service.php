@@ -96,6 +96,23 @@ class Service extends Model
         return $slug;
     }
 
+    /** F71 : pictogramme de chaque catégorie, pour se repérer sans lire (icônes Heroicons de Flux). */
+    public const CATEGORIE_ICONES = [
+        'administratif' => 'document-text',
+        'sante' => 'heart',
+        'social' => 'user-group',
+        'education' => 'academic-cap',
+        'culture' => 'musical-note',
+        'urbanisme' => 'building-office-2',
+        'securite' => 'shield-check',
+        'economie' => 'banknotes',
+    ];
+
+    public static function iconeCategorie(?string $categorie): string
+    {
+        return self::CATEGORIE_ICONES[$categorie] ?? 'landmark';
+    }
+
     public static function labelCategorie(?string $categorie): ?string
     {
         return $categorie === null ? null : (self::CATEGORIE_LABELS[$categorie] ?? ucfirst($categorie));

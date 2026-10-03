@@ -87,6 +87,8 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
         </x-slot:actions>
     </x-tn.page-header>
 
+    <x-audit-history :subject="$account" variant="resume" />
+
     <x-tn.surface>
         <x-tn.section-label as="h2" class="mb-2">{{ __('Informations du compte') }}</x-tn.section-label>
         <dl>
@@ -139,4 +141,6 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
             </div>
         </flux:modal>
     @endcan
+
+    <x-audit-history :subject="$account" />
 </section>

@@ -46,6 +46,8 @@ new #[Title('Rôle')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    <x-audit-history :subject="$record" variant="resume" />
+
 
 
     <flux:card>
@@ -60,4 +62,6 @@ new #[Title('Rôle')] class extends Component {
             </div>
         </dl>
     </flux:card>
+
+    <x-audit-history :subject="$record" />
 </section>

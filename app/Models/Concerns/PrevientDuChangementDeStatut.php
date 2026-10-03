@@ -18,7 +18,7 @@ trait PrevientDuChangementDeStatut
 {
     protected function prevenirProprietaire(string $statutAvant): void
     {
-        if (! $this->wasChanged('statut') || $this->user_id === null) {
+        if (! $this->wasChanged('statut')) {
             return;
         }
 

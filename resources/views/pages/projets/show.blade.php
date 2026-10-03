@@ -1,7 +1,11 @@
 <?php
 
+use App\Concerns\ThrottlesPerUser;
+use App\Models\AvisProjet;
 use App\Models\Projet;
 use Flux\Flux;
+use Illuminate\Validation\Rule;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
@@ -9,15 +13,88 @@ use Livewire\Component;
 
 /*
  * Fiche d'un projet de la ville (F67), publique : description en langage simple, étapes, avancement et lieu.
+ * F66 : si la consultation est ouverte, l'habitant connecté donne son avis (pour / contre / sans avis).
  */
 new #[Layout('layouts::public'), Title('Projet de la ville')] class extends Component {
+    use ThrottlesPerUser;
+
     #[Locked]
     public Projet $record;
+
+    public string $position = '';
+
+    public string $commentaire = '';
 
     public function mount(Projet $projet): void
     {
         $this->authorize('view', $projet);
         $this->record = $projet->load('quartier:id,nom');
+
+        if ($this->monAvis) {
+            $this->position = $this->monAvis->position;
+            $this->commentaire = (string) $this->monAvis->commentaire;
+        }
+    }
+
+    /**
+     * Avis de l'habitant connecté sur ce projet (jamais celui d'un autre : filtré par user_id).
+     */
+    #[Computed]
+    public function monAvis(): ?AvisProjet
+    {
+        if (! auth()->check()) {
+            return null;
+        }
+
+        return AvisProjet::query()
+            ->where('projet_id', $this->record->id)
+            ->where('user_id', auth()->id())
+            ->first();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function rules(): array
+    {
+        return [
+            'position' => ['required', Rule::in(AvisProjet::POSITION_OPTIONS)],
+            'commentaire' => ['nullable', 'string', 'max:2000'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function messages(): array
+    {
+        return [
+            'position.required' => __('Choisissez votre réponse : pour, contre ou sans avis.'),
+        ];
+    }
+
+    public function donnerAvis(): void
+    {
+        $this->authorize('donnerAvis', $this->record);
+        $this->throttlePerUser('avis-projet', maxAttempts: 10, decaySeconds: 60);
+
+        $validated = $this->validate();
+
+        $avis = $this->monAvis ?? new AvisProjet;
+        $avis->fill([
+            'position' => $validated['position'],
+            'commentaire' => trim((string) $validated['commentaire']) ?: null,
+        ]);
+
+        if (! $avis->exists) {
+            $avis->user()->associate(auth()->user());
+            $avis->projet()->associate($this->record);
+        }
+
+        $avis->save();
+        unset($this->monAvis);
+
+        Flux::toast(variant: 'success', text: __('Votre avis a été enregistré le :date.', ['date' => $avis->enregistreLe()]));
     }
 
     public function delete(): void
@@ -52,6 +129,9 @@ new #[Layout('layouts::public'), Title('Projet de la ville')] class extends Comp
             </div>
         </x-slot:meta>
         <x-slot:actions>
+            @can('voirAvis', $record)
+                <flux:button icon="chat-bubble-bottom-center-text" :href="route('agent.projets.avis', $record)" wire:navigate>{{ __('Synthèse des avis') }}</flux:button>
+            @endcan
             @can('update', $record)
                 <flux:button icon="pencil-square" :href="route('projets.edit', $record)" wire:navigate>{{ __('Mettre à jour') }}</flux:button>
             @endcan
@@ -87,6 +167,68 @@ new #[Layout('layouts::public'), Title('Projet de la ville')] class extends Comp
                     <p class="text-ink-2">{{ __('Les étapes du projet seront publiées prochainement.') }}</p>
                 @endif
             </x-tn.surface>
+
+            @if ($record->consultation_ouverte || $this->monAvis)
+                <x-tn.surface id="avis">
+                    <x-tn.section-label as="h2" class="mb-2">{{ __('Votre avis sur ce projet') }}</x-tn.section-label>
+                    <p class="mb-4 text-sm text-ink-2">
+                        {{ $record->consultation_ouverte
+                            ? __('La ville consulte les habitants sur ce projet. Ce n\'est pas un vote officiel : votre avis aide les agents à l\'améliorer.')
+                            : __('La consultation sur ce projet est close.') }}
+                    </p>
+
+                    @if ($this->monAvis)
+                        <flux:callout variant="success" icon="check-circle" class="mb-4">
+                            <flux:callout.heading>{{ __('Votre avis a été enregistré le :date.', ['date' => $this->monAvis->enregistreLe()]) }}</flux:callout.heading>
+                            <flux:callout.text>
+                                {{ __('Votre réponse : :position.', ['position' => $this->monAvis->positionLabel()]) }}
+                                @if ($record->consultation_ouverte)
+                                    {{ __('Vous pouvez la modifier tant que la consultation est ouverte.') }}
+                                @endif
+                            </flux:callout.text>
+                        </flux:callout>
+                    @endif
+
+                    @guest
+                        <flux:button variant="primary" icon="arrow-right-end-on-rectangle" :href="route('login')">{{ __('Se connecter pour donner mon avis') }}</flux:button>
+                    @else
+                        @can('donnerAvis', $record)
+                            <form wire:submit="donnerAvis" class="space-y-4">
+                                <fieldset>
+                                    <legend class="mb-2 text-sm font-medium text-ink">{{ __('Êtes-vous favorable à ce projet ?') }}</legend>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        @foreach (AvisProjet::POSITION_LABELS as $valeur => $libelle)
+                                            <label wire:key="position-{{ $valeur }}" class="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-line p-3 text-sm has-[:checked]:border-cyan has-[:checked]:ring-2 has-[:checked]:ring-cyan">
+                                                <input type="radio" wire:model="position" name="position" value="{{ $valeur }}" class="size-4 accent-[var(--color-cyan)]">
+                                                <span>{{ __($libelle) }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                    @error('position')
+                                        <flux:text class="mt-2 text-magenta">{{ $message }}</flux:text>
+                                    @enderror
+                                </fieldset>
+
+                                <flux:textarea wire:model="commentaire" label="{{ __('Commentaire (facultatif)') }}" rows="3" maxlength="2000" placeholder="{{ __('Une remarque, une idée, une inquiétude…') }}" />
+
+                                @error('throttle')
+                                    <flux:text class="text-magenta">{{ $message }}</flux:text>
+                                @enderror
+
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <flux:button type="submit" variant="primary">
+                                        <span wire:loading.remove wire:target="donnerAvis">{{ $this->monAvis ? __('Modifier mon avis') : __('Envoyer mon avis') }}</span>
+                                        <span wire:loading wire:target="donnerAvis">{{ __('Enregistrement…') }}</span>
+                                    </flux:button>
+                                    <flux:link :href="route('avis.index')" wire:navigate class="text-sm">{{ __('Voir tous mes avis') }}</flux:link>
+                                </div>
+                            </form>
+                        @elseif ($record->consultation_ouverte && ! auth()->user()->isCitoyen())
+                            <flux:text>{{ __('Seuls les habitants peuvent donner leur avis.') }}</flux:text>
+                        @endcan
+                    @endguest
+                </x-tn.surface>
+            @endif
         </div>
 
         <div class="space-y-6">
@@ -95,6 +237,11 @@ new #[Layout('layouts::public'), Title('Projet de la ville')] class extends Comp
                     <x-tn.field label="{{ __('État') }}">
                         <x-tn.status-badge :etat="$record->etatBadge()">{{ $record->etatLabel() }}</x-tn.status-badge>
                     </x-tn.field>
+                    @if ($record->consultation_ouverte)
+                        <x-tn.field label="{{ __('Consultation') }}">
+                            <a href="#avis" class="text-sm text-cyan hover:underline">{{ __('Ouverte : donnez votre avis') }}</a>
+                        </x-tn.field>
+                    @endif
                     <x-tn.field label="{{ __('Quartier') }}"><p class="text-sm">{{ $record->nomQuartier() }}</p></x-tn.field>
                     @if ($record->date_debut)
                         <x-tn.field label="{{ __('Début') }}"><p class="font-mono text-sm">{{ $record->date_debut->translatedFormat('d F Y') }}</p></x-tn.field>

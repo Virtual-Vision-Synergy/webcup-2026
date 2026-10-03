@@ -16,6 +16,11 @@
 
                     {{-- make:feature:nav --}}
 @endsection
+@php
+    // F30 : filet de sécurité si le cron du planificateur ne tourne pas (annonces programmées arrivées à leur début).
+    // Avant tout rendu, pour que les deux cloches affichent le même compteur.
+    app(\App\Services\NotifierAnnonce::class)->traiterEchuesAuPlusUneFoisParMinute();
+@endphp
 <!DOCTYPE html>
 <html lang="fr">
     <head>
@@ -61,7 +66,7 @@
 
                     @can('viewAgentSpace')
                         <flux:sidebar.group heading="Espace agent" class="grid">
-                            <flux:sidebar.item icon="briefcase" :href="route('agent.index')" data-test="agent-space-link">
+                            <flux:sidebar.item icon="briefcase" :href="route('agent.tableau-de-bord')" data-test="agent-space-link">
                                 Espace agent
                             </flux:sidebar.item>
                         </flux:sidebar.group>
@@ -84,6 +89,7 @@
 
                         <div class="ms-auto flex items-center gap-2">
                             <x-tn.api-status class="max-sm:hidden" />
+                            <x-tn.cloche />
                             <x-tn.contrast-toggle class="max-lg:hidden" />
                             <x-tn.text-size class="max-lg:hidden" />
                             <x-tn.theme-toggle class="max-lg:hidden" />

@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.')->group(function () {
     Route::livewire('/', 'pages::agent.index')->name('index');
 
+    // F50 : tableau de bord simplifié (compteurs, activité sur 7 jours, dernières demandes).
+    Route::livewire('tableau-de-bord', 'pages::agent.tableau-de-bord')->name('tableau-de-bord');
+
     // Messages généraux diffusés en bandeau à tous les habitants (D18).
     Route::livewire('annonces', 'pages::annonces.index')->name('annonces.index');
     Route::livewire('annonces/create', 'pages::annonces.form')->name('annonces.create');

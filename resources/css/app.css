@@ -26,10 +26,17 @@
     --color-ink-2: #4D6070;
     --color-line: rgb(15 27 43 / .10);
 
-    --color-cyan: #00778D;
-    --color-magenta: #C41F5F;
-    --color-amber: #96590C;
-    --color-green: #007E46;
+    /*
+     * F43 : palette d'état vérifiée (simulation Machado 2009 : protanopie, deutéranopie, tritanopie).
+     * - Contraste WCAG AA (≥ 4,5:1) du texte coloré sur fond clair ET sur un fond teinté à 12 %
+     *   (badges), contrôlé par tests/Feature/AccessibiliteCouleursTest.php.
+     * - Alerte (rouge profond) et normal (vert bleuté) restent distincts en deutéranopie (ΔE ≈ 12).
+     * - La couleur n'est jamais seule : chaque état a aussi une icône de forme distincte et un libellé.
+     */
+    --color-cyan: #00687B;
+    --color-magenta: #9A1238;
+    --color-amber: #8A520B;
+    --color-green: #006E4A;
     --color-on-cyan: #FFFFFF;
 
     /* Gris de Flux remappés sur des tons bleutés : tous les composants Flux suivent le thème. */
@@ -73,7 +80,7 @@ body { overflow-wrap: anywhere; }
         --color-line: rgb(65 221 248 / .12);
 
         --color-cyan: #41DDF8;
-        --color-magenta: #FF4285;
+        --color-magenta: #FF4A8A;
         --color-amber: #FFB44B;
         --color-green: #56E795;
         --color-on-cyan: #001321;
@@ -429,6 +436,21 @@ select:focus[data-flux-control] {
 .tn-marqueur-normal { background-color: var(--color-green); }
 .tn-marqueur-perturbe { background-color: var(--color-amber); }
 .tn-marqueur-alerte { background-color: var(--color-magenta); }
+
+/* F43 : un symbole par état dans le marqueur, pour ne pas dépendre de la couleur. */
+.tn-marqueur::after {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--color-surface);
+    font: 700 11px/1 var(--font-sans);
+    content: 'i';
+}
+
+.tn-marqueur-normal::after { content: '✓'; }
+.tn-marqueur-perturbe::after { content: '!'; }
+.tn-marqueur-alerte::after { content: '✕'; }
 
 .dark .tn-marqueur-normal { box-shadow: 0 0 0 4px rgb(86 231 149 / .25); }
 .dark .tn-marqueur-perturbe { box-shadow: 0 0 0 4px rgb(255 180 75 / .25); }

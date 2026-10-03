@@ -114,7 +114,7 @@ class DatabaseSeeder extends Seeder
         Message::factory(20)->recycle($users)->create();
 
         $services = Service::all();
-        Demarche::factory(20)->recycle($users)->recycle($services)->create();
+        Demarche::factory(20)->recente()->recycle($users)->recycle($services)->create();
 
         if (! app()->isProduction()) {
             // Quelques démarches pour le compte citoyen de démo : son espace personnel n'est pas vide.

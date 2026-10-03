@@ -5,6 +5,7 @@
 ### Variables globales
 @baseUrl = https://24h.webcup.fr/wp-json/webcup/v1
 @apiKey = s45f4ds5fgrtr4hytutyt45y4t54yty
+# La clé est dans http-client.private.env.json (ignoré par Git) : { "dev": { "apiKey": "..." } }
 
 
 ### 1. Récupérer les demandes — Authentification via header (recommandé)

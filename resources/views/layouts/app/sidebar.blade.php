@@ -28,6 +28,14 @@
 
                     {{-- make:feature:nav --}}
                 </flux:sidebar.group>
+
+                @can('viewAgentSpace')
+                    <flux:sidebar.group heading="Espace agent" class="grid">
+                        <flux:sidebar.item icon="briefcase" :href="route('agent.index')" data-test="agent-space-link">
+                            Espace agent
+                        </flux:sidebar.item>
+                    </flux:sidebar.group>
+                @endcan
             </flux:sidebar.nav>
 
             <flux:spacer />

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -33,6 +34,7 @@ class UserFactory extends Factory
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
+            'role_id' => fn () => Role::idFor(Role::CITOYEN),
         ];
     }
 
@@ -60,6 +62,16 @@ class UserFactory extends Factory
 
     public function admin(): static
     {
-        return $this->state(fn () => ['role' => 'admin']);
+        return $this->state(fn () => ['role_id' => Role::idFor(Role::ADMIN)]);
+    }
+
+    public function citoyen(): static
+    {
+        return $this->state(fn () => ['role_id' => Role::idFor(Role::CITOYEN)]);
+    }
+
+    public function agent(): static
+    {
+        return $this->state(fn () => ['role_id' => Role::idFor(Role::AGENT)]);
     }
 }

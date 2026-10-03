@@ -25,12 +25,13 @@ test('on ne peut pas devenir admin en trafiquant l\'inscription', function () {
         'password' => 'Password123!',
         'password_confirmation' => 'Password123!',
         'role' => 'admin',
+        'role_id' => 3,
     ]);
 
     $pirate = User::where('email', 'pirate@test.com')->first();
 
     expect($pirate)->not->toBeNull()
-        ->and($pirate->role)->not->toBe('admin');
+        ->and($pirate->isAdmin())->toBeFalse();
 });
 
 test('la connexion est bloquée après trop de tentatives', function () {

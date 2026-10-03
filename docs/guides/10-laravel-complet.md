@@ -48,7 +48,7 @@ Vous connaissez déjà les concepts ; seuls les noms changent.
 Quand un utilisateur ouvre `/signalements` :
 
 1. **Route** (`routes/features.php`) : l'URL pointe vers le composant `pages::signalements.index`. Le middleware `auth` exige une connexion, sinon redirection vers `/login`.
-2. **Composant Livewire** (`resources/views/pages/signalements/⚡index.blade.php`) : `mount()` s'exécute et vérifie les droits avec `$this->authorize('viewAny', Signalement::class)`.
+2. **Composant Livewire** (`resources/views/pages/signalements/index.blade.php`) : `mount()` s'exécute et vérifie les droits avec `$this->authorize('viewAny', Signalement::class)`.
 3. **Policy** (`app/Policies/SignalementPolicy.php`) : répond oui ou non. Non → **403**.
 4. **Modèle** : la propriété calculée `items()` lit les données (`Signalement::query()->with('user')->latest()->paginate(10)`).
 5. **Vue** (bas du même fichier) : HTML rendu avec les composants **Flux** (`<flux:table>`, `<flux:button>`…) dans le layout `layouts/app` (menu de gauche).
@@ -95,7 +95,7 @@ Route::middleware(['auth'])->group(function () {
 });
 ```
 
-- `'pages::signalements.index'` = le fichier `resources/views/pages/signalements/⚡index.blade.php`.
+- `'pages::signalements.index'` = le fichier `resources/views/pages/signalements/index.blade.php`.
 - `{signalement}` : Laravel charge automatiquement le `Signalement` correspondant (*route model binding*) et renvoie **404** s'il n'existe pas.
 - `->name(...)` : on génère toujours les URL par leur nom : `route('signalements.show', $signalement)`.
 - **Page publique** (décision explicite) : la déclarer **en dehors** du groupe `auth`, en haut du fichier.
@@ -431,7 +431,7 @@ new #[Title('Signalement')] class extends Component {
 | `#[Url]` | Propriété synchronisée avec l'URL (`?search=...`) : filtres partageables |
 | `#[On('evenement')]` | Méthode appelée quand un événement est émis |
 
-**Liste avec recherche et pagination** (extrait réel de `⚡index`) :
+**Liste avec recherche et pagination** (extrait réel de `index`) :
 
 ```php
 use WithPagination;
@@ -676,7 +676,7 @@ $user->can('moderer', Signalement::class);            // test booléen
 | Brute force | 5 essais/minute sur la connexion (réponse 429) | `FortifyServiceProvider`, `SecurityTest` |
 | Contrôle d'accès | Policies + `authorize` dans chaque action | `app/Policies/`, pages |
 | Rôles | `role` hors `#[Fillable]`, `/admin` réservé | `User`, Filament |
-| Validation | `rules()` sur chaque formulaire | pages `⚡form` |
+| Validation | `rules()` sur chaque formulaire | pages `form` |
 | Endpoints | Routes métier dans le groupe `auth` | `routes/features.php` |
 | Exposition de données | `APP_DEBUG=false`, `#[Hidden]` sur les secrets de `User` | `.env`, `User` |
 | En-têtes HTTP | X-Frame-Options, nosniff, Referrer-Policy, HSTS, HTTPS forcé | `SecurityHeaders`, `AppServiceProvider` |
@@ -1013,7 +1013,7 @@ Le projet contient un **kit e-mail / notifications** générique (aucun lien ave
 |---|---|
 | Notification générique (application + e-mail) | `app/Notifications/Avis.php` |
 | Table `notifications` | `database/migrations/2026_09_30_080000_create_notifications_table.php` |
-| Cloche dans la sidebar (non lus, 10 dernières, « tout marquer comme lu ») | `resources/views/components/⚡cloche-notifications.blade.php` |
+| Cloche dans la sidebar (non lus, 10 dernières, « tout marquer comme lu ») | `resources/views/components/cloche-notifications.blade.php` |
 | Commande de contrôle d'envoi | `php artisan app:test-mail adresse@exemple.com` |
 | E-mails Laravel en français (réinitialisation, vérification, « Bonjour ! », « Cordialement, »…) | `lang/fr.json` |
 | Tests | `tests/Feature/KitEmailTest.php` |
@@ -1458,7 +1458,7 @@ php artisan migrate
 
 À faire sur une branche `exo/<prénom>` (**jamais mergée**), en local, dans l'ordre. Chaque exercice indique le résultat attendu.
 
-1. **Explorer** (15 min) — `php artisan route:list --path=signalements`, ouvrir chaque route, lire `⚡index.blade.php` de haut en bas. *Attendu* : savoir dire ce que fait chaque méthode.
+1. **Explorer** (15 min) — `php artisan route:list --path=signalements`, ouvrir chaque route, lire `index.blade.php` de haut en bas. *Attendu* : savoir dire ce que fait chaque méthode.
 2. **Ajouter une colonne** (20 min) — migration `statut` (`en_attente` par défaut) sur `signalements`, badge dans la liste. *Attendu* : les anciens signalements affichent « en_attente ».
 3. **Générer une entité** (15 min) — `make:feature Zone --fields="nom:string,description:text?"`. *Attendu* : menu « Zones », CRUD complet, 6 tests verts.
 4. **Relier deux entités** (30 min) — `zone_id` sur `signalements`, `flux:select` des zones dans le formulaire, filtre par zone dans la liste, `with('zone')`. *Attendu* : pas de N+1 (une seule requête pour les zones).

@@ -84,15 +84,15 @@ test('le générateur ajoute trait et cartes quand l\'entité a latitude et long
         ->toContain('use App\Models\Concerns\HasCoordinates;')
         ->toContain('use HasCoordinates;');
 
-    expect(File::get("{$pages}/⚡form.blade.php"))
+    expect(File::get("{$pages}/form.blade.php"))
         ->toContain('<x-carte mode="choix"')
         ->toContain("'latitude' => ['nullable', 'numeric', 'between:-90,90']")
         ->toContain("'longitude' => ['nullable', 'numeric', 'between:-180,180']");
 
-    expect(File::get("{$pages}/⚡show.blade.php"))
+    expect(File::get("{$pages}/show.blade.php"))
         ->toContain('<x-carte :points="[$record->pointCarte((string) $record->nom)]"');
 
-    expect(File::get("{$pages}/⚡index.blade.php"))
+    expect(File::get("{$pages}/index.blade.php"))
         ->toContain('public function points(): array')
         ->toContain('->geolocalises()')
         ->toContain('<details wire:ignore.self')
@@ -107,9 +107,9 @@ test('le générateur n\'ajoute ni trait ni carte sans coordonnées', function (
 
     $pages = resource_path('views/pages/gen-test-notes');
     $generated = File::get(app_path('Models/GenTestNote.php'))
-        .File::get("{$pages}/⚡index.blade.php")
-        .File::get("{$pages}/⚡form.blade.php")
-        .File::get("{$pages}/⚡show.blade.php");
+        .File::get("{$pages}/index.blade.php")
+        .File::get("{$pages}/form.blade.php")
+        .File::get("{$pages}/show.blade.php");
 
     expect($generated)
         ->not->toContain('HasCoordinates')
@@ -148,14 +148,14 @@ test('--belongs-to génère clé étrangère, relation, select validé, filtre e
         ->toContain("'gen_test_zone_id'")
         ->not->toContain("'user_id'");
     expect(File::get(database_path('factories/GenTestFicheFactory.php')))->toContain('GenTestZone::factory()');
-    expect(File::get("{$pages}/⚡form.blade.php"))
+    expect(File::get("{$pages}/form.blade.php"))
         ->toContain("Rule::exists(GenTestZone::class, 'id')")
         ->toContain('<flux:select wire:model="gen_test_zone_id"')
         ->toContain('$this->genTestZoneOptions');
-    expect(File::get("{$pages}/⚡index.blade.php"))
+    expect(File::get("{$pages}/index.blade.php"))
         ->toContain("->with(['user', 'genTestZone'])")
         ->toContain('filterGenTestZoneId');
-    expect(File::get("{$pages}/⚡show.blade.php"))->toContain('$record->genTestZone?->nom');
+    expect(File::get("{$pages}/show.blade.php"))->toContain('$record->genTestZone?->nom');
     expect(File::get(base_path('tests/Feature/GenTestFicheTest.php')))->toContain('preventLazyLoading');
 
     lintPhp(app_path('Models/GenTestFiche.php'), ...File::glob("{$pages}/*.blade.php"));
@@ -167,7 +167,7 @@ test('--belongs-to=Zone? rend la relation facultative', function () {
     $migration = File::get(File::glob(database_path('migrations/*_create_gen_test_fiches_table.php'))[0]);
 
     expect($migration)->toContain("foreignId('gen_test_zone_id')->nullable()->constrained()->cascadeOnDelete()");
-    expect(File::get(resource_path('views/pages/gen-test-fiches/⚡form.blade.php')))
+    expect(File::get(resource_path('views/pages/gen-test-fiches/form.blade.php')))
         ->toContain("['nullable', Rule::exists(GenTestZone::class, 'id')]");
 });
 
@@ -220,9 +220,9 @@ test('--statut génère colonne, constante, badge et transition réservée à l\
     expect(File::get(app_path('Policies/GenTestFichePolicy.php')))
         ->toContain('public function changerStatut(User $user, GenTestFiche $genTestFiche): bool')
         ->toContain('return $user->isAdmin();');
-    expect(File::get("{$pages}/⚡index.blade.php"))->toContain('filterStatut')->toContain('couleurStatut()');
-    expect(File::get("{$pages}/⚡show.blade.php"))->toContain("authorize('changerStatut', \$this->record)");
-    expect(File::get("{$pages}/⚡form.blade.php"))->not->toContain('statut');
+    expect(File::get("{$pages}/index.blade.php"))->toContain('filterStatut')->toContain('couleurStatut()');
+    expect(File::get("{$pages}/show.blade.php"))->toContain("authorize('changerStatut', \$this->record)");
+    expect(File::get("{$pages}/form.blade.php"))->not->toContain('statut');
     expect(File::get(base_path('tests/Feature/GenTestFicheTest.php')))
         ->toContain('un utilisateur ne peut pas changer le statut de sa propre fiche');
 
@@ -254,7 +254,7 @@ test('--public ouvre la liste et le détail aux invités et garde le reste prot�
     expect(File::get(app_path('Policies/GenTestFichePolicy.php')))
         ->toContain('public function viewAny(?User $user): bool')
         ->toContain('public function create(User $user): bool');
-    expect(File::get(resource_path('views/pages/gen-test-fiches/⚡index.blade.php')))
+    expect(File::get(resource_path('views/pages/gen-test-fiches/index.blade.php')))
         ->toContain("#[Layout('layouts::public'")
         ->toContain('@auth')
         ->toContain('@guest');

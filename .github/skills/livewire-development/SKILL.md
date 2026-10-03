@@ -18,16 +18,16 @@ Use `search-docs` for detailed Livewire 4 patterns and documentation.
 
 ```bash
 # Single-file component (SFC - default in v4)
-# Creates: resources/views/components/⚡create-post.blade.php
+# Creates: resources/views/components/create-post.blade.php
 php artisan make:livewire create-post
 
 # Page component (SFC - Full Page in v4)
-# Creates: resources/views/pages/⚡create-post.blade.php
+# Creates: resources/views/pages/create-post.blade.php
 php artisan make:livewire pages::create-post
 
 # Multi-file component (MFC)
-# Creates: resources/views/components/⚡create-post/create-post.php
-#          resources/views/components/⚡create-post/create-post.blade.php
+# Creates: resources/views/components/create-post/create-post.php
+#          resources/views/components/create-post/create-post.blade.php
 php artisan make:livewire create-post --mfc
 
 # Class-based component (v3 style)
@@ -52,15 +52,15 @@ Also check `config/livewire.php` for `make_command.type`, `make_command.emoji`, 
 
 | Format | Flag | Class Path | View Path |
 |--------|------|------------|-----------|
-| Single-file (SFC) | default | — | `resources/views/components/⚡create-post.blade.php` (PHP + Blade in one file) |
-| Full Page SFC | `pages::name` | — | `resources/views/pages/⚡create-post.blade.php` |
-| Multi-file (MFC) | `--mfc` | `resources/views/components/⚡create-post/create-post.php` | `resources/views/components/⚡create-post/create-post.blade.php` |
+| Single-file (SFC) | default | — | `resources/views/components/create-post.blade.php` (PHP + Blade in one file) |
+| Full Page SFC | `pages::name` | — | `resources/views/pages/create-post.blade.php` |
+| Multi-file (MFC) | `--mfc` | `resources/views/components/create-post/create-post.php` | `resources/views/components/create-post/create-post.blade.php` |
 | Class-based | `--class` | `app/Livewire/CreatePost.php` | `resources/views/livewire/create-post.blade.php` |
-| View-based | default (Blade-only) | — | `resources/views/components/⚡create-post.blade.php` (Blade-only with functional state) |
+| View-based | default (Blade-only) | — | `resources/views/components/create-post.blade.php` (Blade-only with functional state) |
 
-> **Important:** The ⚡ prefix shown above is the **default** behavior in Livewire v4 — it is **configurable**. Check `config/livewire.php` for the `make_command.emoji` setting. When `true` (default), always include the ⚡ prefix in filenames you create. When `false`, omit the ⚡ prefix from all paths above.
+> **Important:** The  prefix shown above is the **default** behavior in Livewire v4 — it is **configurable**. Check `config/livewire.php` for the `make_command.emoji` setting. When `true` (default), always include the  prefix in filenames you create. When `false`, omit the  prefix from all paths above.
 
-Namespaced components map to subdirectories: `make:livewire Posts/CreatePost` creates `resources/views/components/posts/⚡create-post.blade.php` (single-file by default). Use `make:livewire Posts/CreatePost --mfc` for multi-file output at `resources/views/components/posts/⚡create-post/create-post.php` and `resources/views/components/posts/⚡create-post/create-post.blade.php`.
+Namespaced components map to subdirectories: `make:livewire Posts/CreatePost` creates `resources/views/components/posts/create-post.blade.php` (single-file by default). Use `make:livewire Posts/CreatePost --mfc` for multi-file output at `resources/views/components/posts/create-post/create-post.php` and `resources/views/components/posts/create-post/create-post.blade.php`.
 
 ### Single-File Component Example
 

@@ -10,7 +10,7 @@ _Mis à jour le vendredi 2 octobre 2026. À lire en premier (humains et Claude).
 
 ## Stack
 
-Laravel 13 / PHP 8.4, Livewire 4 (composants ⚡), Flux (gratuit), Tailwind 4, Filament 5 (`/admin`), Fortify, Pest / Pint / PHPStan. Local : SQLite (Herd). Production : MariaDB 10.11, sessions et cache en base, `QUEUE_CONNECTION=sync` (à passer à `database` dans Hodifly), e-mails par `sendmail`. Pas de WebSockets ; temps réel par `wire:poll.10s.visible` (jamais sous 5 s). File d'attente : `sync` en local, `database` + worker en production (voir « Le serveur »).
+Laravel 13 / PHP 8.4, Livewire 4 (composants ), Flux (gratuit), Tailwind 4, Filament 5 (`/admin`), Fortify, Pest / Pint / PHPStan. Local : SQLite (Herd). Production : MariaDB 10.11, sessions et cache en base, `QUEUE_CONNECTION=sync` (à passer à `database` dans Hodifly), e-mails par `sendmail`. Pas de WebSockets ; temps réel par `wire:poll.10s.visible` (jamais sous 5 s). File d'attente : `sync` en local, `database` + worker en production (voir « Le serveur »).
 
 ## Ce qui est prêt dans le dépôt
 

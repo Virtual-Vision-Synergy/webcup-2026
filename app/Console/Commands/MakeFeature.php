@@ -109,9 +109,9 @@ class MakeFeature extends Command
             app_path("Models/{$this->model}.php") => $this->modelClass(),
             database_path("factories/{$this->model}Factory.php") => $this->factory(),
             app_path("Policies/{$this->model}Policy.php") => $this->policy(),
-            resource_path("views/pages/{$this->slug}/⚡index.blade.php") => $this->indexPage(),
-            resource_path("views/pages/{$this->slug}/⚡form.blade.php") => $this->formPage(),
-            resource_path("views/pages/{$this->slug}/⚡show.blade.php") => $this->showPage(),
+            resource_path("views/pages/{$this->slug}/index.blade.php") => $this->indexPage(),
+            resource_path("views/pages/{$this->slug}/form.blade.php") => $this->formPage(),
+            resource_path("views/pages/{$this->slug}/show.blade.php") => $this->showPage(),
             base_path("tests/Feature/{$this->model}Test.php") => $this->tests(),
         ];
 

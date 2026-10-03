@@ -99,12 +99,14 @@ new #[Title('Signalement')] class extends Component {
     />
 
     <form wire:submit="save" class="space-y-6">
-        <fieldset class="space-y-3">
+        <x-tn.mention-obligatoire />
+
+        <fieldset class="space-y-3" data-requis>
             <legend class="tn-display mb-1 text-lg font-semibold text-ink">{{ __('Type de problème') }}</legend>
             <div class="grid gap-2 sm:grid-cols-2">
                 @foreach (Signalement::CATEGORIE_OPTIONS as $option)
                     <label wire:key="categorie-{{ $option }}" class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
-                        <input type="radio" wire:model="categorie" value="{{ $option }}" class="size-4 accent-[var(--color-cyan)]">
+                        <input type="radio" wire:model="categorie" name="categorie" value="{{ $option }}" required class="size-4 accent-[var(--color-cyan)]">
                         <span class="font-medium text-ink">{{ __(Signalement::libelleCategorie($option)) }}</span>
                     </label>
                 @endforeach

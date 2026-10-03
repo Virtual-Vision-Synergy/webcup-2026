@@ -4,6 +4,7 @@ use App\Models\CreneauRendezVous;
 use App\Models\Demarche;
 use App\Models\RendezVous;
 use App\Models\Service;
+use App\Models\ServiceInterruption;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Livewire\Livewire;
@@ -98,7 +99,7 @@ test('le catalogue affiche le même état pour chaque service et filtre les disp
 
     Livewire::actingAs($user)
         ->test('pages::services.index')
-        ->set('disponiblesSeulement', true)
+        ->set('disponibles', true)
         ->assertSee('Urbanisme')
         ->assertDontSee('Médiathèque Ravinala')
         ->assertDontSee('État civil');
@@ -267,4 +268,26 @@ test('mise à jour de l’état : motif obligatoire et lien http(s) uniquement',
         ->assertHasErrors(['motif' => 'required', 'alternativeUrl']);
 
     expect($service->fresh()->etat())->toBe(Service::ETAT_DISPONIBLE);
+});
+
+test('une interruption F38 apparaît avec le même état, et « Disponible » depuis la fiche la clôt', function () {
+    $service = Service::factory()->create();
+    ServiceInterruption::factory()->incident()->for($service)->create(['motif' => 'Panne du logiciel']);
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)
+        ->get(route('services.index'))
+        ->assertSee('data-service-etat="indisponible"', false)
+        ->assertSee('Indisponible · Incident');
+
+    Livewire::actingAs($admin)
+        ->test('pages::services.show', ['service' => $service])
+        ->assertSet('motif', 'Panne du logiciel')
+        ->set('etat', Service::ETAT_DISPONIBLE)
+        ->call('mettreAJourEtat')
+        ->assertHasNoErrors();
+
+    expect(ServiceInterruption::sole()->retabli_at)->not->toBeNull()
+        ->and(ServiceInterruption::sole()->retabli_par)->toBe($admin->id)
+        ->and($service->fresh()->etat())->toBe(Service::ETAT_DISPONIBLE);
 });

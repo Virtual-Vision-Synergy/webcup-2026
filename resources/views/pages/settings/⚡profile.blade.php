@@ -1,6 +1,7 @@
 <?php
 
 use App\Concerns\ProfileValidationRules;
+use App\Services\OnboardingProgress;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -13,6 +14,8 @@ new #[Title('Profile settings')] class extends Component {
 
     public string $name = '';
     public string $email = '';
+    public string $telephone = '';
+    public string $quartier = '';
 
     /**
      * Mount the component.
@@ -21,6 +24,8 @@ new #[Title('Profile settings')] class extends Component {
     {
         $this->name = Auth::user()->name;
         $this->email = Auth::user()->email;
+        $this->telephone = (string) Auth::user()->telephone;
+        $this->quartier = (string) Auth::user()->quartier;
     }
 
     /**
@@ -30,7 +35,15 @@ new #[Title('Profile settings')] class extends Component {
     {
         $user = Auth::user();
 
-        $validated = $this->validate($this->profileRules($user->id));
+        $validated = $this->validate([
+            ...$this->profileRules($user->id),
+            'telephone' => ['nullable', 'string', 'max:30', 'regex:/^\+?[0-9 .()-]{6,30}$/'],
+            'quartier' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        foreach (['telephone', 'quartier'] as $champ) {
+            $validated[$champ] = trim($validated[$champ] ?? '') ?: null;
+        }
 
         $user->fill($validated);
 
@@ -41,6 +54,11 @@ new #[Title('Profile settings')] class extends Component {
         $user->save();
 
         Flux::toast(variant: 'success', text: __('Profile updated.'));
+
+        // Parcours de prise en main (D12) : retour à l'étape suivante si l'habitant vient de /bienvenue.
+        if (OnboardingProgress::pour($user)->doitRevenirAuParcours()) {
+            $this->redirectRoute('onboarding.show', navigate: true);
+        }
     }
 
 }; ?>
@@ -59,6 +77,10 @@ new #[Title('Profile settings')] class extends Component {
 
             </div>
 
+            <flux:input wire:model="telephone" label="Téléphone" type="tel" autocomplete="tel" placeholder="Ex. 034 12 345 67" />
+
+            <flux:input wire:model="quartier" label="Quartier" type="text" autocomplete="address-level3" placeholder="Ex. Ambohitra" />
+
             <div class="flex items-center gap-4">
                 <div class="flex items-center justify-end">
                     <flux:button variant="primary" type="submit" class="w-full" data-test="update-profile-button">
@@ -68,6 +90,13 @@ new #[Title('Profile settings')] class extends Component {
 
             </div>
         </form>
+
+            @can('view', \App\Models\Onboarding::class)
+                <p class="mb-6 text-sm text-ink-2">
+                    Nouveau à Nova Terra ?
+                    <a href="{{ route('onboarding.show') }}" wire:navigate class="font-medium text-cyan hover:underline" data-test="revoir-onboarding">Revoir la prise en main</a>
+                </p>
+            @endcan
 
             <livewire:pages::settings.delete-user-form />
     </x-pages::settings.layout>

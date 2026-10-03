@@ -68,7 +68,9 @@ new #[Title('Service')] class extends Component {
     <x-tn.page-header
         label="Annuaire"
         :title="$record ? 'Modifier le service' : 'Ajouter un service'"
-        :breadcrumb="['Services' => route('services.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
+        :breadcrumb="$record
+            ? ['Mon espace' => route('dashboard'), 'Services' => route('services.index'), $record->nom => route('services.show', $record), 'Modifier' => null]
+            : ['Mon espace' => route('dashboard'), 'Services' => route('services.index'), 'Nouveau' => null]"
     />
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">

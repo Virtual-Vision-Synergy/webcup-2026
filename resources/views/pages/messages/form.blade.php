@@ -71,7 +71,9 @@ new #[Title('Message')] class extends Component {
     <x-tn.page-header
         label="Contact"
         :title="$record ? 'Modifier le message' : 'Écrire à un service'"
-        :breadcrumb="['Messages' => route('messages.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
+        :breadcrumb="$record
+            ? ['Mon espace' => route('dashboard'), 'Messages' => route('messages.index'), ($record->sujet ?: 'Message') => route('messages.show', $record), 'Modifier' => null]
+            : ['Mon espace' => route('dashboard'), 'Messages' => route('messages.index'), 'Nouveau' => null]"
     />
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">

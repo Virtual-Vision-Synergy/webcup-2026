@@ -20,6 +20,9 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
 
     // F34 : comptes citoyens (droits fins dans UserPolicy : administerAccounts, viewAccount, deactivate, reactivate).
     Route::livewire('/citoyens', 'pages::agent.citizens.index')->name('citizens.index');
+    // F71 : comptes d'habitants sans e-mail (UserPolicy::createResidentAccounts), déclarés avant /citoyens/{user}.
+    Route::livewire('/citoyens/nouveau', 'pages::agent.citizens.create')->name('citizens.create');
+    Route::livewire('/citoyens/import', 'pages::agent.citizens.import')->name('citizens.import');
     Route::livewire('/citoyens/{user}', 'pages::agent.citizens.show')->name('citizens.show');
     Route::livewire('demandes', 'pages::agent.demandes')->name('demandes');
 
@@ -32,6 +35,10 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     // F47 : journal d'audit en LECTURE SEULE (aucune route de création, modification ni suppression).
     Route::livewire('journal', 'pages::agent.audit.index')->name('audit.index');
     Route::livewire('journal/{auditLog}', 'pages::agent.audit.show')->name('audit.show');
+
+    // F51 : remontées des habitants sur leurs données (RemonteePolicy::traiter dans chaque action).
+    Route::livewire('donnees/remontees', 'pages::agent.remontees.index')->name('concerns.index');
+    Route::livewire('donnees/remontees/{remontee}', 'pages::agent.remontees.show')->name('concerns.show');
 
     // F48 : historique d'un élément (lecture seule). {type} passe par la liste blanche AuditLog::HISTORY_TYPES (sinon 404).
     Route::livewire('historique/{type}/{id}', 'pages::agent.audit.history')

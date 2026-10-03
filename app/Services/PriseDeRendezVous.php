@@ -25,6 +25,11 @@ class PriseDeRendezVous
      */
     public function reserver(User $user, Service $service, int $creneauId, ?string $motif = null): RendezVous
     {
+        // F63 : service désactivé par un administrateur (relu en base, l'objet peut dater de l'affichage).
+        if (Service::query()->whereKey($service->id)->whereNotNull('indisponible_depuis')->exists()) {
+            throw CreneauIndisponible::serviceIndisponible();
+        }
+
         try {
             $rendezVous = DB::transaction(function () use ($user, $service, $creneauId, $motif): RendezVous {
                 $creneau = CreneauRendezVous::query()->lockForUpdate()->find($creneauId);

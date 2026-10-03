@@ -38,9 +38,13 @@ new class extends Component {
     }
 }; ?>
 
-<div x-data="{ ouvert: false }" x-on:keydown.escape.window="ouvert = false">
+<div
+    x-data="{ ouvert: false }"
+    x-init="$watch('ouvert', (valeur) => valeur && $nextTick(() => $refs.panneau.focus()))"
+    x-on:keydown.escape.window="if (ouvert) { ouvert = false; $root.querySelector('[data-test=cloche-notifications]')?.focus() }"
+>
     <div>
-        <flux:sidebar.item icon="bell" x-on:click="ouvert = ! ouvert" data-test="cloche-notifications"
+        <flux:sidebar.item icon="bell" x-on:click="ouvert = ! ouvert" x-bind:aria-expanded="ouvert.toString()" aria-controls="cloche-panneau" data-test="cloche-notifications"
             :aria-label="$this->unreadCount === 0 ? 'Notifications, aucune non lue' : 'Notifications, '.$this->unreadCount.' non lue'.($this->unreadCount > 1 ? 's' : '')">
             {{ __('Notifications') }}
             @if ($this->unreadCount > 0)
@@ -48,7 +52,7 @@ new class extends Component {
             @endif
         </flux:sidebar.item>
 
-        <div x-show="ouvert" x-cloak x-on:click.outside="ouvert = false" class="fixed bottom-20 start-3 z-50 w-80 max-w-[calc(100vw-1.5rem)] rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+        <div id="cloche-panneau" x-ref="panneau" x-show="ouvert" x-cloak x-on:click.outside="ouvert = false" x-on:focusout="if ($event.relatedTarget && ! $el.contains($event.relatedTarget) && ! $event.relatedTarget.closest('[data-test=cloche-notifications]')) { ouvert = false }" role="dialog" aria-label="{{ __('Notifications') }}" tabindex="-1" class="fixed bottom-20 start-3 z-50 w-80 max-w-[calc(100vw-1.5rem)] rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
             <div class="flex items-center justify-between gap-2 border-b border-zinc-200 px-3 py-2 dark:border-zinc-700">
                 <flux:heading size="sm">{{ __('Notifications') }}</flux:heading>
                 @if ($this->unreadCount > 0)

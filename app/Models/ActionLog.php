@@ -39,6 +39,8 @@ class ActionLog extends Model
         'login' => 'Connexion',
         'logout' => 'Déconnexion',
         'export' => 'Export',
+        'account_deactivated' => 'Compte désactivé',
+        'account_reactivated' => 'Compte réactivé',
     ];
 
     /**

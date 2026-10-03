@@ -82,7 +82,9 @@ new #[Title('Actualite')] class extends Component {
     <x-tn.page-header
         label="Fil du Haut Conseil"
         :title="$record ? 'Modifier l’annonce' : 'Publier une annonce'"
-        :breadcrumb="['Actualités' => route('actualites.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
+        :breadcrumb="$record
+            ? ['Mon espace' => route('dashboard'), 'Actualités' => route('actualites.index'), ($record->titre ?: 'Annonce') => route('actualites.show', $record), 'Modifier' => null]
+            : ['Mon espace' => route('dashboard'), 'Actualités' => route('actualites.index'), 'Nouveau' => null]"
     />
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">

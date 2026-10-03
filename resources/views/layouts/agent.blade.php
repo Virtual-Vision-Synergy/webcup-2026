@@ -12,7 +12,7 @@
         <flux:header container class="tn-glass sticky top-0 z-40 h-[72px]! border-b border-t-2 border-t-cyan">
             <a href="{{ route('agent.index') }}" class="flex items-center gap-3" aria-label="Espace agent : demandes Nova Terra">
                 <x-app-logo-icon class="size-[26px] shrink-0" />
-                <span class="tn-display text-[15px] font-semibold tracking-[.16em] max-sm:hidden" style="font-stretch: 118%">TERRA NOVA</span>
+                <span class="tn-display text-[0.9375rem] font-semibold tracking-[.16em] max-sm:hidden" style="font-stretch: 118%">TERRA NOVA</span>
                 <x-tn.status-badge etat="info">Espace agent</x-tn.status-badge>
             </a>
 
@@ -20,10 +20,23 @@
                 <flux:navbar.item icon="inbox-stack" :href="route('agent.index')" :current="request()->routeIs('agent.index')">
                     Demandes Nova Terra
                 </flux:navbar.item>
+                <flux:navbar.item icon="megaphone" :href="route('agent.annonces.index')" :current="request()->routeIs('agent.annonces.*')">
+                    Messages généraux
+                </flux:navbar.item>
+                <flux:navbar.item icon="users" :href="route('agent.citizens.index')" :current="request()->routeIs('agent.citizens.*')">
+                    Comptes citoyens
+                </flux:navbar.item>
+                <flux:navbar.item icon="clipboard-document-list" :href="route('agent.demandes')" :current="request()->routeIs('agent.demandes')">
+                    Demandes des habitants
+                </flux:navbar.item>
+                <flux:navbar.item icon="document-text" :href="route('agent.audit.index')" :current="request()->routeIs('agent.audit.*')">
+                    Journal
+                </flux:navbar.item>
             </flux:navbar>
 
             <flux:spacer />
 
+            <x-tn.contrast-toggle class="max-md:hidden" />
             <x-tn.theme-toggle class="max-md:hidden" />
             <flux:button :href="route('dashboard')" variant="ghost" size="sm" icon="arrow-uturn-left" class="max-md:hidden">
                 Espace citoyen
@@ -44,6 +57,10 @@
                     <flux:menu.separator />
 
                     <flux:menu.item icon="inbox-stack" :href="route('agent.index')" class="md:hidden">Demandes Nova Terra</flux:menu.item>
+                    <flux:menu.item icon="users" :href="route('agent.citizens.index')" class="md:hidden">Comptes citoyens</flux:menu.item>
+                    <flux:menu.item icon="megaphone" :href="route('agent.annonces.index')" class="md:hidden">Messages généraux</flux:menu.item>
+                    <flux:menu.item icon="clipboard-document-list" :href="route('agent.demandes')" class="md:hidden">Demandes des habitants</flux:menu.item>
+                    <flux:menu.item icon="document-text" :href="route('agent.audit.index')" class="md:hidden">Journal</flux:menu.item>
                     <flux:menu.item icon="arrow-uturn-left" :href="route('dashboard')">Retour à l'espace citoyen</flux:menu.item>
                     <flux:menu.item icon="cog" :href="route('profile.edit')">{{ __('Settings') }}</flux:menu.item>
 
@@ -58,6 +75,8 @@
                 </flux:menu>
             </flux:dropdown>
         </flux:header>
+
+        <x-tn.bandeau-annonces />
 
         <flux:main container>
             {{ $slot }}

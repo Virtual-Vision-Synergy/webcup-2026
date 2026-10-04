@@ -120,6 +120,7 @@
             </flux:dropdown>
         </flux:header>
 
+        {{-- Bandeaux hors de toute grille, frères directs de <main> : pleine largeur, contenu aligné sur l'en-tête et <main>. --}}
         <x-tn.bandeau-annonces />
 
         {{-- F44 : pas de <flux:main> (grille Flux) : le bandeau d'alerte y devenait une colonne étroite à côté du contenu.

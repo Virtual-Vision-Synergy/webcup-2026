@@ -40,10 +40,9 @@ class DatabaseSeeder extends Seeder
         $this->call(RoleSeeder::class);
         $this->call(QuartierSeeder::class);
 
-        // D09 : seeder relançable sans doublon. Les comptes de démo existent déjà → rien à recréer.
+        // D09 : seeder relançable sans doublon. Les comptes de démo existent déjà → rien à recréer
+        // (php artisan migrate:fresh --seed pour repartir de zéro, en local uniquement).
         if (User::where('email', 'admin@example.com')->exists()) {
-            $this->command?->info('Données de démo déjà présentes : rien à ajouter (php artisan migrate:fresh --seed pour repartir de zéro, en local uniquement).');
-
             return;
         }
 

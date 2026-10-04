@@ -104,6 +104,52 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * F95 : nombre de notifications non lues, compté une seule fois par requête HTTP
+     * (les deux cloches et la page des notifications affichent le même chiffre).
+     */
+    public function nombreNotificationsNonLues(): int
+    {
+        $requete = request();
+        $cle = 'tn.notifications-non-lues.'.$this->getKey();
+
+        if (! $requete->attributes->has($cle)) {
+            $requete->attributes->set($cle, $this->unreadNotifications()->count());
+        }
+
+        return (int) $requete->attributes->get($cle);
+    }
+
+    /**
+     * À appeler après avoir marqué des notifications comme lues dans la même requête.
+     */
+    public function oublierNotificationsNonLues(): void
+    {
+        request()->attributes->remove('tn.notifications-non-lues.'.$this->getKey());
+    }
+
+    /**
+     * F95 : l'habitant a-t-il déjà déposé une démarche ? Un « oui » est retenu pour la requête HTTP en cours
+     * (le tableau de bord posait la question deux fois) ; un « non » est toujours revérifié.
+     */
+    public function aCommenceUneDemarche(): bool
+    {
+        $requete = request();
+        $cle = 'tn.demarche-commencee.'.$this->getKey();
+
+        if ($requete->attributes->get($cle) === true) {
+            return true;
+        }
+
+        $commencee = $this->demarches()->exists();
+
+        if ($commencee) {
+            $requete->attributes->set($cle, true);
+        }
+
+        return $commencee;
+    }
+
+    /**
      * Get the user's initials
      */
     public function initials(): string

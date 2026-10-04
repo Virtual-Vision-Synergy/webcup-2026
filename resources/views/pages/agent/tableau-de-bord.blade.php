@@ -46,6 +46,24 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
     }
 
     /**
+     * F86 : urgences médicales ouvertes (déposées ou en cours) et, parmi elles, celles sans prise en charge.
+     *
+     * @return array{ouvertes: int, sans_prise_en_charge: int}
+     */
+    #[Computed]
+    public function urgences(): array
+    {
+        Gate::authorize('viewAgentSpace');
+
+        $ouvertes = Demarche::query()->visibleTo(auth()->user())->urgencesATraiter();
+
+        return [
+            'ouvertes' => (clone $ouvertes)->count(),
+            'sans_prise_en_charge' => $ouvertes->whereNull('pris_en_charge_le')->count(),
+        ];
+    }
+
+    /**
      * Compteurs clés du suivi quotidien.
      *
      * @return array{total: int, aujourdhui: int, en_attente: int, signalements: int, signalements_nouveaux: int}
@@ -142,6 +160,30 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
             </flux:button>
         </x-slot:actions>
     </x-tn.page-header>
+
+    {{-- F86 : urgences médicales à traiter en priorité --}}
+    @php($urgences = $this->urgences)
+    <a
+        href="{{ route('agent.demandes', ['prioritaires' => 1]) }}"
+        wire:navigate
+        data-test="compteur-urgences"
+        @class([
+            'flex items-center justify-between gap-3 rounded-md border p-4 transition',
+            'border-magenta bg-magenta/8 hover:bg-magenta/12' => $urgences['ouvertes'] > 0,
+            'border-line hover:border-magenta/50' => $urgences['ouvertes'] === 0,
+        ])
+    >
+        <span class="flex items-center gap-3">
+            <flux:icon name="heart" @class(['size-6 shrink-0', 'text-magenta' => $urgences['ouvertes'] > 0, 'text-ink-2' => $urgences['ouvertes'] === 0]) aria-hidden="true" />
+            <span>
+                <span class="block font-semibold text-ink">Urgences médicales à traiter en priorité</span>
+                <span @class(['block text-sm', 'font-medium text-magenta' => $urgences['sans_prise_en_charge'] > 0, 'text-ink-2' => $urgences['sans_prise_en_charge'] === 0])>
+                    {{ $urgences['sans_prise_en_charge'] > 0 ? $urgences['sans_prise_en_charge'].' sans prise en charge' : 'Toutes prises en charge' }}
+                </span>
+            </span>
+        </span>
+        <span @class(['tn-display text-3xl font-semibold', 'text-magenta' => $urgences['ouvertes'] > 0, 'text-ink-2' => $urgences['ouvertes'] === 0])>{{ $urgences['ouvertes'] }}</span>
+    </a>
 
     {{-- Compteurs du suivi quotidien --}}
     <div class="grid grid-cols-2 gap-3 lg:grid-cols-4" data-test="compteurs">

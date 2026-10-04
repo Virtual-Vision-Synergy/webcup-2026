@@ -21,3 +21,4 @@ parameters:
                 - app/Concerns/ThrottlesPerUser.php
                 - app/Concerns/BloqueSiServiceIndisponible.php
                 - app/Concerns/ProtegeContreRobots.php
+                - app/Concerns/EmpecheEnvoiEnDouble.php

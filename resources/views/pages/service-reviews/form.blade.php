@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\EmpecheEnvoiEnDouble;
 use App\Concerns\ThrottlesPerUser;
 use App\Models\Service;
 use App\Models\ServiceReview;
@@ -14,7 +15,7 @@ use Livewire\Component;
  * un seul avis par habitant et par service (pré-rempli s'il existe, mis à jour à l'envoi).
  */
 new #[Title('Votre avis sur ce service')] class extends Component {
-    use ThrottlesPerUser;
+    use EmpecheEnvoiEnDouble, ThrottlesPerUser;
 
     #[Locked]
     public Service $service;
@@ -34,6 +35,7 @@ new #[Title('Votre avis sur ce service')] class extends Component {
     {
         $this->authorize('view', $service);
         $this->service = $service;
+        $this->initialiserJetonEnvoi();
         $this->review = ServiceReview::query()->whereBelongsTo(auth()->user())->whereBelongsTo($service)->first();
 
         if ($this->review !== null) {
@@ -80,7 +82,19 @@ new #[Title('Votre avis sur ce service')] class extends Component {
         $donnees = $this->validate();
 
         try {
-            $avis = ServiceReview::enregistrer(auth()->user(), $this->service, $donnees);
+            // F82 : même note et même commentaire renvoyés (double clic, retour arrière) → rien n'est réécrit.
+            $avis = $this->envoyerUneSeuleFois(
+                'avis',
+                ['service_id' => $this->service->id, 'rating' => (int) $donnees['rating'], 'comment' => $donnees['comment']],
+                fn (): ServiceReview => ServiceReview::enregistrer(auth()->user(), $this->service, $donnees),
+                fn (): string => route('services.reviews.mine'),
+            );
+
+            if ($avis === null) {
+                $this->confirmation = null;
+
+                return;
+            }
         } catch (UniqueConstraintViolationException) {
             // Double envoi simultané : l'avis existe déjà, on le met à jour.
             $avis = ServiceReview::enregistrer(auth()->user(), $this->service, $donnees);
@@ -142,11 +156,10 @@ new #[Title('Votre avis sur ce service')] class extends Component {
                     <flux:callout variant="danger" icon="exclamation-triangle">{{ $message }}</flux:callout>
                 @enderror
 
+                <x-envoi-deja-fait :le="$envoiDejaFaitLe" :url="$envoiDejaFaitUrl" message="Cet avis a déjà été envoyé" lien="voir mes avis" />
+
                 <div class="flex flex-wrap items-center gap-2">
-                    <flux:button type="submit" variant="primary" icon="paper-airplane">
-                        <span wire:loading.remove wire:target="save">{{ $review ? __('Mettre à jour mon avis') : __('Envoyer mon avis') }}</span>
-                        <span wire:loading wire:target="save">{{ __('Envoi…') }}</span>
-                    </flux:button>
+                    <x-submit-button variant="primary" icon="paper-airplane">{{ $review ? __('Mettre à jour mon avis') : __('Envoyer mon avis') }}</x-submit-button>
                     <flux:button variant="ghost" :href="route('services.show', $service)" wire:navigate>{{ __('Retour à la fiche') }}</flux:button>
                 </div>
             </form>

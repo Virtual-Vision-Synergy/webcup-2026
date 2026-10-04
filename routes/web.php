@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
 
+// F93 : page publique décidée — affichée sans réseau à tous (connectés ou non) par le service worker ; aucune donnée personnelle.
+Route::view('hors-ligne', 'hors-ligne')->name('hors-ligne');
+
 // F51 : page publique décidée — un habitant doit comprendre l'usage de ses données avant de créer un compte.
 Route::view('vos-donnees', 'vos-donnees')->name('privacy.show');
 

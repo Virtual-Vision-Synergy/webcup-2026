@@ -1,3 +1,5 @@
+import { etatReseau, pagesHorsLigne } from './hors-ligne.js';
+
 /**
  * Menu mobile Terra Nova (bottom sheet) : état partagé entre le bouton « Menu », la feuille et la page qui recule.
  * Alpine est fourni par Livewire : on déclare le store à son initialisation.
@@ -30,6 +32,10 @@ document.addEventListener('alpine:init', () => {
     });
 
     window.Alpine.data('tnBandeau', bandeauAnnonce);
+
+    // F93 : état du réseau, brouillons hors ligne et page « Vous êtes hors ligne ».
+    window.Alpine.data('tnEtatReseau', etatReseau);
+    window.Alpine.data('tnPagesHorsLigne', pagesHorsLigne);
 });
 
 /**

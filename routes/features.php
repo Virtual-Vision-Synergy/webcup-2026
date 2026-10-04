@@ -120,6 +120,11 @@ Route::middleware(['auth'])->group(function () {
     // F92 : « Je ne sais pas à qui m'adresser » — orientation vers le bon service à partir d'une description libre (moteur D10).
     Route::livewire('orientation', 'pages::orientation.index')->name('orientation.index');
 
+    // F103 : rapport d'activité imprimable (PDF par « Imprimer ») et CSV, réservé aux admins (Gate voirRapportActivite).
+    Route::livewire('rapport-activite', 'pages::rapport-activite.index')
+        ->middleware('can:voirRapportActivite')
+        ->name('rapport-activite.imprimable');
+
     // make:feature:routes
 });
 

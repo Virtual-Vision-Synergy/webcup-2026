@@ -75,3 +75,8 @@
 .dark .tn-marqueur-perturbe { box-shadow: 0 0 0 4px rgb(255 180 75 / .25); }
 .dark .tn-marqueur-alerte { box-shadow: 0 0 0 4px rgb(255 66 133 / .25); }
 .dark .tn-marqueur-info { box-shadow: 0 0 0 4px rgb(65 221 248 / .25); }
+
+/* Thème sombre : les tuiles OpenStreetMap (claires) sont inversées, les marqueurs et bulles ne sont pas touchés. */
+.dark .leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) brightness(.9) contrast(.9) saturate(.6);
+}

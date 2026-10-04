@@ -49,6 +49,10 @@
                         Boîte à idées
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="chat-bubble-left-right" :href="route('consultations.index')" :current="request()->routeIs('consultations.*')" wire:navigate>
+                        Consultations
+                    </flux:sidebar.item>
+
                     <flux:sidebar.item icon="eye" :href="route('accessibility.show')" :current="request()->routeIs('accessibility.show')" wire:navigate>
                         Accessibilité
                     </flux:sidebar.item>
@@ -143,6 +147,7 @@
                 </header>
 
                 <x-tn.bandeau-annonces />
+                <x-tn.bandeau-consultations />
 
                 <main id="contenu" tabindex="-1" class="flex flex-1 flex-col">
                     {{ $slot }}

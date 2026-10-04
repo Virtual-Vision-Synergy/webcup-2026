@@ -274,8 +274,9 @@ test('la confirmation directe d’un rendez-vous sur un service indisponible est
 
     interrompre($this->service);
 
-    $page->call('confirmer')->assertHasErrors('service');
-    Livewire::actingAs($citoyen)->test('pages::rendez-vous.form')->call('choisirService', $this->service->slug)->assertHasErrors('service');
+    // F64 : refus = retour sur la fiche du service, avec le message (motif, retour prévu, alternative).
+    $page->call('confirmer')->assertRedirect(route('services.show', $this->service));
+    Livewire::actingAs($citoyen)->test('pages::rendez-vous.form')->call('choisirService', $this->service->slug)->assertRedirect(route('services.show', $this->service));
 
     expect(RendezVous::count())->toBe(0);
 });
@@ -297,7 +298,7 @@ test('l’envoi direct d’une démarche sur un service indisponible est refusé
         ->set('description', 'Pour mon fils.')
         ->set('service_id', (string) $this->service->id)
         ->call('save')
-        ->assertHasErrors('service_id');
+        ->assertRedirect(route('services.show', $this->service));
 
     expect(Demarche::count())->toBe(0);
 });

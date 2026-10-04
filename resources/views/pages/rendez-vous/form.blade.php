@@ -41,14 +41,13 @@ new #[Title('Prendre rendez-vous')] class extends Component {
     {
         $this->authorize('create', RendezVous::class);
 
+        if ($this->refuserSiServiceIndisponible($this->serviceSlug)) {
+            return;
+        }
+
         if ($this->serviceSlug !== '' && $this->service === null) {
             $this->serviceSlug = '';
             $this->creneauId = '';
-        }
-
-        // F38 : service interrompu (maintenance, incident) → retour à sa fiche, qui explique quand revenir.
-        if ($this->redirigerSiServiceIndisponible($this->service)) {
-            return;
         }
 
         if ($this->creneauId !== '' && $this->creneau === null) {
@@ -211,8 +210,10 @@ new #[Title('Prendre rendez-vous')] class extends Component {
     {
         $this->authorize('create', RendezVous::class);
 
-        // F38 : refusé côté serveur si le service est interrompu, même si le bouton a été contourné.
-        Service::query()->prendRendezVous()->where('slug', $slug)->first()?->assertDisponible('service');
+        // F38 / F64 : refusé côté serveur si le service est indisponible, même si le bouton a été contourné.
+        if ($this->refuserSiServiceIndisponible($slug)) {
+            return;
+        }
 
         $this->serviceSlug = $slug;
         $this->creneauId = '';
@@ -266,14 +267,16 @@ new #[Title('Prendre rendez-vous')] class extends Component {
 
         $service = $this->service;
 
+        // F38 / F64 : le service a pu devenir indisponible depuis le choix du créneau.
+        if ($this->refuserSiServiceIndisponible($this->serviceSlug)) {
+            return;
+        }
+
         if ($service === null || ! ctype_digit($this->creneauId)) {
             $this->retourServices();
 
             return;
         }
-
-        // F38 : le service a pu être interrompu depuis le choix du créneau.
-        $service->assertDisponible('service');
 
         try {
             $rendezVous = app(PriseDeRendezVous::class)->reserver(auth()->user(), $service, (int) $this->creneauId, $this->motif);
@@ -288,6 +291,15 @@ new #[Title('Prendre rendez-vous')] class extends Component {
         session()->flash('rendez-vous-confirme', true);
 
         $this->redirectRoute('appointments.show', $rendezVous, navigate: true);
+    }
+
+    /**
+     * F38 / F64 : un service indisponible ne prend pas de rendez-vous (lien direct, choix ou confirmation) :
+     * retour sur sa fiche avec le motif, la date de retour prévue et l'alternative (relu en base).
+     */
+    private function refuserSiServiceIndisponible(string $slug): bool
+    {
+        return $slug !== '' && $this->redirigerSiServiceIndisponible(Service::query()->where('slug', $slug)->first());
     }
 
     /**

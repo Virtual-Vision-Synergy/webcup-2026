@@ -140,6 +140,7 @@
         @endpersist
 
         <x-tn.chargement />
+        <x-tn.etat-reseau />
 
         @fluxScripts
     </body>

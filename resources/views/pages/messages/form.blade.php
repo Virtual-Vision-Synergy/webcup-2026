@@ -153,7 +153,7 @@ new #[Title('Contacter la mairie')] class extends Component {
             </div>
         </div>
     @else
-        <form wire:submit="save" class="relative space-y-6 rounded-md border border-line bg-surface p-5 md:p-6" novalidate>
+        <form wire:submit="save" @if (! $record) data-brouillon="contact" data-brouillon-libelle="{{ __('Message à la mairie') }}" @endif class="relative space-y-6 rounded-md border border-line bg-surface p-5 md:p-6" novalidate>
             <x-tn.mention-obligatoire />
 
             @unless ($record)

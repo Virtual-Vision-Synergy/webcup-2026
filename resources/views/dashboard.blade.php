@@ -163,7 +163,7 @@
                                     <span class="block truncate text-sm text-ink-2">{{ $demarche->service?->nom ?? 'Service non précisé' }} · <span class="font-mono text-xs">{{ $demarche->created_at->format('d.m.Y') }}</span></span>
                                     <x-slot:aside>
                                         @if ($demarche->urgence_medicale)
-                                            <x-tn.status-badge etat="alerte">Urgence médicale</x-tn.status-badge>
+                                            <x-badge-urgence-medicale />
                                         @endif
                                         <x-tn.status-badge :etat="$demarche->etatStatut()">{{ Demarche::libelleStatut($demarche->statut) }}</x-tn.status-badge>
                                     </x-slot:aside>

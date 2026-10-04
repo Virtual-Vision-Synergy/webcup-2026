@@ -121,6 +121,11 @@ Route::middleware(['auth'])->group(function () {
     // F92 : « Je ne sais pas à qui m'adresser » — orientation vers le bon service à partir d'une description libre (moteur D10).
     Route::livewire('orientation', 'pages::orientation.index')->name('orientation.index');
 
+    // F103 : rapport d'activité imprimable (PDF par « Imprimer ») et CSV, réservé aux admins (Gate voirRapportActivite).
+    Route::livewire('rapport-activite', 'pages::rapport-activite.index')
+        ->middleware('can:voirRapportActivite')
+        ->name('rapport-activite.imprimable');
+
     // F99 : espace partenaire — un compte partenaire gère SES services, l'admin ceux de tous (PartnerOfferingPolicy dans chaque action).
     Route::middleware('can:viewPartnerSpace')->prefix('partenaire/services')->name('partner.offerings.')->group(function () {
         Route::livewire('/', 'pages::partner-offerings.index')->name('index');

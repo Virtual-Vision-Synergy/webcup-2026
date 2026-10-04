@@ -61,6 +61,9 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('viewAgentSpace', fn (User $user): bool => $user->isAgent() || $user->isAdmin());
 
+        // F103 : le rapport d'activité (page admin, version imprimable, CSV) est réservé aux administrateurs.
+        Gate::define('voirRapportActivite', fn (User $user): bool => $user->isAdmin());
+
         // F99 : espace partenaire (comptes partenaires rattachés à un partenaire, et admins qui gèrent tous les partenaires).
         Gate::define('viewPartnerSpace', fn (User $user): bool => $user->isAdmin() || ($user->isPartenaire() && $user->partner_id !== null));
 

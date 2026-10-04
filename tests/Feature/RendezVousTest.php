@@ -201,14 +201,14 @@ test('un citoyen reçoit un 403 sur la fiche et l’annulation du rendez-vous d�
 test('« Mes rendez-vous » ne liste que ceux du citoyen connecté', function () {
     $citoyen = User::factory()->citoyen()->create();
     RendezVous::factory()->for($citoyen)->create(['creneau_id' => creneauDe($this->etatCivil, '2026-10-06 06:30:00')->id]);
-    $autreService = Service::factory()->create(['nom' => 'Urbanisme', 'duree_rendez_vous' => 30]);
+    $autreService = Service::factory()->create(['nom' => 'Voirie et propreté', 'duree_rendez_vous' => 30]);
     RendezVous::factory()->create(['creneau_id' => creneauDe($autreService, '2026-10-06 06:30:00')->id]);
 
     $this->actingAs($citoyen)
         ->get(route('appointments.index'))
         ->assertOk()
         ->assertSee('État civil')
-        ->assertDontSee('Urbanisme');
+        ->assertDontSee('Voirie et propreté');
 });
 
 test('l’annulation libère le créneau, qui est de nouveau proposé', function () {

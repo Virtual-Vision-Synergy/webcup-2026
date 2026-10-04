@@ -25,7 +25,7 @@
         </form>
 
         <flux:text class="text-center text-sm">
-            Le lien est valable 15 minutes et ne fonctionne qu'une seule fois. Si la double authentification est activée sur votre compte, votre code vous sera demandé ensuite.
+            Le lien est valable 15 minutes et ne fonctionne qu'une seule fois. Si la vérification en deux étapes est activée sur votre compte, votre code vous sera demandé ensuite.
         </flux:text>
 
         <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-600 dark:text-zinc-400">

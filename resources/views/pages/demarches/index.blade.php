@@ -169,7 +169,7 @@ new #[Title('Mes démarches')] class extends Component {
                         <x-slot:aside>
                             <span class="flex flex-wrap gap-1">
                                 @if ($item->urgence_medicale)
-                                    <x-tn.status-badge etat="alerte">{{ __('Urgence médicale') }}</x-tn.status-badge>
+                                    <x-badge-urgence-medicale />
                                 @endif
                                 <x-tn.status-badge :etat="$item->etatStatut()">{{ Demarche::libelleStatut($item->statut) }}</x-tn.status-badge>
                                 @if ($item->reponseEnvoyee())
@@ -205,7 +205,7 @@ new #[Title('Mes démarches')] class extends Component {
                             <flux:table.cell>
                                 <div class="flex flex-wrap gap-1">
                                     @if ($item->urgence_medicale)
-                                        <x-tn.status-badge etat="alerte">{{ __('Urgence médicale') }}</x-tn.status-badge>
+                                        <x-badge-urgence-medicale />
                                     @endif
                                     <x-tn.status-badge :etat="$item->etatStatut()">{{ Demarche::libelleStatut($item->statut) }}</x-tn.status-badge>
                                     @if ($item->reponseEnvoyee())

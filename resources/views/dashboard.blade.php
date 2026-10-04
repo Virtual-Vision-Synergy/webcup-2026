@@ -3,6 +3,8 @@
     use Illuminate\Support\Facades\Route;
 
     $user = auth()->user();
+    // F78 : rôle chargé une fois (pas de requête paresseuse dans l'en-tête).
+    $user->loadMissing('role');
     // Uniquement les démarches de l'utilisateur connecté (jamais d'ID venant du navigateur).
     $demarches = $user->demarches()->with('service')->latest()->limit(5)->get();
     $totalDemarches = $user->demarches()->count();
@@ -17,7 +19,10 @@
     // F29 : alertes en cours qui visent le quartier de l'habitant, affichées en tête.
     $alertesQuartier = \App\Models\Annonce::enDiffusion($user)->filter(fn ($annonce) => $annonce->concerne($user));
     // F28 : services prioritaires (mis en avant par un agent), proposés dans l'accès rapide.
-    $servicesPrioritaires = \App\Models\Service::query()->where('mis_en_avant', true)->orderBy('nom')->limit(4)->get(['id', 'nom', 'slug', 'indisponible_depuis']);
+    // F78 : mis en cache 10 min, vidé dès qu'un service change (ViderCachesPublics) ; tableaux simples en cache, pas de modèles.
+    $servicesPrioritaires = \App\Models\Service::hydrate(Cache::remember(\App\Models\Service::CACHE_SERVICES_PRIORITAIRES, 600, fn (): array => \App\Models\Service::query()
+        ->where('mis_en_avant', true)->orderBy('nom')->limit(4)->get(['id', 'nom', 'slug', 'indisponible_depuis'])
+        ->map(fn (\App\Models\Service $service): array => $service->getAttributes())->all()));
     $rubriques = array_filter(config('navigation.rubriques'), fn (array $r): bool => Route::has($r['route']));
     // D11 : résumé de « Mes demandes » (signalements de l'utilisateur connecté uniquement).
     $totalMesDemandes = \App\Models\Signalement::duCitoyen($user)->count();

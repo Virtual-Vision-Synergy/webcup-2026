@@ -55,7 +55,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Disponibilité des servi
         label="Espace agent"
         title="Disponibilité des services"
         subtitle="Signalez une maintenance ou un incident : les habitants sont prévenus sur le catalogue et la fiche avant de commencer une démarche."
-        :breadcrumb="['Espace agent' => route('agent.index'), 'Services' => null]"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Services' => null]"
     />
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -69,7 +69,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Disponibilité des servi
     @if ($this->items->isEmpty())
         <x-tn.empty icon="landmark" title="Aucun service" :text="$search !== '' || $indisponibles ? 'Aucun service ne correspond à ces critères.' : 'Aucun service n’est encore publié.'" />
     @else
-        <div class="overflow-x-auto">
+        <x-tn.surface padding="px-4 py-2">
             <flux:table :paginate="$this->items">
                 <flux:table.columns>
                     <flux:table.column>Service</flux:table.column>
@@ -113,6 +113,6 @@ new #[Layout('layouts::agent'), Title('Espace agent — Disponibilité des servi
                     @endforeach
                 </flux:table.rows>
             </flux:table>
-        </div>
+        </x-tn.surface>
     @endif
 </section>

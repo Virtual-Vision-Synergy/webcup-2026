@@ -156,7 +156,7 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
         :title="$record ? 'Modifier le message' : 'Publier un message ou une alerte'"
         :breadcrumb="['Messages généraux' => route('agent.annonces.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
         :title="$record ? 'Modifier le message' : 'Publier un message général'"
-        :breadcrumb="['Espace agent' => route('agent.index'), 'Messages généraux' => route('agent.annonces.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Messages généraux' => route('agent.annonces.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
     />
 
     @if ($record)

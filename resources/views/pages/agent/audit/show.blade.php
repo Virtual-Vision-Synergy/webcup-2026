@@ -70,7 +70,7 @@ new #[Layout('layouts::agent'), Title('Entrée du journal')] class extends Compo
         label="Journal"
         :title="$log->libelleAction()"
         :subtitle="$log->phrase()"
-        :breadcrumb="['Espace agent' => route('agent.index'), 'Journal' => route('agent.audit.index'), 'Entrée n° '.$log->id => null]"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Journal' => route('agent.audit.index'), 'Entrée n° '.$log->id => null]"
     >
         <x-slot:meta>
             <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink-2">

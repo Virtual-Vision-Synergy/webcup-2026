@@ -117,7 +117,7 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
 <section class="w-full space-y-6">
     <x-tn.page-header
         label="{{ __('Haut Conseil de la Ville') }}"
-        :breadcrumb="['Espace agent' => route('agent.index'), 'Messages généraux' => null]"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Messages généraux' => null]"
         title="{{ __('Messages généraux') }}"
         subtitle="{{ __('Diffusez une information à tous les habitants : elle s’affiche en bandeau sur toutes les pages pendant sa période de validité.') }}"
     >
@@ -137,7 +137,7 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
                 <flux:select.option :value="$code">{{ __($statut['label']) }}</flux:select.option>
             @endforeach
         </flux:select>
-        <div wire:loading wire:target="filterStatut"><flux:text>{{ __('Chargement…') }}</flux:text></div>
+        <span wire:loading wire:target="filterStatut" class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">{{ __('Mise à jour…') }}</span>
     </div>
 
     @if ($this->items->isEmpty())
@@ -145,6 +145,7 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
             <flux:button variant="primary" :href="route('agent.annonces.create')" wire:navigate>{{ __('Publier un message') }}</flux:button>
         </x-tn.empty>
     @else
+        <x-tn.surface padding="px-4 py-2">
         <flux:table :paginate="$this->items">
             <flux:table.columns>
                 <flux:table.column>{{ __('Message') }}</flux:table.column>
@@ -204,6 +205,7 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
                 @endforeach
             </flux:table.rows>
         </flux:table>
+        </x-tn.surface>
     @endif
 
     <flux:modal name="mise-a-jour" class="w-full max-w-lg">

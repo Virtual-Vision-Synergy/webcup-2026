@@ -5,9 +5,9 @@
     « Accueil » est ajouté automatiquement en premier niveau (désactivable avec :home="false").
 --}}
 @php
-    $niveaux = $home ? ['Accueil' => route('home')] + $items : $items;
+    $niveaux = $home ? [__('Accueil') => route('home')] + $items : $items;
 @endphp
-<nav {{ $attributes }} aria-label="Fil d'Ariane">
+<nav {{ $attributes }} aria-label="{{ __('Fil d\'Ariane') }}">
     <ol class="flex flex-wrap items-center gap-1.5 font-mono text-[0.6875rem] uppercase tracking-[.06em] text-ink-2">
         @foreach ($niveaux as $libelle => $url)
             <li class="flex min-w-0 items-center gap-1.5">
@@ -16,11 +16,11 @@
                         @if ($loop->first && $home)
                             <flux:icon name="house" class="size-3.5" aria-hidden="true" />
                         @endif
-                        {{ $libelle }}
+                        {{ __($libelle) }}
                     </a>
                     <span aria-hidden="true" class="text-ink-2/60">›</span>
                 @else
-                    <span aria-current="page" class="max-w-[60vw] truncate text-ink md:max-w-xs" title="{{ $libelle }}">{{ $libelle }}</span>
+                    <span aria-current="page" class="max-w-[60vw] truncate text-ink md:max-w-xs" title="{{ __($libelle) }}">{{ __($libelle) }}</span>
                 @endif
             </li>
         @endforeach

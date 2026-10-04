@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\Actualite;
+use App\Services\OptimiseurImage;
 use Flux\Flux;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -21,11 +21,11 @@ new #[Title('Actualite')] class extends Component {
     {
         $this->authorize('delete', $this->record);
         if ($this->record->image) {
-            Storage::disk('public')->delete($this->record->image);
+            app(OptimiseurImage::class)->supprimer($this->record->image);
         }
         $this->record->delete();
 
-        Flux::toast(variant: 'success', text: 'Actualite supprimé(e).');
+        Flux::toast(variant: 'success', text: __('Actualite supprimé(e).'));
 
         $this->redirectRoute('actualites.index', navigate: true);
     }
@@ -33,7 +33,7 @@ new #[Title('Actualite')] class extends Component {
 
 <article class="mx-auto w-full max-w-3xl space-y-8">
     <x-tn.page-header
-        label="Fil du Haut Conseil"
+        label="{{ __('Fil du Haut Conseil') }}"
         :title="$record->titre"
         :breadcrumb="['Mon espace' => route('dashboard'), 'Actualités' => route('actualites.index'), ($record->titre ?: 'Annonce') => null]"
     >
@@ -48,16 +48,18 @@ new #[Title('Actualite')] class extends Component {
         </x-slot:meta>
         <x-slot:actions>
             @can('update', $record)
-                <flux:button icon="pencil-square" :href="route('actualites.edit', $record)" wire:navigate>Modifier</flux:button>
+                <flux:button icon="pencil-square" :href="route('actualites.edit', $record)" wire:navigate>{{ __('Modifier') }}</flux:button>
             @endcan
             @can('delete', $record)
-                <flux:button variant="danger" icon="trash" wire:click="delete" wire:confirm="Supprimer définitivement cette annonce ?">Supprimer</flux:button>
+                <flux:button variant="danger" icon="trash" wire:click="delete" wire:confirm="{{ __('Supprimer définitivement cette annonce ?') }}">{{ __('Supprimer') }}</flux:button>
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
 
+    <x-audit-history :subject="$record" variant="resume" />
+
     @if ($record->image)
-        <img src="{{ Storage::url($record->image) }}" alt="Illustration de l'annonce : {{ $record->titre }}" class="max-h-[420px] w-full rounded-md border border-line object-cover" />
+        <x-tn.image :chemin="$record->image" :alt="__('Illustration de l\'annonce : :titre', ['titre' => $record->titre])" :prioritaire="true" class="h-auto max-h-[420px] w-full rounded-md border border-line object-cover" />
     @endif
 
     <div class="text-[1.0625rem] leading-[1.7] text-ink">
@@ -66,6 +68,8 @@ new #[Title('Actualite')] class extends Component {
 
     <footer class="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-5">
         <span class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-ink-2">Mise en ligne · {{ $record->created_at->format('d.m.Y · H:i') }}</span>
-        <a href="{{ route('actualites.index') }}" wire:navigate class="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-cyan hover:underline">← Toutes les actualités</a>
+        <a href="{{ route('actualites.index') }}" wire:navigate class="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-cyan hover:underline">{{ __('← Toutes les actualités') }}</a>
     </footer>
+
+    <x-audit-history :subject="$record" />
 </article>

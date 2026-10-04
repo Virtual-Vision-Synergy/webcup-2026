@@ -4,9 +4,9 @@
 
     // Lecture du cache seulement (aucun appel réseau dans la page) : rempli par l'espace agent.
     $etatApi = match (true) {
-        Cache::has(NovaTerraApiClient::FRESH_CACHE_KEY) => ['etat' => 'normal', 'texte' => 'API en ligne'],
-        Cache::has(NovaTerraApiClient::LAST_KNOWN_CACHE_KEY) => ['etat' => 'perturbe', 'texte' => 'API en veille'],
-        default => ['etat' => 'info', 'texte' => 'Réseau civique'],
+        Cache::has(NovaTerraApiClient::FRESH_CACHE_KEY) => ['etat' => 'normal', 'texte' => __('API en ligne')],
+        Cache::has(NovaTerraApiClient::LAST_KNOWN_CACHE_KEY) => ['etat' => 'perturbe', 'texte' => __('API en veille')],
+        default => ['etat' => 'info', 'texte' => __('Réseau civique')],
     };
 @endphp
 

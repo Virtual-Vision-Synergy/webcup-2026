@@ -16,10 +16,6 @@ export default defineConfig({
                 google('IBM Plex Sans', {
                     weights: [400, 500, 600],
                 }),
-                google('JetBrains Mono', {
-                    weights: [400, 500],
-                    preload: false,
-                }),
             ],
         }),
         tailwindcss(),

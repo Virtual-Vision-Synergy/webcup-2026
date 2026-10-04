@@ -1,7 +1,7 @@
 <div class="flex w-full max-w-5xl items-start gap-8 max-md:flex-col">
     <nav class="w-full md:sticky md:top-24 md:w-[220px]" aria-label="{{ __('Settings') }}">
-        <ul class="flex gap-1 overflow-x-auto md:flex-col">
-            @foreach ([['profile.edit', __('Profile'), 'users-round'], ['security.edit', __('Security'), 'shield-check'], ['appearance.edit', __('Appearance'), 'moon']] as [$route, $libelle, $icone])
+        <ul class="flex flex-wrap gap-1 md:flex-col">
+            @foreach ([['profile.edit', __('Profile'), 'users-round'], ['security.edit', __('Security'), 'shield-check'], ['profile.devices.index', 'Appareils', 'device-phone-mobile'], ['appearance.edit', __('Appearance'), 'moon']] as [$route, $libelle, $icone])
                 @php $actif = request()->routeIs($route); @endphp
                 <li class="shrink-0">
                     <a
@@ -15,7 +15,7 @@
                         ])
                     >
                         <flux:icon :name="$icone" class="size-4" />
-                        {{ $libelle }}
+                        {{ __($libelle) }}
                     </a>
                 </li>
             @endforeach

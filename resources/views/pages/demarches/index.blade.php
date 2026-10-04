@@ -22,15 +22,81 @@ new #[Title('Mes démarches')] class extends Component {
     #[Url(except: false)]
     public bool $mine = false;
 
-    #[Url(except: '')]
+    /**
+     * F79 : tris proposés. Liste blanche : la valeur de l'URL n'est jamais passée telle quelle à orderBy.
+     */
+    public const TRI_OPTIONS = ['recents' => 'Plus récentes', 'anciens' => 'Plus anciennes', 'statut' => 'Par statut'];
+
+    /** F79 : filtres conservés dans l'URL (?categorie=…&service=…&statut=…&tri=…), historique pour le retour arrière. */
+    #[Url(as: 'categorie', except: '', history: true)]
+    public string $filterCategorie = '';
+
+    #[Url(as: 'service', except: '', history: true)]
     public string $filterServiceId = '';
 
-    #[Url(except: '')]
+    #[Url(as: 'statut', except: '', history: true)]
     public string $filterStatut = '';
+
+    #[Url(except: 'recents', history: true)]
+    public string $tri = 'recents';
 
     public function mount(): void
     {
         $this->authorize('viewAny', Demarche::class);
+        $this->ignorerFiltresInvalides();
+    }
+
+    /**
+     * F79 : une valeur inconnue venue de l'URL est ignorée (retour au défaut), sans erreur.
+     */
+    protected function ignorerFiltresInvalides(): void
+    {
+        if (! in_array($this->filterCategorie, Service::CATEGORIE_OPTIONS, true)) {
+            $this->filterCategorie = '';
+        }
+
+        if (! ctype_digit($this->filterServiceId)) {
+            $this->filterServiceId = '';
+        }
+
+        if (! in_array($this->filterStatut, Demarche::STATUT_OPTIONS, true)) {
+            $this->filterStatut = '';
+        }
+
+        if (! array_key_exists($this->tri, self::TRI_OPTIONS)) {
+            $this->tri = 'recents';
+        }
+    }
+
+    /**
+     * F79 : au moins un filtre choisi par l'utilisateur (pour le message « aucun résultat »).
+     */
+    #[Computed]
+    public function filtresActifs(): bool
+    {
+        return $this->search !== '' || $this->filterCategorie !== '' || $this->filterServiceId !== '' || $this->filterStatut !== '' || $this->mine;
+    }
+
+    /**
+     * F79 : retour à la liste par défaut.
+     */
+    public function reinitialiser(): void
+    {
+        $this->authorize('viewAny', Demarche::class);
+        $this->reset('search', 'mine', 'filterCategorie', 'filterServiceId', 'filterStatut', 'tri');
+        $this->resetPage();
+    }
+
+    public function updatedFilterCategorie(): void
+    {
+        $this->ignorerFiltresInvalides();
+        $this->resetPage();
+    }
+
+    public function updatedTri(): void
+    {
+        $this->ignorerFiltresInvalides();
+        $this->resetPage();
     }
 
     /**
@@ -56,11 +122,13 @@ new #[Title('Mes démarches')] class extends Component {
 
     public function updatedFilterServiceId(): void
     {
+        $this->ignorerFiltresInvalides();
         $this->resetPage();
     }
 
     public function updatedFilterStatut(): void
     {
+        $this->ignorerFiltresInvalides();
         $this->resetPage();
     }
 
@@ -79,6 +147,7 @@ new #[Title('Mes démarches')] class extends Component {
                 $query->where(fn ($q) => $q->where('titre', 'like', $term)->orWhere('description', 'like', $term));
             })
             ->when(! $this->voitToutesLesDemarches || $this->mine, fn ($query) => $query->whereBelongsTo(auth()->user()))
+            ->when($this->filterCategorie !== '', fn ($query) => $query->whereHas('service', fn ($q) => $q->where('categorie', $this->filterCategorie)))
             ->when($this->filterServiceId !== '', fn ($query) => $query->where('service_id', $this->filterServiceId))
             ->when($this->filterStatut !== '', fn ($query) => $query->where('statut', $this->filterStatut));
     }
@@ -88,8 +157,45 @@ new #[Title('Mes démarches')] class extends Component {
     {
         return $this->filteredQuery()
             ->with(['user', 'service', 'derniereReponse'])
-            ->latest()
-            ->paginate(10);
+            ->tap(fn (Builder $query) => $this->appliquerTri($query))
+            ->paginate(10)
+            ->appends($this->parametresUrl());
+    }
+
+    /**
+     * F79 : tri choisi parmi TRI_OPTIONS uniquement ; colonnes et ordre fixés dans le code.
+     *
+     * @param  Builder<Demarche>  $query
+     */
+    protected function appliquerTri(Builder $query): void
+    {
+        match ($this->tri) {
+            'anciens' => $query->oldest()->oldest('id'),
+            'statut' => $query
+                ->orderByRaw(
+                    'CASE statut '.str_repeat('WHEN ? THEN ? ', count(Demarche::STATUT_OPTIONS)).'ELSE ? END',
+                    [...collect(Demarche::STATUT_OPTIONS)->flatMap(fn (string $statut, int $rang) => [$statut, $rang])->all(), count(Demarche::STATUT_OPTIONS)],
+                )
+                ->latest()->latest('id'),
+            default => $query->latest()->latest('id'),
+        };
+    }
+
+    /**
+     * F79 : filtres actifs, recopiés dans les liens de pagination.
+     *
+     * @return array<string, string>
+     */
+    protected function parametresUrl(): array
+    {
+        return array_filter([
+            'search' => $this->search,
+            'mine' => $this->mine ? '1' : '',
+            'categorie' => $this->filterCategorie,
+            'service' => $this->filterServiceId,
+            'statut' => $this->filterStatut,
+            'tri' => $this->tri === 'recents' ? '' : $this->tri,
+        ], fn (string $valeur) => $valeur !== '');
     }
 
     /**
@@ -136,6 +242,12 @@ new #[Title('Mes démarches')] class extends Component {
     {{-- Filtres --}}
     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="{{ __('Rechercher…') }}" aria-label="{{ __('Rechercher une démarche') }}" class="sm:max-w-xs" />
+        <flux:select wire:model.live="filterCategorie" aria-label="{{ __('Filtrer par sujet') }}" class="sm:max-w-52">
+            <flux:select.option value="">{{ __('Sujet : tous') }}</flux:select.option>
+            @foreach (Service::CATEGORIE_OPTIONS as $option)
+                <flux:select.option :value="$option">{{ Service::labelCategorie($option) }}</flux:select.option>
+            @endforeach
+        </flux:select>
         <flux:select wire:model.live="filterServiceId" aria-label="{{ __('Filtrer par service') }}" class="sm:max-w-52">
             <flux:select.option value="">{{ __('Service : tous') }}</flux:select.option>
             @foreach ($this->serviceOptions as $option)
@@ -148,13 +260,25 @@ new #[Title('Mes démarches')] class extends Component {
                 <flux:select.option :value="$option">{{ Demarche::libelleStatut($option) }}</flux:select.option>
             @endforeach
         </flux:select>
+        <flux:select wire:model.live="tri" aria-label="{{ __('Trier les démarches') }}" class="sm:max-w-52">
+            @foreach ($this::TRI_OPTIONS as $option => $libelle)
+                <flux:select.option :value="$option">Tri : {{ $libelle }}</flux:select.option>
+            @endforeach
+        </flux:select>
         @if ($this->voitToutesLesDemarches)
             <flux:checkbox wire:model.live="mine" label="{{ __('Mes démarches uniquement') }}" />
+        @endif
+        @if ($this->filtresActifs || $tri !== 'recents')
+            <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="reinitialiser">Réinitialiser</flux:button>
         @endif
         <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">{{ __('Mise à jour…') }}</span>
     </div>
 
-    @if ($this->items->isEmpty())
+    @if ($this->items->isEmpty() && $this->filtresActifs)
+        <x-tn.empty icon="funnel" title="Aucune demande ne correspond à ces filtres." text="Modifiez le sujet, le service, le statut ou la recherche, ou repartez de la liste complète.">
+            <flux:button variant="primary" icon="x-mark" wire:click="reinitialiser">Réinitialiser</flux:button>
+        </x-tn.empty>
+    @elseif ($this->items->isEmpty())
         <x-tn.empty icon="file-text" title="{{ __('Aucune démarche pour le moment') }}" text="{{ __('Modifiez les filtres ou déposez votre première démarche.') }}">
             <flux:button variant="primary" icon="plus" :href="route('demarches.create')" wire:navigate>{{ __('Nouvelle démarche') }}</flux:button>
         </x-tn.empty>

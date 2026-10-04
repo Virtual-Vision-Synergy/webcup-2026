@@ -87,7 +87,7 @@ new #[Title('Mes démarches')] class extends Component {
     public function items(): LengthAwarePaginator
     {
         return $this->filteredQuery()
-            ->with(['user', 'service'])
+            ->with(['user', 'service', 'derniereReponse'])
             ->latest()
             ->paginate(10);
     }
@@ -167,7 +167,12 @@ new #[Title('Mes démarches')] class extends Component {
                         <span class="block truncate font-medium text-ink">{{ $item->titre }}</span>
                         <span class="block truncate text-sm text-ink-2">{{ $item->service?->nom ?? __('Service non précisé') }} · <span class="font-mono text-xs">{{ $item->created_at->format('d.m.Y') }}</span></span>
                         <x-slot:aside>
-                            <x-tn.status-badge :etat="$item->etatStatut()">{{ Demarche::libelleStatut($item->statut) }}</x-tn.status-badge>
+                            <span class="flex flex-wrap gap-1">
+                                <x-tn.status-badge :etat="$item->etatStatut()">{{ Demarche::libelleStatut($item->statut) }}</x-tn.status-badge>
+                                @if ($item->reponseEnvoyee())
+                                    <x-tn.status-badge etat="normal">{{ __('Réponse de la mairie') }}</x-tn.status-badge>
+                                @endif
+                            </span>
                         </x-slot:aside>
                     </x-tn.list-row>
                 </li>
@@ -194,7 +199,14 @@ new #[Title('Mes démarches')] class extends Component {
                         <flux:table.row wire:key="row-{{ $item->id }}">
                             <flux:table.cell><a href="{{ route('demarches.show', $item) }}" wire:navigate class="font-medium text-ink hover:text-cyan">{{ $item->titre }}</a></flux:table.cell>
                             <flux:table.cell>{{ $item->service?->nom ?? '—' }}</flux:table.cell>
-                            <flux:table.cell><x-tn.status-badge :etat="$item->etatStatut()">{{ Demarche::libelleStatut($item->statut) }}</x-tn.status-badge></flux:table.cell>
+                            <flux:table.cell>
+                                <div class="flex flex-wrap gap-1">
+                                    <x-tn.status-badge :etat="$item->etatStatut()">{{ Demarche::libelleStatut($item->statut) }}</x-tn.status-badge>
+                                    @if ($item->reponseEnvoyee())
+                                        <x-tn.status-badge etat="normal">{{ __('Réponse de la mairie') }}</x-tn.status-badge>
+                                    @endif
+                                </div>
+                            </flux:table.cell>
                             @if ($this->voitToutesLesDemarches)
                                 <flux:table.cell>{{ $item->user?->name }}</flux:table.cell>
                             @endif

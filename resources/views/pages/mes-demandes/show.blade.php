@@ -56,7 +56,7 @@ new #[Title('Suivi de ma demande')] class extends Component {
                 <x-tn.field label="Description"><p class="whitespace-pre-line leading-relaxed">{{ $record->description }}</p></x-tn.field>
             </dl>
             @if ($record->photo)
-                <img src="{{ Storage::url($record->photo) }}" alt="Photo du problème signalé : {{ $categorie }}, {{ $record->lieu }}" class="mt-4 max-h-96 w-full rounded-xl object-cover" />
+                <img src="{{ Storage::url($record->photo) }}" alt="Photo du problème signalé : {{ $categorie }}, {{ $record->lieu }}" class="mt-4 max-h-96 w-full rounded-xl object-cover" loading="lazy" decoding="async" />
             @endif
         </x-tn.surface>
 

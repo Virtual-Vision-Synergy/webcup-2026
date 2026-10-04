@@ -32,8 +32,11 @@ Route::get('langue/{code}', function (string $code, Request $request) {
 })->middleware('throttle:30,1')->name('langue');
 
 // F59 : page publique décidée — le « Mode allégé » doit être activable avant la connexion (accueil sur réseau lent).
+// F96 : « actif » (0 ou 1) fixe le choix explicite (bandeau de la version légère automatique) ; sinon bascule.
 Route::post('mode-allege', function (Request $request) {
-    $actif = ! ModeAllege::actif($request);
+    $actif = in_array($request->input('actif'), ['0', '1'], true)
+        ? $request->input('actif') === '1'
+        : ! ModeAllege::actif($request);
     $user = $request->user();
 
     if ($user !== null) {

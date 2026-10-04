@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
 use App\Models\Concerns\HasCoordinates;
+use App\Models\Concerns\RegenereInfosEssentielles;
 use App\Models\Concerns\ViderCachesPublics;
 use Carbon\CarbonInterface;
 use Database\Factories\ServiceFactory;
@@ -42,7 +43,7 @@ use Illuminate\Validation\ValidationException;
 class Service extends Model
 {
     /** @use HasFactory<ServiceFactory> */
-    use Auditable, HasAuditHistory, HasCoordinates, HasFactory, ViderCachesPublics;
+    use Auditable, HasAuditHistory, HasCoordinates, HasFactory, RegenereInfosEssentielles, ViderCachesPublics;
 
     /** Catégories du catalogue (filtre et recherche). */
     public const CATEGORIE_OPTIONS = ['administratif', 'sante', 'social', 'education', 'culture', 'urbanisme', 'securite', 'economie'];

@@ -37,6 +37,7 @@
                         <a href="{{ route('accessibility.show') }}" class="text-cyan hover:underline">{{ __('Accessibilité') }}</a>
                         <a href="{{ route('sobriete.show') }}" class="text-cyan hover:underline" data-test="footer-sobriete-link">{{ __('Sobriété') }}</a>
                         <a href="{{ route('lexique') }}" class="text-cyan hover:underline" data-test="footer-lexique-link">{{ __('Lexique') }}</a>
+                        <a href="{{ route('infos-essentielles') }}" class="text-cyan hover:underline" data-test="footer-infos-essentielles-link">{{ __('Infos essentielles') }}</a>
                     </nav>
                     <p class="font-mono text-xs uppercase tracking-[.06em]">Virtual Vision Synergie</p>
                 </div>

@@ -120,21 +120,21 @@ new #[Title('Services')] class extends Component {
             return collect();
         }
 
-        $offres = PartnerOffering::query()
-            ->published()
-            ->with('partner')
+        // F95 : une seule requête (partenaire joint), même quand des services partenaires s'affichent.
+        $offres = PartnerOffering::attacherPartenaireJoint(PartnerOffering::query()
+            ->publieAvecPartenaire()
             ->when($search !== '', function ($query) use ($search) {
                 $term = '%'.$search.'%';
-                $query->where(fn ($q) => $q->where('title', 'like', $term)
-                    ->orWhere('description', 'like', $term)
-                    ->orWhereHas('partner', fn ($p) => $p->where('name', 'like', $term)));
+                $query->where(fn ($q) => $q->where('partner_offerings.title', 'like', $term)
+                    ->orWhere('partner_offerings.description', 'like', $term)
+                    ->orWhere('partners.name', 'like', $term));
             })
-            ->when($categorie !== null, fn ($query) => $query->whereHas('partner', fn ($p) => $p->where('type', $categorie)))
-            ->when($this->disponibles || $this->maintenant, fn ($query) => $query->where('status', PartnerOffering::STATUS_AVAILABLE))
-            ->orderByRaw("case status when 'available' then 0 when 'full' then 1 else 2 end")
-            ->orderBy('title')
+            ->when($categorie !== null, fn ($query) => $query->where('partners.type', $categorie))
+            ->when($this->disponibles || $this->maintenant, fn ($query) => $query->where('partner_offerings.status', PartnerOffering::STATUS_AVAILABLE))
+            ->orderByRaw("case partner_offerings.status when 'available' then 0 when 'full' then 1 else 2 end")
+            ->orderBy('partner_offerings.title')
             ->limit(30)
-            ->get();
+            ->get());
 
         return $this->maintenant
             ? $offres->filter(fn (PartnerOffering $offre): bool => $offre->estDisponibleMaintenant())->values()

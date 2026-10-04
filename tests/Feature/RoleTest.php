@@ -11,8 +11,9 @@ function role(string $code): Role
     return Role::where('code', $code)->firstOrFail();
 }
 
-test('les trois rôles de base existent après les migrations', function () {
-    expect(Role::orderBy('id')->pluck('code')->all())->toBe(['citoyen', 'agent', 'admin']);
+test('les rôles de base existent après les migrations', function () {
+    // F99 : le rôle « partenaire » est ajouté par la migration add_partenaire_role.
+    expect(Role::orderBy('id')->pluck('code')->all())->toBe(['citoyen', 'agent', 'admin', 'partenaire']);
 });
 
 test('un nouvel inscrit est citoyen, même s\'il envoie un role_id', function () {

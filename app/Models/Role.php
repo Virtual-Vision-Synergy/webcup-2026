@@ -29,8 +29,11 @@ class Role extends Model
 
     public const ADMIN = 'admin';
 
+    /** F99 : compte d'un partenaire (F74), qui gère uniquement les services de son partenaire. */
+    public const PARTENAIRE = 'partenaire';
+
     /** Rôles de base, non supprimables. */
-    public const CODES = [self::CITOYEN, self::AGENT, self::ADMIN];
+    public const CODES = [self::CITOYEN, self::AGENT, self::ADMIN, self::PARTENAIRE];
 
     /** @var array<string, int> */
     private static array $ids = [];

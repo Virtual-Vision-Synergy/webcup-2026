@@ -34,6 +34,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $telephone
  * @property string|null $quartier Ancienne saisie libre (D12), tenue à jour avec le nom du quartier choisi.
  * @property int|null $quartier_id
+ * @property int|null $partner_id F99 : partenaire (F74) d'un compte partenaire ; assigné par un admin (jamais en masse).
+ * @property-read Partner|null $partner
  * @property string|null $profil_canicule F31 : profil choisi pour les conseils canicule ; assigné dans le code (jamais en masse).
  * @property-read Quartier|null $quartierResidence
  * @property-read Onboarding|null $onboarding
@@ -54,7 +56,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
- * role_id, deactivated_at et verrouille_jusqu_au ne sont volontairement PAS remplissables : ils sont assignés dans le code
+ * role_id, partner_id, deactivated_at et verrouille_jusqu_au ne sont volontairement PAS remplissables : ils sont assignés dans le code
  * (inscription, admin, deactivate()/reactivate()).
  * L'ancienne colonne texte « role » existe encore en base mais n'est plus utilisée.
  */
@@ -106,6 +108,7 @@ class User extends Authenticatable implements FilamentUser, HasLocalePreference
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'quartier_id' => 'integer',
+            'partner_id' => 'integer',
             'deactivated_at' => 'datetime',
             'verrouille_jusqu_au' => 'datetime',
             'notifier_par_email' => 'boolean',
@@ -441,6 +444,51 @@ class User extends Authenticatable implements FilamentUser, HasLocalePreference
     public function isAgent(): bool
     {
         return $this->hasRole(Role::AGENT);
+    }
+
+    public function isPartenaire(): bool
+    {
+        return $this->hasRole(Role::PARTENAIRE);
+    }
+
+    /**
+     * F99 : compte partenaire rattaché à un partenaire (F74) ; seul cas où il gère des services partenaires.
+     */
+    public function gerePartenaire(int $partnerId): bool
+    {
+        return $this->isPartenaire() && $this->partner_id !== null && $this->partner_id === $partnerId;
+    }
+
+    /**
+     * F99 : rattache le compte à un partenaire et lui donne le rôle partenaire (admin uniquement : PartnerPolicy::linkAccount).
+     *
+     * @throws \DomainException si le compte est un administrateur ou un agent
+     */
+    public function rattacherAuPartenaire(Partner $partner): void
+    {
+        if ($this->isAdmin() || $this->isAgent()) {
+            throw new \DomainException('Un compte agent ou administrateur ne peut pas devenir un compte partenaire.');
+        }
+
+        $this->partner()->associate($partner);
+        $this->changerRole(Role::query()->where('code', Role::PARTENAIRE)->firstOrFail());
+    }
+
+    /**
+     * F99 : retire le rattachement et rend au compte le rôle citoyen.
+     */
+    public function detacherDuPartenaire(): void
+    {
+        $this->partner()->dissociate();
+        $this->changerRole(Role::query()->where('code', Role::CITOYEN)->firstOrFail());
+    }
+
+    /**
+     * @return BelongsTo<Partner, $this>
+     */
+    public function partner(): BelongsTo
+    {
+        return $this->belongsTo(Partner::class);
     }
 
     public function isCitoyen(): bool

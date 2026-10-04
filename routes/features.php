@@ -151,5 +151,8 @@ Route::group([], function () {
     Route::livewire('idees', 'pages::ideas.index')->name('ideas.index');
     Route::livewire('idees/{idea:reference}', 'pages::ideas.show')->where('idea', 'IDE-\d{4}-\d{6}')->name('ideas.show');
 
+    // D13 : lexique des mots administratifs, consultable sans compte (informations générales, aucune donnée personnelle, lecture seule).
+    Route::livewire('lexique', 'pages::lexique.index')->name('lexique');
+
     // make:feature:routes-public
 });

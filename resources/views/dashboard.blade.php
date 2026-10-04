@@ -94,8 +94,8 @@
         @if (($user->isAgent() || $user->isAdmin()) && ! $user->hasEnabledTwoFactorAuthentication())
             <p class="rounded-md border border-magenta/35 bg-magenta/8 px-4 py-3 text-sm text-ink-2" role="status">
                 <flux:icon name="shield-check" class="me-1 inline size-4 text-magenta" aria-hidden="true" />
-                Votre compte {{ $user->role->label }} donne accès aux données des habitants : la double authentification est fortement recommandée.
-                <a href="{{ route('security.edit') }}" wire:navigate class="font-medium text-magenta underline underline-offset-2">Activer la double authentification</a>
+                Votre compte {{ $user->role->label }} donne accès aux données des habitants : la vérification en deux étapes est fortement recommandée.
+                <a href="{{ route('security.edit') }}" wire:navigate class="font-medium text-magenta underline underline-offset-2">Activer la vérification en deux étapes</a>
             </p>
         @endif
 
@@ -163,7 +163,7 @@
                                     <span class="block truncate text-sm text-ink-2">{{ $demarche->service?->nom ?? 'Service non précisé' }} · <span class="font-mono text-xs">{{ $demarche->created_at->format('d.m.Y') }}</span></span>
                                     <x-slot:aside>
                                         @if ($demarche->urgence_medicale)
-                                            <x-tn.status-badge etat="alerte">Urgence médicale</x-tn.status-badge>
+                                            <x-badge-urgence-medicale />
                                         @endif
                                         <x-tn.status-badge :etat="$demarche->etatStatut()">{{ Demarche::libelleStatut($demarche->statut) }}</x-tn.status-badge>
                                     </x-slot:aside>

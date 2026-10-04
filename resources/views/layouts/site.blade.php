@@ -33,6 +33,7 @@
                     <nav aria-label="{{ __('Informations') }}" class="flex flex-wrap gap-x-4 gap-y-1">
                         <a href="{{ route('privacy.show') }}" class="text-cyan hover:underline">{{ __('Vos données') }}</a>
                         <a href="{{ route('accessibility.show') }}" class="text-cyan hover:underline">{{ __('Accessibilité') }}</a>
+                        <a href="{{ route('lexique') }}" class="text-cyan hover:underline" data-test="footer-lexique-link">{{ __('Lexique') }}</a>
                     </nav>
                     <p class="font-mono text-xs uppercase tracking-[.06em]">Virtual Vision Synergie</p>
                 </div>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\EmpecheEnvoiEnDouble;
 use App\Concerns\ProtegeContreRobots;
 use App\Concerns\ThrottlesPerUser;
 use App\Models\Signalement;
@@ -12,7 +13,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 
 new #[Title('Signalement')] class extends Component {
-    use ProtegeContreRobots, ThrottlesPerUser, WithFileUploads;
+    use EmpecheEnvoiEnDouble, ProtegeContreRobots, ThrottlesPerUser, WithFileUploads;
 
     #[Locked]
     public ?Signalement $record = null;
@@ -35,6 +36,7 @@ new #[Title('Signalement')] class extends Component {
         } else {
             $this->authorize('create', Signalement::class);
             $this->initialiserAntiRobot('signalement');
+            $this->initialiserJetonEnvoi();
         }
     }
 
@@ -59,6 +61,26 @@ new #[Title('Signalement')] class extends Component {
         return ['categorie' => __('catégorie'), 'lieu' => __('adresse ou lieu')];
     }
 
+    /**
+     * Messages d'erreur en mots simples (D13).
+     *
+     * @return array<string, string>
+     */
+    protected function messages(): array
+    {
+        return [
+            'categorie.required' => __('Choisissez le type de problème.'),
+            'categorie.in' => __('Choisissez le type de problème.'),
+            'description.required' => __('Décrivez ce qui s’est passé.'),
+            'description.max' => __('Votre description est trop longue : 5 000 caractères au maximum.'),
+            'lieu.required' => __('Indiquez le lieu du problème.'),
+            'lieu.max' => __('Le lieu est trop long : 255 caractères au maximum.'),
+            'photo.image' => __('La photo doit être une image JPG, PNG ou WebP.'),
+            'photo.mimes' => __('La photo doit être une image JPG, PNG ou WebP.'),
+            'photo.max' => __('La photo est trop lourde : 2 Mo au maximum.'),
+        ];
+    }
+
     public function save(): void
     {
         $this->record
@@ -79,27 +101,50 @@ new #[Title('Signalement')] class extends Component {
             );
         }
 
-        if ($this->photo) {
-            $optimiseur = app(OptimiseurImage::class);
-            $optimiseur->supprimer($this->record?->photo);
-            // F60 : redimensionnée (1600 px max) et compressée en WebP à l'enregistrement.
-            $validated['photo'] = $optimiseur->enregistrer($this->photo, 'signalements');
-        } else {
-            unset($validated['photo']);
-        }
-
         if ($this->record) {
+            $this->enregistrerPhoto($validated);
             $this->record->update($validated);
             $record = $this->record;
         } else {
-            $record = new Signalement($validated);
-            $record->user()->associate(auth()->user());
-            $record->save();
+            // F82 : même signalement renvoyé (double clic, retour arrière) → rien n'est créé, message avec lien.
+            $record = $this->envoyerUneSeuleFois(
+                'signalement',
+                ['categorie' => $validated['categorie'], 'description' => $validated['description'], 'lieu' => $validated['lieu']],
+                function () use ($validated): Signalement {
+                    $this->enregistrerPhoto($validated);
+                    $record = new Signalement($validated);
+                    $record->user()->associate(auth()->user());
+                    $record->save();
+
+                    return $record;
+                },
+                fn (Signalement $signalement): string => route('signalements.show', $signalement),
+            );
+
+            if ($record === null) {
+                return;
+            }
         }
 
         Flux::toast(variant: 'success', text: $this->record ? __('Signalement mis à jour.') : __('Signalement envoyé à la mairie. Merci !'));
 
         $this->redirectRoute('signalements.show', $record, navigate: true);
+    }
+
+    /**
+     * F60 : photo redimensionnée (1600 px max) et compressée en WebP à l'enregistrement.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    private function enregistrerPhoto(array &$validated): void
+    {
+        if ($this->photo) {
+            $optimiseur = app(OptimiseurImage::class);
+            $optimiseur->supprimer($this->record?->photo);
+            $validated['photo'] = $optimiseur->enregistrer($this->photo, 'signalements');
+        } else {
+            unset($validated['photo']);
+        }
     }
 }; ?>
 
@@ -111,7 +156,11 @@ new #[Title('Signalement')] class extends Component {
         :breadcrumb="$record
             ? ['Mon espace' => route('dashboard'), 'Signalements' => route('signalements.index'), 'Signalement' => route('signalements.show', $record), 'Modifier' => null]
             : ['Mon espace' => route('dashboard'), 'Signalements' => route('signalements.index'), 'Nouveau' => null]"
-    />
+    >
+        <x-slot:meta>
+            <x-tn.mots-utiles class="mt-3" :slugs="['signalement', 'statut', 'quartier']" />
+        </x-slot:meta>
+    </x-tn.page-header>
 
     <form wire:submit="save" class="relative space-y-6">
         <x-tn.mention-obligatoire />
@@ -149,12 +198,11 @@ new #[Title('Signalement')] class extends Component {
 
         <flux:error name="throttle" />
 
+        <x-envoi-deja-fait :le="$envoiDejaFaitLe" :url="$envoiDejaFaitUrl" />
+
         <div class="flex items-center justify-between gap-3 border-t border-line pt-5">
             <flux:button :href="route('signalements.index')" wire:navigate variant="ghost">{{ __('Annuler') }}</flux:button>
-            <flux:button type="submit" variant="primary" class="tn-cta">
-                <span wire:loading.remove wire:target="save">{{ $record ? __('Enregistrer') : __('Envoyer le signalement') }}</span>
-                <span wire:loading wire:target="save">{{ __('Envoi…') }}</span>
-            </flux:button>
+            <x-submit-button variant="primary" class="tn-cta">{{ $record ? __('Enregistrer') : __('Envoyer le signalement') }}</x-submit-button>
         </div>
     </form>
 </section>

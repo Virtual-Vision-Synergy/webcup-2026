@@ -51,4 +51,12 @@ return [
         ],
     ],
 
+    /*
+    | F82 : envoi en double des formulaires. Le même contenu, envoyé par le même habitant sur le même formulaire
+    | dans cette fenêtre, n'est pas enregistré une seconde fois (en plus du jeton unique par affichage).
+    */
+    'doublons' => [
+        'fenetre_minutes' => (int) env('DOUBLONS_FENETRE_MINUTES', 5),
+    ],
+
 ];

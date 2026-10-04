@@ -116,6 +116,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call(ServiceSeeder::class);
 
+        // D10 : synonymes d'orientation (« poubelle » → Environnement et propreté), éditables dans Filament.
+        $this->call(MotsClesServiceSeeder::class);
+
         Actualite::factory(20)->recycle($users)->create();
 
         Message::factory(20)->recycle($users)->create();

@@ -68,13 +68,13 @@
         >
             <div class="mx-auto h-[5px] w-[38px] rounded-full bg-ink-2/40" aria-hidden="true"></div>
             <div class="mt-2 flex items-center justify-between">
-                <h2 id="tn-menu-titre" class="tn-label text-ink">Menu</h2>
+                <h2 id="tn-menu-titre" class="tn-label text-ink">{{ __('Menu') }}</h2>
                 <button
                     type="button"
                     x-on:click="$store.menu?.fermer()"
                     x-on:pointerdown.stop
                     class="-me-2 flex size-11 items-center justify-center rounded-sm text-ink-2 hover:text-ink"
-                    aria-label="Fermer le menu"
+                    aria-label="{{ __('Fermer le menu') }}"
                 >
                     <flux:icon name="x" class="size-5" />
                 </button>
@@ -90,7 +90,7 @@
                                 <span class="flex size-9 items-center justify-center rounded-sm border border-cyan/18 bg-cyan/8 text-cyan" aria-hidden="true">
                                     <flux:icon :name="$rubrique['icon']" class="size-[18px]" />
                                 </span>
-                                <span class="mt-2 text-[0.9375rem] font-medium text-ink">{{ $rubrique['label'] }}</span>
+                                <span class="mt-2 text-[0.9375rem] font-medium text-ink">{{ __($rubrique['label']) }}</span>
                             </a>
                         </li>
                     @endforeach
@@ -99,53 +99,81 @@
 
             @if (isset($autres) && filled(trim(strip_tags((string) $autres))))
                 <div class="tn-sheet-autres mt-3 border-t border-line px-2 pt-3">
-                    <x-tn.section-label class="mb-1 px-1">Autres rubriques</x-tn.section-label>
+                    <x-tn.section-label class="mb-1 px-1">{{ __('Autres rubriques') }}</x-tn.section-label>
                     {{ $autres }}
                 </div>
             @endif
 
             <ul class="mt-3 border-t border-line pt-2">
+                @if (Route::has('partners.index'))
+                    <li><a href="{{ route('partners.index') }}" class="{{ $ligne }}"><flux:icon name="building-storefront" class="size-5 text-ink-2" />{{ __('Partenaires') }}</a></li>
+                @endif
                 @auth
-                    <li><a href="{{ route('dashboard') }}" class="{{ $ligne }}"><flux:icon name="house" class="size-5 text-ink-2" />Mon espace</a></li>
+                    <li><a href="{{ route('dashboard') }}" class="{{ $ligne }}"><flux:icon name="house" class="size-5 text-ink-2" />{{ __('Mon espace') }}</a></li>
                     @if (Route::has('demarches.index'))
                         <li>
                             <a href="{{ route('demarches.index') }}" class="{{ $ligne }}">
-                                <flux:icon name="file-text" class="size-5 text-ink-2" />Mes démarches
+                                <flux:icon name="file-text" class="size-5 text-ink-2" />{{ __('Mes démarches') }}
                                 @if ($demarchesEnCours > 0)
-                                    <span class="ms-auto rounded-xs bg-cyan px-1.5 font-mono text-xs leading-5 text-on-cyan">{{ $demarchesEnCours }}<span class="sr-only"> en cours</span></span>
+                                    <span class="ms-auto rounded-xs bg-cyan px-1.5 font-mono text-xs leading-5 text-on-cyan">{{ $demarchesEnCours }}<span class="sr-only"> {{ __('en cours') }}</span></span>
                                 @endif
                             </a>
                         </li>
                     @endif
                     @can('viewAgentSpace')
-                        <li><a href="{{ route('agent.tableau-de-bord') }}" class="{{ $ligne }}"><flux:icon name="briefcase" class="size-5 text-ink-2" />Espace agent</a></li>
+                        <li><a href="{{ route('agent.tableau-de-bord') }}" class="{{ $ligne }}"><flux:icon name="briefcase" class="size-5 text-ink-2" />{{ __('Espace agent') }}</a></li>
                     @endcan
-                    <li><a href="{{ route('profile.edit') }}" class="{{ $ligne }}"><flux:icon name="settings" class="size-5 text-ink-2" />Paramètres</a></li>
+                    <li><a href="{{ route('profile.edit') }}" class="{{ $ligne }}"><flux:icon name="settings" class="size-5 text-ink-2" />{{ __('Paramètres') }}</a></li>
                 @else
-                    <li><a href="{{ route('login') }}" class="{{ $ligne }}"><flux:icon name="log-out" class="size-5 rotate-180 text-ink-2" />Connexion</a></li>
+                    <li><a href="{{ route('login') }}" class="{{ $ligne }}"><flux:icon name="log-out" class="size-5 rotate-180 text-ink-2" />{{ __('Connexion') }}</a></li>
                     @if (Route::has('register'))
-                        <li><a href="{{ route('register') }}" class="{{ $ligne }}"><flux:icon name="users-round" class="size-5 text-ink-2" />Créer un compte</a></li>
+                        <li><a href="{{ route('register') }}" class="{{ $ligne }}"><flux:icon name="users-round" class="size-5 text-ink-2" />{{ __('Créer un compte') }}</a></li>
                     @endif
                 @endauth
                 <li class="flex min-h-12 items-center justify-between gap-3 px-3">
                     <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
-                        <flux:icon name="eye" class="size-5 text-ink-2" />Contraste élevé
+                        <flux:icon name="language" class="size-5 text-ink-2" />{{ __('Langue') }}
                     </span>
-                    <x-tn.contrast-toggle class="-me-2" />
+                    <x-tn.langue class="-me-2" />
                 </li>
                 <li class="flex min-h-12 items-center justify-between gap-3 px-3">
                     <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
-                        <flux:icon name="moon" class="size-5 text-ink-2" />Apparence
+                        <flux:icon name="eye"class="size-5 text-ink-2" />{{ __('Contraste élevé') }}
+                    </span>
+                    <x-tn.contrast-toggle class="-me-2" />
+                </li>
+                <li class="flex min-h-12 flex-wrap items-center justify-between gap-3 px-3 py-1">
+                    <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
+                        <flux:icon name="magnifying-glass-plus" class="size-5 text-ink-2" />{{ __('Taille du texte') }}
+                    </span>
+                    <x-tn.text-size />
+                </li>
+                <li class="flex min-h-12 flex-wrap items-center justify-between gap-3 px-3 py-1">
+                    <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
+                        <flux:icon name="language" class="size-5 text-ink-2" />{{ __('Langue') }}
+                    </span>
+                    <x-tn.langue />
+                </li>
+                <li class="flex min-h-12 items-center justify-between gap-3 px-3">
+                    <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
+                        <flux:icon name="moon" class="size-5 text-ink-2" />{{ __('Apparence') }}
                     </span>
                     <x-tn.theme-toggle class="-me-2" />
                 </li>
+                <li class="flex min-h-12 items-center justify-between gap-3 px-3">
+                    <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
+                        <flux:icon name="bolt" class="size-5 text-ink-2" />{{ __('Mode allégé') }}
+                    </span>
+                    <x-tn.mode-allege class="-me-2" />
+                </li>
+                <li><a href="{{ route('accessibility.show') }}" class="{{ $ligne }}"><flux:icon name="eye" class="size-5 text-ink-2" />{{ __('Accessibilité : toutes les aides') }}</a></li>
             </ul>
 
             @auth
                 <form method="POST" action="{{ route('logout') }}" class="mt-2 border-t border-line pt-2">
                     @csrf
                     <button type="submit" class="{{ $ligne }} text-magenta!" data-test="mobile-logout-button">
-                        <flux:icon name="log-out" class="size-5" />Se déconnecter
+                        <flux:icon name="log-out" class="size-5" />{{ __('Se déconnecter') }}
                     </button>
                 </form>
             @endauth

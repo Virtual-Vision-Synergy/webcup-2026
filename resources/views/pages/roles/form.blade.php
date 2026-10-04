@@ -58,7 +58,7 @@ new #[Title('Rôle')] class extends Component {
             $record = Role::create($validated);
         }
 
-        Flux::toast(variant: 'success', text: 'Rôle enregistré(e).');
+        Flux::toast(variant: 'success', text: __('Rôle enregistré(e).'));
 
         $this->redirectRoute('roles.show', $record, navigate: true);
     }
@@ -66,21 +66,21 @@ new #[Title('Rôle')] class extends Component {
 
 <section class="mx-auto w-full max-w-2xl space-y-6">
     <x-tn.page-header
-        label="Administration"
-        :title="$record ? 'Modifier le rôle' : 'Ajouter un rôle'"
+        label="{{ __('Administration') }}"
+        :title="$record ? __('Modifier le rôle') : __('Ajouter un rôle')"
         :breadcrumb="$record
             ? ['Mon espace' => route('dashboard'), 'Rôles' => route('roles.index'), $record->code => route('roles.show', $record), 'Modifier' => null]
             : ['Mon espace' => route('dashboard'), 'Rôles' => route('roles.index'), 'Nouveau' => null]"
     />
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
-        <flux:input wire:model="code" label="Code" required :disabled="$record && in_array($record->code, \App\Models\Role::CODES, true)" />
+        <flux:input wire:model="code" label="{{ __('Code') }}" required :disabled="$record && in_array($record->code, \App\Models\Role::CODES, true)" />
 
-        <flux:input wire:model="label" label="Libellé" required />
+        <flux:input wire:model="label" label="{{ __('Libellé') }}" required />
 
         <div class="flex items-center gap-3">
-            <flux:button type="submit" variant="primary">Enregistrer</flux:button>
-            <flux:button :href="route('roles.index')" wire:navigate variant="ghost">Annuler</flux:button>
+            <flux:button type="submit" variant="primary">{{ __('Enregistrer') }}</flux:button>
+            <flux:button :href="route('roles.index')" wire:navigate variant="ghost">{{ __('Annuler') }}</flux:button>
         </div>
     </form>
 </section>

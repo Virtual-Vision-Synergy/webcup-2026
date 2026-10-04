@@ -1,10 +1,10 @@
 <?php
 
 use App\Models\Actualite;
+use App\Services\OptimiseurImage;
 use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
@@ -65,11 +65,11 @@ new #[Title('Actualites')] class extends Component {
         $record = Actualite::findOrFail($id);
         $this->authorize('delete', $record);
         if ($record->image) {
-            Storage::disk('public')->delete($record->image);
+            app(OptimiseurImage::class)->supprimer($record->image);
         }
         $record->delete();
 
-        Flux::toast(variant: 'success', text: 'Actualite supprimé(e).');
+        Flux::toast(variant: 'success', text: __('Actualite supprimé(e).'));
     }
 }; ?>
 
@@ -83,40 +83,40 @@ new #[Title('Actualites')] class extends Component {
 
 <section class="mx-auto w-full max-w-6xl space-y-6">
     <x-tn.page-header
-        label="Fil du Haut Conseil"
-        title="Actualités"
-        :subtitle="$this->items->total().' annonce(s) publiée(s)'"
+        label="{{ __('Fil du Haut Conseil') }}"
+        title="{{ __('Actualités') }}"
+        :subtitle="__(':n annonce(s) publiée(s)', ['n' => $this->items->total()])"
         :breadcrumb="['Mon espace' => route('dashboard'), 'Actualités' => null]"
     >
         <x-slot:actions>
             @can('create', Actualite::class)
-                <flux:button variant="primary" icon="plus" :href="route('actualites.create')" wire:navigate>Publier</flux:button>
+                <flux:button variant="primary" icon="plus" :href="route('actualites.create')" wire:navigate>{{ __('Publier') }}</flux:button>
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher une annonce…" aria-label="Rechercher une annonce" class="sm:max-w-sm" />
+        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="{{ __('Rechercher une annonce…') }}" aria-label="{{ __('Rechercher une annonce') }}" class="sm:max-w-sm" />
         @can('create', Actualite::class)
-            <flux:checkbox wire:model.live="mine" label="Mes publications uniquement" />
+            <flux:checkbox wire:model.live="mine" label="{{ __('Mes publications uniquement') }}" />
         @endcan
-        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+        <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">{{ __('Mise à jour…') }}</span>
     </div>
 
     @if ($this->items->isEmpty())
-        <x-tn.empty icon="newspaper" title="Aucune annonce pour le moment" text="Les publications du Haut Conseil apparaîtront ici. Modifiez la recherche pour élargir les résultats." />
+        <x-tn.empty icon="newspaper" title="{{ __('Aucune annonce pour le moment') }}" text="{{ __('Les publications du Haut Conseil apparaîtront ici. Modifiez la recherche pour élargir les résultats.') }}" />
     @else
         @if ($aLaUne)
             {{-- À LA UNE --}}
             <article class="grid overflow-hidden rounded-md border border-line bg-surface lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
                 <div class="tn-sky relative min-h-56 overflow-hidden lg:min-h-80">
                     @if ($aLaUne->image)
-                        <img src="{{ Storage::url($aLaUne->image) }}" alt="" class="absolute inset-0 size-full object-cover">
+                        <x-tn.image :chemin="$aLaUne->image" :prioritaire="true" sizes="(min-width: 1024px) 55vw, 100vw" class="absolute inset-0 size-full object-cover" />
                     @else
                         <div class="tn-planet -right-16 -bottom-24 size-[280px]" aria-hidden="true"></div>
                         <div class="tn-grid" aria-hidden="true"></div>
                     @endif
-                    <x-tn.status-badge etat="info" :live="true" class="absolute top-4 left-4 bg-night/60! backdrop-blur">À la une</x-tn.status-badge>
+                    <x-tn.status-badge etat="info" :live="true" class="absolute top-4 left-4 bg-night/60! backdrop-blur">{{ __('À la une') }}</x-tn.status-badge>
                 </div>
                 <div class="flex flex-col p-6 md:p-8">
                     <time datetime="{{ $aLaUne->date?->toDateString() }}" class="font-mono text-sm text-ink-2">{{ $aLaUne->date?->translatedFormat('l j F Y') }}</time>
@@ -124,7 +124,7 @@ new #[Title('Actualites')] class extends Component {
                         <a href="{{ route('actualites.show', $aLaUne) }}" wire:navigate class="hover:text-cyan">{{ $aLaUne->titre }}</a>
                     </h2>
                     <p class="mt-3 leading-relaxed text-ink-2">{{ Str::limit(strip_tags((string) $aLaUne->contenu), 260) }}</p>
-                    <a href="{{ route('actualites.show', $aLaUne) }}" wire:navigate class="tn-btn-secondary mt-auto w-fit max-lg:mt-6">Lire l’annonce</a>
+                    <a href="{{ route('actualites.show', $aLaUne) }}" wire:navigate class="tn-btn-secondary mt-auto w-fit max-lg:mt-6">{{ __('Lire l’annonce') }}</a>
                 </div>
             </article>
         @endif
@@ -143,10 +143,10 @@ new #[Title('Actualites')] class extends Component {
                         </div>
                         <div class="flex items-start gap-1">
                             @can('update', $item)
-                                <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('actualites.edit', $item)" wire:navigate aria-label="Modifier" />
+                                <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('actualites.edit', $item)" wire:navigate aria-label="{{ __('Modifier') }}" />
                             @endcan
                             @can('delete', $item)
-                                <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer cette annonce ?" aria-label="Supprimer" />
+                                <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="{{ __('Supprimer cette annonce ?') }}" aria-label="{{ __('Supprimer') }}" />
                             @endcan
                         </div>
                     </li>

@@ -59,6 +59,9 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     Route::livewire('idees', 'pages::agent.ideas.index')->name('ideas.index');
     Route::livewire('idees/{idea:reference}', 'pages::agent.ideas.show')->where('idea', 'IDE-\d{4}-\d{6}')->name('ideas.show');
 
+    // F76 : avis des habitants sur les services couverts (F70) — répondre, masquer, réafficher (ServiceReviewPolicy).
+    Route::livewire('avis', 'pages::agent.service-reviews.index')->name('reviews.index');
+
     // F48 : historique d'un élément (lecture seule). {type} passe par la liste blanche AuditLog::HISTORY_TYPES (sinon 404).
     Route::livewire('historique/{type}/{id}', 'pages::agent.audit.history')
         ->whereIn('type', array_keys(AuditLog::HISTORY_TYPES))

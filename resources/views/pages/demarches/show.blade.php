@@ -19,7 +19,23 @@ new #[Title('Démarche')] class extends Component {
     {
         // F70 : refus explicite et journalisé pour un agent d'un autre service (DemarchePolicy::view).
         AuditLogger::autoriser('view', $demarche);
-        $this->record = $demarche->loadMissing(['service', 'user']);
+        $this->record = $demarche->loadMissing(['service', 'user', 'prisEnChargePar:id,name']);
+    }
+
+    /**
+     * F86 : prise en charge d'une urgence médicale, tracée (qui, quand).
+     */
+    public function prendreEnCharge(): void
+    {
+        AuditLogger::autoriser('prendreEnCharge', $this->record);
+
+        $prise = $this->record->prendreEnCharge(auth()->user());
+        $this->record->load('prisEnChargePar:id,name');
+
+        Flux::toast(
+            variant: $prise ? 'success' : 'warning',
+            text: $prise ? __('Urgence prise en charge.') : __('Cette urgence est déjà prise en charge.'),
+        );
     }
 
     public function delete(): void
@@ -90,6 +106,9 @@ new #[Title('Démarche')] class extends Component {
         <x-slot:meta>
             <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink-2">
                 <x-tn.status-badge :etat="$record->etatStatut()">{{ __(Demarche::libelleStatut($statut)) }}</x-tn.status-badge>
+                @if ($record->urgence_medicale)
+                    <x-tn.status-badge etat="alerte">{{ __('Urgence médicale') }}</x-tn.status-badge>
+                @endif
                 <span>Par {{ $record->user?->name }}</span>
                 <span class="font-mono text-xs">{{ $record->created_at->format('d.m.Y · H:i') }}</span>
             </div>
@@ -104,7 +123,51 @@ new #[Title('Démarche')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    {{-- F86 : urgence médicale : numéros d'urgence en haut pour l'habitant, prise en charge tracée pour le personnel. --}}
+    @if ($record->urgence_medicale)
+        @if ($record->user_id === auth()->id() && $record->estUrgenceOuverte())
+            <x-urgence-medicale-numeros />
+        @endif
+
+        <div class="flex flex-col gap-3 rounded-md border border-magenta/40 bg-magenta/5 p-4 sm:flex-row sm:items-center sm:justify-between" data-test="urgence-prise-en-charge">
+            <div class="flex items-start gap-2">
+                <flux:icon name="heart" class="mt-0.5 size-5 shrink-0 text-magenta" aria-hidden="true" />
+                <div>
+                    <p class="font-semibold text-ink">{{ __('Urgence médicale : traitée en priorité') }}</p>
+                    @if ($record->pris_en_charge_le)
+                        <p class="text-sm text-ink-2">
+                            {{ __('Prise en charge par') }}
+                            {{ $record->user_id === auth()->id() ? __('un agent municipal') : ($record->prisEnChargePar?->name ?? __('un agent')) }}
+                            {{ __('le') }} <span class="font-mono">{{ $record->pris_en_charge_le->timezone(config('app.timezone'))->format('d.m.Y · H:i') }}</span>
+                        </p>
+                    @else
+                        <p class="text-sm text-ink-2">{{ __('En attente de prise en charge : les agents concernés ont été prévenus immédiatement.') }}</p>
+                    @endif
+                </div>
+            </div>
+            @if (! $record->pris_en_charge_le)
+                @can('prendreEnCharge', $record)
+                    <flux:button variant="primary" icon="hand-raised" wire:click="prendreEnCharge">
+                        <span wire:loading.remove wire:target="prendreEnCharge">{{ __('Prendre en charge') }}</span>
+                        <span wire:loading wire:target="prendreEnCharge">{{ __('Enregistrement…') }}</span>
+                    </flux:button>
+                @endcan
+            @endif
+        </div>
+    @endif
+
     <x-audit-history :subject="$record" variant="resume" />
+
+    {{-- F76 : démarche traitée → invitation à donner (ou modifier) son avis sur le service. --}}
+    @if ($statut === 'traitee' && $record->service && $record->user?->is(auth()->user()))
+        <flux:callout icon="star" color="cyan">
+            <flux:callout.heading>{{ __('Comment s’est passée votre démarche ? Donnez votre avis') }}</flux:callout.heading>
+            <flux:callout.text>{{ __('Votre note et votre commentaire aident la ville à améliorer le service « :service ».', ['service' => $record->service->nom]) }}</flux:callout.text>
+            <x-slot name="actions">
+                <flux:button size="sm" variant="primary" :href="route('services.reviews.edit', $record->service)" wire:navigate>{{ __('Donner mon avis') }}</flux:button>
+            </x-slot>
+        </flux:callout>
+    @endif
 
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <x-tn.surface>

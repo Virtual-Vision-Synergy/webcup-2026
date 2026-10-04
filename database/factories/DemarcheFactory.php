@@ -51,4 +51,21 @@ class DemarcheFactory extends Factory
             return ['created_at' => $date, 'updated_at' => $date];
         });
     }
+
+    /**
+     * F86 : urgence médicale ouverte, pas encore prise en charge.
+     */
+    public function urgenceMedicale(): static
+    {
+        return $this->state(fn (): array => [
+            'titre' => fake()->randomElement([
+                'Urgence médicale : malaise de ma voisine âgée',
+                'Urgence médicale : enfant en crise de convulsions',
+                'Urgence médicale : blessé grave après une chute de chantier',
+            ]),
+            'description' => 'La personne est consciente mais très faible. Nous avons besoin d’une orientation rapide vers un centre de santé ouvert.',
+            'statut' => 'deposee',
+            'urgence_medicale' => true,
+        ]);
+    }
 }

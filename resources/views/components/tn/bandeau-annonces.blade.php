@@ -31,6 +31,7 @@
     };
 @endphp
 
+<x-tn.bandeau-consigne-incident />
 <x-tn.bandeau-mode-degrade />
 <x-tn.bandeau-dependances />
 <x-tn.bandeau-canicule />

@@ -5,8 +5,9 @@
         <!-- Session Status -->
         <x-auth-session-status class="text-center" :status="session('status')" />
 
-        <form method="POST" action="{{ route('register.store') }}" class="flex flex-col gap-6">
+        <form method="POST" action="{{ route('register.store') }}" class="relative flex flex-col gap-6">
             @csrf
+            <x-anti-robot formulaire="inscription" />
             <!-- Name -->
             <flux:input
                 name="name"
@@ -19,21 +20,33 @@
                 :placeholder="__('Full name')"
             />
 
-            <!-- Email Address -->
+            <!-- F71 : e-mail facultatif si un téléphone est donné -->
+            <flux:input
+                name="telephone"
+                :label="__('Numéro de téléphone')"
+                :value="old('telephone')"
+                type="tel"
+                autocomplete="tel"
+                icon="phone"
+                placeholder="034 12 345 67"
+            />
+
             <flux:input
                 name="email"
                 :label="__('Email address')"
+                :badge="__('Facultatif')"
                 :value="old('email')"
                 type="email"
-                required
                 autocomplete="email"
+                icon="envelope"
                 placeholder="email@example.com"
+                :description="__('Pas d\'adresse e-mail ? Le téléphone suffit pour vous connecter.')"
             />
 
             <!-- Password -->
             <flux:input
                 name="password"
-                :label="__('Password')"
+                :label="__('Mot de passe ou code personnel')"
                 type="password"
                 required
                 autocomplete="new-password"
@@ -53,6 +66,13 @@
                 passwordrules="{{ \Illuminate\Validation\Rules\Password::defaults()->toPasswordRulesString() }}"
                 viewable
             />
+
+            <p class="text-sm text-zinc-600 dark:text-zinc-400">
+                Avant de créer votre compte, lisez
+                <flux:link :href="route('privacy.show')" data-test="lien-vos-donnees">comment vos données sont utilisées</flux:link>.
+            </p>
+
+            <flux:error name="formulaire" />
 
             <div class="flex items-center justify-end">
                 <flux:button type="submit" variant="primary" class="w-full" data-test="register-user-button">

@@ -22,6 +22,8 @@ return [
         ['label' => 'Transports', 'route' => 'transports.index', 'match' => 'transports.*'],
         ['label' => 'Actualités', 'route' => 'actualites.index', 'match' => 'actualites.*'],
         ['label' => 'Services', 'route' => 'services.index', 'match' => 'services.*'],
+        ['label' => 'Projets', 'route' => 'projets.index', 'match' => 'projets.*'],
+        ['label' => 'Partenaires', 'route' => 'partners.index', 'match' => 'partners.*'],
     ],
 
     // Onglet central de la barre mobile (action principale).

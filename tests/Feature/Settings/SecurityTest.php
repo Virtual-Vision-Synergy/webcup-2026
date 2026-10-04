@@ -6,6 +6,9 @@ use Laravel\Fortify\Features;
 use Livewire\Livewire;
 
 beforeEach(function () {
+    // Ces tests vérifient les textes anglais du kit de démarrage ; l'application est en français par défaut.
+    app()->setLocale('en');
+
     $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
 
     Features::twoFactorAuthentication([

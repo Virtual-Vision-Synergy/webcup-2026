@@ -5,13 +5,14 @@
  * pour ne pas alourdir les pages sans carte.
  *
  * Chaque élément [data-carte] contient sa configuration JSON :
- * { points: [{lat, lng, titre, url}], centre: [lat, lng], zoom, mode: 'lecture'|'choix', champLat, champLng }
+ * { points: [{lat, lng, titre, url, lignes, lien}], centre: [lat, lng], zoom, mode: 'lecture'|'choix', champLat, champLng }
  *
  * Sécurité : les textes des bulles sont posés avec textContent (jamais innerHTML),
  * et seules les URL http(s) ou relatives sont utilisées dans les liens.
  */
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import '../css/carte.css';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
@@ -24,6 +25,9 @@ const cartes = new Map();
 
 // États reconnus : la couleur du marqueur indique un état (voir app/View/Components/Carte.php).
 const ETATS = ['normal', 'perturbe', 'alerte', 'info'];
+
+// F43 : l'état n'est jamais porté par la seule couleur : symbole dans le marqueur (CSS) + libellé dans le titre.
+const LIBELLES_ETATS = { normal: 'normal', perturbe: 'perturbé', alerte: 'alerte', info: 'information' };
 
 function urlTuiles() {
     const style = document.documentElement.classList.contains('dark') ? 'dark_all' : 'light_all';
@@ -51,11 +55,21 @@ function contenuBulle(point) {
     titre.textContent = point.titre ?? '';
     bloc.appendChild(titre);
 
+    // Lignes d'information (adresse, horaires…) : un paragraphe par ligne, texte brut.
+    (Array.isArray(point.lignes) ? point.lignes : []).forEach((texte) => {
+        const ligne = document.createElement('p');
+        ligne.textContent = String(texte);
+        // Style en ligne : Leaflet impose une grande marge aux paragraphes des bulles.
+        ligne.style.margin = '0.25rem 0 0';
+        ligne.style.whiteSpace = 'pre-line';
+        bloc.appendChild(ligne);
+    });
+
     const url = urlSure(point.url);
     if (url) {
         const lien = document.createElement('a');
         lien.href = url;
-        lien.textContent = 'Voir le détail';
+        lien.textContent = typeof point.lien === 'string' && point.lien !== '' ? point.lien : 'Voir le détail';
         lien.className = 'mt-1 block';
         bloc.appendChild(lien);
     }
@@ -107,10 +121,13 @@ function initialiser(el) {
     const marqueurs = points.map((p) => {
         const options = { title: p.titre ?? '', alt: p.titre ?? '' };
         if (ETATS.includes(p.etat)) {
-            options.icon = L.divIcon({ className: `tn-marqueur tn-marqueur-${p.etat}`, iconSize: [18, 18], iconAnchor: [9, 9], popupAnchor: [0, -10] });
+            const titre = [p.titre, `état : ${LIBELLES_ETATS[p.etat]}`].filter(Boolean).join(' — ');
+            options.title = titre;
+            options.alt = titre;
+            options.icon = L.divIcon({ className: `tn-marqueur tn-marqueur-${p.etat}`, iconSize: [22, 22], iconAnchor: [11, 11], popupAnchor: [0, -12] });
         }
         const marqueur = L.marker([nombre(p.lat), nombre(p.lng)], options).addTo(carte);
-        if (p.titre || p.url) {
+        if (p.titre || p.url || p.lignes?.length) {
             marqueur.bindPopup(contenuBulle(p));
         }
 

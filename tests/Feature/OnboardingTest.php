@@ -113,11 +113,11 @@ test('la progression suit les vraies actions du citoyen jusqu\'à la fin du parc
         ->set('description', 'Pour mon nouveau logement.')
         ->call('save')
         ->assertHasNoErrors()
-        ->assertRedirect(route('onboarding.show'));
-    expect(progression($user)->nombreFaites())->toBe(3);
+        ->assertRedirect(route('demarches.accuse', $user->demarches()->sole()));
+    expect(progression($user)->nombreFaites())->toBe(3)
+        ->and($user->onboarding()->value('completed_at'))->not->toBeNull();
 
     $this->get(route('onboarding.show'))->assertOk()->assertSee('vous êtes prêt');
-    expect($user->onboarding()->value('completed_at'))->not->toBeNull();
 
     $this->post(route('logout'));
     $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'password'])

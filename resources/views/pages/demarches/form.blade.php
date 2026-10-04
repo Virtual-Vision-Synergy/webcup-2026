@@ -9,6 +9,7 @@ use App\Services\OnboardingProgress;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
@@ -53,6 +54,9 @@ new #[Title('Démarche')] class extends Component {
             if ($service !== null) {
                 $this->service_id = (string) $service->id;
             }
+
+            // F92 : besoin décrit sur la page d'orientation, repris comme description de la démarche.
+            $this->description = Str::limit(trim(request()->string('besoin')->toString()), 5000, '');
         }
     }
 

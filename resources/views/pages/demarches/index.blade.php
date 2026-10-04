@@ -168,6 +168,9 @@ new #[Title('Mes démarches')] class extends Component {
                         <span class="block truncate text-sm text-ink-2">{{ $item->service?->nom ?? __('Service non précisé') }} · <span class="font-mono text-xs">{{ $item->created_at->format('d.m.Y') }}</span></span>
                         <x-slot:aside>
                             <span class="flex flex-wrap gap-1">
+                                @if ($item->urgence_medicale)
+                                    <x-tn.status-badge etat="alerte">{{ __('Urgence médicale') }}</x-tn.status-badge>
+                                @endif
                                 <x-tn.status-badge :etat="$item->etatStatut()">{{ Demarche::libelleStatut($item->statut) }}</x-tn.status-badge>
                                 @if ($item->reponseEnvoyee())
                                     <x-tn.status-badge etat="normal">{{ __('Réponse de la mairie') }}</x-tn.status-badge>
@@ -201,6 +204,9 @@ new #[Title('Mes démarches')] class extends Component {
                             <flux:table.cell>{{ $item->service?->nom ?? '—' }}</flux:table.cell>
                             <flux:table.cell>
                                 <div class="flex flex-wrap gap-1">
+                                    @if ($item->urgence_medicale)
+                                        <x-tn.status-badge etat="alerte">{{ __('Urgence médicale') }}</x-tn.status-badge>
+                                    @endif
                                     <x-tn.status-badge :etat="$item->etatStatut()">{{ Demarche::libelleStatut($item->statut) }}</x-tn.status-badge>
                                     @if ($item->reponseEnvoyee())
                                         <x-tn.status-badge etat="normal">{{ __('Réponse de la mairie') }}</x-tn.status-badge>

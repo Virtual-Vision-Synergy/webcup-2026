@@ -120,6 +120,8 @@ class DatabaseSeeder extends Seeder
         if (! app()->isProduction()) {
             // Quelques démarches pour le compte citoyen de démo : son espace personnel n'est pas vide.
             Demarche::factory(4)->recycle($services)->for(User::where('email', 'user@example.com')->firstOrFail())->create();
+            // F86 : deux urgences médicales ouvertes (tête de la liste agent, compteur « À traiter en priorité »).
+            Demarche::factory(2)->urgenceMedicale()->recycle($services)->for(User::where('email', 'user@example.com')->firstOrFail())->create();
         }
 
         // Messages généraux (D18) : un en cours, un programmé, un expiré, publiés par un agent.
@@ -177,6 +179,9 @@ class DatabaseSeeder extends Seeder
 
         if (! app()->isProduction()) {
             $this->call(LoginAttemptSeeder::class);
+
+            // F81 : envois de formulaires bloqués (robots) pour l'écran admin « Robots bloqués ».
+            $this->call(TentativeBloqueeSeeder::class);
         }
 
         if (! app()->isProduction()) {
@@ -227,6 +232,9 @@ class DatabaseSeeder extends Seeder
             // F84 : échanges agent / habitant sur les démarches de user@example.com.
             $this->call(ReponseDemarcheSeeder::class);
         }
+
+        // F76 : avis des habitants sur trois services (notes variées, deux réponses, un avis masqué).
+        $this->call(ServiceReviewSeeder::class);
 
         // make:feature:seeders
     }

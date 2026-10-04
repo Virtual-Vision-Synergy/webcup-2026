@@ -19,13 +19,17 @@ test('un utilisateur connecté voit la liste des messages', function () {
 test('un utilisateur peut créer : Message', function () {
     $user = User::factory()->create();
 
-    Livewire::actingAs($user)
+    $formulaire = Livewire::actingAs($user)
         ->test('pages::messages.form')
         ->set('nom', 'Valeur de test')
         ->set('email', 'citoyen@example.com')
         ->set('sujet', 'Valeur de test')
-        ->set('message', 'Valeur de test')
-        ->call('save')
+        ->set('message', 'Valeur de test');
+
+    // F81 : un humain met plus de 3 secondes à remplir le formulaire.
+    $this->travel(5)->seconds();
+
+    $formulaire->call('save')
         ->assertHasNoErrors();
 
     expect(Message::where('user_id', $user->id)->count())->toBe(1);

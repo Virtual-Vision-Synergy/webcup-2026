@@ -109,6 +109,12 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('consultations/create', 'pages::consultations.form')->name('consultations.create');
     Route::livewire('consultations/{consultation}', 'pages::consultations.show')->name('consultations.show');
 
+    // F76 : avis des habitants sur les services (ServiceReviewPolicy : un avis par habitant et par service, modifiable
+    // par son auteur tant qu'il n'est pas masqué). service_id vient toujours de la route, jamais du formulaire.
+    Route::livewire('services/{service}/avis', 'pages::service-reviews.show')->name('services.reviews.index');
+    Route::livewire('services/{service}/avis/donner', 'pages::service-reviews.form')->name('services.reviews.edit');
+    Route::livewire('mes-avis/services', 'pages::service-reviews.index')->name('services.reviews.mine');
+
     // make:feature:routes
 });
 

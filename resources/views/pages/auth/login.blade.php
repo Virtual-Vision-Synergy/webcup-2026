@@ -6,8 +6,9 @@
         <x-auth-session-status class="text-center" :status="session('status')" />
 
 
-        <form method="POST" action="{{ route('login.store') }}" class="flex flex-col gap-6">
+        <form method="POST" action="{{ route('login.store') }}" class="relative flex flex-col gap-6">
             @csrf
+            <x-anti-robot formulaire="connexion" />
 
             <!-- F71 : e-mail, identifiant d'habitant ou téléphone -->
             <flux:input
@@ -43,6 +44,8 @@
 
             <!-- Remember Me -->
             <flux:checkbox name="remember" :label="__('Remember me')" :checked="old('remember')" />
+
+            <flux:error name="formulaire" />
 
             <div class="flex items-center justify-end">
                 <flux:button variant="primary" type="submit" class="w-full" data-test="login-button">

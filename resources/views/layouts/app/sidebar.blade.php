@@ -57,6 +57,10 @@
                         Accessibilité
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="star" :href="route('services.reviews.mine')" :current="request()->routeIs('services.reviews.mine')" wire:navigate>
+                        Mes avis sur les services
+                    </flux:sidebar.item>
+
                     {{-- make:feature:nav --}}
 @endsection
 @php

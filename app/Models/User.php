@@ -161,6 +161,41 @@ class User extends Authenticatable implements FilamentUser, HasLocalePreference
     }
 
     /**
+     * Démarches déposées ou en cours (compteur du menu mobile), retenu pour la requête HTTP en cours.
+     */
+    public function nombreDemarchesEnCours(): int
+    {
+        $cle = 'tn.demarches-en-cours.'.$this->getKey();
+        $connu = request()->attributes->get($cle);
+
+        if (is_int($connu)) {
+            return $connu;
+        }
+
+        $nombre = $this->demarches()->whereIn('statut', ['deposee', 'en_cours'])->count();
+        request()->attributes->set($cle, $nombre);
+
+        return $nombre;
+    }
+
+    /**
+     * F95 : le tableau de bord a déjà compté les démarches par statut ; il le retient pour la requête en cours,
+     * ce qui évite au menu mobile et au rappel de prise en main de reposer la question à la base.
+     *
+     * @param  iterable<string, int|string>  $parStatut
+     */
+    public function retenirDemarchesParStatut(iterable $parStatut): void
+    {
+        $parStatut = collect($parStatut)->map(fn ($total): int => (int) $total);
+
+        request()->attributes->set('tn.demarches-en-cours.'.$this->getKey(), (int) $parStatut->only(['deposee', 'en_cours'])->sum());
+
+        if ($parStatut->sum() > 0) {
+            request()->attributes->set('tn.demarche-commencee.'.$this->getKey(), true);
+        }
+    }
+
+    /**
      * Get the user's initials
      */
     public function initials(): string
@@ -270,6 +305,16 @@ class User extends Authenticatable implements FilamentUser, HasLocalePreference
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    /**
+     * F97 : trajets habituels (ligne + arrêt) de l'habitant, pour être prévenu des interruptions.
+     *
+     * @return HasMany<AbonnementLigne, $this>
+     */
+    public function abonnementsLigne(): HasMany
+    {
+        return $this->hasMany(AbonnementLigne::class);
     }
 
     /**

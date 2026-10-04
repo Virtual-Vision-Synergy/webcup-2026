@@ -11,6 +11,54 @@ use Illuminate\Database\Seeder;
  */
 class ServiceSeeder extends Seeder
 {
+    /** Services mis en avant en tête du catalogue et sur l'accueil. */
+    private const MIS_EN_AVANT = ['État civil', 'Accueil de la Mairie', 'Urbanisme', 'Action sociale (CCAS)'];
+
+    /** Catégorie de chaque service de l'annuaire (voir Service::CATEGORIE_OPTIONS). */
+    private const CATEGORIES = [
+        'État civil' => 'administratif',
+        'Accueil de la Mairie' => 'administratif',
+        'Élections et recensement' => 'administratif',
+        'Cimetière et affaires funéraires' => 'administratif',
+        'Urbanisme' => 'urbanisme',
+        'Services techniques et voirie' => 'urbanisme',
+        'Environnement et propreté' => 'urbanisme',
+        'Santé publique' => 'sante',
+        'Action sociale (CCAS)' => 'social',
+        'Petite enfance et écoles' => 'education',
+        'Jeunesse' => 'education',
+        'Médiathèque Ravinala' => 'culture',
+        'Sports et associations' => 'culture',
+        'Culture et festivités' => 'culture',
+        'Police municipale' => 'securite',
+        'Marchés et commerce' => 'economie',
+        'Mairie annexe du quartier Nord' => 'administratif',
+    ];
+
+    /**
+     * Position du lieu d'accueil de chaque service sur la carte (F45).
+     *
+     * @var array<string, array{0: float, 1: float}>
+     */
+    private const COORDONNEES = [
+        'État civil' => [-18.9102, 47.5256],
+        'Accueil de la Mairie' => [-18.9098, 47.5252],
+        'Élections et recensement' => [-18.9105, 47.5261],
+        'Police municipale' => [-18.9093, 47.5264],
+        'Urbanisme' => [-18.9061, 47.5218],
+        'Services techniques et voirie' => [-18.8987, 47.5332],
+        'Action sociale (CCAS)' => [-18.9178, 47.5297],
+        'Santé publique' => [-18.9189, 47.5312],
+        'Médiathèque Ravinala' => [-18.9037, 47.5281],
+        'Petite enfance et écoles' => [-18.9141, 47.5187],
+        'Sports et associations' => [-18.9213, 47.5175],
+        'Environnement et propreté' => [-18.8962, 47.5145],
+        'Culture et festivités' => [-18.9071, 47.5303],
+        'Marchés et commerce' => [-18.9119, 47.5236],
+        'Cimetière et affaires funéraires' => [-18.9265, 47.5389],
+        'Jeunesse' => [-18.9012, 47.5241],
+    ];
+
     public function run(): void
     {
         $auteur = User::query()->where('role', 'admin')->first() ?? User::query()->first();
@@ -19,8 +67,34 @@ class ServiceSeeder extends Seeder
             return;
         }
 
-        foreach ($this->services() as $data) {
+        // F46 : hôpitaux et services d'urgence (catégorie santé, déjà localisés).
+        foreach (Service::ETABLISSEMENTS_SANTE as $data) {
             if (Service::query()->where('nom', $data['nom'])->exists()) {
+                continue;
+            }
+
+            $service = new Service($data);
+            $service->categorie = 'sante';
+            $service->slug = Service::uniqueSlug($data['nom']);
+            $service->user()->associate($auteur);
+            $service->save();
+        }
+
+        foreach ($this->services() as $data) {
+            $data['categorie'] = self::CATEGORIES[$data['nom']] ?? null;
+            [$data['latitude'], $data['longitude']] = self::COORDONNEES[$data['nom']] ?? [null, null];
+
+            $existant = Service::query()->where('nom', $data['nom'])->first();
+
+            if ($existant !== null) {
+                if ($existant->categorie === null && $data['categorie'] !== null) {
+                    $existant->update(['categorie' => $data['categorie']]);
+                }
+
+                if ($existant->latitude === null && $data['latitude'] !== null) {
+                    $existant->update(['latitude' => $data['latitude'], 'longitude' => $data['longitude']]);
+                }
+
                 continue;
             }
 
@@ -30,6 +104,9 @@ class ServiceSeeder extends Seeder
             $service->user()->associate($auteur);
             $service->save();
         }
+
+        // Démarches les plus courantes mises en avant (F28).
+        Service::query()->whereIn('nom', self::MIS_EN_AVANT)->update(['mis_en_avant' => true]);
     }
 
     /**
@@ -165,6 +242,14 @@ class ServiceSeeder extends Seeder
                 'telephone' => null,
                 'email' => 'jeunesse@mairie-novaterra.mg',
                 'adresse' => 'Maison des jeunes, 7 avenue de la Jeunesse, Nova Terra',
+            ],
+            [
+                'nom' => 'Mairie annexe du quartier Nord',
+                'description' => "Antenne de proximité de la mairie : actes d'état civil, certificats de résidence, légalisation de signature et accueil des habitants du quartier Nord.\nPrend le relais de l'hôtel de ville lorsqu'un service central est interrompu.",
+                'horaires' => "Lundi au vendredi : 8 h 00 – 12 h 00\nMercredi : 14 h 00 – 16 h 00",
+                'telephone' => '+261 20 22 402 30',
+                'email' => 'annexe-nord@mairie-novaterra.mg',
+                'adresse' => '12 rue du Port, quartier Nord, Nova Terra',
             ],
         ];
     }

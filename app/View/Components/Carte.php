@@ -13,6 +13,7 @@ use InvalidArgumentException;
  * Choix   : <x-carte mode="choix" /> dans un composant Livewire qui a des propriétés latitude et longitude.
  *
  * Chaque point : ['lat' => -18.91, 'lng' => 47.52, 'titre' => 'Texte', 'url' => route(...)] (titre et url facultatifs).
+ * Facultatifs aussi : 'lignes' => ['Adresse…', 'Horaires…'] (texte sous le titre), 'lien' => 'Voir la fiche' (texte du lien).
  */
 class Carte extends Component
 {
@@ -24,7 +25,7 @@ class Carte extends Component
     /** États reconnus pour colorer un marqueur. */
     public const ETATS = ['normal', 'perturbe', 'alerte', 'info'];
 
-    /** @var array<int, array{lat: float, lng: float, titre: string, url: string|null, etat: string|null}> */
+    /** @var array<int, array{lat: float, lng: float, titre: string, url: string|null, etat: string|null, lignes: array<int, string>, lien: string|null}> */
     public array $points;
 
     /**
@@ -81,7 +82,7 @@ class Carte extends Component
      * Garde les points aux coordonnées valides et les liens sûrs (relatifs ou http/https).
      *
      * @param  iterable<int, array<string, mixed>|null>  $points
-     * @return array<int, array{lat: float, lng: float, titre: string, url: string|null, etat: string|null}>
+     * @return array<int, array{lat: float, lng: float, titre: string, url: string|null, etat: string|null, lignes: array<int, string>, lien: string|null}>
      */
     private function normaliser(iterable $points): array
     {
@@ -112,6 +113,11 @@ class Carte extends Component
                 'url' => $url,
                 // État affiché par la couleur du marqueur (liste fermée, sinon marqueur standard).
                 'etat' => in_array($point['etat'] ?? null, self::ETATS, true) ? $point['etat'] : null,
+                'lignes' => array_values(array_filter(
+                    array_map(fn (mixed $ligne): string => is_scalar($ligne) ? trim((string) $ligne) : '', (array) ($point['lignes'] ?? [])),
+                    fn (string $ligne): bool => $ligne !== '',
+                )),
+                'lien' => isset($point['lien']) && is_scalar($point['lien']) ? (string) $point['lien'] : null,
             ];
         }
 

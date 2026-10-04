@@ -2,6 +2,7 @@
 
 use App\Models\Service;
 use Flux\Flux;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
@@ -14,7 +15,13 @@ new #[Title('Service')] class extends Component {
 
     public string $nom = '';
     public string $description = '';
-    public string $icone = '';
+    public string $categorie = '';
+    public string $lieu_rendez_vous = '';
+    public string $duree_rendez_vous = '';
+    public string $pieces_a_fournir = '';
+    public string $latitude = '';
+    public string $longitude = '';
+    public bool $mis_en_avant = false;
 
     public function mount(?Service $service = null): void
     {
@@ -23,7 +30,13 @@ new #[Title('Service')] class extends Component {
             $this->record = $service;
             $this->nom = (string) ($service->nom ?? '');
             $this->description = (string) ($service->description ?? '');
-            $this->icone = (string) ($service->icone ?? '');
+            $this->categorie = (string) ($service->categorie ?? '');
+            $this->mis_en_avant = (bool) $service->mis_en_avant;
+            $this->lieu_rendez_vous = (string) ($service->lieu_rendez_vous ?? '');
+            $this->duree_rendez_vous = (string) ($service->duree_rendez_vous ?? '');
+            $this->pieces_a_fournir = (string) ($service->pieces_a_fournir ?? '');
+            $this->latitude = (string) ($service->latitude ?? '');
+            $this->longitude = (string) ($service->longitude ?? '');
         } else {
             $this->authorize('create', Service::class);
         }
@@ -37,7 +50,13 @@ new #[Title('Service')] class extends Component {
         return [
             'nom' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:5000'],
-            'icone' => ['required', 'string', 'max:255'],
+            'categorie' => ['required', Rule::in(Service::CATEGORIE_OPTIONS)],
+            'lieu_rendez_vous' => ['nullable', 'string', 'max:255'],
+            'duree_rendez_vous' => ['nullable', 'integer', 'min:5', 'max:240'],
+            'pieces_a_fournir' => ['nullable', 'string', 'max:2000'],
+            'latitude' => ['nullable', 'required_with:longitude', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'required_with:latitude', 'numeric', 'between:-180,180'],
+            'mis_en_avant' => ['boolean'],
         ];
     }
 
@@ -48,17 +67,32 @@ new #[Title('Service')] class extends Component {
             : $this->authorize('create', Service::class);
 
         $validated = $this->validate();
+        $miseEnAvant = (bool) ($validated['mis_en_avant'] ?? false);
+        unset($validated['mis_en_avant']);
 
-        if ($this->record) {
-            $this->record->update($validated);
-            $record = $this->record;
-        } else {
-            $record = new Service($validated);
-            $record->user()->associate(auth()->user());
-            $record->save();
+        foreach (['lieu_rendez_vous', 'duree_rendez_vous', 'pieces_a_fournir', 'latitude', 'longitude'] as $field) {
+            if (($validated[$field] ?? null) === '') {
+                $validated[$field] = null;
+            }
         }
 
-        Flux::toast(variant: 'success', text: 'Service enregistré(e).');
+        $record = $this->record ?? new Service;
+        $record->fill($validated);
+
+        if (! $record->exists) {
+            $record->user()->associate(auth()->user());
+        }
+
+        // Champ réservé : seuls les agents et admins peuvent le changer (sinon la valeur actuelle est conservée).
+        if (auth()->user()->can('feature', $record)) {
+            $record->mis_en_avant = $miseEnAvant;
+        }
+
+        $record->save();
+
+        Cache::forget('landing.etat');
+
+        Flux::toast(variant: 'success', text: __('Service enregistré(e).'));
 
         $this->redirectRoute('services.show', $record, navigate: true);
     }
@@ -66,21 +100,54 @@ new #[Title('Service')] class extends Component {
 
 <section class="mx-auto w-full max-w-2xl space-y-6">
     <x-tn.page-header
-        label="Annuaire"
-        :title="$record ? 'Modifier le service' : 'Ajouter un service'"
-        :breadcrumb="['Services' => route('services.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
+        label="{{ __('Annuaire') }}"
+        :title="$record ? __('Modifier le service') : __('Ajouter un service')"
+        :breadcrumb="$record
+            ? ['Mon espace' => route('dashboard'), 'Services' => route('services.index'), $record->nom => route('services.show', $record), 'Modifier' => null]
+            : ['Mon espace' => route('dashboard'), 'Services' => route('services.index'), 'Nouveau' => null]"
     />
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
-        <flux:input wire:model="nom" label="Nom" required />
+        <flux:input wire:model="nom" label="{{ __('Nom') }}" required />
 
-        <flux:textarea wire:model="description" label="Description" rows="5" required />
+        <flux:textarea wire:model="description" label="{{ __('Description') }}" rows="5" required />
 
-        <flux:input wire:model="icone" label="Icone" required />
+        <flux:select wire:model="categorie" label="{{ __('Catégorie') }}" placeholder="{{ __('Choisir une catégorie…') }}" required>
+            @foreach (Service::CATEGORIE_LABELS as $valeur => $label)
+                <flux:select.option value="{{ $valeur }}">{{ __($label) }}</flux:select.option>
+            @endforeach
+        </flux:select>
+
+        <fieldset class="space-y-4">
+            <flux:heading size="sm">{{ __('Lieu d\'accueil sur la carte') }}</flux:heading>
+            <flux:text>{{ __('Placez le lieu où les habitants sont reçus : il apparaîtra sur la carte des services.') }}</flux:text>
+
+            <x-carte mode="choix" hauteur="16rem" :label="__('Choisir l\'emplacement du service')" />
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:input wire:model="latitude" label="{{ __('Latitude') }}" inputmode="decimal" />
+                <flux:input wire:model="longitude" label="{{ __('Longitude') }}" inputmode="decimal" />
+            </div>
+        </fieldset>
+
+        <fieldset class="space-y-4">
+            <flux:heading size="sm">Prise de rendez-vous</flux:heading>
+            <flux:text>Laissez la durée vide si le service ne prend pas de rendez-vous en ligne.</flux:text>
+
+            <flux:input wire:model="duree_rendez_vous" type="number" min="5" max="240" label="Durée d'un rendez-vous (minutes)" />
+
+            <flux:input wire:model="lieu_rendez_vous" label="Lieu du rendez-vous" placeholder="Bâtiment, étage, guichet" />
+
+            <flux:textarea wire:model="pieces_a_fournir" label="Pièces à apporter (une par ligne)" rows="4" />
+        </fieldset>
+
+        @can('feature', $record ?? Service::class)
+            <flux:checkbox wire:model="mis_en_avant" label="{{ __('Mettre en avant') }}" description="{{ __('Le service apparaît en tête du catalogue et sur la page d\'accueil.') }}" />
+        @endcan
 
         <div class="flex items-center gap-3">
-            <flux:button type="submit" variant="primary">Enregistrer</flux:button>
-            <flux:button :href="route('services.index')" wire:navigate variant="ghost">Annuler</flux:button>
+            <flux:button type="submit" variant="primary">{{ __('Enregistrer') }}</flux:button>
+            <flux:button :href="route('services.index')" wire:navigate variant="ghost">{{ __('Annuler') }}</flux:button>
         </div>
     </form>
 </section>

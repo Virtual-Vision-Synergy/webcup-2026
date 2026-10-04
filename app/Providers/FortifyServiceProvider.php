@@ -85,6 +85,13 @@ class FortifyServiceProvider extends ServiceProvider
                 throw ValidationException::withMessages([Fortify::username() => EnsureAccountIsActive::MESSAGE]);
             }
 
+            // F85 : compte verrouillé temporairement (identifiants corrects : pas d'énumération possible).
+            if ($user->estVerrouille()) {
+                app(LoginAttemptRecorder::class)->record($request, $email, $user, successful: false, reason: LoginAttempt::REASON_LOCKED_OUT);
+
+                throw ValidationException::withMessages([Fortify::username() => $user->messageVerrouillage()]);
+            }
+
             return $user;
         });
     }

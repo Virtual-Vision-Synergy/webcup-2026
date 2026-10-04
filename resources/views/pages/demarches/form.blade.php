@@ -24,6 +24,9 @@ new #[Title('Démarche')] class extends Component {
     public string $description = '';
     public string $service_id = '';
 
+    /** F86 : case « urgence médicale » (les mots-clés de la description suffisent aussi). */
+    public bool $urgenceMedicale = false;
+
     public function mount(?Demarche $demarche = null): void
     {
         if ($demarche?->exists) {
@@ -32,6 +35,7 @@ new #[Title('Démarche')] class extends Component {
             $this->titre = (string) ($demarche->titre ?? '');
             $this->description = (string) ($demarche->description ?? '');
             $this->service_id = (string) ($demarche->service_id ?? '');
+            $this->urgenceMedicale = $demarche->urgence_medicale;
         } else {
             $this->authorize('create', Demarche::class);
 
@@ -58,6 +62,7 @@ new #[Title('Démarche')] class extends Component {
         return [
             'titre' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:5000'],
+            'urgenceMedicale' => ['boolean'],
             // F63 : un service rendu indisponible par un administrateur n'accepte plus de démarche (contrôle serveur).
             'service_id' => [
                 'nullable',
@@ -104,6 +109,10 @@ new #[Title('Démarche')] class extends Component {
         // F78 : 10 envois par minute et par habitant au plus (message clair au-dessus du bouton).
         $this->throttlePerUser('demarche', maxAttempts: 10, decaySeconds: 60);
 
+        // F86 : urgence médicale si la case est cochée ou si le texte l'évoque ; jamais retirée par l'habitant.
+        $urgence = (bool) ($validated['urgenceMedicale'] ?? false) || Demarche::detecterUrgenceMedicale($validated['titre'], $validated['description']);
+        unset($validated['urgenceMedicale']);
+
         foreach (['service_id'] as $field) {
             if (($validated[$field] ?? null) === '') {
                 $validated[$field] = null;
@@ -112,16 +121,38 @@ new #[Title('Démarche')] class extends Component {
 
         $depuisParcours = ! $this->record && OnboardingProgress::pour(auth()->user())->doitRevenirAuParcours();
 
-        if ($this->record) {
-            $this->record->update($validated);
-            $record = $this->record;
-        } else {
-            $record = new Demarche($validated);
+        $record = $this->record ?? new Demarche;
+        $nouvelleUrgence = $urgence && ! $record->urgence_medicale;
+
+        $record->fill($validated);
+
+        if (! $record->exists) {
             $record->user()->associate(auth()->user());
-            $record->save();
         }
 
-        Flux::toast(variant: 'success', text: 'Démarche enregistrée.');
+        if ($nouvelleUrgence) {
+            $record->urgence_medicale = true;
+        }
+
+        $record->save();
+
+        if ($nouvelleUrgence) {
+            $record->alerterUrgenceMedicale();
+        }
+
+        Flux::toast(
+            variant: $record->urgence_medicale ? 'warning' : 'success',
+            text: $record->urgence_medicale
+                ? 'Urgence médicale transmise en priorité aux agents. Si une vie est en danger, appelez le 15 ou le 112.'
+                : 'Démarche enregistrée.',
+        );
+
+        // F86 : une urgence ne suit pas le circuit ordinaire (pas de retour au parcours) : fiche avec les numéros d'urgence.
+        if ($record->urgence_medicale) {
+            $this->redirectRoute('demarches.show', $record, navigate: true);
+
+            return;
+        }
 
         // Parcours de prise en main (D12) : la première démarche termine le parcours, on affiche les félicitations.
         if ($depuisParcours) {
@@ -207,6 +238,19 @@ new #[Title('Démarche')] class extends Component {
                     <p class="mt-1 text-ink-2">Un objet court, puis les détails utiles au traitement.</p>
                     <x-tn.mention-obligatoire />
                 </div>
+                {{-- F86 : urgence médicale, numéros d'urgence affichés dès que la case est cochée. --}}
+                <div class="space-y-3">
+                    <label class="flex min-h-11 cursor-pointer items-start gap-3 rounded-md border border-magenta/35 bg-surface px-4 py-3 has-checked:border-magenta has-checked:bg-magenta/8">
+                        <input type="checkbox" wire:model="urgenceMedicale" class="mt-1 size-4 accent-[var(--color-magenta)]">
+                        <span>
+                            <span class="block font-medium text-ink">Il s’agit d’une urgence médicale</span>
+                            <span class="block text-sm text-ink-2">Votre demande sera traitée en priorité. Les mots-clés (malaise, hémorragie, ne respire plus…) sont aussi détectés automatiquement.</span>
+                        </span>
+                    </label>
+                    <div x-show="$wire.urgenceMedicale" x-cloak>
+                        <x-urgence-medicale-numeros />
+                    </div>
+                </div>
                 <flux:input wire:model="titre" label="Objet de la démarche" placeholder="Ex. Demande d'acte de naissance" required />
                 <flux:textarea wire:model="description" label="Détails" placeholder="Précisez votre demande (personnes concernées, dates, pièces disponibles…)" rows="6" required />
             </div>
@@ -218,6 +262,7 @@ new #[Title('Démarche')] class extends Component {
                     <dl>
                         <x-tn.field label="Service"><span x-text="services[$wire.service_id] ?? 'Je ne sais pas'"></span></x-tn.field>
                         <x-tn.field label="Objet"><span x-text="$wire.titre"></span></x-tn.field>
+                        <x-tn.field label="Urgence médicale"><span x-text="$wire.urgenceMedicale ? 'Oui : traitée en priorité' : 'Non'"></span></x-tn.field>
                         <x-tn.field label="Détails"><p class="whitespace-pre-line" x-text="$wire.description"></p></x-tn.field>
                     </dl>
                 </x-tn.panel>

@@ -55,6 +55,14 @@ class DemarchePolicy
     }
 
     /**
+     * F80 : classer un dossier par priorité (personnel du service ou admin ; un habitant → 403).
+     */
+    public function changerPriorite(User $user, Demarche $demarche): Response
+    {
+        return $this->accesService($user, $demarche);
+    }
+
+    /**
      * F86 : prendre en charge une urgence médicale (personnel du service, ou admin).
      */
     public function prendreEnCharge(User $user, Demarche $demarche): Response

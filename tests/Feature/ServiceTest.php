@@ -16,8 +16,8 @@ test('un utilisateur connecté voit la liste des services', function () {
         ->assertOk();
 });
 
-test('un utilisateur peut créer : Service', function () {
-    $user = User::factory()->create();
+test('un agent peut créer : Service', function () {
+    $user = User::factory()->agent()->create();
 
     Livewire::actingAs($user)
         ->test('pages::services.form')

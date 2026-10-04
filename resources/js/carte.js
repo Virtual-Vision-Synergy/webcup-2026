@@ -9,20 +9,32 @@
 let chargement = null;
 const chargerLeaflet = () => (chargement ??= import('./carte-leaflet.js'));
 
+/** F93 : carte impossible à charger (réseau coupé) : message clair, le reste de la page reste utilisable. */
+const MESSAGE_INDISPONIBLE = 'Carte momentanément indisponible (pas de connexion). Les adresses et informations de la page restent valables.';
+const initialiserCarte = (el) => chargerLeaflet()
+    .then(({ initialiser }) => initialiser(el))
+    .catch(() => {
+        chargement = null;
+        const message = el.querySelector('[data-carte-message]');
+        if (message) {
+            message.textContent = MESSAGE_INDISPONIBLE;
+        }
+    });
+
 const observees = new WeakSet();
 
 const observateur = 'IntersectionObserver' in window
     ? new IntersectionObserver((entrees) => {
         entrees.filter((entree) => entree.isIntersecting).forEach((entree) => {
             observateur.unobserve(entree.target);
-            chargerLeaflet().then(({ initialiser }) => initialiser(entree.target));
+            initialiserCarte(entree.target);
         });
     }, { rootMargin: '200px 0px' })
     : null;
 
 function surveiller() {
     if (chargement) {
-        chargement.then(({ nettoyer }) => nettoyer());
+        chargement.then(({ nettoyer }) => nettoyer()).catch(() => {});
     }
 
     document.querySelectorAll('[data-carte]').forEach((el) => {
@@ -35,7 +47,7 @@ function surveiller() {
         if (observateur) {
             observateur.observe(el);
         } else {
-            chargerLeaflet().then(({ initialiser }) => initialiser(el));
+            initialiserCarte(el);
         }
     });
 }

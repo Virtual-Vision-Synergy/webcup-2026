@@ -11,6 +11,11 @@
 
 <title>{{ $pageTitle }}</title>
 
+{{-- F93 : empreinte anonyme de la session : si l'utilisateur change sur cet appareil, pages hors ligne et brouillons sont effacés. --}}
+@auth
+    <meta name="tn-session" content="{{ substr(hash_hmac('sha256', (string) auth()->id(), (string) config('app.key')), 0, 16) }}" />
+@endauth
+
 <link rel="canonical" href="{{ url()->current() }}" />
 <meta property="og:type" content="website" />
 <meta property="og:locale" content="{{ app()->getLocale() === 'en' ? 'en_US' : 'fr_FR' }}" />

@@ -29,8 +29,8 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
 {{-- F58 : une seule police (IBM Plex Sans), auto-hébergée par Vite au build ; aucun appel à un CDN de polices. --}}
-{{-- F62 : en version simple, police du système (aucun fichier de police téléchargé). --}}
-@unless (\App\Support\VersionSimple::actif())
+{{-- F62 / F96 : en version simple ou légère, police du système (aucun fichier de police téléchargé). --}}
+@unless (\App\Support\ModeAllege::actif())
     @fonts
 @endunless
 
@@ -64,4 +64,35 @@
         }
     } catch (e) {}
 </script>
+{{--
+    F96 : version légère automatique. Économiseur de données, connexion lente (slow-2g, 2g, 3g) ou petit écran :
+    le cookie mode_allege_auto est posé pour les pages suivantes, la présentation allégée et le bandeau
+    s'appliquent tout de suite. Rendu seulement sans choix explicite de l'habitant (qui prime toujours).
+--}}
+@if (\App\Support\ModeAllege::detectionPossible())
+    <script>
+        try {
+            var tnCnx = navigator.connection || {};
+            var tnLeger = tnCnx.saveData === true
+                || ['slow-2g', '2g', '3g'].indexOf(tnCnx.effectiveType) !== -1
+                || window.matchMedia('(max-width: 767px)').matches;
+
+            if (tnLeger !== /(?:^|;\s*){{ \App\Support\ModeAllege::COOKIE_AUTO }}=1(?:;|$)/.test(document.cookie)) {
+                document.cookie = '{{ \App\Support\ModeAllege::COOKIE_AUTO }}=' + (tnLeger ? '1' : '0')
+                    + '; path=/; max-age=' + (tnLeger ? 2592000 : 0) + '; SameSite=Lax'
+                    + (window.location.protocol === 'https:' ? '; Secure' : '');
+            }
+
+            if (tnLeger) {
+                document.documentElement.classList.add('allege');
+                document.addEventListener('DOMContentLoaded', function () {
+                    var tnBandeau = document.querySelector('[data-bandeau-version-legere]');
+                    if (tnBandeau) {
+                        tnBandeau.hidden = false;
+                    }
+                });
+            }
+        } catch (e) {}
+    </script>
+@endif
 @fluxAppearance

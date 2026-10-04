@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\BloqueSiServiceIndisponible;
 use App\Concerns\ThrottlesPerUser;
 use App\Exceptions\CreneauIndisponible;
 use App\Models\CreneauRendezVous;
@@ -17,7 +18,7 @@ use Livewire\Component;
  * Le service et le créneau choisis sont dans l'URL, mais toujours revalidés côté serveur.
  */
 new #[Title('Prendre rendez-vous')] class extends Component {
-    use ThrottlesPerUser;
+    use BloqueSiServiceIndisponible, ThrottlesPerUser;
 
     #[Url(as: 'service', except: '')]
     public string $serviceSlug = '';
@@ -40,6 +41,10 @@ new #[Title('Prendre rendez-vous')] class extends Component {
     {
         $this->authorize('create', RendezVous::class);
 
+        if ($this->refuserSiServiceIndisponible($this->serviceSlug)) {
+            return;
+        }
+
         if ($this->serviceSlug !== '' && $this->service === null) {
             $this->serviceSlug = '';
             $this->creneauId = '';
@@ -60,7 +65,8 @@ new #[Title('Prendre rendez-vous')] class extends Component {
     #[Computed]
     public function services(): Collection
     {
-        return Service::query()->prendRendezVous()->disponibles()->orderBy('nom')->get();
+        // F63 : les services désactivés par un admin ne sont pas proposés ; F38 : ceux en interruption restent listés, grisés.
+        return Service::query()->prendRendezVous()->whereNull('indisponible_depuis')->with('interruptionCourante')->orderBy('nom')->get();
     }
 
     #[Computed]
@@ -70,7 +76,8 @@ new #[Title('Prendre rendez-vous')] class extends Component {
             return null;
         }
 
-        return Service::query()->prendRendezVous()->disponibles()->where('slug', $this->serviceSlug)->first();
+        // F63 : un service désactivé par un admin est traité comme inconnu ; F38 : un service interrompu est géré à part (redirection, erreur).
+        return Service::query()->prendRendezVous()->whereNull('indisponible_depuis')->where('slug', $this->serviceSlug)->first();
     }
 
     /**
@@ -203,6 +210,11 @@ new #[Title('Prendre rendez-vous')] class extends Component {
     {
         $this->authorize('create', RendezVous::class);
 
+        // F38 / F64 : refusé côté serveur si le service est indisponible, même si le bouton a été contourné.
+        if ($this->refuserSiServiceIndisponible($slug)) {
+            return;
+        }
+
         $this->serviceSlug = $slug;
         $this->creneauId = '';
         $this->erreurCreneau = '';
@@ -255,6 +267,11 @@ new #[Title('Prendre rendez-vous')] class extends Component {
 
         $service = $this->service;
 
+        // F38 / F64 : le service a pu devenir indisponible depuis le choix du créneau.
+        if ($this->refuserSiServiceIndisponible($this->serviceSlug)) {
+            return;
+        }
+
         if ($service === null || ! ctype_digit($this->creneauId)) {
             $this->retourServices();
 
@@ -274,6 +291,15 @@ new #[Title('Prendre rendez-vous')] class extends Component {
         session()->flash('rendez-vous-confirme', true);
 
         $this->redirectRoute('appointments.show', $rendezVous, navigate: true);
+    }
+
+    /**
+     * F38 / F64 : un service indisponible ne prend pas de rendez-vous (lien direct, choix ou confirmation) :
+     * retour sur sa fiche avec le motif, la date de retour prévue et l'alternative (relu en base).
+     */
+    private function refuserSiServiceIndisponible(string $slug): bool
+    {
+        return $slug !== '' && $this->redirigerSiServiceIndisponible(Service::query()->where('slug', $slug)->first());
     }
 
     /**
@@ -324,6 +350,12 @@ new #[Title('Prendre rendez-vous')] class extends Component {
         </flux:callout>
     @endif
 
+    @error('service')
+        <flux:callout variant="danger" icon="exclamation-triangle" role="alert">
+            <flux:callout.text>{{ $message }}</flux:callout.text>
+        </flux:callout>
+    @enderror
+
     @error('throttle')
         <flux:callout variant="danger" icon="exclamation-triangle" role="alert">
             <flux:callout.text>{{ $message }}</flux:callout.text>
@@ -340,17 +372,27 @@ new #[Title('Prendre rendez-vous')] class extends Component {
             <ul class="grid gap-3 sm:grid-cols-2">
                 @foreach ($this->services as $service)
                     <li wire:key="service-{{ $service->id }}">
-                        <button type="button" wire:click="choisirService('{{ $service->slug }}')" class="h-full w-full cursor-pointer rounded-md border border-line bg-surface p-4 text-left transition hover:border-cyan hover:bg-cyan/5 focus-visible:border-cyan">
-                            <span class="block font-semibold text-ink">{{ $service->nom }}</span>
-                            <span class="mt-2 flex items-start gap-1.5 text-sm text-ink-2">
-                                <flux:icon.map-pin class="mt-0.5 size-4 shrink-0" />
-                                {{ $service->lieuRendezVous() ?? 'Lieu communiqué par le service' }}
-                            </span>
-                            <span class="mt-1 flex items-center gap-1.5 text-sm text-ink-2">
-                                <flux:icon.clock class="size-4 shrink-0" />
-                                Durée : {{ $service->duree_rendez_vous }} minutes
-                            </span>
-                        </button>
+                        @if ($interruption = $service->interruptionEnCours())
+                            {{-- F38 : service interrompu, listé mais non sélectionnable. --}}
+                            <div class="h-full w-full rounded-md border border-line bg-surface p-4 opacity-80" aria-disabled="true">
+                                <span class="block font-semibold text-ink">{{ $service->nom }}</span>
+                                <x-tn.status-badge :etat="$interruption->etatBadge()" class="mt-2">Indisponible · {{ $interruption->libelleType() }}</x-tn.status-badge>
+                                <span class="mt-2 block text-sm text-ink-2">{{ $interruption->libelleRetour() }}</span>
+                                <a href="{{ route('services.show', $service) }}" wire:navigate class="mt-2 inline-block text-sm text-cyan hover:underline">Démarche suspendue pendant l’interruption · que faire en attendant ?</a>
+                            </div>
+                        @else
+                            <button type="button" wire:click="choisirService('{{ $service->slug }}')" class="h-full w-full cursor-pointer rounded-md border border-line bg-surface p-4 text-left transition hover:border-cyan hover:bg-cyan/5 focus-visible:border-cyan">
+                                <span class="block font-semibold text-ink">{{ $service->nom }}</span>
+                                <span class="mt-2 flex items-start gap-1.5 text-sm text-ink-2">
+                                    <flux:icon.map-pin class="mt-0.5 size-4 shrink-0" />
+                                    {{ $service->lieuRendezVous() ?? 'Lieu communiqué par le service' }}
+                                </span>
+                                <span class="mt-1 flex items-center gap-1.5 text-sm text-ink-2">
+                                    <flux:icon.clock class="size-4 shrink-0" />
+                                    Durée : {{ $service->duree_rendez_vous }} minutes
+                                </span>
+                            </button>
+                        @endif
                     </li>
                 @endforeach
             </ul>
@@ -393,13 +435,14 @@ new #[Title('Prendre rendez-vous')] class extends Component {
                         type="date"
                         wire:model.live="jour"
                         label="Jour"
+                        required
                         :min="$this->creneauxParJour->keys()->first()"
                         :max="$this->creneauxParJour->keys()->last()"
                         class="cursor-pointer"
                     />
 
                     @if ($this->creneauxDuJour->isNotEmpty())
-                        <flux:select wire:model="creneauSelectionne" label="Horaire" placeholder="Choisir un horaire…" class="cursor-pointer">
+                        <flux:select wire:model="creneauSelectionne" label="Horaire" placeholder="Choisir un horaire…" class="cursor-pointer" required>
                             @foreach ($this->creneauxDuJour as $creneau)
                                 <flux:select.option wire:key="creneau-{{ $creneau->id }}" :value="$creneau->id">
                                     {{ $creneau->libelleHeureDebut() }} à {{ $creneau->libelleHeureFin() }}

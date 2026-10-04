@@ -105,6 +105,9 @@
             @endif
 
             <ul class="mt-3 border-t border-line pt-2">
+                @if (Route::has('partners.index'))
+                    <li><a href="{{ route('partners.index') }}" class="{{ $ligne }}"><flux:icon name="building-storefront" class="size-5 text-ink-2" />{{ __('Partenaires') }}</a></li>
+                @endif
                 @auth
                     <li><a href="{{ route('dashboard') }}" class="{{ $ligne }}"><flux:icon name="house" class="size-5 text-ink-2" />{{ __('Mon espace') }}</a></li>
                     @if (Route::has('demarches.index'))
@@ -129,9 +132,27 @@
                 @endauth
                 <li class="flex min-h-12 items-center justify-between gap-3 px-3">
                     <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
-                        <flux:icon name="eye" class="size-5 text-ink-2" />{{ __('Contraste élevé') }}
+                        <flux:icon name="language" class="size-5 text-ink-2" />{{ __('Langue') }}
+                    </span>
+                    <x-tn.langue class="-me-2" />
+                </li>
+                <li class="flex min-h-12 items-center justify-between gap-3 px-3">
+                    <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
+                        <flux:icon name="eye"class="size-5 text-ink-2" />{{ __('Contraste élevé') }}
                     </span>
                     <x-tn.contrast-toggle class="-me-2" />
+                </li>
+                <li class="flex min-h-12 flex-wrap items-center justify-between gap-3 px-3 py-1">
+                    <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
+                        <flux:icon name="magnifying-glass-plus" class="size-5 text-ink-2" />{{ __('Taille du texte') }}
+                    </span>
+                    <x-tn.text-size />
+                </li>
+                <li class="flex min-h-12 flex-wrap items-center justify-between gap-3 px-3 py-1">
+                    <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
+                        <flux:icon name="language" class="size-5 text-ink-2" />{{ __('Langue') }}
+                    </span>
+                    <x-tn.langue />
                 </li>
                 <li class="flex min-h-12 items-center justify-between gap-3 px-3">
                     <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
@@ -139,6 +160,13 @@
                     </span>
                     <x-tn.theme-toggle class="-me-2" />
                 </li>
+                <li class="flex min-h-12 items-center justify-between gap-3 px-3">
+                    <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
+                        <flux:icon name="bolt" class="size-5 text-ink-2" />{{ __('Mode allégé') }}
+                    </span>
+                    <x-tn.mode-allege class="-me-2" />
+                </li>
+                <li><a href="{{ route('accessibility.show') }}" class="{{ $ligne }}"><flux:icon name="eye" class="size-5 text-ink-2" />{{ __('Accessibilité : toutes les aides') }}</a></li>
             </ul>
 
             @auth

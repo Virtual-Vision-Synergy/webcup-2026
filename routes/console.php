@@ -22,3 +22,6 @@ Schedule::command('appointments:send-reminders')->everyFiveMinutes()->withoutOve
 
 // F30 : notifie les habitants des annonces importantes programmées, au moment où elles commencent (idempotent).
 Schedule::command('annonces:notify')->everyMinute()->withoutOverlapping();
+
+// F87 : vérifie la dernière sauvegarde de la base et alerte les admins si elle manque ou échoue.
+Schedule::command('sauvegardes:surveiller')->everyFifteenMinutes()->withoutOverlapping();

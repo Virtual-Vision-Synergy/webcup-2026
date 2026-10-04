@@ -48,6 +48,12 @@ class ActionLog extends Model
         'service_indisponible' => 'Service rendu indisponible',
         'service_retabli' => 'Service rétabli',
         'message_officiel_publie' => 'Message officiel publié',
+        'export_donnees_document' => 'Export de ses données (document)',
+        'export_donnees_json' => 'Export de ses données (JSON)',
+        'export_donnees_csv' => 'Export de ses données (CSV)',
+        'consultation_creee' => 'Consultation créée',
+        'consultation_reponse' => 'Réponse à une consultation',
+        'consultation_decision' => 'Décision de consultation publiée',
     ];
 
     /**

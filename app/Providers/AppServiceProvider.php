@@ -5,10 +5,12 @@ namespace App\Providers;
 use App\Models\User;
 use App\Policies\DatabaseNotificationPolicy;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -50,6 +52,17 @@ class AppServiceProvider extends ServiceProvider
         DB::prohibitDestructiveCommands(
             app()->isProduction(),
         );
+
+        // F78 : toute requête N+1 (relation chargée paresseusement) est signalée hors production.
+        // Journalisée plutôt que levée en exception, pour ne jamais casser une page pendant une démonstration.
+        Model::preventLazyLoading(! app()->isProduction());
+        Model::handleLazyLoadingViolationUsing(function (Model $model, string $relation): void {
+            Log::warning('Requête N+1 détectée : relation chargée paresseusement.', [
+                'modele' => $model::class,
+                'relation' => $relation,
+                'url' => request()->fullUrl(),
+            ]);
+        });
 
         Password::defaults(fn (): ?Password => app()->isProduction()
             ? Password::min(12)

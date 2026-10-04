@@ -67,6 +67,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('notifications/{notification}/lire', [NotificationController::class, 'lire'])->whereUuid('notification')->name('notifications.read');
     Route::get('notifications/{notification}/ouvrir', [NotificationController::class, 'ouvrir'])->whereUuid('notification')->name('notifications.open');
 
+    // D11 : « Mes demandes » de l'habitant connecté (requête filtrée sur l'auteur ; détail : SignalementPolicy::viewOwn → 403 pour autrui).
+    Route::livewire('mes-demandes', 'pages::mes-demandes.index')->name('mes-demandes.index');
+    Route::livewire('mes-demandes/{signalement}', 'pages::mes-demandes.show')->name('mes-demandes.show');
+
     // F67 : création et mise à jour des projets de la ville (ProjetPolicy : agents et admins).
     Route::livewire('projets/create', 'pages::projets.form')->name('projets.create');
     Route::livewire('projets/{projet}/edit', 'pages::projets.form')->name('projets.edit');
@@ -85,10 +89,31 @@ Route::middleware(['auth'])->group(function () {
     Route::get('profil/appareils/{knownDevice}/pas-moi', [KnownDeviceController::class, 'confirm'])->name('profile.devices.confirm');
     Route::post('profil/appareils/{knownDevice}/pas-moi', [KnownDeviceController::class, 'notMe'])->name('profile.devices.not-me');
 
+    // F55 : export des données personnelles de l'utilisateur connecté (aucun identifiant dans l'URL ; UserPolicy::exportPersonalData).
+    Route::livewire('profil/mes-donnees', 'pages::profile.mes-donnees')->name('profile.data');
+
     // F72 : « Par où commencer ? » — services recommandés selon la situation de l'habitant (OnboardingPolicy::parOuCommencer).
     Route::livewire('par-ou-commencer', 'pages::onboarding.par-ou-commencer')
         ->middleware('can:parOuCommencer,'.Onboarding::class)
         ->name('onboarding.par-ou-commencer');
+
+    // F68 : boîte à idées — proposer, accusé de réception (auteur seul : IdeaPolicy::viewOwn) et « Mes idées ».
+    Route::livewire('idees/proposer', 'pages::ideas.form')->name('ideas.create');
+    Route::livewire('idees/mes-idees', 'pages::ideas.mine')->name('ideas.mine');
+    Route::livewire('idees/{idea:reference}/confirmation', 'pages::ideas.confirmation')
+        ->where('idea', 'IDE-\d{4}-\d{6}')
+        ->name('ideas.received');
+
+    // F65 : consultations des habitants (ConsultationPolicy : création et décision agents/admins, réponse unique de l'habitant concerné).
+    Route::livewire('consultations', 'pages::consultations.index')->name('consultations.index');
+    Route::livewire('consultations/create', 'pages::consultations.form')->name('consultations.create');
+    Route::livewire('consultations/{consultation}', 'pages::consultations.show')->name('consultations.show');
+
+    // F76 : avis des habitants sur les services (ServiceReviewPolicy : un avis par habitant et par service, modifiable
+    // par son auteur tant qu'il n'est pas masqué). service_id vient toujours de la route, jamais du formulaire.
+    Route::livewire('services/{service}/avis', 'pages::service-reviews.show')->name('services.reviews.index');
+    Route::livewire('services/{service}/avis/donner', 'pages::service-reviews.form')->name('services.reviews.edit');
+    Route::livewire('mes-avis/services', 'pages::service-reviews.index')->name('services.reviews.mine');
 
     // make:feature:routes
 });
@@ -116,6 +141,15 @@ Route::group([], function () {
 
     // F46 : urgences et santé, consultable sans compte (numéros d'urgence, hôpitaux) ; lecture seule, aucune action.
     Route::livewire('urgences', 'pages::urgences.index')->name('urgences.index');
+
+    // F74 : partenaires publiés consultables sans compte (horaires, adresse, carte) ; gestion dans routes/agent.php.
+    Route::livewire('partenaires', 'pages::partners.index')->name('partners.index');
+    Route::livewire('partenaires/{partner:slug}', 'pages::partners.show')->name('partners.show');
+
+    // F68 : idées publiées consultables sans compte (décision assumée) ; soutenir exige d'être connecté.
+    // Idée masquée par la modération : 404 sauf pour son auteur et le personnel (IdeaPolicy::view).
+    Route::livewire('idees', 'pages::ideas.index')->name('ideas.index');
+    Route::livewire('idees/{idea:reference}', 'pages::ideas.show')->where('idea', 'IDE-\d{4}-\d{6}')->name('ideas.show');
 
     // make:feature:routes-public
 });

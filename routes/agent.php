@@ -50,6 +50,11 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     // F66 : synthèse des avis des habitants sur un projet (ProjetPolicy::voirAvis).
     Route::livewire('projets/{projet}/avis', 'pages::agent.projets.avis')->name('projets.avis');
 
+    // F74 : gestion des partenaires (PartnerPolicy : agents et admins, authorize dans chaque action).
+    Route::livewire('partenaires', 'pages::agent.partners.index')->name('partners.index');
+    Route::livewire('partenaires/create', 'pages::partners.form')->name('partners.create');
+    Route::livewire('partenaires/{partner}/edit', 'pages::partners.form')->name('partners.edit');
+
     // F68 : boîte à idées — tri par soutiens, état, réponse et masquage (IdeaPolicy dans chaque action).
     Route::livewire('idees', 'pages::agent.ideas.index')->name('ideas.index');
     Route::livewire('idees/{idea:reference}', 'pages::agent.ideas.show')->where('idea', 'IDE-\d{4}-\d{6}')->name('ideas.show');

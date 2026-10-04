@@ -125,6 +125,14 @@
                             </flux:sidebar.item>
                         </flux:sidebar.group>
                     @endcan
+
+                    @if (auth()->user()->isAdmin())
+                        <flux:sidebar.group :heading="__('Administration')" class="grid">
+                            <flux:sidebar.item icon="shield-check" :href="route('filament.admin.pages.dashboard')" data-test="admin-space-link">
+                                {{ __('Espace admin') }}
+                            </flux:sidebar.item>
+                        </flux:sidebar.group>
+                    @endif
                 </flux:sidebar.nav>
 
                 <flux:spacer />

@@ -16,8 +16,14 @@ test('un utilisateur connecté voit la liste des actualites', function () {
         ->assertOk();
 });
 
-test('un utilisateur peut créer : Actualite', function () {
-    $user = User::factory()->create();
+test('un citoyen ne peut pas ouvrir la création d\'actualité (D09)', function () {
+    $this->actingAs(User::factory()->create())
+        ->get(route('actualites.create'))
+        ->assertForbidden();
+});
+
+test('un agent peut créer : Actualite', function () {
+    $user = User::factory()->agent()->create();
 
     Livewire::actingAs($user)
         ->test('pages::actualites.form')

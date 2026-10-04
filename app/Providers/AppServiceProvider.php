@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Models\User;
 use App\Notifications\Channels\MailChannelTolerant;
 use App\Policies\DatabaseNotificationPolicy;
+use App\Services\RecommandationProvider;
+use App\Services\RecommandationsEcrites;
 use App\Services\ReformulateurRequete;
 use App\Services\SansReformulation;
 use Carbon\CarbonImmutable;
@@ -28,6 +30,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // D10 : orientation sans IA par défaut ; une reformulation par IA pourra être liée ici plus tard.
         $this->app->bind(ReformulateurRequete::class, SansReformulation::class);
+
+        // F31 : conseils canicule écrits par l'Agence sanitaire (aucune IA) ; une implémentation IA pourra être liée ici.
+        $this->app->bind(RecommandationProvider::class, RecommandationsEcrites::class);
 
         // F93 : une panne du serveur d'e-mails n'empêche plus d'afficher la page (erreur journalisée + bandeau).
         $this->app->bind(MailChannel::class, MailChannelTolerant::class);

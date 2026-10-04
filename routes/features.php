@@ -157,5 +157,8 @@ Route::group([], function () {
     // D13 : lexique des mots administratifs, consultable sans compte (informations générales, aucune donnée personnelle, lecture seule).
     Route::livewire('lexique', 'pages::lexique.index')->name('lexique');
 
+    // F31 : canicule, consultable sans compte (information de santé : alertes par quartier, conseils écrits, numéros utiles).
+    Route::livewire('canicule', 'pages::canicule.index')->name('canicule');
+
     // make:feature:routes-public
 });

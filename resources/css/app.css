@@ -576,6 +576,12 @@ html.allege .tn-sky {
     background: var(--color-night);
 }
 
+/* F96 : version légère → police du système (aucun fichier de police téléchargé). */
+html.allege {
+    --font-display: ui-sans-serif, system-ui, sans-serif;
+    --font-sans: ui-sans-serif, system-ui, sans-serif;
+}
+
 html.allege body:has([data-loading]) .tn-chargement {
     visibility: visible;
 }

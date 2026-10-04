@@ -61,14 +61,6 @@
                         Mes avis sur les services
                     </flux:sidebar.item>
 
-                    <flux:sidebar.item icon="squares-2x2" :href="route('gen-test-zones.index')" :current="request()->routeIs('gen-test-zones.*')" wire:navigate>
-                        Gen Test Zones
-                    </flux:sidebar.item>
-
-                    <flux:sidebar.item icon="squares-2x2" :href="route('gen-test-fiches.index')" :current="request()->routeIs('gen-test-fiches.*')" wire:navigate>
-                        Gen Test Fiches
-                    </flux:sidebar.item>
-
                     {{-- make:feature:nav --}}
 @endsection
 @php

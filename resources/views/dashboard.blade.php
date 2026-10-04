@@ -12,6 +12,7 @@
     $parStatut = $user->demarches()->selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut');
     // F95 : le total se déduit du décompte par statut (une requête de moins).
     $totalDemarches = (int) $parStatut->sum();
+    $user->retenirDemarchesParStatut($parStatut);
     // Alertes : démarches traitées ou refusées dans les 7 derniers jours.
     $alertes = $user->demarches()
         ->whereIn('statut', ['traitee', 'refusee'])

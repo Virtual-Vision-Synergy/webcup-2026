@@ -47,6 +47,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $code_activation Empreinte du code d'activation à usage unique (F71).
  * @property string|null $langue Langue mémorisée (F71).
  * @property bool $mode_allege Mode allégé pour les connexions lentes (F59).
+ * @property bool $version_simple Version simple des pages clés (F62).
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
@@ -98,6 +99,7 @@ class User extends Authenticatable implements FilamentUser
             'verrouille_jusqu_au' => 'datetime',
             'notifier_par_email' => 'boolean',
             'mode_allege' => 'boolean',
+            'version_simple' => 'boolean',
         ];
     }
 

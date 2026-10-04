@@ -14,6 +14,8 @@
                     </span>
                     <span class="sr-only">{{ config('app.name', 'Laravel') }}</span>
                 </a>
+                <x-tn.langue class="justify-center" />
+
                 <main id="contenu" tabindex="-1" class="flex flex-col gap-6">
                     {{ $slot }}
                 </main>

@@ -105,6 +105,7 @@
                         <x-tn.status-badge etat="info" class="lg:hidden">Espace agent</x-tn.status-badge>
 
                         <div class="ms-auto flex items-center gap-2">
+                            <x-tn.langue class="max-md:hidden" />
                             <x-tn.contrast-toggle class="max-md:hidden" />
                             <x-tn.theme-toggle class="max-md:hidden" />
 
@@ -148,6 +149,11 @@
                                     <flux:menu.item icon="cog" :href="route('profile.edit')">{{ __('Settings') }}</flux:menu.item>
 
                                     <flux:menu.separator />
+
+                                    {{-- D14 : choix de la langue sur mobile (le sélecteur de l'en-tête est masqué). --}}
+                                    <x-tn.langue class="px-1 py-1 md:hidden" />
+
+                                    <flux:menu.separator class="md:hidden" />
 
                                     <form method="POST" action="{{ route('logout') }}" class="w-full">
                                         @csrf

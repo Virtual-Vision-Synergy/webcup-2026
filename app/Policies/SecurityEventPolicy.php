@@ -21,6 +21,15 @@ class SecurityEventPolicy
         return $user->isAdmin();
     }
 
+    /**
+     * F100 : fil des derniers événements dans l'espace agent (données masquées, lecture seule).
+     * Agents et administrateurs ; un habitant reçoit un 403.
+     */
+    public function consulterFil(User $user): bool
+    {
+        return $user->isAgent() || $user->isAdmin();
+    }
+
     public function create(User $user): bool
     {
         return false;

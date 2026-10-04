@@ -113,7 +113,7 @@ new class extends Component {
 }; ?>
 
 <x-tn.surface>
-    <div wire:poll.30s.visible="rafraichir">
+    <div wire:poll.{{ \App\Support\ModeDegrade::poll(30) }}.visible="rafraichir">
         <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
             <x-tn.section-label as="h2">Échanges avec la mairie</x-tn.section-label>
             @php($derniere = $this->reponses->last())

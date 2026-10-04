@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CacheHttpModeDegrade;
 use App\Http\Middleware\DefinirLangue;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\MesurerPerformance;
@@ -23,6 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SecurityHeaders::class);
         $middleware->web(append: [DefinirLangue::class, EnsureAccountIsActive::class]);
+        // F77 : mode dégradé → pages publiques mises en cache par le navigateur des visiteurs.
+        $middleware->web(append: [CacheHttpModeDegrade::class]);
         // F78 : placé en tête pour tout compter ; n'agit qu'hors production (en-tête Server-Timing : requêtes SQL et temps).
         $middleware->web(prepend: [MesurerPerformance::class]);
         // Écrit par le navigateur (bouton « Fermer » du bandeau D18) ; contenu filtré par Annonce::clesFermees().

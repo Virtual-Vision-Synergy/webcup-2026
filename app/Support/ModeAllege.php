@@ -14,6 +14,11 @@ class ModeAllege
 
     public static function actif(?Request $request = null): bool
     {
+        // F77 : en mode dégradé (surcharge des serveurs), le mode allégé est imposé à tout le monde.
+        if (ModeDegrade::actif()) {
+            return true;
+        }
+
         $request ??= request();
         $user = $request->user();
 

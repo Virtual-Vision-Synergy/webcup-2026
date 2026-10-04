@@ -147,7 +147,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
     $totalSemaine = array_sum(array_column($activite, 'total'));
 @endphp
 
-<section class="mx-auto w-full max-w-6xl space-y-6" wire:poll.60s.visible>
+<section class="mx-auto w-full max-w-6xl space-y-6" wire:poll.{{ \App\Support\ModeDegrade::poll(60) }}.visible>
     <x-tn.page-header
         label="Espace agent"
         :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Tableau de bord' => null]"

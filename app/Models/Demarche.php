@@ -37,6 +37,11 @@ use Illuminate\Support\Str;
  * @property bool $urgence_medicale
  * @property int|null $pris_en_charge_par
  * @property CarbonInterface|null $pris_en_charge_le
+ *
+ * F80 : priorite et priorite_manuelle ne sont PAS remplissables : la priorité est suggérée par le code
+ * (prioriteSuggeree) ou fixée par un agent (changerPriorite, policy changerPriorite).
+ * @property string $priorite
+ * @property bool $priorite_manuelle
  */
 #[Fillable(['titre', 'description', 'service_id'])]
 class Demarche extends Model
@@ -63,7 +68,25 @@ class Demarche extends Model
      *
      * @var array<string, mixed>
      */
-    protected $attributes = ['statut' => self::STATUT_OPTIONS[0], 'urgence_medicale' => false];
+    protected $attributes = ['statut' => self::STATUT_OPTIONS[0], 'urgence_medicale' => false, 'priorite' => 'normale', 'priorite_manuelle' => false];
+
+    /** F80 : priorités, de la plus basse à la plus haute. */
+    public const PRIORITE_OPTIONS = ['basse', 'normale', 'haute', 'urgente'];
+
+    /** @var array<string, string> */
+    public const PRIORITE_LABELS = ['basse' => 'Basse', 'normale' => 'Normale', 'haute' => 'Haute', 'urgente' => 'Urgente'];
+
+    /** @var array<string, string> État du badge Terra Nova (couleur + icône). */
+    public const PRIORITE_ETATS = ['basse' => 'normal', 'normale' => 'info', 'haute' => 'perturbe', 'urgente' => 'alerte'];
+
+    /** @var array<string, string> */
+    public const PRIORITE_ICONES = ['basse' => 'arrow-down', 'normale' => 'minus', 'haute' => 'arrow-up', 'urgente' => 'fire'];
+
+    /** F80 : catégories de service sensibles (priorité haute suggérée). */
+    public const CATEGORIES_SENSIBLES = ['sante', 'social', 'securite'];
+
+    /** F80 : au-delà de ce délai sans clôture, la priorité haute est suggérée. */
+    public const JOURS_AVANT_PRIORITE_HAUTE = 7;
 
     /**
      * F86 : mots-clés qui signalent une urgence médicale (comparés sans accents ni majuscules, mots entiers).
@@ -88,7 +111,99 @@ class Demarche extends Model
         return [
             'urgence_medicale' => 'boolean',
             'pris_en_charge_le' => 'datetime',
+            'priorite_manuelle' => 'boolean',
         ];
+    }
+
+    /**
+     * F80 : tant qu'aucun agent ne l'a fixée, la priorité suit la suggestion (dépôt, changement d'état, d'urgence ou de service).
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Demarche $demarche): void {
+            if (! $demarche->priorite_manuelle && (! $demarche->exists || $demarche->isDirty(['statut', 'urgence_medicale', 'service_id']))) {
+                $demarche->priorite = $demarche->prioriteSuggeree()['priorite'];
+            }
+        });
+    }
+
+    public static function libellePriorite(string $priorite): string
+    {
+        return __(self::PRIORITE_LABELS[$priorite] ?? ucfirst($priorite));
+    }
+
+    /**
+     * F80 : priorité suggérée et sa raison. L'urgence médicale (F86) l'emporte toujours ;
+     * une relance de l'habitant restée sans réponse dans le fil (F84) remonte le dossier.
+     *
+     * @return array{priorite: string, motif: string}
+     */
+    public function prioriteSuggeree(): array
+    {
+        $ouverte = in_array($this->statut, self::STATUTS_URGENCE_OUVERTE, true);
+        $derniere = $this->exists ? $this->derniereReponse : null;
+        $categorie = $this->service_id !== null ? $this->service?->categorie : null;
+
+        return match (true) {
+            $this->urgence_medicale && $ouverte => ['priorite' => 'urgente', 'motif' => __('Urgence médicale signalée')],
+            ! $ouverte => ['priorite' => 'basse', 'motif' => __('Dossier clôturé')],
+            $derniere !== null && ! $derniere->de_agent => ['priorite' => 'haute', 'motif' => __('Relance de l’habitant sans réponse')],
+            $this->created_at !== null && $this->created_at->lte(now()->subDays(self::JOURS_AVANT_PRIORITE_HAUTE)) => ['priorite' => 'haute', 'motif' => __('En attente depuis plus de :n jours', ['n' => self::JOURS_AVANT_PRIORITE_HAUTE])],
+            in_array($categorie, self::CATEGORIES_SENSIBLES, true) => ['priorite' => 'haute', 'motif' => __('Service sensible (santé, social, sécurité)')],
+            default => ['priorite' => 'normale', 'motif' => __('Aucun critère particulier')],
+        };
+    }
+
+    /**
+     * F80 : priorité fixée par un agent (droits vérifiés avant : policy changerPriorite), ou retour à la suggestion (« auto »).
+     */
+    public function changerPriorite(string $priorite): void
+    {
+        if ($priorite === 'auto') {
+            $this->priorite_manuelle = false;
+            $this->priorite = $this->prioriteSuggeree()['priorite'];
+        } elseif (in_array($priorite, self::PRIORITE_OPTIONS, true)) {
+            $this->priorite_manuelle = true;
+            $this->priorite = $priorite;
+        } else {
+            throw new \InvalidArgumentException("Priorité inconnue : {$priorite}");
+        }
+
+        $this->save();
+    }
+
+    /**
+     * F80 : recalcule la priorité suggérée sans toucher à la date de mise à jour ni au journal (fil F84, ancienneté).
+     */
+    public function recalculerPriorite(): void
+    {
+        if ($this->priorite_manuelle) {
+            return;
+        }
+
+        $suggestion = $this->prioriteSuggeree()['priorite'];
+
+        if ($suggestion !== $this->priorite) {
+            static::query()->whereKey($this->getKey())->toBase()->update(['priorite' => $suggestion]);
+            $this->priorite = $suggestion;
+            $this->syncOriginalAttribute('priorite');
+        }
+    }
+
+    /**
+     * F80 : ordre de traitement. Les urgences médicales ouvertes (F86) restent toujours tout en haut,
+     * puis les dossiers ouverts par priorité, puis par ancienneté.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeOrdreDeTraitement(Builder $query): void
+    {
+        $query
+            ->orderByRaw("case when urgence_medicale = 1 and statut in ('deposee', 'en_cours') then 0 else 1 end")
+            ->orderByRaw("case when statut in ('deposee', 'en_cours') then 0 else 1 end")
+            ->orderByRaw("case priorite when 'urgente' then 0 when 'haute' then 1 when 'normale' then 2 else 3 end")
+            ->oldest()
+            ->oldest('id');
     }
 
     /**
@@ -286,6 +401,9 @@ class Demarche extends Model
         $reponse->user()->associate($auteur);
         $reponse->de_agent = $auteur->id !== $this->user_id && ($auteur->isAgent() || $auteur->isAdmin());
         $reponse->save();
+
+        // F80 : une relance de l'habitant remonte la priorité suggérée ; la réponse d'un agent la fait redescendre.
+        $this->unsetRelation('derniereReponse')->recalculerPriorite();
 
         if ($reponse->de_agent) {
             $this->prevenirDeLaReponse($reponse);

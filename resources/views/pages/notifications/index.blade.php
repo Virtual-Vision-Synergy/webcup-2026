@@ -47,6 +47,9 @@ new #[Title('Mes notifications')] class extends Component {
         :subtitle="$this->nonLues === 0 ? 'Aucune notification non lue' : $this->nonLues.' notification'.($this->nonLues > 1 ? 's' : '').' non lue'.($this->nonLues > 1 ? 's' : '')"
         :breadcrumb="['Mon espace' => route('dashboard'), 'Notifications' => null]"
     >
+        <x-slot:meta>
+            <x-tn.mots-utiles class="mt-3" :slugs="['notification', 'alerte']" />
+        </x-slot:meta>
         @if ($this->nonLues > 0)
             <x-slot:actions>
                 <form method="POST" action="{{ route('notifications.read-all') }}">

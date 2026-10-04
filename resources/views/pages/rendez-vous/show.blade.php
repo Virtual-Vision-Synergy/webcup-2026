@@ -40,7 +40,7 @@ new #[Title('Mon rendez-vous')] class extends Component {
         $this->vientDEtreConfirme = false;
         $this->record->refresh()->load(['service', 'creneau']);
 
-        Flux::toast(variant: 'success', text: 'Rendez-vous annulé. Le créneau est de nouveau proposé aux autres habitants.');
+        Flux::toast(variant: 'success', text: __('Rendez-vous annulé. Cet horaire est de nouveau proposé aux autres habitants.'));
     }
 
     /**

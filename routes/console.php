@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\FormSubmission;
 use App\Models\KnownDevice;
 use App\Models\LoginAttempt;
 use App\Models\TentativeBloquee;
@@ -14,7 +15,8 @@ Artisan::command('inspire', function () {
 // F37 : purge du journal des tentatives de connexion (rétention dans config/security.php).
 // F54 : purge des appareils inactifs depuis plus de 6 mois.
 // F81 : purge du journal des envois de formulaires bloqués (même rétention que F37).
-Schedule::command('model:prune', ['--model' => [LoginAttempt::class, KnownDevice::class, TentativeBloquee::class]])->daily();
+// F82 : purge des envois de formulaires mémorisés pour les doublons (plus d'un jour).
+Schedule::command('model:prune', ['--model' => [LoginAttempt::class, KnownDevice::class, TentativeBloquee::class, FormSubmission::class]])->daily();
 
 // F39 : prolonge chaque nuit l'agenda des créneaux de rendez-vous (idempotent).
 Schedule::command('appointments:generate-slots')->dailyAt('01:00');
@@ -27,3 +29,6 @@ Schedule::command('annonces:notify')->everyMinute()->withoutOverlapping();
 
 // F87 : vérifie la dernière sauvegarde de la base et alerte les admins si elle manque ou échoue.
 Schedule::command('sauvegardes:surveiller')->everyFifteenMinutes()->withoutOverlapping();
+
+// F80 : recalcule chaque heure la priorité suggérée des demandes ouvertes (ancienneté, relances ; jamais une priorité fixée par un agent).
+Schedule::command('demarches:prioriser')->hourly()->withoutOverlapping();

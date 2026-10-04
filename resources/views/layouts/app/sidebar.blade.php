@@ -176,6 +176,7 @@
                 </header>
 
                 <x-tn.bandeau-version-simple />
+                <x-tn.bandeau-version-legere />
                 <x-tn.bandeau-annonces />
                 <x-tn.bandeau-consultations />
 

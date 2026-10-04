@@ -230,6 +230,9 @@ class DatabaseSeeder extends Seeder
             $this->call(ReponseDemarcheSeeder::class);
         }
 
+        // F76 : avis des habitants sur trois services (notes variées, deux réponses, un avis masqué).
+        $this->call(ServiceReviewSeeder::class);
+
         // make:feature:seeders
     }
 }

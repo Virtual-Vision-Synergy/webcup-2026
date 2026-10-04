@@ -32,8 +32,9 @@ trait ExportsCsv
      * @param  Model|class-string<Model>  $subject  objet ou classe passé à la Policy
      * @param  Builder<Model>  $query
      * @param  array<string, Closure(Model): mixed>  $columns  en-tête => valeur de la colonne pour une ligne
+     * @param  string  $dateFormat  format de la date ajoutée au nom du fichier (« Y-m-d » : export-2026-10-04.csv)
      */
-    protected function streamCsv(string $ability, Model|string $subject, Builder $query, array $columns, string $filename, int $chunkSize = 200): StreamedResponse
+    protected function streamCsv(string $ability, Model|string $subject, Builder $query, array $columns, string $filename, int $chunkSize = 200, string $dateFormat = 'Ymd'): StreamedResponse
     {
         Gate::authorize($ability, $subject);
 
@@ -52,7 +53,7 @@ trait ExportsCsv
             });
 
             fclose($out);
-        }, $name.'-'.now()->format('Ymd').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }, $name.'-'.now()->format($dateFormat).'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     /**

@@ -14,9 +14,9 @@
  * La couleur indique un ÉTAT : cyan = action, ambre = perturbé, magenta = alerte, vert = normal.
  */
 @theme {
-    --font-display: 'Saira', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
     --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
-    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
 
     /* Clair : « salle de contrôle de jour » */
     --color-night: #F2F8FB;
@@ -26,10 +26,17 @@
     --color-ink-2: #4D6070;
     --color-line: rgb(15 27 43 / .10);
 
-    --color-cyan: #00778D;
-    --color-magenta: #C41F5F;
-    --color-amber: #96590C;
-    --color-green: #007E46;
+    /*
+     * F43 : palette d'état vérifiée (simulation Machado 2009 : protanopie, deutéranopie, tritanopie).
+     * - Contraste WCAG AA (≥ 4,5:1) du texte coloré sur fond clair ET sur un fond teinté à 12 %
+     *   (badges), contrôlé par tests/Feature/AccessibiliteCouleursTest.php.
+     * - Alerte (rouge profond) et normal (vert bleuté) restent distincts en deutéranopie (ΔE ≈ 12).
+     * - La couleur n'est jamais seule : chaque état a aussi une icône de forme distincte et un libellé.
+     */
+    --color-cyan: #00687B;
+    --color-magenta: #9A1238;
+    --color-amber: #8A520B;
+    --color-green: #006E4A;
     --color-on-cyan: #FFFFFF;
 
     /* Gris de Flux remappés sur des tons bleutés : tous les composants Flux suivent le thème. */
@@ -55,6 +62,14 @@
     --chamfer: 18px;
 }
 
+/*
+ * TAILLE DU TEXTE (A / A+ / A++) : tout est en rem, on agrandit donc la base de <html>.
+ * Les longs mots et blocs flex ne doivent jamais déborder ni se chevaucher.
+ */
+html[data-text-size='lg'] { font-size: 125%; }
+html[data-text-size='xl'] { font-size: 150%; }
+body { overflow-wrap: anywhere; }
+
 @layer theme {
     .dark {
         --color-night: #050A16;
@@ -65,7 +80,7 @@
         --color-line: rgb(65 221 248 / .12);
 
         --color-cyan: #41DDF8;
-        --color-magenta: #FF4285;
+        --color-magenta: #FF4A8A;
         --color-amber: #FFB44B;
         --color-green: #56E795;
         --color-on-cyan: #001321;
@@ -110,6 +125,20 @@
         outline-offset: 2px;
     }
 
+    /* F41 : zone de contenu ciblée par « Aller au contenu » (focus programmatique, pas d'action). */
+    main[tabindex='-1']:focus {
+        outline: none;
+    }
+
+    /* F42 : astérisque visuelle sur les champs obligatoires (le lecteur d'écran annonce déjà « requis »). */
+    [data-flux-field]:has(> [data-flux-control]:required, > * > [data-flux-control]:required) > [data-flux-label]::after,
+    fieldset[data-requis] > legend::after {
+        content: ' *';
+        content: ' *' / '';
+        margin-inline-start: 0.125rem;
+        color: var(--color-magenta);
+    }
+
     @media (prefers-reduced-motion: reduce) {
         *,
         ::before,
@@ -123,44 +152,41 @@
 }
 
 @layer components {
-    /* Titres Saira élargis */
+    /* Titres (IBM Plex Sans) */
     .tn-display {
         font-family: var(--font-display);
-        font-stretch: 112%;
     }
 
     .tn-h1 {
         font-family: var(--font-display);
-        font-stretch: 112%;
-        font-weight: 700;
-        font-size: 38px;
+        font-weight: 600;
+        font-size: 2.375rem;
         line-height: 1.02;
         letter-spacing: -0.01em;
     }
 
     @media (min-width: 768px) {
         .tn-h1 {
-            font-size: 64px;
+            font-size: 4rem;
         }
     }
 
     .tn-h2 {
         font-family: var(--font-display);
-        font-stretch: 112%;
         font-weight: 600;
-        font-size: 26px;
+        font-size: 1.625rem;
         line-height: 1.1;
     }
 
     @media (min-width: 768px) {
         .tn-h2 {
-            font-size: 32px;
+            font-size: 2rem;
         }
     }
 
     .tn-label {
         font-family: var(--font-display);
-        font-size: 13px;
+        font-size: 0.8125rem;
         font-weight: 600;
         letter-spacing: .16em;
         text-transform: uppercase;
@@ -341,8 +367,53 @@
     }
 }
 
+/*
+ * F44 : contenu agrandi (zoom navigateur 200 % / 400 %, taille du texte A+ / A++) sans casser l'affichage.
+ * - La zone de défilement des tableaux Flux est le repère des éléments positionnés qu'elle contient
+ *   (sinon un libellé sr-only du tableau sort de la zone et crée un défilement horizontal de toute la page).
+ * - En dessous de 64rem de large (soit 1280 px zoomés à 200 %), aucun texte n'est tronqué par « … » :
+ *   il passe à la ligne.
+ */
+ui-table-scroll-area {
+    position: relative;
+}
+
+@media (max-width: 64rem) {
+    .truncate {
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+}
+
+/* Très petite largeur (zoom 400 %, ou texte A++ sur téléphone) : boutons et badges passent à la ligne au lieu de déborder. */
+@media (max-width: 40rem) {
+    [data-flux-button],
+    [data-flux-badge] {
+        max-width: 100%;
+        height: auto;
+        min-height: 2.5rem;
+        white-space: normal;
+        text-align: center;
+    }
+
+    [data-flux-badge] {
+        min-height: 0;
+    }
+}
+
 [data-flux-field]:not(ui-radio, ui-checkbox) {
     @apply grid gap-2;
+    /* F44 : une seule colonne qui peut rétrécir (les champs date ne forcent plus la largeur de la page). */
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+}
+
+input[type='date'],
+input[type='datetime-local'],
+input[type='time'] {
+    min-width: 0;
 }
 
 [data-flux-label] {
@@ -365,64 +436,146 @@ select:focus[data-flux-control] {
     box-shadow: inset 2px 0 0 var(--color-cyan);
 }
 
-/* Carte Leaflet aux couleurs Terra Nova : contrôles vitrés, bulles en surface, marqueurs d'état. */
-.leaflet-container {
-    background-color: var(--color-surface-2);
-    font-family: var(--font-sans);
+/*
+ * CONTRASTE ÉLEVÉ (classe `hc` sur <html>, posée par partials/head selon la préférence mémorisée).
+ * Textes noir sur blanc / blanc sur noir (rapport > 15:1), bordures nettes, soulignement des liens.
+ */
+@layer theme {
+    html.hc {
+        --color-night: #FFFFFF;
+        --color-surface: #FFFFFF;
+        --color-surface-2: #F0F0F0;
+        --color-ink: #000000;
+        --color-ink-2: #1F1F1F;
+        --color-line: rgb(0 0 0 / .65);
+
+        --color-cyan: #004A5C;
+        --color-magenta: #8F0038;
+        --color-amber: #6B3B00;
+        --color-green: #005A2F;
+        --color-on-cyan: #FFFFFF;
+
+        --color-zinc-400: #2B2B2B;
+        --color-zinc-500: #1F1F1F;
+        --color-zinc-600: #111111;
+
+        --color-accent: #004A5C;
+        --color-accent-content: #004A5C;
+        --color-accent-foreground: #FFFFFF;
+    }
+
+    html.hc.dark {
+        --color-night: #000000;
+        --color-surface: #000000;
+        --color-surface-2: #141414;
+        --color-ink: #FFFFFF;
+        --color-ink-2: #EDEDED;
+        --color-line: rgb(255 255 255 / .7);
+
+        --color-cyan: #7CF0FF;
+        --color-magenta: #FF8FB5;
+        --color-amber: #FFD27A;
+        --color-green: #7DFFB0;
+        --color-on-cyan: #000000;
+
+        --color-zinc-300: #EDEDED;
+        --color-zinc-400: #E0E0E0;
+        --color-zinc-500: #D0D0D0;
+
+        --color-accent: #7CF0FF;
+        --color-accent-content: #7CF0FF;
+        --color-accent-foreground: #000000;
+    }
 }
 
-.leaflet-bar,
-.leaflet-control-attribution {
-    border: 1px solid var(--color-line) !important;
-    border-radius: var(--radius-sm) !important;
-    overflow: hidden;
-    background-color: rgb(255 255 255 / .75) !important;
-    backdrop-filter: blur(14px);
-    box-shadow: none !important;
+html.hc :focus-visible {
+    outline-width: 3px;
 }
 
-.dark .leaflet-bar,
-.dark .leaflet-control-attribution {
-    background-color: rgb(5 10 22 / .6) !important;
+html.hc a:not([class*='button']):not([data-flux-button]) {
+    text-decoration-line: underline;
+    text-underline-offset: 3px;
 }
 
-.leaflet-bar a,
-.leaflet-control-attribution,
-.leaflet-control-attribution a {
-    color: var(--color-ink) !important;
-    background-color: transparent !important;
-    border-color: var(--color-line) !important;
+html.hc .tn-glass,
+html.hc .tn-panel,
+html.hc .tn-panel-inner {
+    background: var(--color-surface);
+    backdrop-filter: none;
 }
 
-.leaflet-bar a {
-    width: 36px !important;
-    height: 36px !important;
-    line-height: 36px !important;
+html.hc .tn-sky,
+html.hc .tn-planet,
+html.hc .tn-grid {
+    opacity: 0.15;
 }
 
-.leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
-    background-color: var(--color-surface);
-    color: var(--color-ink);
-    border: 1px solid var(--color-line);
-    box-shadow: 0 8px 24px -8px rgb(0 0 0 / .35);
+/* Alpine : masque les éléments x-show avant l’initialisation (bandeau D18). */
+[x-cloak] { display: none !important; }
+
+/*
+ * F59 : connexion lente.
+ * 1. Indicateurs de chargement : Livewire pose [data-loading] sur l'élément qui a lancé la requête ;
+ *    le bouton est grisé et ne peut pas être cliqué deux fois, et un bandeau « Chargement… » apparaît.
+ */
+form[data-loading] [type='submit'],
+button[data-loading],
+[data-flux-button][data-loading] {
+    opacity: 0.6;
+    pointer-events: none;
+    cursor: progress;
 }
 
-.leaflet-popup-content a {
-    color: var(--color-cyan);
+.tn-chargement {
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: 70;
+    display: none;
+    justify-content: center;
+    pointer-events: none;
 }
 
-.tn-marqueur {
-    border-radius: 9999px;
-    border: 3px solid var(--color-surface);
-    background-color: var(--color-cyan);
+body:has([data-loading]) .tn-chargement {
+    display: flex;
+    animation: tn-apparition 0s linear 400ms both;
 }
 
-.tn-marqueur-normal { background-color: var(--color-green); }
-.tn-marqueur-perturbe { background-color: var(--color-amber); }
-.tn-marqueur-alerte { background-color: var(--color-magenta); }
+@keyframes tn-apparition {
+    from { visibility: hidden; }
+    to { visibility: visible; }
+}
 
-.dark .tn-marqueur-normal { box-shadow: 0 0 0 4px rgb(86 231 149 / .25); }
-.dark .tn-marqueur-perturbe { box-shadow: 0 0 0 4px rgb(255 180 75 / .25); }
-.dark .tn-marqueur-alerte { box-shadow: 0 0 0 4px rgb(255 66 133 / .25); }
-.dark .tn-marqueur-info { box-shadow: 0 0 0 4px rgb(65 221 248 / .25); }
+/*
+ * 2. « Mode allégé » (html.allege, rendu côté serveur) : sans images décoratives, flou ni animations.
+ *    Les illustrations décoratives ne sont même pas envoyées (voir welcome et layouts/auth/split).
+ */
+html.allege *,
+html.allege ::before,
+html.allege ::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+}
+
+html.allege .tn-glass,
+html.allege .tn-panel,
+html.allege .tn-panel-inner {
+    background: var(--color-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+html.allege .tn-planet,
+html.allege .tn-grid,
+html.allege [data-decoratif] {
+    display: none !important;
+}
+
+html.allege .tn-sky {
+    background: var(--color-night);
+}
+
+html.allege body:has([data-loading]) .tn-chargement {
+    visibility: visible;
+}

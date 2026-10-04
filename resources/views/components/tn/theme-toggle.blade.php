@@ -3,9 +3,9 @@
     type="button"
     x-data
     x-on:click="$flux.appearance = $flux.dark ? 'light' : 'dark'"
-    x-bind:aria-label="$flux.dark ? 'Passer en thème clair' : 'Passer en thème sombre'"
     x-bind:aria-pressed="$flux.dark ? 'true' : 'false'"
-    aria-label="Changer de thème"
+    aria-label="{{ __('Thème sombre') }}"
+    title="{{ __('Thème sombre') }}"
     {{ $attributes->class('inline-flex size-11 shrink-0 items-center justify-center rounded-sm text-ink-2 transition-colors hover:bg-cyan/8 hover:text-ink') }}
 >
     <flux:icon.sun class="hidden size-5 dark:block" />

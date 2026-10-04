@@ -117,6 +117,9 @@ class DatabaseSeeder extends Seeder
         // F91 : règles de l'assistant d'orientation (questions fréquentes), éditables dans Filament.
         $this->call(ReglesAssistantSeeder::class);
 
+        // F90 : explications simples des passages administratifs et synonymes, éditables dans Filament.
+        $this->call(ExplicationsSimplesSeeder::class);
+
         // F31 : recommandations canicule écrites (profil × niveau), éditables dans Filament.
         $this->call(RecommandationsCaniculeSeeder::class);
 
@@ -169,6 +172,9 @@ class DatabaseSeeder extends Seeder
         // Alerte ciblée F29 « Montée des eaux — quartier sud » + habitants sud@example.com et nord@example.com.
         $this->call(AlerteMonteeDesEauxSeeder::class);
 
+        // F101 : alerte « Panne électrique — secteur nord » en cours (nord@example.com la voit et est notifié).
+        $this->call(AlertePanneElectriqueSeeder::class);
+
         if (! app()->isProduction()) {
             // F30 : notifications lues et non lues pour user@example.com + annonce « Danger » programmée dans 5 min.
             $this->call(NotificationsAnnoncesSeeder::class);
@@ -206,6 +212,9 @@ class DatabaseSeeder extends Seeder
 
             // F81 : envois de formulaires bloqués (robots) pour l'écran admin « Robots bloqués ».
             $this->call(TentativeBloqueeSeeder::class);
+
+            // F100 : événements de sécurité (F85) pour le fil « Sécurité » de l'espace agent.
+            $this->call(SecurityEventSeeder::class);
         }
 
         if (! app()->isProduction()) {

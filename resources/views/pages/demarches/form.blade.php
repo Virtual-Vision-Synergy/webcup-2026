@@ -227,6 +227,8 @@ new #[Title('Démarche')] class extends Component {
 
     <x-tn.aide id="demarches-form">{{ __('Quatre étapes : choisissez le service, décrivez votre demande, ajoutez une pièce si besoin, puis vérifiez avant d\'envoyer.') }}</x-tn.aide>
 
+    <livewire:explication-simple cle="depot-demarche" />
+
     <form wire:submit="save" @if (! $record) data-brouillon="demarche" data-brouillon-libelle="{{ __('Nouvelle démarche') }}" @endif class="space-y-6" x-on:keydown.enter="if (etape < 3 && $event.target.tagName !== 'TEXTAREA') { $event.preventDefault(); suivant(); }">
         <div x-ref="contenu" tabindex="-1" class="outline-none">
             {{-- ÉTAPE 1 : SERVICE --}}

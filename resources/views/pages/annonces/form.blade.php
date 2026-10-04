@@ -53,7 +53,35 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             $maintenant = now(Annonce::FUSEAU);
             $this->debut = $maintenant->format('Y-m-d\TH:i');
             $this->fin = $maintenant->addDay()->format('Y-m-d\TH:i');
+
+            // F101 : /agent/annonces/create?modele=panne-electrique arrive pré-rempli.
+            $modele = request()->query('modele');
+            if (is_string($modele) && array_key_exists($modele, Annonce::MODELES)) {
+                $this->appliquerModele($modele);
+            }
         }
+    }
+
+    /**
+     * F101 : pré-remplit le formulaire avec un modèle d'alerte (rien n'est publié avant « Publier »).
+     */
+    public function appliquerModele(string $cle): void
+    {
+        $this->authorize('create', Annonce::class);
+
+        $champs = Annonce::depuisModele($cle);
+        if ($this->record !== null || $champs === null) {
+            return;
+        }
+
+        $this->titre = $champs['titre'];
+        $this->contenu = $champs['contenu'];
+        $this->consignes = $champs['consignes'];
+        $this->niveau = $champs['niveau'];
+        $this->quartier_id = (string) ($champs['quartier_id'] ?? '');
+        $this->debut = $champs['debut']->format('Y-m-d\TH:i');
+        $this->fin = $champs['fin']->format('Y-m-d\TH:i');
+        $this->resetValidation();
     }
 
     /**
@@ -162,6 +190,16 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
     @if ($record)
         <x-audit-history :subject="$record" variant="resume" />
     @endif
+
+    @unless ($record)
+        <div class="flex flex-wrap items-center gap-2 rounded-md border border-line bg-surface p-4">
+            <flux:text class="text-sm font-medium">Partir d’un modèle :</flux:text>
+            @foreach (\App\Models\Annonce::MODELES as $cle => $modele)
+                <flux:button size="sm" icon="bolt" wire:click="appliquerModele('{{ $cle }}')">{{ $modele['libelle'] }}</flux:button>
+            @endforeach
+            <flux:text class="w-full text-xs">Le formulaire est pré-rempli (quartier, consignes, heure de fin estimée) : relisez puis publiez.</flux:text>
+        </div>
+    @endunless
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
         <flux:input wire:model.live.debounce.400ms="titre" label="Titre" maxlength="120" required

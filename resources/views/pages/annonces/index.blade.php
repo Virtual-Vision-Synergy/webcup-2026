@@ -103,6 +103,23 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
         Flux::toast(variant: 'success', text: 'Situation mise à jour : le bandeau affiche la nouvelle ligne.');
     }
 
+    /**
+     * F101 : situation rétablie (« courant rétabli ») : ligne horodatée ajoutée, fin de diffusion dans 30 minutes.
+     */
+    public function retablir(int $id): void
+    {
+        $annonce = Annonce::findOrFail($id);
+        $this->authorize('update', $annonce);
+
+        if ($annonce->statut() !== 'en_cours') {
+            return;
+        }
+
+        $annonce->retablir('Situation rétablie (courant rétabli). Cette alerte prend fin dans 30 minutes.');
+
+        Flux::toast(variant: 'success', text: 'Situation rétablie : le bandeau l’indique et disparaîtra dans 30 minutes.');
+    }
+
     public function delete(int $id): void
     {
         $annonce = Annonce::findOrFail($id);
@@ -123,6 +140,9 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
     >
         <x-slot:actions>
             @can('create', \App\Models\Annonce::class)
+                <flux:button icon="bolt" :href="route('agent.annonces.create', ['modele' => 'panne-electrique'])" wire:navigate>
+                    Alerte panne électrique
+                </flux:button>
                 <flux:button variant="primary" icon="megaphone" :href="route('agent.annonces.create')" wire:navigate>
                     {{ __('Publier un message') }}
                 </flux:button>
@@ -187,6 +207,9 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
                                     @if ($item->statut() === 'en_cours')
                                         <flux:button size="sm" variant="ghost" icon="clock" wire:click="ouvrirMiseAJour({{ $item->id }})">
                                             Mettre à jour
+                                        </flux:button>
+                                        <flux:button size="sm" variant="ghost" icon="check-circle" wire:click="retablir({{ $item->id }})" wire:confirm="Indiquer que la situation est rétablie ? L’alerte prendra fin dans 30 minutes.">
+                                            Rétabli
                                         </flux:button>
                                     @endif
                                     @if ($item->statut() !== 'expire')

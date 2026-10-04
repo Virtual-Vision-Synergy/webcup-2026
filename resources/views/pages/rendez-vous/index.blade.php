@@ -63,6 +63,7 @@ new #[Title('Mes rendez-vous')] class extends Component {
     >
         <x-slot:meta>
             <x-tn.mots-utiles class="mt-3" :slugs="['rendez-vous', 'etat-civil', 'urbanisme', 'ccas']" />
+            <livewire:explication-simple cle="rendez-vous-conditions" />
         </x-slot:meta>
         <x-slot:actions>
             @can('create', RendezVous::class)

@@ -1,10 +1,11 @@
 <?php
 
+use App\Filament\Resources\GenTestFiches\Pages\ListGenTestFiches;
 use App\Models\GenTestFiche;
-use App\Models\User;
 use App\Models\GenTestZone;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 use Filament\Actions\Testing\TestAction;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 
@@ -242,7 +243,7 @@ test('un admin change le statut depuis Filament', function () {
 
     $this->actingAs(User::factory()->admin()->create());
 
-    Livewire::test(\App\Filament\Resources\GenTestFiches\Pages\ListGenTestFiches::class)
+    Livewire::test(ListGenTestFiches::class)
         ->callAction(TestAction::make('changerStatut')->table($record), ['statut' => GenTestFiche::STATUT_OPTIONS[1]])
         ->assertHasNoFormErrors();
 

@@ -263,6 +263,16 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * F97 : trajets habituels (ligne + arrêt) de l'habitant, pour être prévenu des interruptions.
+     *
+     * @return HasMany<AbonnementLigne, $this>
+     */
+    public function abonnementsLigne(): HasMany
+    {
+        return $this->hasMany(AbonnementLigne::class);
+    }
+
+    /**
      * Démarches déposées par l'habitant (espace personnel).
      *
      * @return HasMany<Demarche, $this>

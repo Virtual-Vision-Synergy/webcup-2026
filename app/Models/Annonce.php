@@ -28,13 +28,14 @@ use Illuminate\Support\Facades\Cache;
  * @property string|null $consignes
  * @property Carbon $debut
  * @property Carbon $fin
+ * @property bool $officiel Message officiel du Haut Conseil (F73) ; assigné dans le code, par un administrateur uniquement.
  * @property Carbon|null $notified_at Envoi de la notification aux habitants (F30) ; assigné par NotifierAnnonce uniquement.
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $user
  * @property-read Quartier|null $quartier
  *
- * user_id (l'auteur) et notified_at ne sont volontairement PAS remplissables : ils sont assignés dans le code.
+ * user_id (l'auteur), officiel et notified_at ne sont volontairement PAS remplissables : ils sont assignés dans le code.
  */
 #[Fillable(['titre', 'contenu', 'niveau', 'debut', 'fin', 'quartier_id', 'consignes'])]
 class Annonce extends Model
@@ -105,7 +106,7 @@ class Annonce extends Model
     }
 
     /**
-     * Messages à afficher dans le bandeau : ceux du quartier de l'habitant d'abord (F29),
+     * Messages à afficher dans le bandeau : les messages officiels du Haut Conseil (F73), puis ceux du quartier de l'habitant d'abord (F29),
      * puis du plus grave au moins grave, puis du plus récent au plus ancien.
      *
      * Le cache (court, invalidé à chaque création, modification ou suppression) contient les messages non expirés ;
@@ -123,7 +124,7 @@ class Annonce extends Model
             ->where('annonces.fin', '>', now())
             ->get([
                 'annonces.id', 'annonces.titre', 'annonces.contenu', 'annonces.consignes', 'annonces.niveau',
-                'annonces.quartier_id', 'annonces.debut', 'annonces.fin', 'annonces.updated_at', 'quartiers.nom as quartier_nom',
+                'annonces.officiel', 'annonces.quartier_id', 'annonces.debut', 'annonces.fin', 'annonces.updated_at', 'quartiers.nom as quartier_nom',
             ])
             ->map(fn (Annonce $annonce): array => $annonce->getAttributes())
             ->all());
@@ -133,6 +134,7 @@ class Annonce extends Model
         return self::hydrate($lignes)
             ->filter(fn (Annonce $annonce): bool => $annonce->debut->lte($maintenant) && $annonce->fin->gt($maintenant))
             ->sortBy([
+                fn (Annonce $a, Annonce $b): int => $b->estOfficiel() <=> $a->estOfficiel(),
                 fn (Annonce $a, Annonce $b): int => $b->concerne($habitant) <=> $a->concerne($habitant),
                 fn (Annonce $a, Annonce $b): int => $b->gravite() <=> $a->gravite(),
                 fn (Annonce $a, Annonce $b): int => $b->debut <=> $a->debut,
@@ -168,6 +170,14 @@ class Annonce extends Model
     public function estGrave(): bool
     {
         return in_array($this->niveau, self::NIVEAUX_GRAVES, true);
+    }
+
+    /**
+     * Message officiel du Haut Conseil (F73) : toujours affiché en premier, signé par l'institution.
+     */
+    public function estOfficiel(): bool
+    {
+        return (bool) $this->officiel;
     }
 
     public function estCiblee(): bool
@@ -245,6 +255,7 @@ class Annonce extends Model
             'debut' => 'datetime',
             'fin' => 'datetime',
             'notified_at' => 'datetime',
+            'officiel' => 'boolean',
             'quartier_id' => 'integer',
         ];
     }

@@ -3,6 +3,8 @@
     - Les messages fermés (cookie) ne sont plus rendus : rien ne « revient » au changement de page.
     - Un seul message est déplié (le plus important pour ce visiteur) ; les autres sont repliés derrière un bouton.
     - Les alertes d'un quartier qui n'est pas celui du visiteur (ou visiteur sans quartier) sont toujours repliées, en version compacte.
+    - F73 : les messages officiels du Haut Conseil passent avant tout le reste et ne sont jamais repliés. Une fois masqué,
+      un message officiel laisse une ligne « Relire » vers sa page : il reste consultable pendant toute sa diffusion.
     - Chaque bandeau disparaît seul après quelques secondes pour la visite (voir tn.bandeau-annonce) ; « Afficher » les rouvre.
     - Pleine largeur même si un parent devient une grille (grille Flux de <flux:main> : le bandeau y formait une colonne étroite à gauche).
 --}}
@@ -11,7 +13,12 @@
     $sansQuartier = $habitant !== null && $habitant->isCitoyen() && $habitant->quartier_id === null;
     $fermees = \App\Models\Annonce::clesFermees(request()->cookie(\App\Models\Annonce::COOKIE_FERMES));
 
-    [$principales, $autresQuartiers] = \App\Models\Annonce::enDiffusion($habitant)
+    [$officiels, $ordinaires] = \App\Models\Annonce::enDiffusion($habitant)
+        ->partition(fn (\App\Models\Annonce $annonce): bool => $annonce->estOfficiel());
+    [$officielsMasques, $officielsVisibles] = $officiels
+        ->partition(fn (\App\Models\Annonce $annonce): bool => in_array($annonce->cleFermeture(), $fermees, true));
+
+    [$principales, $autresQuartiers] = $ordinaires
         ->reject(fn (\App\Models\Annonce $annonce): bool => in_array($annonce->cleFermeture(), $fermees, true))
         ->partition(fn (\App\Models\Annonce $annonce): bool => ! $annonce->estCiblee() || $annonce->concerne($habitant));
 
@@ -24,8 +31,34 @@
     };
 @endphp
 
-@if ($visible || $repliees->isNotEmpty())
+@if ($officiels->isNotEmpty() || $visible || $repliees->isNotEmpty())
     <div {{ $attributes->class('tn-bandeaux-annonces w-full [grid-column:1/-1]') }} x-data="{ tous: false }">
+        @foreach ($officielsVisibles as $annonce)
+            <x-tn.bandeau-annonce
+                officiel
+                :variante="$annonce->concerne($habitant) ? 'renforce' : 'standard'"
+                :niveau="$annonce->niveau"
+                :titre="$annonce->titre"
+                :contenu="$annonce->contenu"
+                :consignes="$annonce->listeConsignes()"
+                :quartier="$annonce->nomQuartier()"
+                :date="$annonce->debut"
+                :lien="route('alertes.show', $annonce->id)"
+                :cle="$annonce->cleFermeture()"
+            />
+        @endforeach
+
+        @foreach ($officielsMasques as $annonce)
+            <div class="border-b-2 border-ink bg-surface">
+                <p class="mx-auto flex min-h-10 max-w-7xl flex-wrap items-center gap-x-2 px-4 text-sm text-ink sm:px-6 lg:px-8">
+                    <flux:icon.building-library class="size-4 shrink-0" aria-hidden="true" />
+                    <span class="font-semibold">Message officiel du Haut Conseil :</span>
+                    <span class="min-w-0 truncate">{{ $annonce->titre }}</span>
+                    <a href="{{ route('alertes.show', $annonce->id) }}" class="font-medium underline underline-offset-2">Relire</a>
+                </p>
+            </div>
+        @endforeach
+
         @foreach (collect([$visible])->filter()->concat($repliees) as $annonce)
             @if ($repliees->isNotEmpty() && $annonce->is($repliees->first()))
                 <div id="tn-autres-annonces" x-show="tous" x-cloak>

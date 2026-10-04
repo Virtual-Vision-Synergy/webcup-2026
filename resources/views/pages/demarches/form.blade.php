@@ -136,6 +136,8 @@ new #[Title('Démarche')] class extends Component {
             $record->urgence_medicale = true;
         }
 
+        $nouvelle = ! $record->exists;
+
         if ($record->exists) {
             $record->save();
         } else {
@@ -165,8 +167,13 @@ new #[Title('Démarche')] class extends Component {
             variant: $record->urgence_medicale ? 'warning' : 'success',
             text: $record->urgence_medicale
                 ? 'Urgence médicale transmise en priorité aux agents. Si une vie est en danger, appelez le 15 ou le 112.'
-                : 'Démarche enregistrée.',
+                : ($nouvelle ? 'Démarche envoyée. Numéro de suivi : '.$record->numeroSuivi() : 'Démarche enregistrée.'),
         );
+
+        // Confirmation claire après l'envoi (D16) : affichée sur la page de suivi de la démarche.
+        if ($nouvelle) {
+            session()->flash('demarche_envoyee', $record->numeroSuivi());
+        }
 
         // F86 : une urgence ne suit pas le circuit ordinaire (pas de retour au parcours) : fiche avec les numéros d'urgence.
         if ($record->urgence_medicale) {

@@ -162,7 +162,7 @@ new #[Title('Signalement')] class extends Component {
         </x-slot:meta>
     </x-tn.page-header>
 
-    <form wire:submit="save" class="relative space-y-6">
+    <form wire:submit="save" @if (! $record) data-brouillon="signalement" data-brouillon-libelle="{{ __('Signalement') }}" @endif class="relative space-y-6">
         <x-tn.mention-obligatoire />
 
         @unless ($record)

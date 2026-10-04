@@ -223,6 +223,11 @@ class DatabaseSeeder extends Seeder
         // F68 : six idées de la boîte à idées (états variés, soutiens, deux réponses de la ville).
         $this->call(IdeaSeeder::class);
 
+        if (! app()->isProduction()) {
+            // F84 : échanges agent / habitant sur les démarches de user@example.com.
+            $this->call(ReponseDemarcheSeeder::class);
+        }
+
         // make:feature:seeders
     }
 }

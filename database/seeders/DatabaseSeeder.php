@@ -206,6 +206,9 @@ class DatabaseSeeder extends Seeder
 
             // F81 : envois de formulaires bloqués (robots) pour l'écran admin « Robots bloqués ».
             $this->call(TentativeBloqueeSeeder::class);
+
+            // F100 : événements de sécurité (F85) pour le fil « Sécurité » de l'espace agent.
+            $this->call(SecurityEventSeeder::class);
         }
 
         if (! app()->isProduction()) {

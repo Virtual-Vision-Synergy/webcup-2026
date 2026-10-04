@@ -9,7 +9,8 @@
     $connecte = auth()->check();
 
     // Données réelles de la base, mises en cache 60 s (tableaux simples, pas de modèles en cache).
-    $etat = Cache::remember('landing.etat', 60, fn (): array => [
+    // F78 : vidé dès qu'un service ou une actualité change (trait ViderCachesPublics).
+    $etat = Cache::remember(Service::CACHE_ACCUEIL, 60, fn (): array => [
         'genere_le' => now()->timestamp,
         'services' => Service::count(),
         'actualites' => Actualite::count(),

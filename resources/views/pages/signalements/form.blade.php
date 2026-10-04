@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\ThrottlesPerUser;
 use App\Models\Signalement;
 use App\Services\OptimiseurImage;
 use Flux\Flux;
@@ -10,7 +11,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 
 new #[Title('Signalement')] class extends Component {
-    use WithFileUploads;
+    use ThrottlesPerUser, WithFileUploads;
 
     #[Locked]
     public ?Signalement $record = null;
@@ -63,6 +64,9 @@ new #[Title('Signalement')] class extends Component {
             : $this->authorize('create', Signalement::class);
 
         $validated = $this->validate();
+
+        // F78 : 10 envois par minute et par habitant au plus (message clair sous le formulaire).
+        $this->throttlePerUser('signalement', maxAttempts: 10, decaySeconds: 60);
 
         if ($this->photo) {
             $optimiseur = app(OptimiseurImage::class);
@@ -127,6 +131,8 @@ new #[Title('Signalement')] class extends Component {
                 <x-tn.image :chemin="$record->photo" :alt="__('Photo du signalement')" sizes="320px" class="h-40 w-auto rounded-lg object-cover" />
             @endif
         </div>
+
+        <flux:error name="throttle" />
 
         <div class="flex items-center justify-between gap-3 border-t border-line pt-5">
             <flux:button :href="route('signalements.index')" wire:navigate variant="ghost">{{ __('Annuler') }}</flux:button>

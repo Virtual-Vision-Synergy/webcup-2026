@@ -1,6 +1,7 @@
 <?php
 
 use App\Concerns\BloqueSiServiceIndisponible;
+use App\Concerns\ThrottlesPerUser;
 use App\Models\Demarche;
 use App\Models\Service;
 use App\Services\OnboardingProgress;
@@ -14,7 +15,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Démarche')] class extends Component {
-    use BloqueSiServiceIndisponible;
+    use BloqueSiServiceIndisponible, ThrottlesPerUser;
 
     #[Locked]
     public ?Demarche $record = null;
@@ -90,6 +91,9 @@ new #[Title('Démarche')] class extends Component {
             : $this->authorize('create', Demarche::class);
 
         $validated = $this->validate();
+
+        // F78 : 10 envois par minute et par habitant au plus (message clair au-dessus du bouton).
+        $this->throttlePerUser('demarche', maxAttempts: 10, decaySeconds: 60);
 
         // F38 : pas de nouvelle démarche sur un service interrompu (une démarche déjà déposée reste modifiable sur son service).
         $serviceChoisi = filled($validated['service_id'] ?? null) ? Service::query()->find((int) $validated['service_id']) : null;
@@ -221,6 +225,8 @@ new #[Title('Démarche')] class extends Component {
 
             <p x-ref="erreurEtape" hidden class="mt-4 text-sm text-magenta" role="alert"><flux:icon.exclamation-circle variant="micro" class="me-1 inline size-4 align-[-3px]" aria-hidden="true" />Renseignez l'objet et les détails pour continuer.</p>
         </div>
+
+        <flux:error name="throttle" />
 
         {{-- Un seul CTA par étape --}}
         <div class="flex items-center justify-between gap-3 border-t border-line pt-5">

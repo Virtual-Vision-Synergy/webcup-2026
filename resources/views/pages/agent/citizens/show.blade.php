@@ -121,7 +121,7 @@ new #[Layout('layouts::agent'), Title('Compte citoyen')] class extends Component
     <x-tn.page-header
         label="{{ __('Fiche du compte') }}"
         :title="$account->name"
-        :breadcrumb="['Espace agent' => route('agent.index'), 'Comptes citoyens' => route('agent.citizens.index'), $account->name => null]"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Comptes citoyens' => route('agent.citizens.index'), $account->name => null]"
     >
         <x-slot:meta>
             <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink-2">

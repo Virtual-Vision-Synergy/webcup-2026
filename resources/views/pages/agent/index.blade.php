@@ -156,22 +156,22 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
     $majLe = $result->fetchedAt?->timezone($this::FUSEAU_AFFICHAGE)->format('d/m/Y à H:i');
 @endphp
 
-<section class="w-full space-y-6">
-    <x-tn.breadcrumb :items="['Espace agent' => null]" />
+<section class="mx-auto w-full max-w-6xl space-y-6">
+    <x-tn.page-header
+        label="Espace agent"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Demandes Nova Terra' => null]"
+        title="Demandes Nova Terra"
+        subtitle="Les demandes reçues de la plateforme de la Ville de Nova Terra : difficulté, XP et arrivée."
+    >
+        @if ($majLe && ! $result->stale)
+            <x-slot:actions>
+                <span class="font-mono text-xs text-ink-2">Mis à jour le {{ $majLe }}</span>
+            </x-slot:actions>
+        @endif
+    </x-tn.page-header>
 
     {{-- D17 : charge de travail en un coup d'œil --}}
     <livewire:compteur-demandes-attente />
-
-    <div class="flex flex-wrap items-end justify-between gap-4">
-        <div>
-            <flux:heading size="xl" level="1">{{ __('Demandes Nova Terra') }}</flux:heading>
-            <flux:text class="mt-1">{{ __('Les demandes reçues de la plateforme de la Ville de Nova Terra : difficulté, XP et arrivée.') }}</flux:text>
-        </div>
-
-        @if ($majLe && ! $result->stale)
-            <flux:text size="sm">Mis à jour le {{ $majLe }}</flux:text>
-        @endif
-    </div>
 
     @if (! $result->available)
         <flux:callout variant="danger" icon="exclamation-triangle" data-test="api-unavailable">
@@ -186,8 +186,8 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
 
     @if ($result->available && $session !== [])
         <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <flux:card class="space-y-1">
-                <flux:text size="sm">{{ __('Concours') }}</flux:text>
+            <x-tn.surface padding="p-4" class="space-y-1">
+                <x-tn.section-label class="text-xs!">{{ __('Concours') }}</x-tn.section-label>
                 <flux:heading size="lg">
                     @if (($session['status'] ?? 'none') === 'none')
                         {{ __('Pas encore démarré') }}
@@ -197,17 +197,17 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
                         {{ __('Terminé') }}
                     @endif
                 </flux:heading>
-            </flux:card>
-            <flux:card class="space-y-1">
-                <flux:text size="sm">{{ __('Vague actuelle') }}</flux:text>
+            </x-tn.surface>
+            <x-tn.surface padding="p-4" class="space-y-1">
+                <x-tn.section-label class="text-xs!">{{ __('Vague actuelle') }}</x-tn.section-label>
                 <flux:heading size="lg">{{ (int) ($session['current_wave'] ?? 0) }}</flux:heading>
-            </flux:card>
-            <flux:card class="space-y-1">
-                <flux:text size="sm">{{ __('Demandes visibles') }}</flux:text>
+            </x-tn.surface>
+            <x-tn.surface padding="p-4" class="space-y-1">
+                <x-tn.section-label class="text-xs!">{{ __('Demandes visibles') }}</x-tn.section-label>
                 <flux:heading size="lg">{{ (int) ($session['visible_requests_count'] ?? count($result->requests)) }}</flux:heading>
-            </flux:card>
-            <flux:card class="space-y-1">
-                <flux:text size="sm">{{ __('Prochaine vague') }}</flux:text>
+            </x-tn.surface>
+            <x-tn.surface padding="p-4" class="space-y-1">
+                <x-tn.section-label class="text-xs!">{{ __('Prochaine vague') }}</x-tn.section-label>
                 <flux:heading size="lg">
                     @if ((int) ($session['next_wave_number'] ?? 0) === 0)
                         {{ __('Plus de vague prévue') }}
@@ -215,7 +215,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
                         Vague {{ (int) $session['next_wave_number'] }} dans {{ (int) ($session['minutes_until_next_wave'] ?? 0) }} min
                     @endif
                 </flux:heading>
-            </flux:card>
+            </x-tn.surface>
         </div>
     @endif
 
@@ -245,19 +245,13 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
         </div>
 
         @if ($this->rows === [])
-            <flux:card class="py-10 text-center">
-                <flux:icon.inbox class="mx-auto size-10 text-zinc-400" />
-                <flux:heading class="mt-3">{{ __('Aucune demande à afficher') }}</flux:heading>
-                <flux:text class="mt-1">
-                    @if ($difficulte !== '' || $arrivee !== '')
-                        {{ __('Aucune demande ne correspond aux filtres choisis.') }}
-                    @else
-                        {{ __('L\'API n\'a encore publié aucune demande.') }}
-                    @endif
-                </flux:text>
-            </flux:card>
+            <x-tn.empty
+                icon="inbox"
+                title="Aucune demande à afficher"
+                :text="$difficulte !== '' || $arrivee !== '' ? 'Aucune demande ne correspond aux filtres choisis.' : 'L\'API n\'a encore publié aucune demande.'"
+            />
         @else
-            <flux:card class="overflow-x-auto p-0">
+            <x-tn.surface padding="px-4 py-2">
                 <flux:table>
                     <flux:table.columns>
                         <flux:table.column>{{ __('Code') }}</flux:table.column>
@@ -308,7 +302,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes Nova Terra')] c
                         @endforeach
                     </flux:table.rows>
                 </flux:table>
-            </flux:card>
+            </x-tn.surface>
         @endif
     @endif
 </section>

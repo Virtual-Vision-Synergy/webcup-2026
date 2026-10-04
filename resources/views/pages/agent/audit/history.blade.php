@@ -150,7 +150,7 @@ new #[Layout('layouts::agent'), Title('Historique')] class extends Component {
         label="Historique des modifications"
         :title="$this->nomElement()"
         :subtitle="$this->items->total().' modification(s) enregistrée(s), de la plus récente à la plus ancienne. Lecture seule.'"
-        :breadcrumb="['Espace agent' => route('agent.index'), 'Journal' => route('agent.audit.index'), 'Historique' => null]"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Journal' => route('agent.audit.index'), 'Historique' => null]"
     >
         <x-slot:actions>
             @if ($this->lienFiche())

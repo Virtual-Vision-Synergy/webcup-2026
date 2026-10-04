@@ -32,23 +32,24 @@ new #[Layout('layouts::agent'), Title('Espace agent — Partenaires')] class ext
 }; ?>
 
 <section class="mx-auto w-full max-w-5xl space-y-6">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-        <div>
-            <flux:heading size="xl" level="1">{{ __('Partenaires') }}</flux:heading>
-            <flux:text>{{ __('Horaires, adresse et emplacement affichés sur la page publique.') }}</flux:text>
-        </div>
-        <div class="flex flex-wrap gap-2">
+    <x-tn.page-header
+        label="Espace agent"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Partenaires' => null]"
+        title="Partenaires"
+        subtitle="Horaires, adresse et emplacement affichés sur la page publique."
+    >
+        <x-slot:actions>
             <flux:button icon="eye" :href="route('partners.index')">{{ __('Voir la page publique') }}</flux:button>
-            <flux:button variant="primary" icon="plus" :href="route('agent.partners.create')">{{ __('Ajouter un partenaire') }}</flux:button>
-        </div>
-    </div>
+            <flux:button variant="primary" icon="plus" :href="route('agent.partners.create')" class="tn-cta">{{ __('Ajouter un partenaire') }}</flux:button>
+        </x-slot:actions>
+    </x-tn.page-header>
 
     @if ($this->partners->isEmpty())
-        <flux:card class="text-center">
-            <flux:heading>{{ __('Aucun partenaire pour le moment.') }}</flux:heading>
-            <flux:button class="mt-3" variant="primary" :href="route('agent.partners.create')">{{ __('Ajouter le premier partenaire') }}</flux:button>
-        </flux:card>
+        <x-tn.empty icon="building-storefront" title="Aucun partenaire pour le moment.">
+            <flux:button variant="primary" icon="plus" :href="route('agent.partners.create')">{{ __('Ajouter le premier partenaire') }}</flux:button>
+        </x-tn.empty>
     @else
+        <x-tn.surface padding="px-4 py-2">
         <flux:table :paginate="$this->partners">
             <flux:table.columns>
                 <flux:table.column>{{ __('Nom') }}</flux:table.column>
@@ -71,13 +72,16 @@ new #[Layout('layouts::agent'), Title('Espace agent — Partenaires')] class ext
                                 <flux:badge size="sm" color="zinc" icon="eye-slash">{{ __('Brouillon') }}</flux:badge>
                             @endif
                         </flux:table.cell>
-                        <flux:table.cell class="text-end">
-                            <flux:button size="sm" variant="ghost" :href="route('partners.show', $partner)">{{ __('Voir') }}</flux:button>
-                            <flux:button size="sm" icon="pencil-square" :href="route('agent.partners.edit', $partner)">{{ __('Modifier') }}</flux:button>
+                        <flux:table.cell>
+                            <div class="flex justify-end gap-1">
+                                <flux:button size="sm" variant="ghost" icon="eye" :href="route('partners.show', $partner)">{{ __('Voir') }}</flux:button>
+                                <flux:button size="sm" icon="pencil-square" :href="route('agent.partners.edit', $partner)">{{ __('Modifier') }}</flux:button>
+                            </div>
                         </flux:table.cell>
                     </flux:table.row>
                 @endforeach
             </flux:table.rows>
         </flux:table>
+        </x-tn.surface>
     @endif
 </section>

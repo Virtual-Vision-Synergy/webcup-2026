@@ -43,19 +43,22 @@ new #[Layout('layouts::public'), Title('Alerte')] class extends Component {
         </x-slot:meta>
     </x-tn.page-header>
 
-    <x-tn.bandeau-annonce
-        class="rounded-md border"
-        variante="renforce"
-        :officiel="$record->estOfficiel()"
-        :date="$record->debut"
-        :impact="$record->impact_prevu_le"
-        :fin="$record->fin"
-        :niveau="$record->niveau"
-        :titre="$record->titre"
-        :contenu="$record->contenu"
-        :consignes="$record->listeConsignes()"
-        :quartier="$concerne ? $record->nomQuartier() : null"
-    />
+    {{-- F89 : version simple en langage clair (relue par la mairie, sinon simplifiée automatiquement). --}}
+    <x-tn.langage-clair :version="\App\Support\LangageClair::pourAnnonce($record)">
+        <x-tn.bandeau-annonce
+            class="rounded-md border"
+            variante="renforce"
+            :officiel="$record->estOfficiel()"
+            :date="$record->debut"
+            :impact="$record->impact_prevu_le"
+            :fin="$record->fin"
+            :niveau="$record->niveau"
+            :titre="$record->titre"
+            :contenu="$record->contenu"
+            :consignes="$record->listeConsignes()"
+            :quartier="$concerne ? $record->nomQuartier() : null"
+        />
+    </x-tn.langage-clair>
 
     <dl class="grid gap-4 rounded-md border border-line bg-surface p-5 text-sm sm:grid-cols-2">
         <div>

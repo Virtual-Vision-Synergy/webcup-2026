@@ -56,6 +56,9 @@ class Annonce extends Model
     /** Niveaux annoncés avec role="alert" ; dans le quartier concerné, le bandeau se replie mais ne se ferme pas. */
     public const NIVEAUX_GRAVES = ['alerte', 'danger'];
 
+    /** Durée d'affichage d'un bandeau avant sa disparition automatique (pour la visite seulement). */
+    public const DUREE_AFFICHAGE_SECONDES = 10;
+
     /** Fuseau de saisie et d'affichage pour les agents (l'application stocke en UTC). */
     public const FUSEAU = 'Indian/Antananarivo';
 

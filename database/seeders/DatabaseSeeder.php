@@ -120,6 +120,8 @@ class DatabaseSeeder extends Seeder
         if (! app()->isProduction()) {
             // Quelques démarches pour le compte citoyen de démo : son espace personnel n'est pas vide.
             Demarche::factory(4)->recycle($services)->for(User::where('email', 'user@example.com')->firstOrFail())->create();
+            // F86 : deux urgences médicales ouvertes (tête de la liste agent, compteur « À traiter en priorité »).
+            Demarche::factory(2)->urgenceMedicale()->recycle($services)->for(User::where('email', 'user@example.com')->firstOrFail())->create();
         }
 
         // Messages généraux (D18) : un en cours, un programmé, un expiré, publiés par un agent.
@@ -143,6 +145,11 @@ class DatabaseSeeder extends Seeder
         // Alerte ciblée F29 « Montée des eaux — quartier sud » + habitants sud@example.com et nord@example.com.
         $this->call(AlerteMonteeDesEauxSeeder::class);
 
+        if (! app()->isProduction()) {
+            // F30 : notifications lues et non lues pour user@example.com + annonce « Danger » programmée dans 5 min.
+            $this->call(NotificationsAnnoncesSeeder::class);
+        }
+
         Signalement::factory(15)->recycle($users)->create();
         Signalement::factory(5)->nouveau()->recycle($users)->create();
 
@@ -157,6 +164,9 @@ class DatabaseSeeder extends Seeder
             Signalement::factory(2)->for($citoyen)->create();
         }
 
+        // F75 : groupes de signalements qui décrivent le même problème (regroupement côté agent).
+        $this->call(SignalementsSimilairesSeeder::class);
+
         // Soutiens d'habitants aux demandes encore ouvertes (F52) : chaque citoyen soutient au plus une fois.
         $citoyens = $users->filter(fn (User $user): bool => $user->isCitoyen());
         Signalement::query()->whereIn('statut', Signalement::STATUTS_OUVERTS)->get()
@@ -168,6 +178,13 @@ class DatabaseSeeder extends Seeder
             });
 
         if (! app()->isProduction()) {
+            $this->call(LoginAttemptSeeder::class);
+
+            // F81 : envois de formulaires bloqués (robots) pour l'écran admin « Robots bloqués ».
+            $this->call(TentativeBloqueeSeeder::class);
+        }
+
+        if (! app()->isProduction()) {
             // Journal d'audit de démo (F47). Les autres seeders n'écrivent rien dans le journal (WithoutModelEvents).
             $this->call(AuditLogSeeder::class);
         }
@@ -176,6 +193,48 @@ class DatabaseSeeder extends Seeder
 
         // F39 : services ouverts aux rendez-vous, créneaux sur 14 jours ouvrés, agenda du jour pour agent@example.com.
         $this->call(RendezVousSeeder::class);
+
+        // F38 : État civil en incident, Médiathèque en maintenance, une interruption passée (historique).
+        $this->call(ServiceInterruptionSeeder::class);
+
+        if (! app()->isProduction()) {
+            // D11 : « Mes demandes » de user@example.com (4 suivis), voisin@example.com (403), sans.demande@example.com (état vide).
+            $this->call(MesDemandesSeeder::class);
+        }
+
+        // F67 : projets en cours dans la ville (voirie, école, parc, réseau d'eau, énergie).
+        $this->call(ProjetSeeder::class);
+
+        // F51 : remontées sur les données de user@example.com (Reçue, Prise en compte, Répondue).
+        $this->call(RemonteeSeeder::class);
+
+        if (! app()->isProduction()) {
+            // F54 : deux appareils connus, historique de connexions et alerte « nouvel appareil » pour user@example.com.
+            $this->call(KnownDeviceSeeder::class);
+        }
+
+        // F40 : rendez-vous de démo rappelé automatiquement ~10 min après le seed (hors production).
+        $this->call(RappelRendezVousSeeder::class);
+
+        // F70 : agents rattachés à leurs services (État civil, Action sociale) et dossiers aux données confidentielles.
+        $this->call(PermissionsServicesSeeder::class);
+
+        // F74 : 4 partenaires de Nova Terra (page publique /partenaires).
+        $this->call(PartnerSeeder::class);
+
+        // F64 : un service perturbé (Urbanisme) et la Médiathèque indisponible, après les interruptions F38.
+        $this->call(EtatServicesSeeder::class);
+
+        // F68 : six idées de la boîte à idées (états variés, soutiens, deux réponses de la ville).
+        $this->call(IdeaSeeder::class);
+
+        if (! app()->isProduction()) {
+            // F84 : échanges agent / habitant sur les démarches de user@example.com.
+            $this->call(ReponseDemarcheSeeder::class);
+        }
+
+        // F76 : avis des habitants sur trois services (notes variées, deux réponses, un avis masqué).
+        $this->call(ServiceReviewSeeder::class);
 
         // make:feature:seeders
     }

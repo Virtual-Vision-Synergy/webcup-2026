@@ -12,5 +12,5 @@
     ])
 >
     <flux:icon :name="$onglet['icon']" class="size-[22px]" />
-    {{ $onglet['label'] }}
+    {{ __($onglet['label']) }}
 </a>

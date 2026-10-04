@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Demarche;
+use App\Services\AuditLogger;
 use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,6 +28,14 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
     #[Url(except: false)]
     public bool $enAttente = false;
 
+    /** F84 : uniquement les demandes dont le dernier message n'est pas une réponse d'agent. */
+    #[Url(except: false)]
+    public bool $sansReponse = false;
+
+    /** F86 : uniquement les urgences médicales encore ouvertes (« À traiter en priorité »). */
+    #[Url(except: false)]
+    public bool $prioritaires = false;
+
     public function mount(): void
     {
         Gate::authorize('viewAgentSpace');
@@ -47,11 +56,21 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
         $this->resetPage();
     }
 
+    public function updatedSansReponse(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedPrioritaires(): void
+    {
+        $this->resetPage();
+    }
+
     public function resetFilters(): void
     {
         Gate::authorize('viewAgentSpace');
 
-        $this->reset('search', 'filterStatut', 'enAttente');
+        $this->reset('search', 'filterStatut', 'enAttente', 'sansReponse', 'prioritaires');
         $this->resetPage();
     }
 
@@ -60,12 +79,16 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
      */
     protected function filteredQuery(): Builder
     {
+        // F70 : uniquement les démarches des services de l'agent (toutes pour l'admin).
         return Demarche::query()
+            ->visibleTo(auth()->user())
             ->when($this->search !== '', function ($query) {
                 $term = '%'.$this->search.'%';
                 $query->where(fn ($q) => $q->where('titre', 'like', $term)->orWhere('description', 'like', $term));
             })
             ->when($this->enAttente, fn ($query) => $query->whereIn('statut', self::STATUTS_EN_ATTENTE))
+            ->when($this->sansReponse, fn ($query) => $query->sansReponse())
+            ->when($this->prioritaires, fn ($query) => $query->urgencesATraiter())
             ->when($this->filterStatut !== '', fn ($query) => $query->where('statut', $this->filterStatut));
     }
 
@@ -75,7 +98,9 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
         Gate::authorize('viewAgentSpace');
 
         return $this->filteredQuery()
-            ->with(['user:id,name', 'service:id,nom'])
+            ->with(['user:id,name', 'service:id,nom', 'derniereReponse', 'prisEnChargePar:id,name'])
+            // F86 : urgences médicales ouvertes tout en haut, quelle que soit leur ancienneté.
+            ->orderByRaw("case when urgence_medicale = 1 and statut in ('deposee', 'en_cours') then 0 else 1 end")
             ->orderByRaw("case when statut in ('deposee', 'en_cours') then 0 else 1 end")
             ->oldest()
             ->paginate(15);
@@ -91,19 +116,47 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
     {
         Gate::authorize('viewAgentSpace');
 
-        $parStatut = Demarche::query()->selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut');
+        $parStatut = Demarche::query()->visibleTo(auth()->user())->selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut');
 
         return collect(Demarche::STATUT_OPTIONS)->mapWithKeys(fn (string $statut): array => [$statut => (int) ($parStatut[$statut] ?? 0)])->all();
+    }
+
+    /**
+     * F86 : nombre d'urgences médicales ouvertes (compteur « À traiter en priorité »).
+     */
+    #[Computed]
+    public function urgencesOuvertes(): int
+    {
+        Gate::authorize('viewAgentSpace');
+
+        return Demarche::query()->visibleTo(auth()->user())->urgencesATraiter()->count();
+    }
+
+    /**
+     * F86 : prise en charge d'une urgence médicale depuis la liste (qui, quand).
+     */
+    public function prendreEnCharge(int $id): void
+    {
+        $record = Demarche::findOrFail($id);
+        AuditLogger::autoriser('prendreEnCharge', $record);
+
+        $prise = $record->prendreEnCharge(auth()->user());
+        unset($this->items, $this->compteurs, $this->urgencesOuvertes);
+
+        Flux::toast(
+            variant: $prise ? 'success' : 'warning',
+            text: $prise ? 'Urgence prise en charge.' : 'Cette urgence est déjà prise en charge.',
+        );
     }
 
     public function changerStatut(int $id, string $statut): void
     {
         $record = Demarche::findOrFail($id);
-        $this->authorize('changerStatut', $record);
+        AuditLogger::autoriser('changerStatut', $record);
         abort_unless(in_array($statut, Demarche::STATUT_OPTIONS, true), 422);
 
         $record->changerStatut($statut);
-        unset($this->items, $this->compteurs);
+        unset($this->items, $this->compteurs, $this->urgencesOuvertes);
 
         Flux::toast(variant: 'success', text: 'Statut mis à jour : '.Demarche::libelleStatut($statut).'.');
     }
@@ -120,6 +173,29 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
         title="Demandes des habitants"
         :subtitle="$enAttenteTotal.' demande(s) en attente d’une action sur '.array_sum($this->compteurs).' au total'"
     />
+
+    {{-- F86 : urgences médicales ouvertes, toujours visibles en tête --}}
+    <button
+        type="button"
+        wire:click="$toggle('prioritaires')"
+        aria-pressed="{{ $prioritaires ? 'true' : 'false' }}"
+        @class([
+            'flex w-full items-center justify-between gap-3 rounded-md border p-4 text-start transition',
+            'border-magenta bg-magenta/10 ring-2 ring-magenta' => $prioritaires,
+            'border-magenta/50 bg-magenta/5 hover:border-magenta' => ! $prioritaires && $this->urgencesOuvertes > 0,
+            'border-line hover:border-magenta/50' => ! $prioritaires && $this->urgencesOuvertes === 0,
+        ])
+        data-test="compteur-urgences"
+    >
+        <span class="flex items-center gap-3">
+            <flux:icon name="heart" @class(['size-6 shrink-0', 'text-magenta' => $this->urgencesOuvertes > 0, 'text-ink-2' => $this->urgencesOuvertes === 0]) aria-hidden="true" />
+            <span>
+                <span class="block font-semibold text-ink">À traiter en priorité</span>
+                <span class="block text-sm text-ink-2">Urgences médicales déposées ou en cours</span>
+            </span>
+        </span>
+        <span @class(['tn-display text-3xl font-semibold', 'text-magenta' => $this->urgencesOuvertes > 0, 'text-ink-2' => $this->urgencesOuvertes === 0])>{{ $this->urgencesOuvertes }}</span>
+    </button>
 
     {{-- Compteurs par état --}}
     <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -151,28 +227,51 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
             @endforeach
         </flux:select>
         <flux:checkbox wire:model.live="enAttente" label="En attente d’action uniquement" />
-        @if ($search !== '' || $filterStatut !== '' || $enAttente)
+        <flux:checkbox wire:model.live="sansReponse" label="Sans réponse uniquement" />
+        <flux:checkbox wire:model.live="prioritaires" label="À traiter en priorité" />
+        @if ($search !== '' || $filterStatut !== '' || $enAttente || $sansReponse || $prioritaires)
             <flux:button variant="ghost" size="sm" icon="x-mark" wire:click="resetFilters">Effacer les filtres</flux:button>
         @endif
         <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
     </div>
 
     @if ($this->items->isEmpty())
-        <x-tn.empty icon="inbox" title="Aucune demande à afficher" :text="($search !== '' || $filterStatut !== '' || $enAttente) ? 'Aucune demande ne correspond aux filtres choisis.' : 'Les habitants n’ont encore déposé aucune demande.'" />
+        <x-tn.empty icon="inbox" title="Aucune demande à afficher" :text="($search !== '' || $filterStatut !== '' || $enAttente || $sansReponse || $prioritaires) ? 'Aucune demande ne correspond aux filtres choisis.' : 'Aucune demande pour les services auxquels vous êtes rattaché.'" />
     @else
         <ul class="space-y-3">
             @foreach ($this->items as $item)
                 @php($attente = in_array($item->statut, $this::STATUTS_EN_ATTENTE, true))
-                <li wire:key="demande-{{ $item->id }}" @class(['rounded-md border p-4', 'border-amber/50 bg-amber/5' => $attente, 'border-line' => ! $attente])>
+                @php($urgence = $item->estUrgenceOuverte())
+                <li wire:key="demande-{{ $item->id }}" @class(['rounded-md border p-4', 'border-magenta border-l-4 bg-magenta/8' => $urgence, 'border-amber/50 bg-amber/5' => $attente && ! $urgence, 'border-line' => ! $attente && ! $urgence])>
                     <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                         <div class="min-w-0 space-y-1">
                             <div class="flex flex-wrap items-center gap-2">
+                                @if ($item->urgence_medicale)
+                                    <flux:badge color="red" icon="heart" size="sm">Urgence médicale</flux:badge>
+                                @endif
                                 <x-tn.status-badge :etat="$item->etatStatut()">{{ Demarche::libelleStatut($item->statut) }}</x-tn.status-badge>
                                 @if ($attente)
                                     <x-tn.status-badge etat="perturbe">Action attendue</x-tn.status-badge>
                                 @endif
+                                @if ($item->reponseEnvoyee())
+                                    <x-tn.status-badge etat="normal">Réponse envoyée</x-tn.status-badge>
+                                @else
+                                    <x-tn.status-badge etat="info">En attente de réponse</x-tn.status-badge>
+                                @endif
                             </div>
                             <a href="{{ route('demarches.show', $item) }}" class="block font-medium text-ink hover:text-cyan">{{ $item->titre }}</a>
+                            @if ($item->urgence_medicale)
+                                <p class="text-xs text-ink-2">
+                                    @if ($item->pris_en_charge_le)
+                                        Prise en charge par {{ $item->prisEnChargePar?->name ?? 'un agent' }} le <span class="font-mono">{{ $item->pris_en_charge_le->timezone(config('app.timezone'))->format('d.m.Y · H:i') }}</span>
+                                    @else
+                                        <span class="font-medium text-magenta">Pas encore prise en charge</span>
+                                    @endif
+                                </p>
+                            @endif
+                            @if ($item->derniereReponse)
+                                <p class="text-xs text-ink-2">Dernier message le <span class="font-mono">{{ $item->derniereReponse->created_at->format('d.m.Y · H:i') }}</span></p>
+                            @endif
                             <p class="text-sm text-ink-2">
                                 {{ $item->user?->name ?? 'Habitant inconnu' }} · {{ $item->service?->nom ?? 'Service non précisé' }} ·
                                 <span class="font-mono text-xs">Déposée le {{ $item->created_at->format('d.m.Y') }}</span>
@@ -182,8 +281,17 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
                             @endif
                         </div>
 
+                        <div class="flex flex-col gap-2 md:shrink-0 md:items-end">
+                        @if ($item->urgence_medicale && ! $item->pris_en_charge_le)
+                            @can('prendreEnCharge', $item)
+                                <flux:button size="xs" variant="danger" icon="hand-raised" wire:click="prendreEnCharge({{ $item->id }})">Prendre en charge</flux:button>
+                            @endcan
+                        @endif
+                        @can('repondre', $item)
+                            <flux:button size="xs" variant="primary" icon="chat-bubble-left-right" :href="route('demarches.show', $item)" wire:navigate>Répondre</flux:button>
+                        @endcan
                         @can('changerStatut', $item)
-                            <div class="flex flex-wrap gap-1 md:shrink-0 md:justify-end" role="group" aria-label="Changer l’état de la demande">
+                            <div class="flex flex-wrap gap-1 md:justify-end" role="group" aria-label="Changer l’état de la demande">
                                 @foreach (Demarche::STATUT_OPTIONS as $option)
                                     <flux:button
                                         size="xs"
@@ -196,6 +304,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
                                 @endforeach
                             </div>
                         @endcan
+                        </div>
                     </div>
                 </li>
             @endforeach

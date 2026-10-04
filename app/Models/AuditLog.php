@@ -39,6 +39,12 @@ class AuditLog extends Model
 
     public const UPDATED_AT = null;
 
+    /** F70 : type d'élément d'un refus d'accès qui ne porte sur aucun modèle (page, action Livewire). */
+    public const SUJET_ACCES = 'Acces';
+
+    /** F70 : entrées qu'un agent ne voit que pour lui-même (refus, consultations de données confidentielles). */
+    public const ACTIONS_PERSONNELLES = ['access_denied', 'confidential_viewed'];
+
     /** Valeur affichée à la place d'une donnée sensible (mot de passe, jeton, secret). */
     public const MASQUE = '[masqué]';
 
@@ -55,6 +61,10 @@ class AuditLog extends Model
         'deactivated' => 'Compte désactivé',
         'reactivated' => 'Compte réactivé',
         'exported' => 'Export',
+        'device_reported' => 'Appareil signalé',
+        'access_denied' => 'Accès refusé',
+        'confidential_viewed' => 'Consultation confidentielle',
+        'services_changed' => 'Services de l’agent modifiés',
     ];
 
     /** @var array<string, string> */
@@ -67,6 +77,10 @@ class AuditLog extends Model
         'deactivated' => 'a désactivé',
         'reactivated' => 'a réactivé',
         'exported' => 'a exporté',
+        'device_reported' => 'a signalé un appareil inconnu sur',
+        'access_denied' => 's’est vu refuser l’accès à',
+        'confidential_viewed' => 'a consulté une donnée confidentielle de',
+        'services_changed' => 'a changé les services couverts par',
     ];
 
     /** État du badge (couleur + texte, voir <x-tn.status-badge>). */
@@ -79,6 +93,10 @@ class AuditLog extends Model
         'deactivated' => 'alerte',
         'reactivated' => 'normal',
         'exported' => 'info',
+        'device_reported' => 'alerte',
+        'access_denied' => 'alerte',
+        'confidential_viewed' => 'perturbe',
+        'services_changed' => 'perturbe',
     ];
 
     /**
@@ -95,6 +113,10 @@ class AuditLog extends Model
         'Demarche' => ['classe' => Demarche::class, 'libelle' => 'Démarche', 'article' => 'la démarche', 'route' => 'demarches.show', 'droit' => 'view'],
         'Signalement' => ['classe' => Signalement::class, 'libelle' => 'Signalement', 'article' => 'le signalement', 'route' => 'signalements.show', 'droit' => 'view'],
         'Message' => ['classe' => Message::class, 'libelle' => 'Message', 'article' => 'le message', 'route' => 'messages.show', 'droit' => 'view'],
+        'LigneTransport' => ['classe' => LigneTransport::class, 'libelle' => 'Ligne de transport', 'article' => 'la ligne', 'route' => 'transports.show', 'droit' => 'view'],
+        'Remontee' => ['classe' => Remontee::class, 'libelle' => 'Remontée', 'article' => 'la remontée', 'route' => 'agent.concerns.show', 'droit' => 'traiter'],
+        'Idea' => ['classe' => Idea::class, 'libelle' => 'Idée', 'article' => 'l’idée', 'route' => null, 'droit' => 'updateStatus'],
+        'RendezVous' => ['classe' => RendezVous::class, 'libelle' => 'Rendez-vous', 'article' => 'le rendez-vous', 'route' => null, 'droit' => 'viewConfidential'],
         'AuditLog' => ['classe' => AuditLog::class, 'libelle' => 'Journal', 'article' => 'le journal', 'route' => null, 'droit' => 'viewAny'],
     ];
 
@@ -137,7 +159,57 @@ class AuditLog extends Model
         'message' => 'Message',
         'filtres' => 'Filtres appliqués',
         'lignes' => 'Nombre de lignes',
+        'lieu_rendez_vous' => 'Lieu de rendez-vous',
+        'pieces_a_fournir' => 'Pièces à fournir',
+        'duree_rendez_vous' => 'Durée du rendez-vous',
+        'mis_en_avant' => 'Mis en avant',
+        'numero' => 'Numéro',
+        'mode' => 'Mode',
+        'arrets' => 'Arrêts',
+        'frequence' => 'Fréquence',
+        'etat' => 'État du trafic',
+        'perturbation' => 'Perturbation',
+        'disponibilite' => 'Disponibilité',
+        'interruption' => 'Interruption (motif)',
+        'reference' => 'Numéro de suivi',
+        'objet' => 'Objet',
+        'envoyee_le' => 'Envoyée le',
+        'prise_en_compte_le' => 'Prise en compte le',
+        'pris_en_charge_par' => 'Prise en compte par (n°)',
+        'reponse' => 'Réponse',
+        'repondue_le' => 'Répondue le',
+        'repondue_par' => 'Répondue par (n°)',
+        'cloturee_le' => 'Clôturée le',
+        'appareil' => 'Appareil',
+        'champ' => 'Donnée consultée',
+        'route' => 'Page demandée',
+        'url' => 'Adresse',
+        'services' => 'Services couverts',
+        'situation' => 'Situation déclarée',
     ];
+
+    /**
+     * Types acceptés dans l'URL de l'historique d'un élément (F48) : slug → clé de SUBJECTS.
+     * Liste blanche : aucun nom de classe n'est jamais lu dans l'URL.
+     *
+     * @var array<string, string>
+     */
+    public const HISTORY_TYPES = [
+        'service' => 'Service',
+        'compte' => 'User',
+        'message-general' => 'Annonce',
+        'role' => 'Role',
+        'actualite' => 'Actualite',
+        'demarche' => 'Demarche',
+        'signalement' => 'Signalement',
+        'message' => 'Message',
+        'transport' => 'LigneTransport',
+        'remontee' => 'Remontee',
+        'idee' => 'Idea',
+    ];
+
+    /** Valeur affichée pour un champ vide dans l'historique d'un élément. */
+    public const VIDE = '(vide)';
 
     protected static function booted(): void
     {
@@ -199,7 +271,7 @@ class AuditLog extends Model
 
     public function libelleAction(): string
     {
-        return self::ACTION_LABELS[$this->action] ?? $this->action;
+        return __(self::ACTION_LABELS[$this->action] ?? $this->action);
     }
 
     public function etatAction(): string
@@ -209,17 +281,74 @@ class AuditLog extends Model
 
     public static function libelleChamp(string $champ): string
     {
-        return self::FIELD_LABELS[$champ] ?? ucfirst(str_replace('_', ' ', $champ));
+        return __(self::FIELD_LABELS[$champ] ?? ucfirst(str_replace('_', ' ', $champ)));
     }
 
     /**
      * Valeur affichable d'un champ avant / après.
      */
+    /**
+     * F70 : champ déclaré confidentiel par le modèle de l'élément (ex. téléphone d'un compte) : jamais affiché en clair.
+     */
+    public function champConfidentiel(string $champ): bool
+    {
+        $classe = self::SUBJECTS[$this->subject_type]['classe'] ?? null;
+        $constante = $classe === null ? null : $classe.'::CHAMPS_CONFIDENTIELS';
+
+        return $constante !== null && defined($constante) && in_array($champ, (array) constant($constante), true);
+    }
+
+    /**
+     * Valeur affichée sur la fiche d'une entrée : « [masqué] » pour un champ confidentiel.
+     */
+    public function valeurAffichee(string $champ, mixed $valeur): string
+    {
+        return $valeur !== null && $valeur !== '' && $this->champConfidentiel($champ) ? self::MASQUE : self::formatValeur($valeur);
+    }
+
+    /**
+     * F70 : entrées qu'un utilisateur peut lire. Admin : tout. Agent : pas les démarches ni les rendez-vous
+     * des services qu'il ne couvre pas, ni les refus et consultations confidentielles des autres.
+     *
+     * @param  Builder<AuditLog>  $query
+     */
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        if ($user->isAdmin()) {
+            return;
+        }
+
+        if (! $user->isAgent()) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query
+            ->where(fn (Builder $q) => $q->where('subject_type', '!=', 'Demarche')
+                ->orWhereIn('subject_id', Demarche::query()->visibleTo($user)->select('id')))
+            ->where(fn (Builder $q) => $q->where('subject_type', '!=', 'RendezVous')
+                ->orWhereIn('subject_id', RendezVous::query()->visibleTo($user)->select('id')))
+            ->where(fn (Builder $q) => $q->whereNotIn('action', self::ACTIONS_PERSONNELLES)
+                ->orWhere('actor_id', $user->id));
+    }
+
+    /**
+     * F70 : modifications de l'élément, sans les refus d'accès ni les consultations confidentielles
+     * (affichées seulement dans le journal et dans le bloc admin « Consultations »).
+     *
+     * @param  Builder<AuditLog>  $query
+     */
+    public function scopeModifications(Builder $query): void
+    {
+        $query->whereNotIn('action', self::ACTIONS_PERSONNELLES);
+    }
+
     public static function formatValeur(mixed $valeur): string
     {
         return match (true) {
             $valeur === null, $valeur === '' => '—',
-            is_bool($valeur) => $valeur ? 'Oui' : 'Non',
+            is_bool($valeur) => $valeur ? __('Oui') : __('Non'),
             is_scalar($valeur) => (string) $valeur,
             default => (string) json_encode($valeur, JSON_UNESCAPED_UNICODE),
         };
@@ -250,6 +379,10 @@ class AuditLog extends Model
     {
         $verbe = self::ACTION_VERBES[$this->action] ?? $this->action;
 
+        if ($this->subject_type === self::SUJET_ACCES) {
+            return $this->auteur().' '.$verbe.' la page « '.$this->nomElement().' »';
+        }
+
         if ($this->subject_type === 'AuditLog') {
             return $this->auteur().' '.$verbe.' le journal d’audit';
         }
@@ -262,6 +395,102 @@ class AuditLog extends Model
     public function dateLocale(string $format = 'd/m/Y H:i'): string
     {
         return $this->created_at?->timezone(self::FUSEAU)->format($format) ?? '—';
+    }
+
+    /**
+     * Slug d'URL de l'historique d'un élément (F48), null si son type n'a pas d'historique.
+     */
+    public static function slugFor(Model $subject): ?string
+    {
+        $slug = array_search(class_basename($subject), self::HISTORY_TYPES, true);
+
+        return $slug === false ? null : $slug;
+    }
+
+    /**
+     * L'utilisateur peut-il consulter l'historique de cet élément ? Il faut lire le journal (agent / admin)
+     * ET avoir le droit d'ouvrir l'élément lui-même (ex. F34 : un agent ne voit pas la fiche d'un autre agent).
+     */
+    public static function peutVoirHistorique(?User $user, Model $subject): bool
+    {
+        $droit = self::SUBJECTS[class_basename($subject)]['droit'] ?? null;
+
+        return $user !== null
+            && self::slugFor($subject) !== null
+            && $droit !== null
+            && $user->can('viewAny', self::class)
+            && $user->can($droit, $subject);
+    }
+
+    /**
+     * Valeur lisible pour l'historique d'un élément (F48) : « (vide) », Oui / Non, dates en français
+     * à l'heure de Madagascar, options traduites via la constante <CHAMP>_LABELS (ou _LIBELLES) du modèle.
+     */
+    public function valeurLisible(string $champ, mixed $valeur): string
+    {
+        if ($valeur === null || $valeur === '') {
+            return self::VIDE;
+        }
+
+        if ($valeur === self::MASQUE || $this->champConfidentiel($champ)) {
+            return self::MASQUE;
+        }
+
+        $classe = self::SUBJECTS[$this->subject_type]['classe'] ?? null;
+        $cast = $classe !== null && $classe !== self::class ? ((new $classe)->getCasts()[$champ] ?? null) : null;
+
+        if ($cast === 'boolean' || is_bool($valeur)) {
+            return filter_var($valeur, FILTER_VALIDATE_BOOLEAN) ? 'Oui' : 'Non';
+        }
+
+        if (is_string($cast) && is_string($valeur) && (str_starts_with($cast, 'date') || str_starts_with($cast, 'immutable_date'))) {
+            try {
+                $date = Carbon::parse($valeur, 'UTC');
+
+                return str_contains($cast, 'datetime')
+                    ? $date->timezone(self::FUSEAU)->format('d/m/Y à H:i')
+                    : $date->format('d/m/Y');
+            } catch (\Throwable) {
+                return $valeur;
+            }
+        }
+
+        if ($classe !== null && is_scalar($valeur)) {
+            foreach (['_LABELS', '_LIBELLES'] as $suffixe) {
+                $constante = $classe.'::'.Str::upper($champ).$suffixe;
+                $libelles = defined($constante) ? constant($constante) : null;
+
+                if (is_array($libelles) && isset($libelles[(string) $valeur])) {
+                    return (string) $libelles[(string) $valeur];
+                }
+            }
+        }
+
+        return self::formatValeur($valeur);
+    }
+
+    /**
+     * « 3 octobre 2026 à 14 h 32 » (heure de Madagascar).
+     */
+    public function dateComplete(): string
+    {
+        $date = $this->created_at?->copy()->setTimezone(self::FUSEAU)->settings(['locale' => 'fr']);
+
+        return $date === null ? '—' : $date->translatedFormat('j F Y').' à '.$date->format('H \h i');
+    }
+
+    /**
+     * « il y a 5 minutes ».
+     */
+    public function dateRelative(): string
+    {
+        return $this->created_at?->copy()->settings(['locale' => 'fr'])->diffForHumans() ?? '';
+    }
+
+    public function estDuJour(): bool
+    {
+        return $this->created_at !== null
+            && $this->created_at->copy()->timezone(self::FUSEAU)->isSameDay(now(self::FUSEAU));
     }
 
     /**

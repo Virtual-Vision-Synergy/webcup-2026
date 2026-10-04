@@ -82,6 +82,7 @@ new #[Layout('layouts::agent'), Title('Journal')] class extends Component {
         $this->authorize('viewAny', AuditLog::class);
 
         return AuditLog::query()
+            ->visibleTo(auth()->user())
             ->whereNotNull('actor_id')
             ->selectRaw('actor_id, MAX(actor_name) as actor_name')
             ->groupBy('actor_id')
@@ -104,13 +105,13 @@ new #[Layout('layouts::agent'), Title('Journal')] class extends Component {
         ]);
 
         return $this->streamCsv('viewAny', AuditLog::class, $query, [
-            'Date' => fn (AuditLog $log) => $log->dateLocale(),
-            'Auteur' => fn (AuditLog $log) => $log->actor_name,
-            'Profil' => fn (AuditLog $log) => $log->actor_role,
-            'Action' => fn (AuditLog $log) => $log->libelleAction(),
-            'Élément' => fn (AuditLog $log) => $log->subject_label,
-            'Description' => fn (AuditLog $log) => $log->phrase(),
-            'Adresse IP' => fn (AuditLog $log) => $log->ip,
+            __('Date') => fn (AuditLog $log) => $log->dateLocale(),
+            __('Auteur') => fn (AuditLog $log) => $log->actor_name,
+            __('Profil') => fn (AuditLog $log) => $log->actor_role,
+            __('Action') => fn (AuditLog $log) => $log->libelleAction(),
+            __('Élément') => fn (AuditLog $log) => $log->subject_label,
+            __('Description') => fn (AuditLog $log) => $log->phrase(),
+            __('Adresse IP') => fn (AuditLog $log) => $log->ip,
         ], 'journal-audit');
     }
 
@@ -123,6 +124,7 @@ new #[Layout('layouts::agent'), Title('Journal')] class extends Component {
         $au = $this->parseDate($this->au)?->endOfDay()->utc();
 
         return AuditLog::query()
+            ->visibleTo(auth()->user())
             ->when(array_key_exists($this->action, AuditLog::ACTION_LABELS), fn (Builder $q) => $q->where('action', $this->action))
             ->when(array_key_exists($this->element, AuditLog::SUBJECTS), fn (Builder $q) => $q->where('subject_type', $this->element))
             ->when($this->auteur === self::AUTEUR_SYSTEME, fn (Builder $q) => $q->whereNull('actor_id'))
@@ -150,34 +152,34 @@ new #[Layout('layouts::agent'), Title('Journal')] class extends Component {
 
 <section class="w-full space-y-6">
     <x-tn.page-header
-        label="Espace agent"
-        title="Journal"
-        :subtitle="$this->items->total().' opération(s) tracée(s). Journal en lecture seule : aucune entrée ne peut être modifiée ni supprimée.'"
+        label="{{ __('Espace agent') }}"
+        title="{{ __('Journal') }}"
+        :subtitle="__(':n opération(s) tracée(s). Journal en lecture seule : aucune entrée ne peut être modifiée ni supprimée.', ['n' => $this->items->total()])"
         :breadcrumb="['Espace agent' => route('agent.index'), 'Journal' => null]"
     >
         <x-slot:actions>
-            <flux:button icon="arrow-down-tray" wire:click="export" wire:loading.attr="disabled">Exporter (CSV)</flux:button>
+            <flux:button icon="arrow-down-tray" wire:click="export" wire:loading.attr="disabled">{{ __('Exporter (CSV)') }}</flux:button>
         </x-slot:actions>
     </x-tn.page-header>
 
     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(5,minmax(0,1fr))_auto] lg:items-end">
-        <flux:select wire:model.live="action" label="Type d'action">
-            <flux:select.option value="">Toutes</flux:select.option>
+        <flux:select wire:model.live="action" label="{{ __('Type d\'action') }}">
+            <flux:select.option value="">{{ __('Toutes') }}</flux:select.option>
             @foreach (AuditLog::ACTION_LABELS as $valeur => $libelle)
-                <flux:select.option value="{{ $valeur }}">{{ $libelle }}</flux:select.option>
+                <flux:select.option value="{{ $valeur }}">{{ __($libelle) }}</flux:select.option>
             @endforeach
         </flux:select>
 
-        <flux:select wire:model.live="auteur" label="Auteur">
-            <flux:select.option value="">Tous</flux:select.option>
+        <flux:select wire:model.live="auteur" label="{{ __('Auteur') }}">
+            <flux:select.option value="">{{ __('Tous') }}</flux:select.option>
             @foreach ($this->auteurs as $id => $nom)
                 <flux:select.option value="{{ $id }}">{{ $nom }}</flux:select.option>
             @endforeach
-            <flux:select.option value="{{ $this::AUTEUR_SYSTEME }}">Système</flux:select.option>
+            <flux:select.option value="{{ $this::AUTEUR_SYSTEME }}">{{ __('Système') }}</flux:select.option>
         </flux:select>
 
-        <flux:select wire:model.live="element" label="Type d'élément">
-            <flux:select.option value="">Tous</flux:select.option>
+        <flux:select wire:model.live="element" label="{{ __('Type d\'élément') }}">
+            <flux:select.option value="">{{ __('Tous') }}</flux:select.option>
             @foreach (AuditLog::SUBJECTS as $valeur => $type)
                 <flux:select.option value="{{ $valeur }}">{{ $type['libelle'] }}</flux:select.option>
             @endforeach
@@ -188,7 +190,7 @@ new #[Layout('layouts::agent'), Title('Journal')] class extends Component {
 
         <div class="flex items-center gap-2">
             @if ($this->hasFilters())
-                <flux:button variant="ghost" icon="x-mark" wire:click="resetFilters">Réinitialiser les filtres</flux:button>
+                <flux:button variant="ghost" icon="x-mark" wire:click="resetFilters">{{ __('Réinitialiser les filtres') }}</flux:button>
             @endif
             <div wire:loading>
                 <flux:icon.loading class="size-5" />
@@ -197,9 +199,9 @@ new #[Layout('layouts::agent'), Title('Journal')] class extends Component {
     </div>
 
     @if ($this->items->isEmpty())
-        <x-tn.empty icon="document-text" title="Aucune opération trouvée" :text="$this->hasFilters() ? 'Aucune entrée ne correspond à ces filtres.' : 'Les opérations sensibles apparaîtront ici dès qu’elles seront réalisées.'">
+        <x-tn.empty icon="document-text" title="{{ __('Aucune opération trouvée') }}" :text="$this->hasFilters() ? __('Aucune entrée ne correspond à ces filtres.') : __('Les opérations sensibles apparaîtront ici dès qu’elles seront réalisées.')">
             @if ($this->hasFilters())
-                <flux:button variant="ghost" icon="x-mark" wire:click="resetFilters">Réinitialiser les filtres</flux:button>
+                <flux:button variant="ghost" icon="x-mark" wire:click="resetFilters">{{ __('Réinitialiser les filtres') }}</flux:button>
             @endif
         </x-tn.empty>
     @else

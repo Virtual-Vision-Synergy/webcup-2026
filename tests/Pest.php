@@ -1,6 +1,10 @@
 <?php
 
+use App\Models\Service;
+use App\Models\User;
+use App\Services\ProtectionFormulaires;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 /*
@@ -44,7 +48,26 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * F70 : agent rattaché à tous les services existants au moment de l'appel (il voit toutes leurs démarches).
+ */
+function agentDeTousLesServices(): User
 {
-    // ..
+    return User::factory()->agentDe(...Service::all()->all())->create();
+}
+
+/**
+ * F81 : champs anti-robots d'un formulaire public affiché il y a 10 secondes (champ piège vide + jeton valide).
+ *
+ * @return array<string, string>
+ */
+function jetonAntiRobot(string $formulaire): array
+{
+    // Respecte un éventuel voyage dans le temps déjà fait par le test.
+    $horlogeFigee = Carbon::getTestNow();
+    Carbon::setTestNow(now()->subSeconds(10));
+    $jeton = app(ProtectionFormulaires::class)->jeton($formulaire);
+    Carbon::setTestNow($horlogeFigee);
+
+    return [ProtectionFormulaires::CHAMP_PIEGE => '', ProtectionFormulaires::CHAMP_JETON => $jeton];
 }

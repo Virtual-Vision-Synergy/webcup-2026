@@ -2,6 +2,7 @@
 
 use App\Models\Annonce;
 use App\Models\Quartier;
+use App\Services\NotifierAnnonce;
 use Flux\Flux;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
@@ -112,14 +113,20 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
         $validated['consignes'] = trim((string) ($validated['consignes'] ?? '')) ?: null;
 
         if ($this->record) {
-            $this->record->update($validated);
+            $annonce = $this->record;
+            $annonce->update($validated);
         } else {
             $annonce = new Annonce($validated);
             $annonce->user()->associate(auth()->user());
             $annonce->save();
         }
 
-        Flux::toast(variant: 'success', text: $this->record ? 'Message modifié.' : 'Message publié.');
+        // F30 : annonce importante déjà visible → habitants prévenus tout de suite (une seule fois) ;
+        // programmée → la commande annonces:notify s'en charge à son début.
+        $notifiee = app(NotifierAnnonce::class)->notifierSiVisible($annonce);
+
+        Flux::toast(variant: 'success', text: ($this->record ? 'Message modifié.' : 'Message publié.')
+            .($notifiee ? ' Les habitants concernés sont prévenus.' : ''));
 
         $this->redirectRoute('agent.annonces.index', navigate: true);
     }
@@ -133,6 +140,10 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
         :title="$record ? 'Modifier le message' : 'Publier un message général'"
         :breadcrumb="['Espace agent' => route('agent.index'), 'Messages généraux' => route('agent.annonces.index'), ($record ? 'Modifier' : 'Nouveau') => null]"
     />
+
+    @if ($record)
+        <x-audit-history :subject="$record" variant="resume" />
+    @endif
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
         <flux:input wire:model.live.debounce.400ms="titre" label="Titre" maxlength="120" required
@@ -159,7 +170,7 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             </flux:select>
         </div>
 
-        <div class="grid gap-4 sm:grid-cols-2">
+        <div class="grid gap-4 md:grid-cols-2">
             <flux:input wire:model="debut" label="Début de diffusion" type="datetime-local" required />
             <flux:input wire:model="fin" label="Fin de diffusion" type="datetime-local" required />
         </div>
@@ -187,4 +198,8 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             <div wire:loading wire:target="save"><flux:text>Enregistrement…</flux:text></div>
         </div>
     </form>
+
+    @if ($record)
+        <x-audit-history :subject="$record" />
+    @endif
 </section>

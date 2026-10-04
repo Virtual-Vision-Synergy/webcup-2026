@@ -53,7 +53,7 @@ test('un autre utilisateur ne peut pas modifier', function () {
 test('un agent peut consulter mais pas supprimer la démarche d\'un habitant', function () {
     $record = Demarche::factory()->create();
 
-    Livewire::actingAs(User::factory()->agent()->create())
+    Livewire::actingAs(agentDeTousLesServices())
         ->test('pages::demarches.show', ['demarche' => $record])
         ->call('delete')
         ->assertForbidden();
@@ -77,7 +77,7 @@ test('la liste charge les relations sans requêtes en trop (pas de N+1)', functi
     Model::preventLazyLoading();
 
     try {
-        $this->actingAs(User::factory()->agent()->create())
+        $this->actingAs(agentDeTousLesServices())
             ->get(route('demarches.index'))
             ->assertOk();
     } finally {
@@ -99,7 +99,7 @@ test('la liste se filtre par service', function () {
     $dansA = Demarche::factory()->create(['service_id' => $a->id]);
     Demarche::factory()->create(['service_id' => $b->id]);
 
-    $ids = Livewire::actingAs(User::factory()->agent()->create())
+    $ids = Livewire::actingAs(agentDeTousLesServices())
         ->test('pages::demarches.index')
         ->set('filterServiceId', (string) $a->id)
         ->instance()->items->pluck('id')->all();
@@ -182,10 +182,10 @@ test('un habitant ne voit que ses démarches dans la liste', function () {
     expect($ids)->toBe([$mienne->id]);
 });
 
-test('un agent voit toutes les démarches et peut changer le statut', function () {
+test('un agent voit les démarches de ses services et peut changer le statut', function () {
     $record = Demarche::factory()->create(['statut' => Demarche::STATUT_OPTIONS[0]]);
     Demarche::factory()->create();
-    $agent = User::factory()->agent()->create();
+    $agent = agentDeTousLesServices();
 
     expect(Livewire::actingAs($agent)->test('pages::demarches.index')->instance()->items->total())->toBe(2);
 

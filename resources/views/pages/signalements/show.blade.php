@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\Signalement;
+use App\Services\OptimiseurImage;
 use Flux\Flux;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -22,7 +22,7 @@ new #[Title('Signalement')] class extends Component {
         $this->authorize('delete', $this->record);
 
         if ($this->record->photo) {
-            Storage::disk('public')->delete($this->record->photo);
+            app(OptimiseurImage::class)->supprimer($this->record->photo);
         }
 
         $this->record->delete();
@@ -73,6 +73,8 @@ new #[Title('Signalement')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    <x-audit-history :subject="$record" variant="resume" />
+
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <x-tn.surface>
             <x-tn.section-label as="h2" class="mb-2">Détails</x-tn.section-label>
@@ -82,7 +84,7 @@ new #[Title('Signalement')] class extends Component {
                 <x-tn.field label="Description"><p class="whitespace-pre-line leading-relaxed">{{ $record->description }}</p></x-tn.field>
             </dl>
             @if ($record->photo)
-                <img src="{{ Storage::url($record->photo) }}" alt="Photo du problème signalé : {{ $categorie }}, {{ $record->lieu }}" class="mt-4 max-h-96 w-full rounded-xl object-cover" />
+                <x-tn.image :chemin="$record->photo" :alt="'Photo du problème signalé : '.$categorie.', '.$record->lieu" sizes="(min-width: 1024px) 60vw, 100vw" class="mt-4 h-auto max-h-96 w-full rounded-xl object-cover" />
             @endif
         </x-tn.surface>
 
@@ -113,4 +115,6 @@ new #[Title('Signalement')] class extends Component {
             @endcan
         </div>
     </div>
+
+    <x-audit-history :subject="$record" />
 </section>

@@ -39,6 +39,23 @@ new #[Layout('layouts::agent'), Title('Entrée du journal')] class extends Compo
         return route($config['route'], $subject);
     }
 
+    /**
+     * Lien vers l'historique complet de l'élément (F48), si l'agent a le droit de le consulter.
+     */
+    #[Computed]
+    public function lienHistorique(): ?string
+    {
+        $this->authorize('view', $this->log);
+
+        $subject = $this->elementExistant();
+
+        if ($subject === null || ! AuditLog::peutVoirHistorique(auth()->user(), $subject)) {
+            return null;
+        }
+
+        return route('agent.history.show', ['type' => AuditLog::slugFor($subject), 'id' => $subject->getKey()]);
+    }
+
     #[Computed]
     public function elementExistant(): ?Model
     {
@@ -62,6 +79,9 @@ new #[Layout('layouts::agent'), Title('Entrée du journal')] class extends Compo
             </div>
         </x-slot:meta>
         <x-slot:actions>
+            @if ($this->lienHistorique)
+                <flux:button :href="$this->lienHistorique" wire:navigate icon="clock">Historique de cet élément</flux:button>
+            @endif
             <flux:button :href="route('agent.audit.index')" wire:navigate variant="ghost" icon="arrow-left">Retour au journal</flux:button>
         </x-slot:actions>
     </x-tn.page-header>
@@ -111,8 +131,8 @@ new #[Layout('layouts::agent'), Title('Entrée du journal')] class extends Compo
                         @foreach ($log->changes as $champ => $valeurs)
                             <flux:table.row wire:key="champ-{{ $champ }}">
                                 <flux:table.cell class="font-medium">{{ AuditLog::libelleChamp($champ) }}</flux:table.cell>
-                                <flux:table.cell class="whitespace-normal! break-words text-ink-2">{{ AuditLog::formatValeur($valeurs['avant'] ?? null) }}</flux:table.cell>
-                                <flux:table.cell class="whitespace-normal! break-words">{{ AuditLog::formatValeur($valeurs['apres'] ?? null) }}</flux:table.cell>
+                                <flux:table.cell class="whitespace-normal! break-words text-ink-2">{{ $log->valeurAffichee((string) $champ, $valeurs['avant'] ?? null) }}</flux:table.cell>
+                                <flux:table.cell class="whitespace-normal! break-words">{{ $log->valeurAffichee((string) $champ, $valeurs['apres'] ?? null) }}</flux:table.cell>
                             </flux:table.row>
                         @endforeach
                     </flux:table.rows>

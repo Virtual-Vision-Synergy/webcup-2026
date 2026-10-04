@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Models\Concerns\HasAuditHistory;
 use Database\Factories\AnnonceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -27,18 +28,19 @@ use Illuminate\Support\Facades\Cache;
  * @property string|null $consignes
  * @property Carbon $debut
  * @property Carbon $fin
+ * @property Carbon|null $notified_at Envoi de la notification aux habitants (F30) ; assigné par NotifierAnnonce uniquement.
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $user
  * @property-read Quartier|null $quartier
  *
- * user_id (l'auteur) n'est volontairement PAS remplissable : il est assigné dans le code.
+ * user_id (l'auteur) et notified_at ne sont volontairement PAS remplissables : ils sont assignés dans le code.
  */
 #[Fillable(['titre', 'contenu', 'niveau', 'debut', 'fin', 'quartier_id', 'consignes'])]
 class Annonce extends Model
 {
     /** @use HasFactory<AnnonceFactory> */
-    use Auditable, HasFactory;
+    use Auditable, HasAuditHistory, HasFactory;
 
     /** Du moins au plus grave. */
     public const NIVEAU_OPTIONS = ['information', 'vigilance', 'alerte', 'danger'];
@@ -58,6 +60,12 @@ class Annonce extends Model
     public const FUSEAU = 'Indian/Antananarivo';
 
     public const CACHE_KEY = 'annonces.en-diffusion';
+
+    /**
+     * Cookie (non chiffré, écrit par le navigateur) listant les messages fermés : « id-version,id-version ».
+     * Lu côté serveur : un message fermé n'est plus rendu du tout, même après un changement de page.
+     */
+    public const COOKIE_FERMES = 'tn_annonces_fermees';
 
     protected static function booted(): void
     {
@@ -129,6 +137,21 @@ class Annonce extends Model
             ->values();
     }
 
+    /**
+     * Clés des messages fermés, lues dans le cookie (format strictement contrôlé, 50 au maximum).
+     *
+     * @return list<string>
+     */
+    public static function clesFermees(?string $cookie): array
+    {
+        $cles = array_filter(
+            array_map(trim(...), explode(',', (string) $cookie)),
+            fn (string $cle): bool => preg_match('/^\d{1,10}-\d{1,12}$/', $cle) === 1,
+        );
+
+        return array_slice(array_values($cles), -50);
+    }
+
     public function gravite(): int
     {
         return (int) array_search($this->niveau, self::NIVEAU_OPTIONS, true);
@@ -136,7 +159,7 @@ class Annonce extends Model
 
     public function libelleNiveau(): string
     {
-        return self::NIVEAU_LIBELLES[$this->niveau] ?? ucfirst($this->niveau);
+        return __(self::NIVEAU_LIBELLES[$this->niveau] ?? ucfirst($this->niveau));
     }
 
     public function estGrave(): bool
@@ -203,11 +226,11 @@ class Annonce extends Model
     }
 
     /**
-     * Clé de fermeture côté navigateur : un message modifié réapparaît.
+     * Clé de fermeture (cookie) et de repli (navigateur) : un message modifié réapparaît.
      */
     public function cleFermeture(): string
     {
-        return 'tn.annonce.'.$this->id.'.'.($this->updated_at->timestamp ?? 0);
+        return $this->id.'-'.($this->updated_at->timestamp ?? 0);
     }
 
     /**
@@ -218,6 +241,7 @@ class Annonce extends Model
         return [
             'debut' => 'datetime',
             'fin' => 'datetime',
+            'notified_at' => 'datetime',
             'quartier_id' => 'integer',
         ];
     }

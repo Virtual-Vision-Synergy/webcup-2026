@@ -19,6 +19,8 @@ new #[Title('Service')] class extends Component {
     public string $lieu_rendez_vous = '';
     public string $duree_rendez_vous = '';
     public string $pieces_a_fournir = '';
+    public string $latitude = '';
+    public string $longitude = '';
     public bool $mis_en_avant = false;
 
     public function mount(?Service $service = null): void
@@ -33,6 +35,8 @@ new #[Title('Service')] class extends Component {
             $this->lieu_rendez_vous = (string) ($service->lieu_rendez_vous ?? '');
             $this->duree_rendez_vous = (string) ($service->duree_rendez_vous ?? '');
             $this->pieces_a_fournir = (string) ($service->pieces_a_fournir ?? '');
+            $this->latitude = (string) ($service->latitude ?? '');
+            $this->longitude = (string) ($service->longitude ?? '');
         } else {
             $this->authorize('create', Service::class);
         }
@@ -50,6 +54,8 @@ new #[Title('Service')] class extends Component {
             'lieu_rendez_vous' => ['nullable', 'string', 'max:255'],
             'duree_rendez_vous' => ['nullable', 'integer', 'min:5', 'max:240'],
             'pieces_a_fournir' => ['nullable', 'string', 'max:2000'],
+            'latitude' => ['nullable', 'required_with:longitude', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'required_with:latitude', 'numeric', 'between:-180,180'],
             'mis_en_avant' => ['boolean'],
         ];
     }
@@ -64,7 +70,7 @@ new #[Title('Service')] class extends Component {
         $miseEnAvant = (bool) ($validated['mis_en_avant'] ?? false);
         unset($validated['mis_en_avant']);
 
-        foreach (['lieu_rendez_vous', 'duree_rendez_vous', 'pieces_a_fournir'] as $field) {
+        foreach (['lieu_rendez_vous', 'duree_rendez_vous', 'pieces_a_fournir', 'latitude', 'longitude'] as $field) {
             if (($validated[$field] ?? null) === '') {
                 $validated[$field] = null;
             }
@@ -86,7 +92,7 @@ new #[Title('Service')] class extends Component {
 
         Cache::forget('landing.etat');
 
-        Flux::toast(variant: 'success', text: 'Service enregistré(e).');
+        Flux::toast(variant: 'success', text: __('Service enregistré(e).'));
 
         $this->redirectRoute('services.show', $record, navigate: true);
     }
@@ -94,23 +100,35 @@ new #[Title('Service')] class extends Component {
 
 <section class="mx-auto w-full max-w-2xl space-y-6">
     <x-tn.page-header
-        label="Annuaire"
-        :title="$record ? 'Modifier le service' : 'Ajouter un service'"
+        label="{{ __('Annuaire') }}"
+        :title="$record ? __('Modifier le service') : __('Ajouter un service')"
         :breadcrumb="$record
             ? ['Mon espace' => route('dashboard'), 'Services' => route('services.index'), $record->nom => route('services.show', $record), 'Modifier' => null]
             : ['Mon espace' => route('dashboard'), 'Services' => route('services.index'), 'Nouveau' => null]"
     />
 
     <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
-        <flux:input wire:model="nom" label="Nom" required />
+        <flux:input wire:model="nom" label="{{ __('Nom') }}" required />
 
-        <flux:textarea wire:model="description" label="Description" rows="5" required />
+        <flux:textarea wire:model="description" label="{{ __('Description') }}" rows="5" required />
 
-        <flux:select wire:model="categorie" label="Catégorie" placeholder="Choisir une catégorie…" required>
+        <flux:select wire:model="categorie" label="{{ __('Catégorie') }}" placeholder="{{ __('Choisir une catégorie…') }}" required>
             @foreach (Service::CATEGORIE_LABELS as $valeur => $label)
-                <flux:select.option value="{{ $valeur }}">{{ $label }}</flux:select.option>
+                <flux:select.option value="{{ $valeur }}">{{ __($label) }}</flux:select.option>
             @endforeach
         </flux:select>
+
+        <fieldset class="space-y-4">
+            <flux:heading size="sm">{{ __('Lieu d\'accueil sur la carte') }}</flux:heading>
+            <flux:text>{{ __('Placez le lieu où les habitants sont reçus : il apparaîtra sur la carte des services.') }}</flux:text>
+
+            <x-carte mode="choix" hauteur="16rem" :label="__('Choisir l\'emplacement du service')" />
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <flux:input wire:model="latitude" label="{{ __('Latitude') }}" inputmode="decimal" />
+                <flux:input wire:model="longitude" label="{{ __('Longitude') }}" inputmode="decimal" />
+            </div>
+        </fieldset>
 
         <fieldset class="space-y-4">
             <flux:heading size="sm">Prise de rendez-vous</flux:heading>
@@ -124,12 +142,12 @@ new #[Title('Service')] class extends Component {
         </fieldset>
 
         @can('feature', $record ?? Service::class)
-            <flux:checkbox wire:model="mis_en_avant" label="Mettre en avant" description="Le service apparaît en tête du catalogue et sur la page d'accueil." />
+            <flux:checkbox wire:model="mis_en_avant" label="{{ __('Mettre en avant') }}" description="{{ __('Le service apparaît en tête du catalogue et sur la page d\'accueil.') }}" />
         @endcan
 
         <div class="flex items-center gap-3">
-            <flux:button type="submit" variant="primary">Enregistrer</flux:button>
-            <flux:button :href="route('services.index')" wire:navigate variant="ghost">Annuler</flux:button>
+            <flux:button type="submit" variant="primary">{{ __('Enregistrer') }}</flux:button>
+            <flux:button :href="route('services.index')" wire:navigate variant="ghost">{{ __('Annuler') }}</flux:button>
         </div>
     </form>
 </section>

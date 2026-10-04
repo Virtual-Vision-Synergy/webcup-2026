@@ -134,6 +134,8 @@ new #[Title('Démarche')] class extends Component {
             $record->urgence_medicale = true;
         }
 
+        $nouvelle = ! $record->exists;
+
         $record->save();
 
         if ($nouvelleUrgence) {
@@ -144,8 +146,13 @@ new #[Title('Démarche')] class extends Component {
             variant: $record->urgence_medicale ? 'warning' : 'success',
             text: $record->urgence_medicale
                 ? 'Urgence médicale transmise en priorité aux agents. Si une vie est en danger, appelez le 15 ou le 112.'
-                : 'Démarche enregistrée.',
+                : ($nouvelle ? 'Démarche envoyée. Numéro de suivi : '.$record->numeroSuivi() : 'Démarche enregistrée.'),
         );
+
+        // Confirmation claire après l'envoi (D16) : affichée sur la page de suivi de la démarche.
+        if ($nouvelle) {
+            session()->flash('demarche_envoyee', $record->numeroSuivi());
+        }
 
         // F86 : une urgence ne suit pas le circuit ordinaire (pas de retour au parcours) : fiche avec les numéros d'urgence.
         if ($record->urgence_medicale) {
@@ -287,9 +294,9 @@ new #[Title('Démarche')] class extends Component {
             </div>
 
             <flux:button type="button" variant="primary" icon:trailing="arrow-right" x-show="etape < 3" x-on:click="suivant()">Continuer</flux:button>
-            <flux:button type="submit" variant="primary" class="tn-cta" x-show="etape === 3" x-cloak>
+            <flux:button type="submit" variant="primary" class="tn-cta" x-show="etape === 3" x-cloak wire:loading.attr="disabled" wire:target="save">
                 <span wire:loading.remove wire:target="save">{{ $record ? 'Enregistrer' : 'Envoyer la démarche' }}</span>
-                <span wire:loading wire:target="save">Enregistrement…</span>
+                <span wire:loading wire:target="save">Envoi en cours…</span>
             </flux:button>
         </div>
     </form>

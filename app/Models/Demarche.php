@@ -204,6 +204,14 @@ class Demarche extends Model
     }
 
     /**
+     * Numéro de suivi communiqué à l'habitant après l'envoi (D16), dérivé de l'identifiant.
+     */
+    public function numeroSuivi(): string
+    {
+        return 'DEM-'.str_pad((string) $this->getKey(), 6, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * F70 : démarches visibles par l'utilisateur. Admin : toutes ; agent : celles de ses services
      * (une démarche sans service est réservée à l'admin) ; habitant : les siennes.
      *

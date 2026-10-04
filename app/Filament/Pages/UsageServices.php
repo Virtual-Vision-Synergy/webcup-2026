@@ -2,7 +2,6 @@
 
 namespace App\Filament\Pages;
 
-use App\Concerns\ExportsCsv;
 use App\Models\ActionLog;
 use App\Models\Quartier;
 use App\Models\Service;
@@ -20,11 +19,14 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /**
  * F98 : tableau de bord « Usage des services » (classement, évolution, analyses par règles, export CSV).
  * Réservé aux admins ; les consultations sont comptées de façon anonyme (table vues_services, sans user_id).
+ *
+ * @property-read StatistiquesUsage $statistiques
+ * @property-read Collection<int, LigneUsage> $classement
+ *
+ * @phpstan-import-type LigneUsage from StatistiquesUsage
  */
 class UsageServices extends Page
 {
-    use ExportsCsv;
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
 
     protected static ?string $navigationLabel = 'Usage des services';
@@ -67,7 +69,7 @@ class UsageServices extends Page
     }
 
     /**
-     * @return Collection<int, array<string, mixed>>
+     * @return Collection<int, LigneUsage>
      */
     #[Computed]
     public function classement(): Collection
@@ -133,20 +135,39 @@ class UsageServices extends Page
             'Démarches abandonnées ou refusées', 'Taux d’abandon (%)', 'Évolution vs période précédente (%)',
         ];
 
-        return response()->streamDownload(function () use ($lignes, $colonnes, $stats): void {
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF");
-            $this->writeCsvRow($out, ['Période du '.$stats->debut->format('d/m/Y').' au '.$stats->fin->format('d/m/Y')]);
-            $this->writeCsvRow($out, $colonnes);
+        $csv = "\xEF\xBB\xBF"
+            .self::ligneCsv(['Période du '.$stats->debut->format('d/m/Y').' au '.$stats->fin->format('d/m/Y')])
+            .self::ligneCsv($colonnes);
 
-            foreach ($lignes->values() as $rang => $l) {
-                $this->writeCsvRow($out, [
-                    $rang + 1, $l['nom'], Service::labelCategorie($l['categorie']), $l['consultations'], $l['lancees'],
-                    $l['terminees'], $l['abandonnees'], $l['taux_abandon'], $l['evolution'],
-                ]);
-            }
+        foreach ($lignes->values() as $rang => $l) {
+            $csv .= self::ligneCsv([
+                $rang + 1, $l['nom'], Service::labelCategorie($l['categorie']), $l['consultations'], $l['lancees'],
+                $l['terminees'], $l['abandonnees'], $l['taux_abandon'], $l['evolution'],
+            ]);
+        }
 
-            fclose($out);
+        return response()->streamDownload(function () use ($csv): void {
+            echo $csv;
         }, 'usage-services-'.now()->format('Ymd').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /**
+     * Ligne CSV pour Excel (séparateur « ; »). Un texte commençant par = + - @ est neutralisé (injection CSV).
+     *
+     * @param  array<int, mixed>  $valeurs
+     */
+    private static function ligneCsv(array $valeurs): string
+    {
+        return collect($valeurs)
+            ->map(function (mixed $valeur): string {
+                $texte = is_scalar($valeur) ? (string) $valeur : '';
+
+                if (is_string($valeur) && $texte !== '' && str_contains("=+-@\t\r", $texte[0])) {
+                    $texte = "'".$texte;
+                }
+
+                return '"'.str_replace('"', '""', $texte).'"';
+            })
+            ->implode(';')."\n";
     }
 }

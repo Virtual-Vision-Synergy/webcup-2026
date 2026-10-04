@@ -60,7 +60,7 @@ class VueService extends Model
             ->first();
 
         if ($vue === null) {
-            $vue = new static;
+            $vue = new self;
             $vue->service_id = $service->id;
             $vue->quartier_id = $quartierId;
             $vue->jour = today();

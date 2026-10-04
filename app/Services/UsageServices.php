@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
  * sur une période, avec comparaison à la période précédente et phrases d'analyse générées par règles (sans IA).
  *
  * Filtres en LISTE BLANCHE : une période, un quartier ou une catégorie inconnus sont ignorés.
+ *
+ * @phpstan-type LigneUsage array{service_id: int, nom: string, categorie: string, consultations: int, lancees: int, terminees: int, abandonnees: int, taux_abandon: int|null, consultations_avant: int, lancees_avant: int, evolution: int|null}
  */
 class UsageServices
 {
@@ -60,7 +62,7 @@ class UsageServices
     /**
      * Classement des services, du plus sollicité au moins sollicité.
      *
-     * @return Collection<int, array{service_id: int, nom: string, categorie: string, consultations: int, lancees: int, terminees: int, abandonnees: int, taux_abandon: int|null, consultations_avant: int, lancees_avant: int, evolution: int|null}>
+     * @return Collection<int, LigneUsage>
      */
     public function classement(): Collection
     {
@@ -74,7 +76,7 @@ class UsageServices
         $demarches = $this->demarchesParService($this->debut, $this->fin);
         $lanceesAvant = $this->demarchesParService($this->debutPrecedent, $this->finPrecedente);
 
-        return $services
+        $classement = $services
             ->map(function (Service $service) use ($vues, $vuesAvant, $demarches, $lanceesAvant): array {
                 $stats = $demarches->get($service->id);
                 $lancees = (int) ($stats->lancees ?? 0);
@@ -99,6 +101,9 @@ class UsageServices
             })
             ->sortByDesc(fn (array $ligne): array => [$ligne['lancees'] + $ligne['consultations'], $ligne['lancees']])
             ->values();
+
+        /** @var Collection<int, LigneUsage> $classement */
+        return $classement;
     }
 
     /**
@@ -136,7 +141,7 @@ class UsageServices
     /**
      * Totaux de la période et évolution par rapport à la période précédente.
      *
-     * @param  Collection<int, array<string, mixed>>  $classement
+     * @param  Collection<int, LigneUsage>  $classement
      * @return array{consultations: int, lancees: int, terminees: int, abandonnees: int, taux_abandon: int|null, evolution: int|null}
      */
     public function totaux(Collection $classement): array
@@ -161,7 +166,7 @@ class UsageServices
     /**
      * Phrases d'analyse exploitables, générées par règles (pas d'IA) : ce qu'un élu peut retenir en 10 secondes.
      *
-     * @param  Collection<int, array<string, mixed>>  $classement
+     * @param  Collection<int, LigneUsage>  $classement
      * @return list<array{niveau: string, texte: string}>
      */
     public function analyses(Collection $classement): array

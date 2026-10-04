@@ -23,6 +23,19 @@ new #[Title('Démarche')] class extends Component {
     }
 
     /**
+     * F80 : l'agent fixe la priorité du dossier (ou revient à la suggestion avec « auto »).
+     */
+    public function changerPriorite(string $priorite): void
+    {
+        AuditLogger::autoriser('changerPriorite', $this->record);
+        abort_unless($priorite === 'auto' || in_array($priorite, Demarche::PRIORITE_OPTIONS, true), 422);
+
+        $this->record->changerPriorite($priorite);
+
+        Flux::toast(variant: 'success', text: __('Priorité mise à jour : :p.', ['p' => Demarche::libellePriorite($this->record->priorite)]));
+    }
+
+    /**
      * F86 : prise en charge d'une urgence médicale, tracée (qui, quand).
      */
     public function prendreEnCharge(): void
@@ -107,9 +120,10 @@ new #[Title('Démarche')] class extends Component {
             <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink-2">
                 <x-tn.status-badge :etat="$record->etatStatut()">{{ __(Demarche::libelleStatut($statut)) }}</x-tn.status-badge>
                 @if ($record->urgence_medicale)
-                    <x-tn.status-badge etat="alerte">{{ __('Urgence médicale') }}</x-tn.status-badge>
+                    <x-badge-urgence-medicale />
                 @endif
                 <span>Par {{ $record->user?->name }}</span>
+                <span class="font-mono text-xs">N° {{ $record->numeroSuivi() }}</span>
                 <span class="font-mono text-xs">{{ $record->created_at->format('d.m.Y · H:i') }}</span>
             </div>
         </x-slot:meta>
@@ -122,6 +136,20 @@ new #[Title('Démarche')] class extends Component {
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
+
+    @if (session('demarche_envoyee'))
+        {{-- Confirmation immédiate après l'envoi (D16) --}}
+        <div class="flex flex-col gap-3 rounded-md border border-green/35 bg-green/8 p-4 sm:flex-row sm:items-center sm:justify-between" role="status">
+            <div class="flex items-start gap-3">
+                <flux:icon.check-circle class="mt-0.5 size-6 shrink-0 text-green" aria-hidden="true" />
+                <div>
+                    <p class="font-semibold text-ink">Votre démarche a bien été envoyée.</p>
+                    <p class="text-ink-2">Numéro de suivi : <strong class="font-mono text-ink">{{ session('demarche_envoyee') }}</strong>. Inutile de la renvoyer : vous pouvez suivre son avancement ici.</p>
+                </div>
+            </div>
+            <flux:button size="sm" icon="arrow-down" href="#suivi">Voir le suivi</flux:button>
+        </div>
+    @endif
 
     {{-- F86 : urgence médicale : numéros d'urgence en haut pour l'habitant, prise en charge tracée pour le personnel. --}}
     @if ($record->urgence_medicale)
@@ -180,7 +208,7 @@ new #[Title('Démarche')] class extends Component {
         </x-tn.surface>
 
         <div class="flex flex-col gap-6">
-            <x-tn.panel :label="__('Suivi')" padding="p-5 md:p-6">
+            <x-tn.panel id="suivi" :label="__('Suivi')" padding="p-5 md:p-6">
                 <x-tn.timeline :items="$chronologie" />
             </x-tn.panel>
 
@@ -200,6 +228,34 @@ new #[Title('Démarche')] class extends Component {
                     </x-tn.surface>
                 @endcan
             @endif
+
+            {{-- F80 : priorité du dossier (personnel uniquement), suggérée automatiquement et ajustable. --}}
+            @can('changerPriorite', $record)
+                @php($suggestion = $record->prioriteSuggeree())
+                <x-tn.surface data-test="priorite-dossier">
+                    <x-tn.section-label as="h2" class="mb-3">{{ __('Priorité du dossier') }}</x-tn.section-label>
+                    <div class="flex flex-wrap items-center gap-2">
+                        @if ($record->urgence_medicale)
+                            <x-badge-urgence-medicale />
+                        @endif
+                        <x-badge-priorite :priorite="$record->priorite" />
+                    </div>
+                    <p class="mt-2 text-sm text-ink-2">
+                        {{ $record->priorite_manuelle ? __('Fixée par un agent.') : __('Suggestion automatique.') }}
+                        {{ __('Suggestion : :p (:motif).', ['p' => Demarche::libellePriorite($suggestion['priorite']), 'motif' => $suggestion['motif']]) }}
+                    </p>
+                    <div class="mt-3 grid grid-cols-2 gap-2">
+                        @foreach (array_reverse(Demarche::PRIORITE_OPTIONS) as $option)
+                            <flux:button size="sm" wire:click="changerPriorite('{{ $option }}')" :variant="$record->priorite_manuelle && $record->priorite === $option ? 'primary' : 'outline'">
+                                {{ Demarche::libellePriorite($option) }}
+                            </flux:button>
+                        @endforeach
+                    </div>
+                    @if ($record->priorite_manuelle)
+                        <flux:button size="sm" variant="ghost" icon="arrow-path" class="mt-2" wire:click="changerPriorite('auto')">{{ __('Revenir à la suggestion automatique') }}</flux:button>
+                    @endif
+                </x-tn.surface>
+            @endcan
 
             @can('changerStatut', $record)
                 <x-tn.surface>

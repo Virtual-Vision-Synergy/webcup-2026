@@ -123,6 +123,9 @@
                     @can('viewAgentSpace')
                         <li><a href="{{ route('agent.tableau-de-bord') }}" class="{{ $ligne }}"><flux:icon name="briefcase" class="size-5 text-ink-2" />{{ __('Espace agent') }}</a></li>
                     @endcan
+                    @if ($user->isAdmin())
+                        <li><a href="{{ route('filament.admin.pages.dashboard') }}" class="{{ $ligne }}" data-test="mobile-admin-space-link"><flux:icon name="shield-check" class="size-5 text-ink-2" />{{ __('Espace admin') }}</a></li>
+                    @endif
                     <li><a href="{{ route('profile.edit') }}" class="{{ $ligne }}"><flux:icon name="settings" class="size-5 text-ink-2" />{{ __('Paramètres') }}</a></li>
                 @else
                     <li><a href="{{ route('login') }}" class="{{ $ligne }}"><flux:icon name="log-out" class="size-5 rotate-180 text-ink-2" />{{ __('Connexion') }}</a></li>
@@ -130,6 +133,9 @@
                         <li><a href="{{ route('register') }}" class="{{ $ligne }}"><flux:icon name="users-round" class="size-5 text-ink-2" />{{ __('Créer un compte') }}</a></li>
                     @endif
                 @endauth
+                @if (Route::has('lexique'))
+                    <li><a href="{{ route('lexique') }}" class="{{ $ligne }}" data-test="mobile-lexique-link"><flux:icon name="book-open" class="size-5 text-ink-2" />{{ __('Lexique') }}</a></li>
+                @endif
                 <li class="flex min-h-12 items-center justify-between gap-3 px-3">
                     <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
                         <flux:icon name="language" class="size-5 text-ink-2" />{{ __('Langue') }}
@@ -147,12 +153,6 @@
                         <flux:icon name="magnifying-glass-plus" class="size-5 text-ink-2" />{{ __('Taille du texte') }}
                     </span>
                     <x-tn.text-size />
-                </li>
-                <li class="flex min-h-12 flex-wrap items-center justify-between gap-3 px-3 py-1">
-                    <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
-                        <flux:icon name="language" class="size-5 text-ink-2" />{{ __('Langue') }}
-                    </span>
-                    <x-tn.langue />
                 </li>
                 <li class="flex min-h-12 items-center justify-between gap-3 px-3">
                     <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">

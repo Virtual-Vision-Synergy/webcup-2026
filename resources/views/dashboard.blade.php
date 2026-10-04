@@ -7,10 +7,11 @@
     $user->loadMissing('role');
     // Uniquement les démarches de l'utilisateur connecté (jamais d'ID venant du navigateur).
     $demarches = $user->demarches()->with('service')->latest()->limit(5)->get();
-    $totalDemarches = $user->demarches()->count();
     // F86 : urgences médicales encore ouvertes de l'habitant, affichées tout en haut avec les numéros d'urgence.
     $urgencesOuvertes = $user->demarches()->urgencesATraiter()->latest()->limit(3)->get();
     $parStatut = $user->demarches()->selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut');
+    // F95 : le total se déduit du décompte par statut (une requête de moins).
+    $totalDemarches = (int) $parStatut->sum();
     // Alertes : démarches traitées ou refusées dans les 7 derniers jours.
     $alertes = $user->demarches()
         ->whereIn('statut', ['traitee', 'refusee'])
@@ -25,10 +26,14 @@
     $servicesPrioritaires = \App\Models\Service::hydrate(Cache::remember(\App\Models\Service::CACHE_SERVICES_PRIORITAIRES, 600, fn (): array => \App\Models\Service::query()
         ->where('mis_en_avant', true)->orderBy('nom')->limit(4)->get(['id', 'nom', 'slug', 'indisponible_depuis'])
         ->map(fn (\App\Models\Service $service): array => $service->getAttributes())->all()));
+    // F95 : interruptions en cours chargées en une requête (au lieu d'une par service affiché).
+    $servicesPrioritaires->load('interruptionCourante');
     $rubriques = array_filter(config('navigation.rubriques'), fn (array $r): bool => Route::has($r['route']));
     // D11 : résumé de « Mes demandes » (signalements de l'utilisateur connecté uniquement).
-    $totalMesDemandes = \App\Models\Signalement::duCitoyen($user)->count();
-    $mesDemandesEnCours = \App\Models\Signalement::duCitoyen($user)->whereNotIn('statut', \App\Models\Signalement::STATUTS_TERMINES)->count();
+    // F95 : un seul décompte par statut pour le total et les demandes en cours.
+    $mesDemandesParStatut = \App\Models\Signalement::duCitoyen($user)->selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut');
+    $totalMesDemandes = (int) $mesDemandesParStatut->sum();
+    $mesDemandesEnCours = (int) $mesDemandesParStatut->except(\App\Models\Signalement::STATUTS_TERMINES)->sum();
 @endphp
 
 <x-layouts::app :title="__('Dashboard')">
@@ -96,8 +101,8 @@
         @if (($user->isAgent() || $user->isAdmin()) && ! $user->hasEnabledTwoFactorAuthentication())
             <p class="rounded-md border border-magenta/35 bg-magenta/8 px-4 py-3 text-sm text-ink-2" role="status">
                 <flux:icon name="shield-check" class="me-1 inline size-4 text-magenta" aria-hidden="true" />
-                Votre compte {{ $user->role->label }} donne accès aux données des habitants : la double authentification est fortement recommandée.
-                <a href="{{ route('security.edit') }}" wire:navigate class="font-medium text-magenta underline underline-offset-2">Activer la double authentification</a>
+                Votre compte {{ $user->role->label }} donne accès aux données des habitants : la vérification en deux étapes est fortement recommandée.
+                <a href="{{ route('security.edit') }}" wire:navigate class="font-medium text-magenta underline underline-offset-2">Activer la vérification en deux étapes</a>
             </p>
         @endif
 
@@ -165,7 +170,7 @@
                                     <span class="block truncate text-sm text-ink-2">{{ $demarche->service?->nom ?? 'Service non précisé' }} · <span class="font-mono text-xs">{{ $demarche->created_at->format('d.m.Y') }}</span></span>
                                     <x-slot:aside>
                                         @if ($demarche->urgence_medicale)
-                                            <x-tn.status-badge etat="alerte">Urgence médicale</x-tn.status-badge>
+                                            <x-badge-urgence-medicale />
                                         @endif
                                         <x-tn.status-badge :etat="$demarche->etatStatut()">{{ Demarche::libelleStatut($demarche->statut) }}</x-tn.status-badge>
                                     </x-slot:aside>

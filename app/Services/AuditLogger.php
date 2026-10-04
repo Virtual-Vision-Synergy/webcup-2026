@@ -30,6 +30,9 @@ class AuditLogger
 
     private static bool $enabled = true;
 
+    /** F85 : actions comptées pour repérer les modifications massives. */
+    private const ACTIONS_MODIFICATION = ['created', 'updated', 'deleted', 'status_changed'];
+
     /** Attribut de requête : le refus de cette requête est déjà au journal (F70). */
     public const REFUS_JOURNALISE = 'audit.refus_journalise';
 
@@ -65,6 +68,12 @@ class AuditLogger
             } catch (Throwable $e) {
                 report($e);
             }
+
+            // F85 : modifications massives d'un même compte → événement de sécurité.
+            $acteur = auth()->user();
+            if ($acteur instanceof User && in_array($entry['action'], self::ACTIONS_MODIFICATION, true)) {
+                app(SurveillanceSecurite::class)->compterModification($acteur);
+            }
         });
     }
 
@@ -97,6 +106,12 @@ class AuditLogger
         }
 
         $request->attributes->set(self::REFUS_JOURNALISE, true);
+
+        // F85 : accès refusés répétés → événement de sécurité.
+        $utilisateur = $request->user();
+        if ($utilisateur instanceof User) {
+            app(SurveillanceSecurite::class)->compterRefus($utilisateur);
+        }
 
         // Pour une action Livewire, la page d'origine est plus parlante que /livewire/update.
         $page = $request->is('livewire*/update') ? (string) $request->headers->get('referer', $request->fullUrl()) : $request->fullUrl();

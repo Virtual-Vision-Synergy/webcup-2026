@@ -71,6 +71,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Mode dégradé (F77)
+    |--------------------------------------------------------------------------
+    |
+    | Surcharge des serveurs : pages allégées, rafraîchissements espacés et
+    | pages publiques mises en cache. Également activable depuis /admin.
+    |
+    */
+
+    'mode_degrade' => (bool) env('MODE_DEGRADE', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

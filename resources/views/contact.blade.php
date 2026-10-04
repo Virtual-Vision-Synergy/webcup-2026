@@ -4,6 +4,7 @@
         @include('partials.head', ['title' => 'Contact', 'description' => 'Contactez la mairie'])
     </head>
     <body class="min-h-screen bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
+        <x-tn.bandeau-mode-degrade />
         <header class="border-b border-zinc-200 dark:border-zinc-800">
             <div class="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-3">
                 <a href="{{ route('home') }}" class="flex items-center gap-2 font-semibold" aria-label="{{ config('app.name') }} — accueil">

@@ -28,7 +28,7 @@ new #[Layout('layouts::public'), Title('Alerte')] class extends Component {
 
 <section class="mx-auto w-full max-w-3xl space-y-6 px-4 py-6 lg:px-8">
     <x-tn.page-header
-        label="Alerte en cours"
+        :label="$record->estOfficiel() ? 'Message officiel du Haut Conseil' : 'Alerte en cours'"
         :title="$record->titre"
         :subtitle="$record->estCiblee() ? 'Quartier '.$record->nomQuartier().' uniquement' : 'Toute la ville de Nova Terra'"
     >
@@ -39,12 +39,15 @@ new #[Layout('layouts::public'), Title('Alerte')] class extends Component {
                     <x-tn.status-badge etat="alerte">Concerne votre quartier : {{ $record->nomQuartier() }}</x-tn.status-badge>
                 @endif
             </div>
+            <x-tn.mots-utiles class="mt-3" :slugs="['alerte', 'quartier']" />
         </x-slot:meta>
     </x-tn.page-header>
 
     <x-tn.bandeau-annonce
         class="rounded-md border"
         variante="renforce"
+        :officiel="$record->estOfficiel()"
+        :date="$record->debut"
         :niveau="$record->niveau"
         :titre="$record->titre"
         :contenu="$record->contenu"

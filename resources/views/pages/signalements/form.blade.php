@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\ProtegeContreRobots;
 use App\Concerns\ThrottlesPerUser;
 use App\Models\Signalement;
 use App\Services\OptimiseurImage;
@@ -11,7 +12,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 
 new #[Title('Signalement')] class extends Component {
-    use ThrottlesPerUser, WithFileUploads;
+    use ProtegeContreRobots, ThrottlesPerUser, WithFileUploads;
 
     #[Locked]
     public ?Signalement $record = null;
@@ -33,6 +34,7 @@ new #[Title('Signalement')] class extends Component {
             $this->lieu = (string) $signalement->lieu;
         } else {
             $this->authorize('create', Signalement::class);
+            $this->initialiserAntiRobot('signalement');
         }
     }
 
@@ -65,8 +67,17 @@ new #[Title('Signalement')] class extends Component {
 
         $validated = $this->validate();
 
-        // F78 : 10 envois par minute et par habitant au plus (message clair sous le formulaire).
-        $this->throttlePerUser('signalement', maxAttempts: 10, decaySeconds: 60);
+        if ($this->record) {
+            // F78 : 10 enregistrements par minute et par habitant au plus (message clair sous le formulaire).
+            $this->throttlePerUser('signalement', maxAttempts: 10, decaySeconds: 60);
+        } else {
+            // F81 : champ piège, délai minimal, 10 envois par minute par compte et 30 par IP (journalisés si bloqués).
+            $this->verifierAntiRobot(
+                'signalement',
+                parCompte: (int) config('security.formulaires.limites.signalement.compte'),
+                parIp: (int) config('security.formulaires.limites.signalement.ip'),
+            );
+        }
 
         if ($this->photo) {
             $optimiseur = app(OptimiseurImage::class);
@@ -102,8 +113,12 @@ new #[Title('Signalement')] class extends Component {
             : ['Mon espace' => route('dashboard'), 'Signalements' => route('signalements.index'), 'Nouveau' => null]"
     />
 
-    <form wire:submit="save" class="space-y-6">
+    <form wire:submit="save" class="relative space-y-6">
         <x-tn.mention-obligatoire />
+
+        @unless ($record)
+            <x-anti-robot-livewire />
+        @endunless
 
         <fieldset class="space-y-3" data-requis>
             <legend class="tn-display mb-1 text-lg font-semibold text-ink">{{ __('Type de problème') }}</legend>

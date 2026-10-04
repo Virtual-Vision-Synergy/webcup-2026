@@ -6,9 +6,18 @@
 
         <flux:heading size="xl" level="1">{{ __('Trop de demandes en peu de temps') }}</flux:heading>
 
+        @isset($message)
+            {{-- F81 : délai précis transmis par le limiteur (inscription, mot de passe oublié). --}}
+            <flux:callout variant="warning" icon="clock" class="text-start" data-test="message-429">
+                <flux:callout.text>{{ $message }}</flux:callout.text>
+            </flux:callout>
+        @endisset
+
         <flux:text>
             {{ __('Par sécurité et pour que la plateforme reste disponible pour tous les habitants, cette action est limitée.') }}
-            {{ __('Patientez une minute, puis réessayez : vos informations ne sont pas perdues.') }}
+            @unless (isset($message))
+                {{ __('Patientez une minute, puis réessayez : vos informations ne sont pas perdues.') }}
+            @endunless
         </flux:text>
 
         <div class="flex flex-wrap justify-center gap-3">

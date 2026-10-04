@@ -46,13 +46,17 @@ test('supprimer efface l\'image et sa miniature', function () {
 test('la photo d\'un signalement est optimisée à l\'enregistrement et affichée en différé', function () {
     $user = User::factory()->create();
 
-    Livewire::actingAs($user)
+    $formulaire = Livewire::actingAs($user)
         ->test('pages::signalements.form')
         ->set('categorie', 'voirie')
         ->set('description', 'Nid-de-poule profond devant l\'école.')
         ->set('lieu', 'Rue des Lumières')
-        ->set('photo', UploadedFile::fake()->image('nid.jpg', 3200, 2400))
-        ->call('save')
+        ->set('photo', UploadedFile::fake()->image('nid.jpg', 3200, 2400));
+
+    // F81 : un humain met plus de 3 secondes à remplir le formulaire.
+    $this->travel(5)->seconds();
+
+    $formulaire->call('save')
         ->assertHasNoErrors();
 
     $signalement = Signalement::where('user_id', $user->id)->firstOrFail();

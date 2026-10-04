@@ -19,7 +19,7 @@ test('un admin peut accéder à l\'admin', function () {
 });
 
 test('on ne peut pas devenir admin en trafiquant l\'inscription', function () {
-    $this->post('/register', [
+    $this->post('/register', jetonAntiRobot('inscription') + [
         'name' => 'Pirate',
         'email' => 'pirate@test.com',
         'password' => 'Password123!',
@@ -38,11 +38,11 @@ test('la connexion est bloquée après trop de tentatives', function () {
     $user = User::factory()->create();
 
     foreach (range(1, 5) as $i) {
-        $this->post('/login', ['email' => $user->email, 'password' => 'mauvais']);
+        $this->post('/login', jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'mauvais']);
     }
 
     // F37 : le blocage renvoie vers /login avec un message en français (plus de 429 du middleware throttle).
-    $this->post('/login', ['email' => $user->email, 'password' => 'password'])
+    $this->post('/login', jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'password'])
         ->assertSessionHasErrors(['email' => 'Trop de tentatives de connexion. Par sécurité, réessayez dans 15 minutes.']);
 
     $this->assertGuest();

@@ -1,28 +1,25 @@
-{{--
-    F94 : page d'erreur 500 volontairement autonome (ni gabarit, ni base, ni session, ni JS) : elle s'affiche
-    même quand la base est coupée et renvoie vers la page « Infos essentielles » (fichier statique).
---}}
+{{-- D14 : page 500 autonome (sans base de données, sans session ni Vite) pour s'afficher même quand tout le reste échoue. --}}
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Une erreur est survenue · {{ config('app.name') }}</title>
+    <title>{{ __('Erreur 500') }} · Terra Nova</title>
     <style>
-        :root { color-scheme: light dark; }
-        body { margin: 0; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-        main { max-width: 36rem; margin: 0 auto; padding: 4rem 1rem; text-align: center; }
-        a { color: #0e7490; font-weight: 600; }
-        @media (prefers-color-scheme: dark) { a { color: #5fd4e8; } }
+        body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: system-ui, sans-serif; background: #0f172a; color: #e2e8f0; padding: 1rem; }
+        main { max-width: 36rem; text-align: center; }
+        p.code { font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: #94a3b8; }
+        h1 { font-size: 1.75rem; margin: .5rem 0 1rem; }
+        a { display: inline-block; margin-top: 1.5rem; padding: .6rem 1.2rem; border-radius: .375rem; background: #00687B; color: #fff; text-decoration: none; }
     </style>
 </head>
 <body>
-<main>
-    <p>Erreur 500</p>
-    <h1>Une erreur est survenue</h1>
-    <p>La plateforme rencontre un problème technique. Nos équipes sont prévenues ; vos démarches déjà déposées restent enregistrées.</p>
-    <p data-test="lien-infos-essentielles"><a href="/infos-essentielles">Infos essentielles : consignes, numéros d’urgence et coordonnées de la mairie →</a></p>
-    <p><a href="/">Réessayer depuis l’accueil</a></p>
-</main>
+    <main>
+        <p class="code">{{ __('Erreur 500') }}</p>
+        <h1>{{ __('Un problème technique est survenu') }}</h1>
+        <p>{{ __('Le service rencontre une difficulté momentanée. Réessayez dans quelques instants ; vos démarches déjà envoyées sont bien enregistrées.') }}</p>
+        <p data-test="lien-infos-essentielles"><a href="/infos-essentielles">{{ __('Infos essentielles : consignes, numéros d’urgence et coordonnées de la mairie') }} →</a></p>
+        <a href="{{ url('/') }}">{{ __('Accueil') }}</a>
+    </main>
 </body>
 </html>

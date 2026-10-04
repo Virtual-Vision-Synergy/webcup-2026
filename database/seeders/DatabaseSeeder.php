@@ -108,6 +108,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call(ServiceSeeder::class);
 
+        // F27 : versions anglaises de quatre fiches (deux services laissés en français pour montrer le repli).
+        $this->call(ServiceTranslationSeeder::class);
+
         // D10 : synonymes d'orientation (« poubelle » → Environnement et propreté), éditables dans Filament.
         $this->call(MotsClesServiceSeeder::class);
 
@@ -270,6 +273,9 @@ class DatabaseSeeder extends Seeder
             // F98 : 120 jours de consultations et de démarches pour le tableau de bord « Usage des services ».
             $this->call(UsageServicesSeeder::class);
         }
+
+        // F97 : ligne 7 interrompue avec solutions de remplacement, trajet habituel de user@example.com sur cette ligne.
+        $this->call(InterruptionTransportSeeder::class);
 
         // make:feature:seeders
     }

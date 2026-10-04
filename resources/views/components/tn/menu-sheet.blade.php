@@ -151,12 +151,6 @@
                     </span>
                     <x-tn.text-size />
                 </li>
-                <li class="flex min-h-12 flex-wrap items-center justify-between gap-3 px-3 py-1">
-                    <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
-                        <flux:icon name="language" class="size-5 text-ink-2" />{{ __('Langue') }}
-                    </span>
-                    <x-tn.langue />
-                </li>
                 <li class="flex min-h-12 items-center justify-between gap-3 px-3">
                     <span class="flex items-center gap-3 text-[0.9375rem] font-medium text-ink">
                         <flux:icon name="moon" class="size-5 text-ink-2" />{{ __('Apparence') }}

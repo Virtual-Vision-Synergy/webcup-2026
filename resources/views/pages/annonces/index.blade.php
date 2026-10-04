@@ -159,7 +159,13 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
                     @php($statut = $this::STATUTS[$item->statut()])
                     <flux:table.row wire:key="annonce-{{ $item->id }}">
                         <flux:table.cell class="max-w-xs">
-                            <p class="truncate font-medium text-ink">{{ $item->titre }}</p>
+                            <p class="flex items-center gap-1.5 font-medium text-ink">
+                                @if ($item->estOfficiel())
+                                    <flux:icon.building-library class="size-4 shrink-0" aria-hidden="true" />
+                                    <span class="shrink-0 rounded-xs bg-ink px-1 font-mono text-[10px] uppercase text-surface">Officiel</span>
+                                @endif
+                                <span class="truncate">{{ $item->titre }}</span>
+                            </p>
                             <p class="truncate text-xs text-ink-2">{{ $item->quartier ? 'Quartier '.$item->quartier->nom : 'Toute la ville' }} · Par {{ $item->user?->name ?? '—' }}</p>
                         </flux:table.cell>
                         <flux:table.cell>

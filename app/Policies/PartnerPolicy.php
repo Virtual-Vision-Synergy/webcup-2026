@@ -39,9 +39,12 @@ class PartnerPolicy
         return $this->gere($user);
     }
 
+    /**
+     * D09 : suppression réservée à l'administrateur (un agent reçoit 403).
+     */
     public function delete(User $user, Partner $partner): bool
     {
-        return $this->gere($user);
+        return $user->isAdmin();
     }
 
     private function gere(User $user): bool

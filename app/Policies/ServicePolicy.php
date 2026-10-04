@@ -35,9 +35,12 @@ class ServicePolicy
         return $user->isAdmin() || $user->isAgent() || $service->user_id === $user->id;
     }
 
+    /**
+     * D09 : suppression réservée à l'administrateur (un agent reçoit 403).
+     */
     public function delete(User $user, Service $service): bool
     {
-        return $user->isAdmin() || $service->user_id === $user->id;
+        return $user->isAdmin();
     }
 
     /**

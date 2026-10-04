@@ -114,6 +114,12 @@ export function initialiser(el) {
         subdomains: 'abcd',
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
     }).addTo(carte);
+    // F93 : fond de carte injoignable (réseau coupé ou fournisseur en panne) : message clair, repères conservés.
+    tuiles.once('tileerror', () => {
+        if (message) {
+            message.textContent = 'Fond de carte momentanément indisponible (connexion coupée ou lente). Les repères et adresses restent affichés.';
+        }
+    });
     const observateurTheme = new MutationObserver(() => tuiles.setUrl(urlTuiles()));
     observateurTheme.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     carte.on('unload', () => observateurTheme.disconnect());

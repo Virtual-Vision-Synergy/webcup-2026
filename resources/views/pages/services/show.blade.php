@@ -6,6 +6,7 @@ use App\Models\RendezVous;
 use App\Models\Service;
 use App\Models\ServiceInterruption;
 use App\Models\ServiceReview;
+use App\Models\VueService;
 use App\Services\OnboardingProgress;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
@@ -42,6 +43,9 @@ new #[Title('Service')] class extends Component {
 
         // Parcours de prise en main (D12), étape « Trouver un service » : sans effet hors parcours en cours.
         OnboardingProgress::pour(auth()->user())->marquerServiceVisite($service);
+
+        // F98 : compteur anonymisé des consultations (aucune donnée personnelle enregistrée).
+        VueService::enregistrer($service, auth()->user());
     }
 
     /**

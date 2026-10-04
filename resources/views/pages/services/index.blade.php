@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\Partner;
+use App\Models\PartnerOffering;
 use App\Models\Service;
 use App\Services\OrientationServices;
 use App\Support\VersionSimple;
@@ -31,6 +33,14 @@ new #[Title('Services')] class extends Component {
     #[Url(except: false)]
     public bool $disponibles = false;
 
+    /** F99 : statut Disponible ET ouvert à l'instant (services partenaires : horaires ; services municipaux : pleinement disponibles). */
+    #[Url(except: false)]
+    public bool $maintenant = false;
+
+    /** F99 : « Tous / Services municipaux / Services partenaires ». */
+    #[Url(except: 'tous')]
+    public string $type = 'tous';
+
     /** F45 : affichage en liste (cartes paginées) ou sur la carte des lieux d'accueil. */
     #[Url(except: 'liste')]
     public string $vue = 'liste';
@@ -60,6 +70,77 @@ new #[Title('Services')] class extends Component {
         $this->resetPage();
     }
 
+    public function updatedMaintenant(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedType(): void
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * F99 : type de catalogue demandé ; une valeur inconnue (URL modifiée à la main) vaut « tous ».
+     */
+    public function typeCatalogue(): string
+    {
+        return array_key_exists($this->type, PartnerOffering::TYPE_CATALOGUE_OPTIONS) ? $this->type : 'tous';
+    }
+
+    public function afficheMunicipaux(): bool
+    {
+        return $this->typeCatalogue() !== 'partenaires';
+    }
+
+    public function affichePartenaires(): bool
+    {
+        // « Mes services uniquement » concerne les services municipaux d'un agent.
+        return $this->typeCatalogue() !== 'municipaux' && ! $this->mine && ! $this->enCarte();
+    }
+
+    /**
+     * F99 : services partenaires publiés (partenaire publié), mêmes recherche et filtres que le catalogue.
+     * « Disponible maintenant » : statut Disponible ET ouvert à l'instant selon les horaires (openingStatus, F74).
+     *
+     * @return \Illuminate\Support\Collection<int, PartnerOffering>
+     */
+    #[Computed]
+    public function offresPartenaires(): \Illuminate\Support\Collection
+    {
+        if (! $this->affichePartenaires()) {
+            return collect();
+        }
+
+        $search = trim($this->search);
+        $categorie = in_array($this->categorie, Partner::TYPE_OPTIONS, true) ? $this->categorie : null;
+
+        // Catégorie municipale sans équivalent chez les partenaires : aucun service partenaire.
+        if ($this->categorie !== '' && $categorie === null) {
+            return collect();
+        }
+
+        $offres = PartnerOffering::query()
+            ->published()
+            ->with('partner')
+            ->when($search !== '', function ($query) use ($search) {
+                $term = '%'.$search.'%';
+                $query->where(fn ($q) => $q->where('title', 'like', $term)
+                    ->orWhere('description', 'like', $term)
+                    ->orWhereHas('partner', fn ($p) => $p->where('name', 'like', $term)));
+            })
+            ->when($categorie !== null, fn ($query) => $query->whereHas('partner', fn ($p) => $p->where('type', $categorie)))
+            ->when($this->disponibles || $this->maintenant, fn ($query) => $query->where('status', PartnerOffering::STATUS_AVAILABLE))
+            ->orderByRaw("case status when 'available' then 0 when 'full' then 1 else 2 end")
+            ->orderBy('title')
+            ->limit(30)
+            ->get();
+
+        return $this->maintenant
+            ? $offres->filter(fn (PartnerOffering $offre): bool => $offre->estDisponibleMaintenant())->values()
+            : $offres;
+    }
+
     public function afficher(string $vue): void
     {
         $this->authorize('viewAny', Service::class);
@@ -75,13 +156,13 @@ new #[Title('Services')] class extends Component {
 
     public function resetFilters(): void
     {
-        $this->reset('search', 'categorie', 'mine', 'disponibles');
+        $this->reset('search', 'categorie', 'mine', 'disponibles', 'maintenant', 'type');
         $this->resetPage();
     }
 
     public function hasFilters(): bool
     {
-        return trim($this->search) !== '' || $this->categorie !== '' || $this->mine || $this->disponibles;
+        return trim($this->search) !== '' || $this->categorie !== '' || $this->mine || $this->disponibles || $this->maintenant || $this->typeCatalogue() !== 'tous';
     }
 
     /**
@@ -164,7 +245,9 @@ new #[Title('Services')] class extends Component {
             // Une valeur inconnue (URL modifiée à la main) est ignorée.
             ->when(in_array($this->categorie, Service::CATEGORIE_OPTIONS, true), fn ($query) => $query->where('categorie', $this->categorie))
             ->when($this->mine, fn ($query) => $query->whereBelongsTo(auth()->user()))
-            ->when($this->disponibles, fn ($query) => $query->pleinementDisponibles());
+            ->when($this->disponibles || $this->maintenant, fn ($query) => $query->pleinementDisponibles())
+            // F99 : « Services partenaires » seuls → aucun service municipal.
+            ->when(! $this->afficheMunicipaux(), fn ($query) => $query->whereRaw('1 = 0'));
     }
 
     #[Computed]
@@ -289,7 +372,14 @@ new #[Title('Services')] class extends Component {
                 <flux:select.option value="{{ $valeur }}">{{ __($label) }}</flux:select.option>
             @endforeach
         </flux:select>
+        {{-- F99 : municipaux / partenaires / tous, et « Disponible maintenant » (filtres GET, combinables). --}}
+        <flux:select wire:model.live="type" aria-label="{{ __('Type de service') }}" class="sm:max-w-56" data-test="filtre-type">
+            @foreach (PartnerOffering::TYPE_CATALOGUE_OPTIONS as $valeur => $label)
+                <flux:select.option value="{{ $valeur }}">{{ __($label) }}</flux:select.option>
+            @endforeach
+        </flux:select>
         <flux:checkbox wire:model.live="disponibles" label="{{ __('Disponibles seulement') }}" />
+        <flux:checkbox wire:model.live="maintenant" label="{{ __('Disponible maintenant') }}" data-test="filtre-maintenant" />
         @can('create', Service::class)
             <flux:checkbox wire:model.live="mine" label="{{ __('Mes services uniquement') }}" />
         @endcan
@@ -339,6 +429,37 @@ new #[Title('Services')] class extends Component {
         </section>
     @endif
 
+    {{-- F99 : services proposés par les partenaires de la ville (badge « Partenaire », état en texte + icône, prochaine action). --}}
+    @if ($this->affichePartenaires() && $this->offresPartenaires->isNotEmpty())
+        <section aria-labelledby="titre-partenaires" class="space-y-3" data-test="services-partenaires">
+            <h2 id="titre-partenaires" class="flex items-center gap-2 font-semibold text-ink">
+                <flux:icon name="building-storefront" class="size-5 text-violet-400" aria-hidden="true" />
+                {{ __('Services partenaires') }}
+                <span class="text-sm font-normal text-ink-2">({{ $this->offresPartenaires->count() }})</span>
+            </h2>
+            <ul class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                @foreach ($this->offresPartenaires as $offre)
+                    @php($ouverture = $offre->openingStatus())
+                    <li wire:key="offre-{{ $offre->id }}" class="group relative flex min-w-0 flex-col rounded-md border border-line bg-surface p-5 transition-colors hover:border-cyan/40">
+                        <div class="mb-3 flex flex-wrap gap-1.5">
+                            <x-service-status :service="$offre" compact />
+                            <flux:badge size="sm" color="violet" icon="building-storefront">{{ __('Partenaire') }}</flux:badge>
+                        </div>
+                        <h3 class="font-semibold text-ink">
+                            <a href="{{ route('catalogue.partners.show', $offre) }}" wire:navigate class="after:absolute after:inset-0 group-hover:text-cyan">{{ __($offre->title) }}</a>
+                        </h3>
+                        <p class="text-sm text-ink-2">{{ __('Proposé par :partenaire', ['partenaire' => $offre->partner->name]) }}</p>
+                        <p class="mt-1 line-clamp-2 text-sm text-ink-2">{{ __($offre->description) }}</p>
+                        <dl class="mt-4 space-y-1.5 border-t border-line pt-3 text-sm">
+                            <div class="flex gap-2"><dt class="sr-only">{{ __('Ouverture') }}</dt><flux:icon :name="$ouverture['open'] ? 'clock' : 'moon'" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="text-xs leading-5 text-ink-2">{{ $ouverture['label'] }}</dd></div>
+                            <div class="flex gap-2"><dt class="sr-only">{{ __('Prochaine étape') }}</dt><flux:icon name="arrow-right-circle" class="mt-0.5 size-4 shrink-0 text-cyan" /><dd class="text-xs font-medium leading-5 text-cyan">{{ __($offre->prochaineAction()['principale']['label']) }}</dd></div>
+                        </dl>
+                    </li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
+
     @if ($this->enCarte())
         @if ($this->lieux->isEmpty())
             <x-tn.empty icon="map" title="{{ __('Aucun lieu à afficher') }}" text="{{ $this->hasFilters() ? __('Aucun service localisé ne correspond à cette recherche ou cette catégorie.') : __('Les lieux d\'accueil des services seront bientôt placés sur la carte.') }}">
@@ -378,13 +499,16 @@ new #[Title('Services')] class extends Component {
                 </section>
             </div>
         @endif
-    @elseif ($this->items->isEmpty() && $this->hasFilters())
+    @elseif ($this->items->isEmpty() && $this->offresPartenaires->isEmpty() && $this->hasFilters())
         <x-tn.empty icon="magnifying-glass" title="{{ __('Aucun service ne correspond') }}" text="{{ __('Aucun résultat pour cette recherche ou cette catégorie. Essayez un autre mot (ex. « santé », « état civil ») ou affichez tout le catalogue.') }}">
             <flux:button variant="primary" icon="x-mark" wire:click="resetFilters">{{ __('Effacer les filtres') }}</flux:button>
         </x-tn.empty>
-    @elseif ($this->items->isEmpty())
+    @elseif ($this->items->isEmpty() && $this->offresPartenaires->isEmpty())
         <x-tn.empty icon="landmark" title="{{ __('Aucun service pour le moment') }}" text="{{ __('Revenez plus tard : l\'annuaire est en cours de publication.') }}" />
-    @else
+    @elseif ($this->items->isNotEmpty())
+        @if ($this->offresPartenaires->isNotEmpty())
+            <h2 class="flex items-center gap-2 font-semibold text-ink"><flux:icon name="landmark" class="size-5 text-cyan" aria-hidden="true" />{{ __('Services municipaux') }}</h2>
+        @endif
         <ul class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             @foreach ($this->items as $item)
                 <li wire:key="row-{{ $item->id }}" @class(['group relative flex min-w-0 flex-col rounded-md border bg-surface p-5 transition-colors hover:border-cyan/40', 'border-cyan/40' => $item->mis_en_avant, 'border-line' => ! $item->mis_en_avant])>

@@ -20,6 +20,12 @@ class ModeAllege
         }
 
         $request ??= request();
+
+        // F62 : la version simple va plus loin que le mode allégé, elle l'inclut donc.
+        if (VersionSimple::actif($request)) {
+            return true;
+        }
+
         $user = $request->user();
 
         if ($user !== null) {

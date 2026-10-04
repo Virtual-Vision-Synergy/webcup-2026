@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 
 /**
  * F85 : événement de sécurité (activité inhabituelle détectée).
@@ -23,7 +23,7 @@ use Illuminate\Support\Carbon;
  * @property array<string, mixed>|null $details
  * @property string|null $ip
  * @property string|null $user_agent
- * @property Carbon|null $created_at
+ * @property CarbonInterface|null $created_at
  */
 class SecurityEvent extends Model
 {
@@ -100,7 +100,7 @@ class SecurityEvent extends Model
     }
 
     /**
-     * @return Builder<static>
+     * @return Builder<self>
      */
     public function prunable(): Builder
     {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,8 +19,8 @@ use Illuminate\Support\Carbon;
  * @property string $table_concernee
  * @property int|null $enregistrement_id
  * @property string $description
- * @property Carbon|null $detectee_le
- * @property Carbon|null $resolue_le
+ * @property CarbonInterface|null $detectee_le
+ * @property CarbonInterface|null $resolue_le
  * @property int|null $resolue_par
  * @property-read User|null $resolveur
  * @property string|null $resolution

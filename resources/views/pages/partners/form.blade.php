@@ -1,9 +1,12 @@
 <?php
 
 use App\Models\Partner;
+use App\Models\User;
 use Flux\Flux;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
@@ -30,6 +33,9 @@ new #[Layout('layouts::agent'), Title('Espace agent — Partenaire')] class exte
 
     /** @var array<string, array<int, array{start: string, end: string}>> */
     public array $hours = [];
+
+    /** F99 : e-mail du compte à rattacher à ce partenaire (admin uniquement). */
+    public string $compteEmail = '';
 
     public function mount(?Partner $partner = null): void
     {
@@ -171,6 +177,61 @@ new #[Layout('layouts::agent'), Title('Espace agent — Partenaire')] class exte
         return $semaine;
     }
 
+    /**
+     * F99 : comptes partenaires rattachés à ce partenaire.
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function comptes(): Collection
+    {
+        return $this->record?->comptes()->orderBy('name')->get(['id', 'name', 'email', 'role_id', 'partner_id']) ?? new Collection;
+    }
+
+    /**
+     * F99 : rattache un compte existant (citoyen) : rôle partenaire + partner_id, jamais par assignation de masse.
+     */
+    public function rattacherCompte(): void
+    {
+        abort_if($this->record === null, 404);
+        $this->authorize('linkAccount', $this->record);
+
+        $this->validate(['compteEmail' => ['required', 'email', 'max:255']], [], ['compteEmail' => 'e-mail du compte']);
+
+        $compte = User::query()->where('email', mb_strtolower(trim($this->compteEmail)))->first();
+
+        if ($compte === null) {
+            $this->addError('compteEmail', 'Aucun compte ne correspond à cet e-mail : la personne doit d\'abord créer son compte.');
+
+            return;
+        }
+
+        try {
+            $compte->rattacherAuPartenaire($this->record);
+        } catch (\DomainException $e) {
+            $this->addError('compteEmail', $e->getMessage());
+
+            return;
+        }
+
+        $this->reset('compteEmail');
+        unset($this->comptes);
+
+        Flux::toast(variant: 'success', text: 'Compte rattaché : il peut gérer les services de ce partenaire.');
+    }
+
+    public function detacherCompte(int $userId): void
+    {
+        abort_if($this->record === null, 404);
+        $this->authorize('linkAccount', $this->record);
+
+        $compte = $this->record->comptes()->whereKey($userId)->firstOrFail();
+        $compte->detacherDuPartenaire();
+        unset($this->comptes);
+
+        Flux::toast(variant: 'success', text: 'Compte détaché : il redevient un compte citoyen.');
+    }
+
     public function delete(): void
     {
         abort_if($this->record === null, 404);
@@ -256,4 +317,34 @@ new #[Layout('layouts::agent'), Title('Espace agent — Partenaire')] class exte
             @endif
         </div>
     </form>
+
+    {{-- F99 : comptes partenaires (rôle « partenaire » + rattachement), attribués uniquement par un administrateur. --}}
+    @if ($record)
+        @can('linkAccount', $record)
+            <section aria-labelledby="titre-comptes" class="space-y-4 rounded-md border border-line bg-surface p-5 md:p-6">
+                <div>
+                    <h2 id="titre-comptes" class="font-semibold text-ink">{{ __('Comptes partenaires') }}</h2>
+                    <flux:text class="text-sm">{{ __('Ces comptes gèrent uniquement les services de ce partenaire (espace partenaire).') }}</flux:text>
+                </div>
+
+                @if ($this->comptes->isEmpty())
+                    <flux:text class="text-sm">{{ __('Aucun compte rattaché pour le moment.') }}</flux:text>
+                @else
+                    <ul class="divide-y divide-line rounded-sm border border-line">
+                        @foreach ($this->comptes as $compte)
+                            <li wire:key="compte-{{ $compte->id }}" class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm">
+                                <span><span class="font-medium">{{ $compte->name }}</span> <span class="text-ink-2">{{ $compte->email }}</span></span>
+                                <flux:button size="sm" variant="ghost" icon="link-slash" wire:click="detacherCompte({{ $compte->id }})" wire:confirm="{{ __('Détacher ce compte ?') }}">{{ __('Détacher') }}</flux:button>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+
+                <form wire:submit="rattacherCompte" class="flex flex-col gap-2 sm:flex-row sm:items-end">
+                    <flux:input wire:model="compteEmail" type="email" :label="__('E-mail d\'un compte existant')" class="sm:max-w-sm" />
+                    <flux:button type="submit" icon="link">{{ __('Rattacher') }}</flux:button>
+                </form>
+            </section>
+        @endcan
+    @endif
 </section>

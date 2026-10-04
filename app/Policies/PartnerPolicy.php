@@ -47,6 +47,14 @@ class PartnerPolicy
         return $user->isAdmin();
     }
 
+    /**
+     * F99 : rattacher / détacher un compte partenaire (rôle et partner_id) : administrateur uniquement.
+     */
+    public function linkAccount(User $user, Partner $partner): bool
+    {
+        return $user->isAdmin();
+    }
+
     private function gere(User $user): bool
     {
         return $user->isAdmin() || $user->isAgent();

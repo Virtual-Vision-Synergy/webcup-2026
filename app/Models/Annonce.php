@@ -33,15 +33,17 @@ use Illuminate\Support\Facades\Cache;
  * @property Carbon $fin
  * @property Carbon|null $impact_prevu_le Début estimé de la perturbation annoncée (F104), pour le compte à rebours.
  * @property bool $officiel Message officiel du Haut Conseil (F73) ; assigné dans le code, par un administrateur uniquement.
+ * @property string|null $langage_clair Version en langage clair (F89), rédigée par l'agent.
+ * @property Carbon|null $langage_clair_valide_le Validation de la version en langage clair (F89) ; assignée dans le code uniquement.
  * @property Carbon|null $notified_at Envoi de la notification aux habitants (F30) ; assigné par NotifierAnnonce uniquement.
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $user
  * @property-read Quartier|null $quartier
  *
- * user_id (l'auteur), officiel et notified_at ne sont volontairement PAS remplissables : ils sont assignés dans le code.
+ * user_id (l'auteur), officiel, langage_clair_valide_le et notified_at ne sont volontairement PAS remplissables : ils sont assignés dans le code.
  */
-#[Fillable(['titre', 'contenu', 'niveau', 'debut', 'fin', 'quartier_id', 'consignes', 'impact_prevu_le'])]
+#[Fillable(['titre', 'contenu', 'niveau', 'debut', 'fin', 'quartier_id', 'consignes', 'impact_prevu_le', 'langage_clair'])]
 class Annonce extends Model
 {
     /** @use HasFactory<AnnonceFactory> */
@@ -229,6 +231,14 @@ class Annonce extends Model
         return (bool) $this->officiel;
     }
 
+    /**
+     * F89 : la version en langage clair n'est montrée aux habitants qu'une fois rédigée ET validée.
+     */
+    public function langageClairPublie(): bool
+    {
+        return filled($this->langage_clair) && $this->langage_clair_valide_le !== null;
+    }
+
     public function estCiblee(): bool
     {
         return $this->quartier_id !== null;
@@ -369,6 +379,7 @@ class Annonce extends Model
             'fin' => 'datetime',
             'impact_prevu_le' => 'datetime',
             'notified_at' => 'datetime',
+            'langage_clair_valide_le' => 'datetime',
             'officiel' => 'boolean',
             'quartier_id' => 'integer',
         ];

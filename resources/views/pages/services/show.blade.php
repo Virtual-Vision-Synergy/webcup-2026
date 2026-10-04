@@ -280,9 +280,11 @@ new #[Title('Service')] class extends Component {
     <x-audit-history :subject="$record" variant="resume" />
 
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        {{-- F89 : version simple en langage clair (relue par la mairie, sinon simplifiée automatiquement). --}}
         <x-tn.surface>
-            <x-tn.section-label as="h2" class="mb-3">{{ __('Missions') }}</x-tn.section-label>
-            <p class="whitespace-pre-line leading-relaxed text-ink">{{ $record->t('description') ?? __('Description à venir.') }}</p>
+            <x-tn.langage-clair :version="\App\Support\LangageClair::pourService($record)" :titre="__('Missions')">
+                <p class="whitespace-pre-line leading-relaxed text-ink">{{ $record->t('description') ?? __('Description à venir.') }}</p>
+            </x-tn.langage-clair>
         </x-tn.surface>
 
         {{-- F96 : en version légère, l'essentiel (horaires, contact, adresse) passe avant les missions sur mobile. --}}

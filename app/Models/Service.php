@@ -42,6 +42,11 @@ use Illuminate\Validation\ValidationException;
  * @property CarbonInterface|null $perturbe_depuis
  * @property CarbonInterface|null $retour_prevu_le
  * @property CarbonInterface|null $etat_mis_a_jour_le
+ *
+ * F89 : langage_clair et langage_clair_valide_le ne sont pas remplissables : rédigés et validés par un agent ou un admin
+ * via enregistrerLangageClair() (ServicePolicy::redigerLangageClair).
+ * @property string|null $langage_clair
+ * @property CarbonInterface|null $langage_clair_valide_le
  */
 #[Fillable(['nom', 'categorie', 'description', 'horaires', 'telephone', 'email', 'adresse', 'lieu_rendez_vous', 'pieces_a_fournir', 'duree_rendez_vous', 'latitude', 'longitude'])]
 class Service extends Model
@@ -159,6 +164,7 @@ class Service extends Model
             'indisponible_depuis' => 'datetime',
             'perturbe_depuis' => 'datetime',
             'etat_mis_a_jour_le' => 'datetime',
+            'langage_clair_valide_le' => 'datetime',
             'retour_prevu_le' => 'date',
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
@@ -222,6 +228,28 @@ class Service extends Model
             $this->estPerturbe() => self::ETAT_PERTURBE,
             default => self::ETAT_DISPONIBLE,
         };
+    }
+
+    /**
+     * F89 : la version en langage clair n'est montrée aux habitants qu'une fois rédigée ET validée.
+     */
+    public function langageClairPublie(): bool
+    {
+        return filled($this->langage_clair) && $this->langage_clair_valide_le !== null;
+    }
+
+    /**
+     * F89 : enregistre la version en langage clair. Validée → publiée avec la date de validation (conservée si le texte
+     * ne change pas) ; non validée → brouillon invisible des habitants. Appeler après l'autorisation (redigerLangageClair).
+     */
+    public function enregistrerLangageClair(?string $texte, bool $valider): void
+    {
+        $texte = trim((string) $texte) ?: null;
+        $inchange = $texte === $this->langage_clair && $this->langage_clair_valide_le !== null;
+
+        $this->langage_clair = $texte;
+        $this->langage_clair_valide_le = $valider && $texte !== null ? ($inchange ? $this->langage_clair_valide_le : now()) : null;
+        $this->save();
     }
 
     public function libelleEtat(): string

@@ -175,7 +175,7 @@ test('API en erreur sans cache : page 200 et message en français', function () 
         ->assertOk()
         ->assertSee('L\'API Nova Terra ne répond pas.')
         ->assertSee('data-test="api-unavailable"', false)
-        ->assertDontSee('D01');
+        ->assertDontSee('Haut Conseil de la Ville');
 });
 
 test('une réponse JSON invalide est traitée comme une panne', function () {

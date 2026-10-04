@@ -48,6 +48,13 @@
 @endphp
 
 <x-layouts::site :title="__('Accueil')" :fluid="true" :description="__('Vos démarches, les actualités de la ville et le contact avec vos services municipaux, au même endroit : la plateforme civique officielle de la Mairie de Nova Terra.')">
+    {{-- F97 : lignes de transport interrompues (disparaît seul à la fin de la période) --}}
+    @if (\App\Models\InterruptionTransport::pourBandeau() !== [])
+        <div class="mx-auto max-w-7xl px-4 pt-4 lg:px-8">
+            <x-tn.bandeau-transports />
+        </div>
+    @endif
+
     {{-- HERO --}}
     <section class="tn-sky relative overflow-hidden" aria-labelledby="titre-hero">
         @if ($illustration)

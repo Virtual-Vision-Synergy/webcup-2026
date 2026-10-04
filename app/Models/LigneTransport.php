@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Ligne de transport municipal (bus, navette, taxi-be, train urbain).
@@ -16,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * user_id, etat et perturbation ne sont volontairement PAS remplissables :
  * ils sont assignés dans le code (l'état du trafic est réservé aux agents et admins).
  * Les arrêts sont stockés un par ligne, dans l'ordre du parcours.
+ * F97 : une interruption en cours déclarée dans Filament (relation interruptionsEnCours chargée) prime sur l'état saisi.
  */
 #[Fillable(['numero', 'nom', 'mode', 'arrets', 'horaires', 'frequence'])]
 class LigneTransport extends Model
@@ -49,6 +52,56 @@ class LigneTransport extends Model
     }
 
     /**
+     * @return BelongsToMany<InterruptionTransport, $this>
+     */
+    public function interruptions(): BelongsToMany
+    {
+        return $this->belongsToMany(InterruptionTransport::class, 'interruption_transport_ligne');
+    }
+
+    /**
+     * F97 : interruptions en cours (debut <= maintenant < fin) ; à charger avec with() avant l'affichage.
+     *
+     * @return BelongsToMany<InterruptionTransport, $this>
+     */
+    public function interruptionsEnCours(): BelongsToMany
+    {
+        return $this->interruptions()->where('debut', '<=', now())->where('fin', '>', now())->orderBy('debut');
+    }
+
+    /**
+     * @return HasMany<AbonnementLigne, $this>
+     */
+    public function abonnements(): HasMany
+    {
+        return $this->hasMany(AbonnementLigne::class);
+    }
+
+    /**
+     * Interruption en cours, si la relation a été chargée (sinon null : pas de requête paresseuse).
+     */
+    public function interruptionCourante(): ?InterruptionTransport
+    {
+        return $this->relationLoaded('interruptionsEnCours') ? $this->interruptionsEnCours->first() : null;
+    }
+
+    /**
+     * État affiché : « interrompu » pendant une interruption déclarée (F97), sinon l'état saisi par l'agent.
+     */
+    public function etatAffiche(): string
+    {
+        return $this->interruptionCourante() !== null ? 'interrompu' : (string) $this->etat;
+    }
+
+    /**
+     * Message affiché sous l'état : cause de l'interruption en cours, sinon message de perturbation.
+     */
+    public function messagePerturbation(): ?string
+    {
+        return $this->interruptionCourante()->cause ?? $this->perturbation;
+    }
+
+    /**
      * Arrêts dans l'ordre du parcours.
      *
      * @return array<int, string>
@@ -64,7 +117,7 @@ class LigneTransport extends Model
 
     public function estPerturbee(): bool
     {
-        return $this->etat !== 'normal';
+        return $this->etatAffiche() !== 'normal';
     }
 
     public function modeLabel(): string
@@ -74,7 +127,7 @@ class LigneTransport extends Model
 
     public function etatLabel(): string
     {
-        return __(self::ETAT_LABELS[$this->etat] ?? (string) $this->etat);
+        return __(self::ETAT_LABELS[$this->etatAffiche()] ?? $this->etatAffiche());
     }
 
     /**
@@ -82,7 +135,7 @@ class LigneTransport extends Model
      */
     public function etatBadge(): string
     {
-        return match ($this->etat) {
+        return match ($this->etatAffiche()) {
             'perturbe' => 'perturbe',
             'interrompu' => 'alerte',
             default => 'normal',

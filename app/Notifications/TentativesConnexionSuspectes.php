@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use Carbon\CarbonInterface;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -10,8 +12,10 @@ use Illuminate\Notifications\Notification;
  * F37 : alerte envoyée au titulaire d'un compte bloqué après plusieurs échecs de connexion.
  * L'adresse IP est masquée partiellement.
  */
-class TentativesConnexionSuspectes extends Notification
+class TentativesConnexionSuspectes extends Notification implements ShouldQueue
 {
+    use Queueable;
+
     public function __construct(
         public CarbonInterface $date,
         public string $ip,
@@ -23,6 +27,16 @@ class TentativesConnexionSuspectes extends Notification
     public function via(object $notifiable): array
     {
         return ['database', 'mail'];
+    }
+
+    /**
+     * F78 : la cloche est enregistrée tout de suite ; l'e-mail (lent, sendmail) part par la file d'attente.
+     *
+     * @return array<string, string>
+     */
+    public function viaConnections(): array
+    {
+        return ['database' => 'sync'];
     }
 
     public static function maskIp(string $ip): string

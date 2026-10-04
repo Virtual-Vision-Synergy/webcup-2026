@@ -214,8 +214,19 @@ class DatabaseSeeder extends Seeder
         // F70 : agents rattachés à leurs services (État civil, Action sociale) et dossiers aux données confidentielles.
         $this->call(PermissionsServicesSeeder::class);
 
+        // F74 : 4 partenaires de Nova Terra (page publique /partenaires).
+        $this->call(PartnerSeeder::class);
+
+        // F64 : un service perturbé (Urbanisme) et la Médiathèque indisponible, après les interruptions F38.
+        $this->call(EtatServicesSeeder::class);
+
         // F68 : six idées de la boîte à idées (états variés, soutiens, deux réponses de la ville).
         $this->call(IdeaSeeder::class);
+
+        if (! app()->isProduction()) {
+            // F84 : échanges agent / habitant sur les démarches de user@example.com.
+            $this->call(ReponseDemarcheSeeder::class);
+        }
 
         // make:feature:seeders
     }

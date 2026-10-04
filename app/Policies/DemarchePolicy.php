@@ -55,6 +55,19 @@ class DemarchePolicy
     }
 
     /**
+     * F84 : écrire dans le fil d'une démarche. Le personnel du service y répond ; l'habitant auteur
+     * peut répondre à son tour. Tout autre habitant : refusé.
+     */
+    public function repondre(User $user, Demarche $demarche): Response
+    {
+        if ($demarche->user_id === $user->id) {
+            return Response::allow();
+        }
+
+        return $this->accesService($user, $demarche);
+    }
+
+    /**
      * F70 : révéler une donnée confidentielle du demandeur (motif obligatoire, consultation journalisée).
      */
     public function viewConfidential(User $user, Demarche $demarche): Response

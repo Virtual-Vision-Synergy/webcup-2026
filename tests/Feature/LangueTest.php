@@ -13,7 +13,7 @@ test('l\'espace connecté propose le sélecteur de langue et reste en français 
 
 test('en anglais, l\'espace connecté déclare lang="en" et traduit le menu latéral', function () {
     $this->actingAs(User::factory()->create())
-        ->get(route('langue', 'en'))
+        ->post(route('langue', 'en'))
         ->assertRedirect();
 
     $this->get(route('dashboard'))
@@ -24,5 +24,5 @@ test('en anglais, l\'espace connecté déclare lang="en" et traduit le menu lat�
 });
 
 test('une langue non proposée renvoie 404', function () {
-    $this->get(route('langue', 'de'))->assertNotFound();
+    $this->post(route('langue', 'de'))->assertNotFound();
 });

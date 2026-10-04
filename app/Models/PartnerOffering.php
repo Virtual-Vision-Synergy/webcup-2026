@@ -205,7 +205,7 @@ class PartnerOffering extends Model
         $jusquAu = $this->unavailable_until;
 
         if ($this->status === self::STATUS_UNAVAILABLE && $jusquAu instanceof CarbonInterface) {
-            return __('Indisponible jusqu\'au :date', ['date' => $jusquAu->settings(['locale' => 'fr'])->translatedFormat('l j F Y')]);
+            return __('Indisponible jusqu\'au :date', ['date' => $jusquAu->settings(['locale' => app()->getLocale()])->translatedFormat('l j F Y')]);
         }
 
         return __($this->libelleStatut());

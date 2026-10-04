@@ -154,7 +154,7 @@ new #[Title('Mes démarches')] class extends Component {
     public function items(): LengthAwarePaginator
     {
         return $this->filteredQuery()
-            ->with(['user', 'service', 'derniereReponse'])
+            ->with(['user', 'service' => fn ($query) => $query->avecTraduction(), 'derniereReponse'])
             ->tap(fn (Builder $query) => $this->appliquerTri($query))
             ->paginate(10)
             ->appends($this->parametresUrl());
@@ -237,7 +237,7 @@ new #[Title('Mes démarches')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
-    <x-tn.aide id="demarches-index">Suivez ici l'avancement de vos démarches. Pour en lancer une, utilisez « Nouvelle démarche ».</x-tn.aide>
+    <x-tn.aide id="demarches-index">{{ __('Suivez ici l\'avancement de vos démarches. Pour en lancer une, utilisez « Nouvelle démarche ».') }}</x-tn.aide>
 
     {{-- Filtres --}}
     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
@@ -289,7 +289,7 @@ new #[Title('Mes démarches')] class extends Component {
                 <li wire:key="m-{{ $item->id }}">
                     <x-tn.list-row icon="file-text" :href="route('demarches.show', $item)" :stack="true">
                         <span class="block truncate font-medium text-ink">{{ $item->titre }}</span>
-                        <span class="block truncate text-sm text-ink-2"><span class="font-mono text-xs">{{ $item->numeroSuivi() }}</span> · {{ $item->service?->nom ?? __('Service non précisé') }} · <span class="font-mono text-xs">{{ $item->created_at->format('d.m.Y') }}</span></span>
+                        <span class="block truncate text-sm text-ink-2"><span class="font-mono text-xs">{{ $item->numeroSuivi() }}</span> · {{ $item->service?->t('nom') ?? __('Service non précisé') }} · <span class="font-mono text-xs">{{ $item->created_at->format('d.m.Y') }}</span></span>
                         <x-slot:aside>
                             <span class="flex flex-wrap gap-1">
                                 @if ($item->urgence_medicale)
@@ -328,7 +328,7 @@ new #[Title('Mes démarches')] class extends Component {
                                 <a href="{{ route('demarches.show', $item) }}" wire:navigate class="font-medium text-ink hover:text-cyan">{{ $item->titre }}</a>
                                 <span class="block font-mono text-xs text-ink-2">{{ $item->numeroSuivi() }}</span>
                             </flux:table.cell>
-                            <flux:table.cell>{{ $item->service?->nom ?? '—' }}</flux:table.cell>
+                            <flux:table.cell>{{ $item->service?->t('nom') ?? '—' }}</flux:table.cell>
                             <flux:table.cell>
                                 <div class="flex flex-wrap gap-1">
                                     @if ($item->urgence_medicale)

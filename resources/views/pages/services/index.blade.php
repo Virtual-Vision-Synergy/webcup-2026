@@ -239,6 +239,8 @@ new #[Title('Services')] class extends Component {
                 $ids = $this->idsOrientes();
                 $query->where(fn ($q) => $q->where('nom', 'like', $term)
                     ->orWhere('description', 'like', $term)
+                    // F27 : un habitant peut aussi chercher avec les mots de la version traduite.
+                    ->orWhereHas('translations', fn ($t) => $t->where('nom', 'like', $term)->orWhere('description', 'like', $term))
                     ->when($categories !== [], fn ($q) => $q->orWhereIn('categorie', $categories))
                     ->when($ids !== [], fn ($q) => $q->orWhereIn('id', $ids)));
             })
@@ -257,6 +259,7 @@ new #[Title('Services')] class extends Component {
 
         return $this->filteredQuery()
             ->with(['user', 'interruptionCourante'])
+            ->avecTraduction()
             // D10 : les plus pertinents d'abord quand on cherche.
             ->when($ids !== [], fn ($query) => $query->orderByRaw(
                 'case id '.implode(' ', array_fill(0, count($ids), 'when ? then ?')).' else ? end',
@@ -274,7 +277,7 @@ new #[Title('Services')] class extends Component {
     #[Computed]
     public function prioritaires(): Collection
     {
-        return Service::query()->with('interruptionCourante')->where('mis_en_avant', true)->orderBy('nom')->limit(6)->get();
+        return Service::query()->with('interruptionCourante')->avecTraduction()->where('mis_en_avant', true)->orderBy('nom')->limit(6)->get();
     }
 
     /**
@@ -295,7 +298,7 @@ new #[Title('Services')] class extends Component {
     {
         return $this->filteredQuery()
             ->geolocalises()
-            ->with('interruptionCourante')
+            ->with('interruptionCourante')->avecTraduction()
             ->prioritaires()
             ->limit(200)
             ->get();
@@ -311,10 +314,10 @@ new #[Title('Services')] class extends Component {
     {
         return $this->lieux
             ->map(fn (Service $service): array => [
-                ...(array) $service->pointCarte(__($service->nom), route('services.show', $service)),
+                ...(array) $service->pointCarte($service->t('nom'), route('services.show', $service)),
                 'lignes' => array_filter([
-                    $service->adresse ? __($service->adresse) : null,
-                    $service->horaires ? __($service->horaires) : null,
+                    $service->adresse ? $service->t('adresse') : null,
+                    $service->horaires ? $service->t('horaires') : null,
                 ]),
                 'lien' => __('Voir la fiche du service'),
             ])
@@ -362,7 +365,7 @@ new #[Title('Services')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
-    <x-tn.aide id="services-index">Tapez le nom d'un service dans la recherche, puis ouvrez sa fiche pour voir ses horaires et ses contacts.</x-tn.aide>
+    <x-tn.aide id="services-index">{{ __('Tapez le nom d\'un service dans la recherche, puis ouvrez sa fiche pour voir ses horaires et ses contacts.') }}</x-tn.aide>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="{{ __('Rechercher un service (ex. santé)…') }}" aria-label="{{ __('Rechercher un service') }}" clearable class="sm:max-w-sm" />
@@ -420,7 +423,7 @@ new #[Title('Services')] class extends Component {
                     <li wire:key="prioritaire-{{ $prioritaire->id }}">
                         <a href="{{ route('services.show', $prioritaire) }}" wire:navigate class="group flex min-h-11 items-center gap-3 rounded-sm border border-line bg-surface px-3 py-2 transition-colors hover:border-cyan/40">
                             <flux:icon name="landmark" class="size-4 shrink-0 text-cyan" aria-hidden="true" />
-                            <span class="min-w-0 flex-1 truncate font-medium text-ink group-hover:text-cyan">{{ __($prioritaire->nom) }}</span>
+                            <span class="min-w-0 flex-1 truncate font-medium text-ink group-hover:text-cyan">{{ $prioritaire->t('nom') }}</span>
                             <x-service-status :service="$prioritaire" compact />
                         </a>
                     </li>
@@ -479,19 +482,19 @@ new #[Title('Services')] class extends Component {
                     <ul class="divide-y divide-line lg:max-h-[24.5rem] lg:overflow-y-auto">
                         @foreach ($this->lieux as $lieu)
                             <li wire:key="lieu-{{ $lieu->id }}" class="space-y-1 px-4 py-3 text-sm">
-                                <a href="{{ route('services.show', $lieu) }}" wire:navigate class="font-semibold text-ink hover:text-cyan hover:underline">{{ __($lieu->nom) }}</a>
+                                <a href="{{ route('services.show', $lieu) }}" wire:navigate class="font-semibold text-ink hover:text-cyan hover:underline">{{ $lieu->t('nom') }}</a>
                                 <x-service-status :service="$lieu" compact class="ms-1" />
                                 @if ($lieu->categorie)
                                     <flux:badge size="sm" class="ms-1">{{ __(Service::labelCategorie($lieu->categorie)) }}</flux:badge>
                                 @endif
                                 @if ($lieu->adresse)
-                                    <p class="flex gap-2 text-ink-2"><flux:icon name="map-pin" class="mt-0.5 size-4 shrink-0" /><span><span class="sr-only">{{ __('Adresse :') }}</span> {{ __($lieu->adresse) }}</span></p>
+                                    <p class="flex gap-2 text-ink-2"><flux:icon name="map-pin" class="mt-0.5 size-4 shrink-0" /><span><span class="sr-only">{{ __('Adresse :') }}</span> {{ $lieu->t('adresse') }}</span></p>
                                 @endif
                                 @if ($lieu->horaires)
-                                    <p class="flex gap-2 text-ink-2"><flux:icon name="clock" class="mt-0.5 size-4 shrink-0" /><span class="whitespace-pre-line font-mono text-xs leading-5"><span class="sr-only">{{ __('Horaires :') }}</span> {{ __($lieu->horaires) }}</span></p>
+                                    <p class="flex gap-2 text-ink-2"><flux:icon name="clock" class="mt-0.5 size-4 shrink-0" /><span class="whitespace-pre-line font-mono text-xs leading-5"><span class="sr-only">{{ __('Horaires :') }}</span> {{ $lieu->t('horaires') }}</span></p>
                                 @endif
                                 <a href="https://www.openstreetmap.org/directions?to={{ $lieu->latitude }}%2C{{ $lieu->longitude }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-cyan hover:underline">
-                                    <flux:icon name="arrow-top-right-on-square" class="size-4" />{{ __('Itinéraire') }}<span class="sr-only"> {{ __('vers :nom (nouvel onglet)', ['nom' => __($lieu->nom)]) }}</span>
+                                    <flux:icon name="arrow-top-right-on-square" class="size-4" />{{ __('Itinéraire') }}<span class="sr-only"> {{ __('vers :nom (nouvel onglet)', ['nom' => $lieu->t('nom')]) }}</span>
                                 </a>
                             </li>
                         @endforeach
@@ -524,13 +527,17 @@ new #[Title('Services')] class extends Component {
                         </span>
                         <div class="min-w-0">
                             <h2 class="font-semibold text-ink">
-                                <a href="{{ route('services.show', $item) }}" wire:navigate class="after:absolute after:inset-0 group-hover:text-cyan">{{ __($item->nom) }}</a>
+                                <a href="{{ route('services.show', $item) }}" wire:navigate class="after:absolute after:inset-0 group-hover:text-cyan">{{ $item->t('nom') }}</a>
                             </h2>
                             @if ($item->categorie)
                                 <flux:badge size="sm" class="mt-1">{{ __(Service::labelCategorie($item->categorie)) }}</flux:badge>
                             @endif
                             @if ($item->description)
-                                <p class="mt-1 line-clamp-2 text-sm text-ink-2">{{ __($item->description) }}</p>
+                                <p class="mt-1 line-clamp-2 text-sm text-ink-2">{{ $item->t('description') }}</p>
+                            @endif
+                            {{-- F27 : fiche pas encore traduite dans la langue choisie (repli sur le français). --}}
+                            @if ($item->afficheEnFrancais(['nom', 'description']))
+                                <x-contenu-en-francais compact class="mt-1" />
                             @endif
                             @if ($this->raisons($item->id) !== [])
                                 <p class="mt-1 text-xs text-ink-2" data-test="raisons">{{ __('Correspond à :') }} {{ implode(', ', array_map(fn (string $r): string => '« '.$r.' »', $this->raisons($item->id))) }}</p>
@@ -544,12 +551,12 @@ new #[Title('Services')] class extends Component {
                             'border-amber/35 bg-amber/8 text-amber' => $item->estPerturbe(),
                         ])>
                             {{ $item->motifEtat() ?: ($item->estIndisponible() ? __('Service momentanément indisponible.') : __('Délais allongés.')) }}
-                            <span class="block text-xs font-medium">{{ __($item->libelleRetourPrevu()) }}</span>
+                            <span class="block text-xs font-medium">{{ $item->libelleRetourPrevu() }}</span>
                         </p>
                     @endif
                     <dl class="mt-4 space-y-1.5 border-t border-line pt-3 text-sm">
                         @if ($item->horaires)
-                            <div class="flex min-w-0 gap-2"><dt class="sr-only">{{ __('Horaires') }}</dt><flux:icon name="clock" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="min-w-0 truncate font-mono text-xs leading-5 text-ink-2">{{ \Illuminate\Support\Str::before(__($item->horaires), "\n") }}</dd></div>
+                            <div class="flex min-w-0 gap-2"><dt class="sr-only">{{ __('Horaires') }}</dt><flux:icon name="clock" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="min-w-0 truncate font-mono text-xs leading-5 text-ink-2">{{ \Illuminate\Support\Str::before((string) $item->t('horaires'), "\n") }}</dd></div>
                         @endif
                         @if ($item->telephone)
                             <div class="flex gap-2"><dt class="sr-only">{{ __('Téléphone') }}</dt><flux:icon name="phone" class="mt-0.5 size-4 shrink-0 text-ink-2" /><dd class="font-mono text-xs leading-5 text-ink-2">{{ $item->telephone }}</dd></div>
@@ -558,13 +565,13 @@ new #[Title('Services')] class extends Component {
                     @canany(['feature', 'update', 'delete'], $item)
                         <div class="relative z-10 mt-3 flex justify-end gap-1">
                             @can('feature', $item)
-                                <flux:button size="sm" variant="ghost" icon="star" :icon:variant="$item->mis_en_avant ? 'solid' : 'outline'" wire:click="toggleFeatured({{ $item->id }})" :aria-label="$item->mis_en_avant ? __('Retirer la mise en avant de :nom', ['nom' => __($item->nom)]) : __('Mettre en avant :nom', ['nom' => __($item->nom)])" :title="$item->mis_en_avant ? __('Retirer la mise en avant') : __('Mettre en avant')" />
+                                <flux:button size="sm" variant="ghost" icon="star" :icon:variant="$item->mis_en_avant ? 'solid' : 'outline'" wire:click="toggleFeatured({{ $item->id }})" :aria-label="$item->mis_en_avant ? __('Retirer la mise en avant de :nom', ['nom' => $item->t('nom')]) : __('Mettre en avant :nom', ['nom' => $item->t('nom')])" :title="$item->mis_en_avant ? __('Retirer la mise en avant') : __('Mettre en avant')" />
                             @endcan
                             @can('update', $item)
-                                <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('services.edit', $item)" wire:navigate aria-label="{{ __('Modifier :nom', ['nom' => __($item->nom)]) }}" />
+                                <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('services.edit', $item)" wire:navigate aria-label="{{ __('Modifier :nom', ['nom' => $item->t('nom')]) }}" />
                             @endcan
                             @can('delete', $item)
-                                <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="{{ __('Supprimer ce service ?') }}" aria-label="{{ __('Supprimer :nom', ['nom' => __($item->nom)]) }}" />
+                                <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="{{ __('Supprimer ce service ?') }}" aria-label="{{ __('Supprimer :nom', ['nom' => $item->t('nom')]) }}" />
                             @endcan
                         </div>
                     @endcanany

@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\EmpecheEnvoiEnDouble;
 use App\Concerns\ProtegeContreRobots;
 use App\Models\Message;
 use Flux\Flux;
@@ -10,7 +11,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Contacter la mairie')] class extends Component {
-    use ProtegeContreRobots;
+    use EmpecheEnvoiEnDouble, ProtegeContreRobots;
 
     #[Locked]
     public ?Message $record = null;
@@ -38,6 +39,7 @@ new #[Title('Contacter la mairie')] class extends Component {
             $this->nom = (string) auth()->user()->name;
             $this->email = (string) auth()->user()->email;
             $this->initialiserAntiRobot('contact');
+            $this->initialiserJetonEnvoi();
         }
     }
 
@@ -92,9 +94,23 @@ new #[Title('Contacter la mairie')] class extends Component {
             parIp: (int) config('security.formulaires.limites.contact.ip'),
         );
 
-        $record = new Message($validated);
-        $record->user()->associate(auth()->user());
-        $record->save();
+        // F82 : même message renvoyé (double clic, retour arrière) → rien n'est créé, message avec lien.
+        $record = $this->envoyerUneSeuleFois(
+            'contact',
+            ['sujet' => $validated['sujet'], 'message' => $validated['message']],
+            function () use ($validated): Message {
+                $record = new Message($validated);
+                $record->user()->associate(auth()->user());
+                $record->save();
+
+                return $record;
+            },
+            fn (Message $message): string => route('messages.show', $message),
+        );
+
+        if ($record === null) {
+            return;
+        }
 
         $this->envoyeId = $record->id;
         $this->reset('sujet', 'message');
@@ -150,11 +166,10 @@ new #[Title('Contacter la mairie')] class extends Component {
 
             <flux:error name="throttle" />
 
+            <x-envoi-deja-fait :le="$envoiDejaFaitLe" :url="$envoiDejaFaitUrl" message="Ce message a déjà été envoyé" lien="voir mon message" />
+
             <div class="flex items-center gap-3">
-                <flux:button type="submit" variant="primary">
-                    <span wire:loading.remove wire:target="save">{{ $record ? __('Enregistrer') : __('Envoyer à la mairie') }}</span>
-                    <span wire:loading wire:target="save">{{ __('Envoi…') }}</span>
-                </flux:button>
+                <x-submit-button variant="primary">{{ $record ? __('Enregistrer') : __('Envoyer à la mairie') }}</x-submit-button>
                 <flux:button :href="route('messages.index')" wire:navigate variant="ghost">{{ __('Annuler') }}</flux:button>
             </div>
         </form>

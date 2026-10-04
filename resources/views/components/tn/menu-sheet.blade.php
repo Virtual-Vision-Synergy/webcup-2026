@@ -4,7 +4,7 @@
     $rubriques = array_filter(config('navigation.rubriques'), fn (array $r): bool => Route::has($r['route']));
     $user = auth()->user();
     // Compteur limité aux démarches de l'utilisateur connecté.
-    $demarchesEnCours = $user ? $user->demarches()->whereIn('statut', ['deposee', 'en_cours'])->count() : 0;
+    $demarchesEnCours = $user ? $user->nombreDemarchesEnCours() : 0;
     $ligne = 'flex min-h-12 w-full items-center gap-3 rounded-sm px-3 text-[0.9375rem] font-medium text-ink hover:bg-cyan/6';
 @endphp
 

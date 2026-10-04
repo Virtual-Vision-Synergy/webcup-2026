@@ -27,7 +27,7 @@ new #[Title('Security settings')] class extends Component {
     /** F54 : message affiché après « Ce n'était pas moi » (autres appareils déconnectés). */
     public ?string $alerteAppareil = null;
 
-    /** Agents et administrateurs : la double authentification leur est fortement recommandée. */
+    /** Agents et administrateurs : la vérification en deux étapes leur est fortement recommandée. */
     public bool $twoFactorRecommended = false;
 
     /**
@@ -95,7 +95,7 @@ new #[Title('Security settings')] class extends Component {
 
         $this->twoFactorEnabled = false;
 
-        Flux::toast(variant: 'warning', text: 'Double authentification désactivée : seul votre mot de passe protège désormais votre compte.');
+        Flux::toast(variant: 'warning', text: 'Vérification en deux étapes désactivée : seul votre mot de passe protège désormais votre compte.');
     }
 }; ?>
 
@@ -148,13 +148,14 @@ new #[Title('Security settings')] class extends Component {
             <section class="mt-12">
                 <flux:heading>{{ __('Two-factor authentication') }}</flux:heading>
                 <flux:subheading>{{ __('Manage your two-factor authentication settings') }}</flux:subheading>
+                <x-tn.mots-utiles class="mt-2 mb-4" :slugs="['verification-deux-etapes', 'code-de-secours']" />
 
                 <div class="flex flex-col w-full mx-auto space-y-6 text-sm" wire:cloak>
                     @if ($twoFactorEnabled)
                         <div class="space-y-4">
-                            <flux:callout variant="success" icon="shield-check" heading="Double authentification active">
+                            <flux:callout variant="success" icon="shield-check" heading="Vérification en deux étapes active">
                                 <flux:callout.text>
-                                    À chaque connexion (mot de passe ou lien reçu par e-mail), un code à 6 chiffres affiché par votre application d'authentification vous sera demandé. Sans ce code, personne ne peut entrer dans votre espace, même avec votre mot de passe.
+                                    À chaque connexion (mot de passe ou lien reçu par e-mail), un code à 6 chiffres affiché par votre application de vérification vous sera demandé. Sans ce code, personne ne peut entrer dans votre espace, même avec votre mot de passe.
                                 </flux:callout.text>
                             </flux:callout>
 
@@ -174,20 +175,20 @@ new #[Title('Security settings')] class extends Component {
                             @if ($twoFactorRecommended)
                                 <flux:callout variant="warning" icon="exclamation-triangle" heading="Fortement recommandée pour votre compte">
                                     <flux:callout.text>
-                                        En tant qu'agent ou administrateur, vous avez accès aux données des habitants. Activez la double authentification pour qu'un mot de passe volé ne suffise pas à entrer dans votre compte.
+                                        En tant qu'agent ou administrateur, vous avez accès aux données des habitants. Activez la vérification en deux étapes pour qu'un mot de passe volé ne suffise pas à entrer dans votre compte.
                                     </flux:callout.text>
                                 </flux:callout>
                             @endif
 
                             <flux:text variant="subtle">
-                                La double authentification ajoute une seconde vérification après votre mot de passe : un code à 6 chiffres qui change toutes les 30 secondes, affiché sur votre téléphone. Même si quelqu'un connaît votre mot de passe, il ne pourra pas accéder à votre espace.
+                                La vérification en deux étapes ajoute une seconde vérification après votre mot de passe : un code à 6 chiffres qui change toutes les 30 secondes, affiché sur votre téléphone. Même si quelqu'un connaît votre mot de passe, il ne pourra pas accéder à votre espace.
                             </flux:text>
 
                             <ol class="list-decimal space-y-1 ps-5 text-zinc-600 dark:text-zinc-300">
-                                <li>Installez une application d'authentification gratuite sur votre téléphone (Google Authenticator, Microsoft Authenticator, FreeOTP…).</li>
-                                <li>Cliquez sur « Activer la 2FA » puis scannez le QR code avec cette application.</li>
+                                <li>Installez une application de vérification gratuite sur votre téléphone (Google Authenticator, Microsoft Authenticator, FreeOTP…).</li>
+                                <li>Cliquez sur « Activer la vérification en deux étapes » puis scannez le QR code avec cette application.</li>
                                 <li>Saisissez le code à 6 chiffres affiché par l'application pour confirmer.</li>
-                                <li>Téléchargez vos codes de récupération et gardez-les en lieu sûr : ils vous dépannent si vous perdez votre téléphone.</li>
+                                <li>Téléchargez vos codes de secours et gardez-les en lieu sûr : ils vous dépannent si vous perdez votre téléphone.</li>
                             </ol>
 
                             <flux:modal.trigger name="two-factor-setup-modal">

@@ -28,7 +28,7 @@ new class extends Component {
     }
 
     /**
-     * Télécharge les codes de récupération de l'utilisateur connecté dans un fichier texte.
+     * Télécharge les codes de secours de l'utilisateur connecté dans un fichier texte.
      */
     public function downloadRecoveryCodes(): ?StreamedResponse
     {
@@ -38,7 +38,7 @@ new class extends Component {
             return null;
         }
 
-        $contenu = 'Codes de récupération - '.config('app.name')."\n"
+        $contenu = 'Codes de secours - '.config('app.name')."\n"
             .'Compte : '.auth()->user()->email."\n"
             .'Chaque code ne peut servir qu\'une seule fois. Conservez ce fichier en lieu sûr.'."\n\n"
             .implode("\n", $this->recoveryCodes)."\n";

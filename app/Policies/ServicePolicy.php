@@ -6,7 +6,7 @@ use App\Models\Service;
 use App\Models\User;
 
 /**
- * Par défaut : tout utilisateur connecté peut lire et créer ;
+ * Tout utilisateur connecté peut lire ; agents et admins peuvent créer ;
  * le propriétaire, les agents et les admins peuvent modifier ;
  * seuls le propriétaire et les admins peuvent supprimer.
  */
@@ -22,9 +22,12 @@ class ServicePolicy
         return true;
     }
 
+    /**
+     * F32 : un citoyen consulte le catalogue mais n'y ajoute pas de service.
+     */
     public function create(User $user): bool
     {
-        return true;
+        return $user->isAdmin() || $user->isAgent();
     }
 
     public function update(User $user, Service $service): bool

@@ -5,13 +5,13 @@
 --}}
 @section('tn-feature-nav')
                     <flux:sidebar.item icon="exclamation-triangle" :href="route('signalements.index')" :current="request()->routeIs('signalements.*')" wire:navigate>
-                        {{ __('Signalements') }}
+                        Signalements
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="bus" :href="route('transports.index')" :current="request()->routeIs('transports.*')" wire:navigate>
-                        {{ __('Transports') }}
+                        Transports
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="calendar-days" :href="route('appointments.index')" :current="request()->routeIs('appointments.*')" wire:navigate>
-                        {{ __('Mes rendez-vous') }}
+                        Mes rendez-vous
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="clipboard-document-list" :href="route('mes-demandes.index')" :current="request()->routeIs('mes-demandes.*')" wire:navigate>
                         Mes demandes
@@ -75,34 +75,34 @@
                 </flux:sidebar.header>
 
                 <flux:sidebar.nav>
-                    <flux:sidebar.group :heading="__('Espace citoyen')" class="grid">
+                    <flux:sidebar.group heading="Espace citoyen" class="grid">
                         <flux:sidebar.item icon="house" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
-                            {{ __('Mon espace') }}
+                            Mon espace
                         </flux:sidebar.item>
 
                         <flux:sidebar.item icon="landmark" :href="route('services.index')" :current="request()->routeIs('services.*')" wire:navigate>
-                            {{ __('Services') }}
+                            Services
                         </flux:sidebar.item>
 
                         <flux:sidebar.item icon="newspaper" :href="route('actualites.index')" :current="request()->routeIs('actualites.*')" wire:navigate>
-                            {{ __('Actualités') }}
+                            Actualités
                         </flux:sidebar.item>
 
                         <flux:sidebar.item icon="mail" :href="route('messages.index')" :current="request()->routeIs('messages.*')" wire:navigate>
-                            {{ __('Messages') }}
+                            Messages
                         </flux:sidebar.item>
 
                         <flux:sidebar.item icon="file-text" :href="route('demarches.index')" :current="request()->routeIs('demarches.*')" wire:navigate>
-                            {{ __('Mes démarches') }}
+                            Mes démarches
                         </flux:sidebar.item>
 
                         @yield('tn-feature-nav')
                     </flux:sidebar.group>
 
                     @can('viewAgentSpace')
-                        <flux:sidebar.group :heading="__('Espace agent')" class="grid">
+                        <flux:sidebar.group heading="Espace agent" class="grid">
                             <flux:sidebar.item icon="briefcase" :href="route('agent.tableau-de-bord')" data-test="agent-space-link">
-                                {{ __('Espace agent') }}
+                                Espace agent
                             </flux:sidebar.item>
                         </flux:sidebar.group>
                     @endcan
@@ -132,7 +132,7 @@
                             <x-tn.mode-allege class="max-lg:hidden" />
                             <a href="{{ route('profile.edit') }}" class="flex size-11 items-center justify-center lg:hidden" wire:navigate>
                                 <flux:avatar size="sm" :name="auth()->user()->name" :initials="auth()->user()->initials()" />
-                                <span class="sr-only">{{ __('Mon compte :') }} {{ auth()->user()->name }}</span>
+                                <span class="sr-only">Mon compte : {{ auth()->user()->name }}</span>
                             </a>
                         </div>
                     </div>

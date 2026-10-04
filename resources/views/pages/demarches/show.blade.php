@@ -123,6 +123,7 @@ new #[Title('Démarche')] class extends Component {
                     <x-badge-urgence-medicale />
                 @endif
                 <span>Par {{ $record->user?->name }}</span>
+                <span class="font-mono text-xs">N° {{ $record->numeroSuivi() }}</span>
                 <span class="font-mono text-xs">{{ $record->created_at->format('d.m.Y · H:i') }}</span>
             </div>
         </x-slot:meta>
@@ -135,6 +136,20 @@ new #[Title('Démarche')] class extends Component {
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
+
+    @if (session('demarche_envoyee'))
+        {{-- Confirmation immédiate après l'envoi (D16) --}}
+        <div class="flex flex-col gap-3 rounded-md border border-green/35 bg-green/8 p-4 sm:flex-row sm:items-center sm:justify-between" role="status">
+            <div class="flex items-start gap-3">
+                <flux:icon.check-circle class="mt-0.5 size-6 shrink-0 text-green" aria-hidden="true" />
+                <div>
+                    <p class="font-semibold text-ink">Votre démarche a bien été envoyée.</p>
+                    <p class="text-ink-2">Numéro de suivi : <strong class="font-mono text-ink">{{ session('demarche_envoyee') }}</strong>. Inutile de la renvoyer : vous pouvez suivre son avancement ici.</p>
+                </div>
+            </div>
+            <flux:button size="sm" icon="arrow-down" href="#suivi">Voir le suivi</flux:button>
+        </div>
+    @endif
 
     {{-- F86 : urgence médicale : numéros d'urgence en haut pour l'habitant, prise en charge tracée pour le personnel. --}}
     @if ($record->urgence_medicale)
@@ -193,7 +208,7 @@ new #[Title('Démarche')] class extends Component {
         </x-tn.surface>
 
         <div class="flex flex-col gap-6">
-            <x-tn.panel :label="__('Suivi')" padding="p-5 md:p-6">
+            <x-tn.panel id="suivi" :label="__('Suivi')" padding="p-5 md:p-6">
                 <x-tn.timeline :items="$chronologie" />
             </x-tn.panel>
 

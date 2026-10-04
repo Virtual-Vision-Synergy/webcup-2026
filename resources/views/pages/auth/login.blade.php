@@ -13,6 +13,7 @@
             <flux:input
                 name="email"
                 :label="__('E-mail, téléphone ou identifiant d\'habitant')"
+                :aria-label="__('E-mail, téléphone ou identifiant d\'habitant')"
                 :value="old('email')"
                 type="text"
                 required
@@ -27,6 +28,7 @@
                 <flux:input
                     name="password"
                     :label="__('Mot de passe ou code personnel')"
+                    :aria-label="__('Mot de passe ou code personnel')"
                     type="password"
                     required
                     autocomplete="current-password"

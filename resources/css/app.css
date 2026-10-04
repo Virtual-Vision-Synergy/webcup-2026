@@ -14,9 +14,9 @@
  * La couleur indique un ÉTAT : cyan = action, ambre = perturbé, magenta = alerte, vert = normal.
  */
 @theme {
-    --font-display: 'Saira', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
     --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
-    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
 
     /* Clair : « salle de contrôle de jour » */
     --color-night: #F2F8FB;
@@ -125,6 +125,20 @@ body { overflow-wrap: anywhere; }
         outline-offset: 2px;
     }
 
+    /* F41 : zone de contenu ciblée par « Aller au contenu » (focus programmatique, pas d'action). */
+    main[tabindex='-1']:focus {
+        outline: none;
+    }
+
+    /* F42 : astérisque visuelle sur les champs obligatoires (le lecteur d'écran annonce déjà « requis »). */
+    [data-flux-field]:has(> [data-flux-control]:required, > * > [data-flux-control]:required) > [data-flux-label]::after,
+    fieldset[data-requis] > legend::after {
+        content: ' *';
+        content: ' *' / '';
+        margin-inline-start: 0.125rem;
+        color: var(--color-magenta);
+    }
+
     @media (prefers-reduced-motion: reduce) {
         *,
         ::before,
@@ -138,16 +152,14 @@ body { overflow-wrap: anywhere; }
 }
 
 @layer components {
-    /* Titres Saira élargis */
+    /* Titres (IBM Plex Sans) */
     .tn-display {
         font-family: var(--font-display);
-        font-stretch: 112%;
     }
 
     .tn-h1 {
         font-family: var(--font-display);
-        font-stretch: 112%;
-        font-weight: 700;
+        font-weight: 600;
         font-size: 2.375rem;
         line-height: 1.02;
         letter-spacing: -0.01em;
@@ -161,7 +173,6 @@ body { overflow-wrap: anywhere; }
 
     .tn-h2 {
         font-family: var(--font-display);
-        font-stretch: 112%;
         font-weight: 600;
         font-size: 1.625rem;
         line-height: 1.1;
@@ -356,8 +367,53 @@ body { overflow-wrap: anywhere; }
     }
 }
 
+/*
+ * F44 : contenu agrandi (zoom navigateur 200 % / 400 %, taille du texte A+ / A++) sans casser l'affichage.
+ * - La zone de défilement des tableaux Flux est le repère des éléments positionnés qu'elle contient
+ *   (sinon un libellé sr-only du tableau sort de la zone et crée un défilement horizontal de toute la page).
+ * - En dessous de 64rem de large (soit 1280 px zoomés à 200 %), aucun texte n'est tronqué par « … » :
+ *   il passe à la ligne.
+ */
+ui-table-scroll-area {
+    position: relative;
+}
+
+@media (max-width: 64rem) {
+    .truncate {
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+}
+
+/* Très petite largeur (zoom 400 %, ou texte A++ sur téléphone) : boutons et badges passent à la ligne au lieu de déborder. */
+@media (max-width: 40rem) {
+    [data-flux-button],
+    [data-flux-badge] {
+        max-width: 100%;
+        height: auto;
+        min-height: 2.5rem;
+        white-space: normal;
+        text-align: center;
+    }
+
+    [data-flux-badge] {
+        min-height: 0;
+    }
+}
+
 [data-flux-field]:not(ui-radio, ui-checkbox) {
     @apply grid gap-2;
+    /* F44 : une seule colonne qui peut rétrécir (les champs date ne forcent plus la largeur de la page). */
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+}
+
+input[type='date'],
+input[type='datetime-local'],
+input[type='time'] {
+    min-width: 0;
 }
 
 [data-flux-label] {
@@ -379,83 +435,6 @@ select:focus[data-flux-control] {
 [data-flux-sidebar-item][data-current] {
     box-shadow: inset 2px 0 0 var(--color-cyan);
 }
-
-/* Carte Leaflet aux couleurs Terra Nova : contrôles vitrés, bulles en surface, marqueurs d'état. */
-.leaflet-container {
-    background-color: var(--color-surface-2);
-    font-family: var(--font-sans);
-}
-
-.leaflet-bar,
-.leaflet-control-attribution {
-    border: 1px solid var(--color-line) !important;
-    border-radius: var(--radius-sm) !important;
-    overflow: hidden;
-    background-color: rgb(255 255 255 / .75) !important;
-    backdrop-filter: blur(14px);
-    box-shadow: none !important;
-}
-
-.dark .leaflet-bar,
-.dark .leaflet-control-attribution {
-    background-color: rgb(5 10 22 / .6) !important;
-}
-
-.leaflet-bar a,
-.leaflet-control-attribution,
-.leaflet-control-attribution a {
-    color: var(--color-ink) !important;
-    background-color: transparent !important;
-    border-color: var(--color-line) !important;
-}
-
-.leaflet-bar a {
-    width: 36px !important;
-    height: 36px !important;
-    line-height: 36px !important;
-}
-
-.leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
-    background-color: var(--color-surface);
-    color: var(--color-ink);
-    border: 1px solid var(--color-line);
-    box-shadow: 0 8px 24px -8px rgb(0 0 0 / .35);
-}
-
-.leaflet-popup-content a {
-    color: var(--color-cyan);
-}
-
-.tn-marqueur {
-    border-radius: 9999px;
-    border: 3px solid var(--color-surface);
-    background-color: var(--color-cyan);
-}
-
-.tn-marqueur-normal { background-color: var(--color-green); }
-.tn-marqueur-perturbe { background-color: var(--color-amber); }
-.tn-marqueur-alerte { background-color: var(--color-magenta); }
-
-/* F43 : un symbole par état dans le marqueur, pour ne pas dépendre de la couleur. */
-.tn-marqueur::after {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: var(--color-surface);
-    font: 700 11px/1 var(--font-sans);
-    content: 'i';
-}
-
-.tn-marqueur-normal::after { content: '✓'; }
-.tn-marqueur-perturbe::after { content: '!'; }
-.tn-marqueur-alerte::after { content: '✕'; }
-
-.dark .tn-marqueur-normal { box-shadow: 0 0 0 4px rgb(86 231 149 / .25); }
-.dark .tn-marqueur-perturbe { box-shadow: 0 0 0 4px rgb(255 180 75 / .25); }
-.dark .tn-marqueur-alerte { box-shadow: 0 0 0 4px rgb(255 66 133 / .25); }
-.dark .tn-marqueur-info { box-shadow: 0 0 0 4px rgb(65 221 248 / .25); }
 
 /*
  * CONTRASTE ÉLEVÉ (classe `hc` sur <html>, posée par partials/head selon la préférence mémorisée).
@@ -530,3 +509,6 @@ html.hc .tn-planet,
 html.hc .tn-grid {
     opacity: 0.15;
 }
+
+/* Alpine : masque les éléments x-show avant l’initialisation (bandeau D18). */
+[x-cloak] { display: none !important; }

@@ -16,7 +16,7 @@
     };
 @endphp
 
-<span {{ $attributes->class(['inline-flex shrink-0 items-center gap-1.5 rounded-xs border px-2 py-0.5 font-mono text-[0.65625rem] font-medium uppercase leading-5 tracking-[.06em]', $style['classes']]) }} data-etat="{{ $etat }}">
+<span {{ $attributes->class(['inline-flex max-w-full shrink-0 items-center gap-1.5 rounded-xs border px-2 py-0.5 font-mono text-[0.65625rem] font-medium uppercase leading-5 tracking-[.06em]', $style['classes']]) }} data-etat="{{ $etat }}">
     @if ($live)
         <x-tn.live-dot />
     @endif

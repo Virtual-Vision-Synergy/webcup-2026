@@ -33,7 +33,7 @@ test('le composant carte en lecture affiche ses points, centrés par défaut sur
     expect(configCarte($html))->toMatchArray([
         'mode' => 'lecture',
         'centre' => [-18.91, 47.52],
-        'points' => [['lat' => -18.91, 'lng' => 47.52, 'titre' => 'Analakely', 'url' => '/points/1', 'etat' => null]],
+        'points' => [['lat' => -18.91, 'lng' => 47.52, 'titre' => 'Analakely', 'url' => '/points/1', 'etat' => null, 'lignes' => [], 'lien' => null]],
     ]);
 });
 

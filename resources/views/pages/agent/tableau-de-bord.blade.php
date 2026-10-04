@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\Demarche;
+use App\Models\SecurityEvent;
 use App\Models\Signalement;
+use App\Services\FilSecurite;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
@@ -129,6 +131,24 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
     }
 
     /**
+     * F100 : 5 derniers événements de sécurité (données masquées) et compteur des non lus.
+     *
+     * @return array{evenements: \Illuminate\Support\Collection<int, array<string, mixed>>, non_lus: int}
+     */
+    #[Computed]
+    public function securite(): array
+    {
+        $this->authorize('consulterFil', SecurityEvent::class);
+
+        $fil = app(FilSecurite::class);
+
+        return [
+            'evenements' => $fil->evenements()->take(5)->values(),
+            'non_lus' => $fil->nonLus(auth()->user()),
+        ];
+    }
+
+    /**
      * @return Collection<int, Signalement>
      */
     #[Computed]
@@ -213,6 +233,38 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
                 dont {{ $compteurs['signalements_nouveaux'] }} nouveau(x)
             </span>
         </a>
+    </div>
+
+    {{-- F100 : derniers événements de sécurité --}}
+    @php($securite = $this->securite)
+    <div class="min-w-0 space-y-3" data-test="widget-securite">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <x-tn.section-label as="h2">
+                Derniers événements de sécurité
+                @if ($securite['non_lus'] > 0)
+                    <span class="ms-2 rounded-full bg-magenta px-2 py-0.5 text-xs font-semibold text-white normal-case tracking-normal" data-test="widget-securite-non-lus">{{ $securite['non_lus'] }} non lu(s)</span>
+                @endif
+            </x-tn.section-label>
+            <flux:link :href="route('agent.securite.index')" wire:navigate class="text-sm">Tous les événements</flux:link>
+        </div>
+
+        @if ($securite['evenements']->isEmpty())
+            <x-tn.empty icon="shield-check" title="Rien à signaler" text="Aucun événement de sécurité sur les {{ FilSecurite::JOURS }} derniers jours." />
+        @else
+            <ul class="divide-y divide-line rounded-md border border-line bg-surface">
+                @foreach ($securite['evenements'] as $evenement)
+                    <li wire:key="securite-{{ $evenement['cle'] }}">
+                        <a href="{{ route('agent.securite.show', ['source' => $evenement['source'], 'id' => $evenement['id']]) }}" class="flex flex-col gap-1 p-4 transition hover:bg-surface-2 sm:flex-row sm:items-center sm:justify-between" wire:navigate>
+                            <div class="flex min-w-0 items-center gap-2">
+                                <x-tn.status-badge :etat="FilSecurite::GRAVITE_ETATS[$evenement['gravite']]">{{ FilSecurite::GRAVITE_OPTIONS[$evenement['gravite']] }}</x-tn.status-badge>
+                                <p class="min-w-0 truncate text-sm text-ink" title="{{ $evenement['phrase'] }}">{{ $evenement['phrase'] }}</p>
+                            </div>
+                            <span class="shrink-0 font-mono text-xs text-ink-2">{{ $evenement['date']->locale('fr')->diffForHumans() }}</span>
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
     </div>
 
     <div class="grid gap-6 lg:grid-cols-5">

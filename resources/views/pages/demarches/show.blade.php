@@ -126,6 +126,7 @@ new #[Title('Démarche')] class extends Component {
                 <span class="font-mono text-xs">{{ __('N°') }} {{ $record->numeroSuivi() }}</span>
                 <span class="font-mono text-xs">{{ $record->created_at->format('d.m.Y · H:i') }}</span>
             </div>
+            <livewire:explication-simple cle="statut-demarche" />
         </x-slot:meta>
         <x-slot:actions>
             @can('voirAccuse', $record)

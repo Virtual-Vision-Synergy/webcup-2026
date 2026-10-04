@@ -175,6 +175,11 @@
             </x-slot:autres>
         </x-tn.menu-sheet>
 
+        {{-- F91 : assistant d'orientation, gardé ouvert d'une page à l'autre (wire:navigate). --}}
+        @persist('assistant-orientation')
+            <livewire:assistant-orientation />
+        @endpersist
+
         @persist('toast')
             <flux:toast.group>
                 <flux:toast />

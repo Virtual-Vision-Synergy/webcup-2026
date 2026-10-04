@@ -15,8 +15,15 @@ use Livewire\WithPagination;
 new #[Title('Signalements')] class extends Component {
     use ThrottlesPerUser, WithPagination;
 
-    /** Tris proposés : les plus récentes, ou les plus soutenues (F52). */
-    public const TRI_OPTIONS = ['recents' => 'Plus récentes', 'soutiens' => 'Plus soutenues'];
+    /**
+     * Tris proposés (F52, F79). Liste blanche : la valeur de l'URL n'est jamais passée telle quelle à orderBy.
+     */
+    public const TRI_OPTIONS = [
+        'recents' => 'Plus récents',
+        'anciens' => 'Plus anciens',
+        'statut' => 'Par état',
+        'soutiens' => 'Plus soutenus',
+    ];
 
     #[Url(except: '')]
     public string $search = '';
@@ -24,22 +31,65 @@ new #[Title('Signalements')] class extends Component {
     #[Url(except: false)]
     public bool $mine = false;
 
-    #[Url(except: '')]
+    /** F79 : filtres conservés dans l'URL (?categorie=…&statut=…&tri=…), historique pour le retour arrière. */
+    #[Url(as: 'categorie', except: '', history: true)]
     public string $filterCategorie = '';
 
-    #[Url(except: '')]
+    #[Url(as: 'statut', except: '', history: true)]
     public string $filterStatut = '';
 
     /** Vue citoyen : '' = mes signalements, 'publiques' = demandes ouvertes des autres habitants (F52). */
     #[Url(except: '')]
     public string $vue = '';
 
-    #[Url(except: 'recents')]
+    #[Url(except: 'recents', history: true)]
     public string $tri = 'recents';
 
     public function mount(): void
     {
         $this->authorize('viewAny', Signalement::class);
+        $this->ignorerFiltresInvalides();
+    }
+
+    /**
+     * F79 : une valeur inconnue venue de l'URL est ignorée (retour au défaut), sans erreur.
+     */
+    protected function ignorerFiltresInvalides(): void
+    {
+        if (! in_array($this->filterCategorie, Signalement::CATEGORIE_OPTIONS, true)) {
+            $this->filterCategorie = '';
+        }
+
+        if (! in_array($this->filterStatut, Signalement::STATUT_OPTIONS, true)) {
+            $this->filterStatut = '';
+        }
+
+        if (! array_key_exists($this->tri, self::TRI_OPTIONS)) {
+            $this->tri = 'recents';
+        }
+
+        if (! in_array($this->vue, ['', 'publiques'], true)) {
+            $this->vue = '';
+        }
+    }
+
+    /**
+     * F79 : au moins un filtre ou tri choisi par l'utilisateur (pour le message « aucun résultat »).
+     */
+    #[Computed]
+    public function filtresActifs(): bool
+    {
+        return $this->search !== '' || $this->filterCategorie !== '' || $this->filterStatut !== '' || $this->mine;
+    }
+
+    /**
+     * F79 : retour à la liste par défaut (la vue citoyen choisie est conservée).
+     */
+    public function reinitialiser(): void
+    {
+        $this->authorize('viewAny', Signalement::class);
+        $this->reset('search', 'mine', 'filterCategorie', 'filterStatut', 'tri');
+        $this->resetPage();
     }
 
     /**
@@ -65,12 +115,14 @@ new #[Title('Signalements')] class extends Component {
 
     public function updatedVue(): void
     {
+        $this->ignorerFiltresInvalides();
         $this->reset('filterStatut');
         $this->resetPage();
     }
 
     public function updatedTri(): void
     {
+        $this->ignorerFiltresInvalides();
         $this->resetPage();
     }
 
@@ -86,11 +138,13 @@ new #[Title('Signalements')] class extends Component {
 
     public function updatedFilterCategorie(): void
     {
+        $this->ignorerFiltresInvalides();
         $this->resetPage();
     }
 
     public function updatedFilterStatut(): void
     {
+        $this->ignorerFiltresInvalides();
         $this->resetPage();
     }
 
@@ -117,9 +171,46 @@ new #[Title('Signalements')] class extends Component {
             ->with('user')
             ->withCount('soutiens')
             ->withExists(['soutiens as soutenu_par_moi' => fn ($query) => $query->where('user_id', auth()->id())])
-            ->when($this->tri === 'soutiens', fn ($query) => $query->orderByDesc('soutiens_count'))
-            ->latest()
-            ->paginate(10);
+            ->tap(fn (Builder $query) => $this->appliquerTri($query))
+            ->paginate(10)
+            ->appends($this->parametresUrl());
+    }
+
+    /**
+     * F79 : tri choisi parmi TRI_OPTIONS uniquement ; colonnes et ordre fixés dans le code.
+     *
+     * @param  Builder<Signalement>  $query
+     */
+    protected function appliquerTri(Builder $query): void
+    {
+        match ($this->tri) {
+            'anciens' => $query->oldest()->oldest('id'),
+            'statut' => $query
+                ->orderByRaw(
+                    'CASE statut '.str_repeat('WHEN ? THEN ? ', count(Signalement::STATUT_OPTIONS)).'ELSE ? END',
+                    [...collect(Signalement::STATUT_OPTIONS)->flatMap(fn (string $statut, int $rang) => [$statut, $rang])->all(), count(Signalement::STATUT_OPTIONS)],
+                )
+                ->latest()->latest('id'),
+            'soutiens' => $query->orderByDesc('soutiens_count')->latest()->latest('id'),
+            default => $query->latest()->latest('id'),
+        };
+    }
+
+    /**
+     * F79 : filtres actifs, recopiés dans les liens de pagination.
+     *
+     * @return array<string, string>
+     */
+    protected function parametresUrl(): array
+    {
+        return array_filter([
+            'search' => $this->search,
+            'mine' => $this->mine ? '1' : '',
+            'categorie' => $this->filterCategorie,
+            'statut' => $this->filterStatut,
+            'vue' => $this->vue,
+            'tri' => $this->tri === 'recents' ? '' : $this->tri,
+        ], fn (string $valeur) => $valeur !== '');
     }
 
     public function soutenir(int $id): void
@@ -212,6 +303,9 @@ new #[Title('Signalements')] class extends Component {
         @if ($this->voitTousLesSignalements)
             <flux:checkbox wire:model.live="mine" label="Mes signalements uniquement" />
         @endif
+        @if ($this->filtresActifs || $tri !== 'recents')
+            <flux:button size="sm" variant="ghost" icon="x-mark" wire:click="reinitialiser">Réinitialiser</flux:button>
+        @endif
         <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
     </div>
 
@@ -219,7 +313,11 @@ new #[Title('Signalements')] class extends Component {
         <flux:callout variant="danger" icon="exclamation-circle" :heading="$message" role="alert" />
     @enderror
 
-    @if ($this->items->isEmpty() && $this->demandesPubliques)
+    @if ($this->items->isEmpty() && $this->filtresActifs)
+        <x-tn.empty icon="funnel" title="{{ $this->demandesPubliques ? 'Aucune demande ne correspond à ces filtres.' : 'Aucun signalement ne correspond à ces filtres.' }}" text="Modifiez la catégorie, l'état ou la recherche, ou repartez de la liste complète.">
+            <flux:button variant="primary" icon="x-mark" wire:click="reinitialiser">Réinitialiser</flux:button>
+        </x-tn.empty>
+    @elseif ($this->items->isEmpty() && $this->demandesPubliques)
         <x-tn.empty icon="users" title="Aucune demande à soutenir pour le moment" text="Quand un habitant signalera un problème, vous pourrez appuyer sa demande ici." />
     @elseif ($this->demandesPubliques)
         {{-- Demandes ouvertes des habitants : ni auteur ni photo, seulement de quoi décider de soutenir (F52) --}}

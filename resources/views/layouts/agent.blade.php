@@ -36,6 +36,9 @@
                         <flux:sidebar.item icon="squares-2x2" :href="route('agent.signalements.similaires')" :current="request()->routeIs('agent.signalements.similaires')">
                             Demandes similaires
                         </flux:sidebar.item>
+                        <flux:sidebar.item icon="arrow-down-tray" :href="route('agent.exports.index')" :current="request()->routeIs('agent.exports.*')">
+                            Export des données
+                        </flux:sidebar.item>
                         <flux:sidebar.item icon="megaphone" :href="route('agent.annonces.index')" :current="request()->routeIs('agent.annonces.*')" :badge="$annoncesEnCours ?: null" :aria-label="'Messages généraux, '.$annoncesEnCours.' en cours'">
                             Messages généraux
                         </flux:sidebar.item>
@@ -125,6 +128,7 @@
                                     <flux:menu.item icon="inbox-stack" :href="route('agent.index')">Demandes Nova Terra</flux:menu.item>
                                     <flux:menu.item icon="clipboard-document-list" :href="route('agent.demandes')">Demandes des habitants</flux:menu.item>
                                     <flux:menu.item icon="squares-2x2" :href="route('agent.signalements.similaires')">Demandes similaires</flux:menu.item>
+                                    <flux:menu.item icon="arrow-down-tray" :href="route('agent.exports.index')">Export des données</flux:menu.item>
                                     <flux:menu.item icon="megaphone" :href="route('agent.annonces.index')">Messages généraux</flux:menu.item>
                                     <flux:menu.item icon="users" :href="route('agent.citizens.index')">Comptes citoyens</flux:menu.item>
                                     <flux:menu.item icon="calendar-days" :href="route('agent.appointments.index')">Rendez-vous du jour</flux:menu.item>

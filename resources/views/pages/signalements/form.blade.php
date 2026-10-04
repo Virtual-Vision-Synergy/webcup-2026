@@ -61,6 +61,26 @@ new #[Title('Signalement')] class extends Component {
         return ['categorie' => __('catégorie'), 'lieu' => __('adresse ou lieu')];
     }
 
+    /**
+     * Messages d'erreur en mots simples (D13).
+     *
+     * @return array<string, string>
+     */
+    protected function messages(): array
+    {
+        return [
+            'categorie.required' => __('Choisissez le type de problème.'),
+            'categorie.in' => __('Choisissez le type de problème.'),
+            'description.required' => __('Décrivez ce qui s’est passé.'),
+            'description.max' => __('Votre description est trop longue : 5 000 caractères au maximum.'),
+            'lieu.required' => __('Indiquez le lieu du problème.'),
+            'lieu.max' => __('Le lieu est trop long : 255 caractères au maximum.'),
+            'photo.image' => __('La photo doit être une image JPG, PNG ou WebP.'),
+            'photo.mimes' => __('La photo doit être une image JPG, PNG ou WebP.'),
+            'photo.max' => __('La photo est trop lourde : 2 Mo au maximum.'),
+        ];
+    }
+
     public function save(): void
     {
         $this->record
@@ -136,7 +156,11 @@ new #[Title('Signalement')] class extends Component {
         :breadcrumb="$record
             ? ['Mon espace' => route('dashboard'), 'Signalements' => route('signalements.index'), 'Signalement' => route('signalements.show', $record), 'Modifier' => null]
             : ['Mon espace' => route('dashboard'), 'Signalements' => route('signalements.index'), 'Nouveau' => null]"
-    />
+    >
+        <x-slot:meta>
+            <x-tn.mots-utiles class="mt-3" :slugs="['signalement', 'statut', 'quartier']" />
+        </x-slot:meta>
+    </x-tn.page-header>
 
     <form wire:submit="save" class="relative space-y-6">
         <x-tn.mention-obligatoire />

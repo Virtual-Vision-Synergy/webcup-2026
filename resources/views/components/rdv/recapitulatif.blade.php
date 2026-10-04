@@ -13,7 +13,7 @@
         <span class="block text-sm text-ink-2">Fuseau : {{ config('rendez_vous.libelle_fuseau') }} ({{ $creneau->debut->setTimezone(\App\Models\CreneauRendezVous::fuseau())->format('\U\T\CP') }})</span>
     </x-tn.field>
     <x-tn.field label="Lieu">{{ $service->lieuRendezVous() ?? 'Lieu communiqué par le service' }}</x-tn.field>
-    <x-tn.field label="Pièces à apporter">
+    <x-tn.field label="Documents à apporter">
         @if ($service->piecesAFournir() === [])
             Aucune pièce particulière.
         @else

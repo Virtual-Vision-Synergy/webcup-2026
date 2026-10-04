@@ -123,6 +123,9 @@
                     @can('viewAgentSpace')
                         <li><a href="{{ route('agent.tableau-de-bord') }}" class="{{ $ligne }}"><flux:icon name="briefcase" class="size-5 text-ink-2" />{{ __('Espace agent') }}</a></li>
                     @endcan
+                    @if ($user->isAdmin())
+                        <li><a href="{{ route('filament.admin.pages.dashboard') }}" class="{{ $ligne }}" data-test="mobile-admin-space-link"><flux:icon name="shield-check" class="size-5 text-ink-2" />{{ __('Espace admin') }}</a></li>
+                    @endif
                     <li><a href="{{ route('profile.edit') }}" class="{{ $ligne }}"><flux:icon name="settings" class="size-5 text-ink-2" />{{ __('Paramètres') }}</a></li>
                 @else
                     <li><a href="{{ route('login') }}" class="{{ $ligne }}"><flux:icon name="log-out" class="size-5 rotate-180 text-ink-2" />{{ __('Connexion') }}</a></li>

@@ -10,6 +10,7 @@ use App\Services\RecommandationsEcrites;
 use App\Services\ReformulateurRequete;
 use App\Services\SansReformulation;
 use Carbon\CarbonImmutable;
+use Filament\Support\Facades\FilamentTimezone;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Channels\MailChannel;
 use Illuminate\Notifications\DatabaseNotification;
@@ -44,6 +45,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        // F87 : l'admin Filament affiche les dates en heure de Madagascar (stockées en UTC).
+        FilamentTimezone::set(config()->string('app.timezone_affichage'));
 
         Gate::define('viewAgentSpace', fn (User $user): bool => $user->isAgent() || $user->isAdmin());
 

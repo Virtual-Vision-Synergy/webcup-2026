@@ -61,6 +61,9 @@
                         Mes avis sur les services
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="sun" :href="route('alertes-canicule.index')" :current="request()->routeIs('alertes-canicule.*')" wire:navigate>
+                        Alertes canicule
+                    </flux:sidebar.item>
                     {{-- make:feature:nav --}}
 @endsection
 @php

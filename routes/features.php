@@ -114,6 +114,9 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('services/{service}/avis', 'pages::service-reviews.show')->name('services.reviews.index');
     Route::livewire('services/{service}/avis/donner', 'pages::service-reviews.form')->name('services.reviews.edit');
     Route::livewire('mes-avis/services', 'pages::service-reviews.index')->name('services.reviews.mine');
+    Route::livewire('alertes-canicule', 'pages::alertes-canicule.index')->name('alertes-canicule.index');
+    Route::livewire('alertes-canicule/create', 'pages::alertes-canicule.form')->name('alertes-canicule.create');
+    Route::livewire('alertes-canicule/{alerte_canicule}/edit', 'pages::alertes-canicule.form')->name('alertes-canicule.edit');
 
     // make:feature:routes
 });

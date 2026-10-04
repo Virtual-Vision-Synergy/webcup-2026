@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Actualite;
+use App\Models\AlerteCanicule;
 use App\Models\Annonce;
 use App\Models\Demarche;
 use App\Models\Message;
@@ -235,6 +236,7 @@ class DatabaseSeeder extends Seeder
 
         // F76 : avis des habitants sur trois services (notes variées, deux réponses, un avis masqué).
         $this->call(ServiceReviewSeeder::class);
+        AlerteCanicule::factory(4)->recycle($users)->create();
 
         // make:feature:seeders
     }

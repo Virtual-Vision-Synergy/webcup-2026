@@ -86,6 +86,20 @@ class UserPolicy
         return $this->viewAccount($user, $model) && ! $user->is($model) && ! $model->isActive();
     }
 
+    /**
+     * F85 : verrouillage temporaire d'un compte suspect (et fermeture de ses sessions). Admin seul,
+     * jamais sur soi-même ni sur un autre admin (pas de prise de contrôle du panneau).
+     */
+    public function verrouiller(User $user, User $model): bool
+    {
+        return $user->isAdmin() && ! $user->is($model) && ! $model->isAdmin();
+    }
+
+    public function deverrouiller(User $user, User $model): bool
+    {
+        return $user->isAdmin() && $model->estVerrouille();
+    }
+
     /*
     | F71 : comptes des habitants sans e-mail, créés par un agent (un par un ou par import CSV).
     | Un nouveau code d'activation ne peut être émis que pour un citoyen SANS e-mail géré par l'acteur (jamais soi-même) :

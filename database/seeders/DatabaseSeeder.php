@@ -189,6 +189,9 @@ class DatabaseSeeder extends Seeder
         // F39 : services ouverts aux rendez-vous, créneaux sur 14 jours ouvrés, agenda du jour pour agent@example.com.
         $this->call(RendezVousSeeder::class);
 
+        // F38 : État civil en incident, Médiathèque en maintenance, une interruption passée (historique).
+        $this->call(ServiceInterruptionSeeder::class);
+
         if (! app()->isProduction()) {
             // D11 : « Mes demandes » de user@example.com (4 suivis), voisin@example.com (403), sans.demande@example.com (état vide).
             $this->call(MesDemandesSeeder::class);
@@ -213,6 +216,12 @@ class DatabaseSeeder extends Seeder
 
         // F74 : 4 partenaires de Nova Terra (page publique /partenaires).
         $this->call(PartnerSeeder::class);
+
+        // F64 : un service perturbé (Urbanisme) et la Médiathèque indisponible, après les interruptions F38.
+        $this->call(EtatServicesSeeder::class);
+
+        // F68 : six idées de la boîte à idées (états variés, soutiens, deux réponses de la ville).
+        $this->call(IdeaSeeder::class);
 
         // make:feature:seeders
     }

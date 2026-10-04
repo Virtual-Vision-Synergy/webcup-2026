@@ -3,7 +3,7 @@
     Volontairement différent de l'espace citoyen : pas de menu latéral, bandeau émeraude, badge « Espace agent ».
 --}}
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif()])>
     <head>
         @include('partials.head')
     </head>
@@ -42,8 +42,14 @@
                 <flux:navbar.item icon="chat-bubble-left-ellipsis" :href="route('agent.concerns.index')" :current="request()->routeIs('agent.concerns.*')" :badge="$remonteesEnAttente ?: null" :aria-label="'Remontées sur les données, '.$remonteesEnAttente.' en attente'">
                     Remontées données
                 </flux:navbar.item>
+                <flux:navbar.item icon="light-bulb" :href="route('agent.ideas.index')" :current="request()->routeIs('agent.ideas.*')">
+                    Boîte à idées
+                </flux:navbar.item>
                 <flux:navbar.item icon="calendar-days" :href="route('agent.appointments.index')" :current="request()->routeIs('agent.appointments.*')">
                     Rendez-vous
+                </flux:navbar.item>
+                <flux:navbar.item icon="wrench-screwdriver" :href="route('agent.services.index')" :current="request()->routeIs('agent.services.*')">
+                    Services
                 </flux:navbar.item>
                 <flux:navbar.item icon="building-office-2" :href="route('projets.index')">
                     Projets
@@ -88,7 +94,9 @@
                     <flux:menu.item icon="clipboard-document-list" :href="route('agent.demandes')" class="md:hidden">Demandes des habitants</flux:menu.item>
                     <flux:menu.item icon="squares-2x2" :href="route('agent.signalements.similaires')" class="md:hidden">Demandes similaires</flux:menu.item>
                     <flux:menu.item icon="chat-bubble-left-ellipsis" :href="route('agent.concerns.index')" class="md:hidden">Remontées sur les données</flux:menu.item>
+                    <flux:menu.item icon="light-bulb" :href="route('agent.ideas.index')" class="md:hidden">Boîte à idées</flux:menu.item>
                     <flux:menu.item icon="calendar-days" :href="route('agent.appointments.index')" class="md:hidden">Rendez-vous du jour</flux:menu.item>
+                    <flux:menu.item icon="wrench-screwdriver" :href="route('agent.services.index')" class="md:hidden">Disponibilité des services</flux:menu.item>
                     <flux:menu.item icon="building-office-2" :href="route('projets.index')" class="md:hidden">Projets de la ville</flux:menu.item>
                     <flux:menu.item icon="building-storefront" :href="route('agent.partners.index')" class="md:hidden">Partenaires</flux:menu.item>
                     <flux:menu.item icon="document-text" :href="route('agent.audit.index')" class="md:hidden">Journal</flux:menu.item>
@@ -121,6 +129,8 @@
                 <flux:toast />
             </flux:toast.group>
         @endpersist
+
+        <x-tn.chargement />
 
         @fluxScripts
     </body>

@@ -50,6 +50,8 @@ new #[Layout('layouts::public'), Title('Alerte')] class extends Component {
             variante="renforce"
             :officiel="$record->estOfficiel()"
             :date="$record->debut"
+            :impact="$record->impact_prevu_le"
+            :fin="$record->fin"
             :niveau="$record->niveau"
             :titre="$record->titre"
             :contenu="$record->contenu"
@@ -67,6 +69,12 @@ new #[Layout('layouts::public'), Title('Alerte')] class extends Component {
             <dt class="text-ink-2">Jusqu’au</dt>
             <dd class="font-medium text-ink">{{ $record->fin->timezone(\App\Models\Annonce::FUSEAU)->translatedFormat('d F Y à H\hi') }}</dd>
         </div>
+        @if ($record->impact_prevu_le)
+            <div class="sm:col-span-2">
+                <dt class="text-ink-2">Début estimé de la perturbation</dt>
+                <dd class="font-medium text-ink">{{ $record->impact_prevu_le->timezone(\App\Models\Annonce::FUSEAU)->translatedFormat('d F Y à H\hi') }}</dd>
+            </div>
+        @endif
         <div class="sm:col-span-2">
             <dt class="text-ink-2">Dernière mise à jour</dt>
             <dd class="font-medium text-ink">{{ $record->updated_at?->timezone(\App\Models\Annonce::FUSEAU)->translatedFormat('d F Y à H\hi') }} (heure de Madagascar)</dd>

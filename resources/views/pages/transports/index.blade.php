@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AbonnementLigne;
 use App\Models\LigneTransport;
 use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -51,13 +52,15 @@ new #[Title('Transports')] class extends Component {
                 $query->where(fn ($q) => $q->where('numero', 'like', $term)->orWhere('nom', 'like', $term)->orWhere('arrets', 'like', $term));
             })
             ->when($mode !== '', fn ($query) => $query->where('mode', $mode))
-            ->when($this->perturbees, fn ($query) => $query->where('etat', '!=', 'normal'));
+            ->when($this->perturbees, fn ($query) => $query->where(fn ($q) => $q->where('etat', '!=', 'normal')
+                ->orWhereHas('interruptions', fn ($i) => $i->enCours())));
     }
 
     #[Computed]
     public function items(): LengthAwarePaginator
     {
         return $this->filteredQuery()
+            ->with('interruptionsEnCours')
             ->orderByRaw("case when etat = 'normal' then 1 else 0 end")
             ->orderBy('numero')
             ->limit(30)
@@ -73,10 +76,29 @@ new #[Title('Transports')] class extends Component {
     public function perturbations(): Collection
     {
         return LigneTransport::query()
-            ->where('etat', '!=', 'normal')
+            ->where(fn ($q) => $q->where('etat', '!=', 'normal')->orWhereHas('interruptions', fn ($i) => $i->enCours()))
+            ->with('interruptionsEnCours')
             ->orderByRaw("case when etat = 'interrompu' then 0 else 1 end")
             ->orderBy('numero')
             ->limit(30)
+            ->get()
+            ->sortBy(fn (LigneTransport $ligne): int => $ligne->etatAffiche() === 'interrompu' ? 0 : 1)
+            ->values();
+    }
+
+    /**
+     * F97 : trajets habituels de l'utilisateur connecté uniquement (jamais d'identifiant venant du navigateur).
+     *
+     * @return Collection<int, AbonnementLigne>
+     */
+    #[Computed]
+    public function mesTrajets(): Collection
+    {
+        return AbonnementLigne::query()
+            ->whereBelongsTo(auth()->user())
+            ->with('ligne.interruptionsEnCours')
+            ->latest()
+            ->limit(10)
             ->get();
     }
 
@@ -129,6 +151,30 @@ new #[Title('Transports')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    <section aria-labelledby="titre-mes-trajets" class="space-y-3" data-test="mes-trajets">
+        <h2 id="titre-mes-trajets" class="tn-display text-lg font-semibold text-ink">{{ __('Mes trajets habituels') }}</h2>
+        @forelse ($this->mesTrajets as $trajet)
+            @php($interruptionTrajet = $trajet->ligne->interruptionCourante())
+            @if ($interruptionTrajet)
+                <x-transport-interruption wire:key="trajet-{{ $trajet->id }}" :interruption="$interruptionTrajet" :ligne="$trajet->ligne" :arret="$trajet->arret" personnel />
+            @else
+                <p wire:key="trajet-{{ $trajet->id }}" class="flex flex-wrap items-center gap-2 rounded-md border border-line bg-surface px-4 py-3 text-sm">
+                    <flux:icon name="check-circle" class="size-4 shrink-0 text-ink-2" aria-hidden="true" />
+                    <a href="{{ route('transports.show', $trajet->ligne) }}" wire:navigate class="font-mono font-semibold text-ink hover:text-cyan">Ligne {{ $trajet->ligne->numero }}</a>
+                    @if ($trajet->arret)
+                        <span class="text-ink-2">· {{ __('arrêt :arret', ['arret' => $trajet->arret]) }}</span>
+                    @endif
+                    <x-tn.status-badge :etat="$trajet->ligne->etatBadge()">{{ $trajet->ligne->etatLabel() }}</x-tn.status-badge>
+                </p>
+            @endif
+        @empty
+            <p class="rounded-md border border-dashed border-line px-4 py-3 text-sm text-ink-2">
+                <flux:icon name="bell" class="me-1 inline size-4 text-cyan" aria-hidden="true" />
+                {{ __('Ouvrez la fiche de la ligne que vous prenez et choisissez votre arrêt : si elle est interrompue, vous serez prévenu et on vous dira comment faire.') }}
+            </p>
+        @endforelse
+    </section>
+
     @if ($this->perturbations->isNotEmpty())
         <div role="alert" class="space-y-2 rounded-md border border-amber/40 bg-amber/8 p-4">
             <p class="flex items-center gap-2 font-semibold text-amber">
@@ -142,7 +188,12 @@ new #[Title('Transports')] class extends Component {
                             <x-tn.status-badge :etat="$ligne->etatBadge()">{{ $ligne->etatLabel() }}</x-tn.status-badge>
                             <a href="{{ route('transports.show', $ligne) }}" wire:navigate class="font-mono font-semibold text-ink hover:text-cyan">Ligne {{ $ligne->numero }}</a>
                         </span>
-                        <span class="text-ink-2">{{ $ligne->perturbation ?? __('Perturbation signalée, informations à venir.') }}</span>
+                        <span class="text-ink-2">
+                            {{ $ligne->messagePerturbation() ?? __('Perturbation signalée, informations à venir.') }}
+                            @if ($ligne->interruptionCourante())
+                                <a href="{{ route('transports.show', $ligne) }}" wire:navigate class="ms-1 font-semibold text-magenta underline underline-offset-2">{{ __('Voir comment faire') }}</a>
+                            @endif
+                        </span>
                     </li>
                 @endforeach
             </ul>
@@ -175,8 +226,8 @@ new #[Title('Transports')] class extends Component {
                 <li wire:key="row-{{ $item->id }}" @class([
                     'group relative flex min-w-0 flex-col rounded-md border bg-surface p-5 transition-colors hover:border-cyan/40',
                     'border-line' => ! $item->estPerturbee(),
-                    'border-amber/50' => $item->etat === 'perturbe',
-                    'border-magenta/50' => $item->etat === 'interrompu',
+                    'border-amber/50' => $item->etatAffiche() === 'perturbe',
+                    'border-magenta/50' => $item->etatAffiche() === 'interrompu',
                 ])>
                     <div class="flex items-start gap-3">
                         <span class="flex h-10 min-w-10 shrink-0 items-center justify-center rounded-sm border border-cyan/25 bg-cyan/10 px-2 font-mono text-base font-bold text-cyan" aria-hidden="true">{{ $item->numero }}</span>
@@ -193,10 +244,10 @@ new #[Title('Transports')] class extends Component {
                         </div>
                     </div>
 
-                    @if ($item->estPerturbee() && $item->perturbation)
-                        <p class="mt-3 flex items-start gap-1.5 text-sm {{ $item->etat === 'interrompu' ? 'text-magenta' : 'text-amber' }}">
-                            <flux:icon :name="$item->etat === 'interrompu' ? 'x-circle' : 'exclamation-triangle'" variant="micro" class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                            <span class="line-clamp-3">{{ $item->perturbation }}</span>
+                    @if ($item->estPerturbee() && $item->messagePerturbation())
+                        <p class="mt-3 flex items-start gap-1.5 text-sm {{ $item->etatAffiche() === 'interrompu' ? 'text-magenta' : 'text-amber' }}">
+                            <flux:icon :name="$item->etatAffiche() === 'interrompu' ? 'x-circle' : 'exclamation-triangle'" variant="micro" class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                            <span class="line-clamp-3">{{ $item->messagePerturbation() }}</span>
                         </p>
                     @endif
 

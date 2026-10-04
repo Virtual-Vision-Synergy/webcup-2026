@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\Annonce;
 use App\Models\Service;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -19,6 +20,8 @@ use function Illuminate\Support\defer;
  *   en bandeau en haut de toutes les pages.
  * - La page est une version statique (HTML simple, sans JS ni image) régénérée à chaque modification
  *   de la consigne, d'un service ou d'une interruption : elle est lue depuis un fichier, sans base de données.
+ * - F104 : les alertes graves en cours (ex. tempête solaire) y sont reprises avec leurs consignes, pour rester
+ *   lisibles hors ligne (F93) pendant la perturbation ; la page est régénérée à chaque modification d'une annonce.
  * - Si le fichier manque et que la base est coupée, une version de secours (numéros, mairie) est rendue.
  */
 class InfosEssentielles
@@ -108,7 +111,7 @@ class InfosEssentielles
     public static function regenerer(): bool
     {
         try {
-            Storage::disk('local')->put(self::FICHIER, self::rendre(self::servicesNonDisponibles()));
+            Storage::disk('local')->put(self::FICHIER, self::rendre(self::servicesNonDisponibles(), self::alertesEnCours()));
 
             return true;
         } catch (Throwable $e) {
@@ -135,11 +138,12 @@ class InfosEssentielles
 
         try {
             $services = self::servicesNonDisponibles();
+            $alertes = self::alertesEnCours();
         } catch (Throwable) {
             return self::rendre(null);
         }
 
-        $html = self::rendre($services);
+        $html = self::rendre($services, $alertes);
 
         try {
             Storage::disk('local')->put(self::FICHIER, $html);
@@ -152,8 +156,9 @@ class InfosEssentielles
 
     /**
      * @param  Collection<int, Service>|null  $services  null = état des services inconnu (base indisponible)
+     * @param  Collection<int, Annonce>|null  $alertes  alertes graves en cours (F104) ; null = inconnues (base indisponible)
      */
-    public static function rendre(?Collection $services): string
+    public static function rendre(?Collection $services, ?Collection $alertes = null): string
     {
         $genereeLe = Carbon::now((string) config('rendez_vous.fuseau', 'UTC'));
         $genereeLe->locale('fr');
@@ -161,8 +166,26 @@ class InfosEssentielles
         return view('infos-essentielles', [
             'consigne' => self::consigne(),
             'services' => $services,
+            'alertes' => $alertes,
             'genereeLe' => $genereeLe->translatedFormat('l j F Y à H:i'),
         ])->render();
+    }
+
+    /**
+     * F104 : alertes graves (Alerte, Danger) en cours de diffusion, de la plus grave à la moins grave.
+     *
+     * @return Collection<int, Annonce>
+     */
+    private static function alertesEnCours(): Collection
+    {
+        return Annonce::query()
+            ->active()
+            ->whereIn('niveau', Annonce::NIVEAUX_GRAVES)
+            ->with('quartier:id,nom')
+            ->latest('debut')
+            ->get()
+            ->sortByDesc(fn (Annonce $annonce): int => $annonce->gravite())
+            ->values();
     }
 
     /**

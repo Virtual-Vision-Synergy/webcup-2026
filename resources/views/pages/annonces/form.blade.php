@@ -31,6 +31,9 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
     public string $debut = '';
     public string $fin = '';
 
+    /** F104 : début estimé de la perturbation annoncée (compte à rebours du bandeau) ; '' = sans échéance. */
+    public string $impact_prevu_le = '';
+
     /** F73 : message officiel du Haut Conseil (administrateurs uniquement, revérifié à l'enregistrement). */
     public bool $officiel = false;
 
@@ -54,6 +57,7 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             $this->langageClairValide = $annonce->langageClairPublie();
             $this->debut = $annonce->debut->timezone(Annonce::FUSEAU)->format('Y-m-d\TH:i');
             $this->fin = $annonce->fin->timezone(Annonce::FUSEAU)->format('Y-m-d\TH:i');
+            $this->impact_prevu_le = (string) $annonce->impact_prevu_le?->timezone(Annonce::FUSEAU)->format('Y-m-d\TH:i');
         } else {
             $this->authorize('create', Annonce::class);
             // Pré-rempli pour publier en quelques secondes : maintenant → +24 h.
@@ -88,6 +92,7 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
         $this->quartier_id = (string) ($champs['quartier_id'] ?? '');
         $this->debut = $champs['debut']->format('Y-m-d\TH:i');
         $this->fin = $champs['fin']->format('Y-m-d\TH:i');
+        $this->impact_prevu_le = isset($champs['impact_prevu_le']) ? $champs['impact_prevu_le']->format('Y-m-d\TH:i') : '';
         $this->resetValidation();
     }
 
@@ -104,6 +109,7 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             'consignes' => ['nullable', 'string', 'max:2000'],
             'debut' => ['required', 'date'],
             'fin' => ['required', 'date', 'after:debut'],
+            'impact_prevu_le' => ['nullable', 'date', 'before:fin'],
             'officiel' => ['boolean'],
             'langage_clair' => ['nullable', 'required_if_accepted:langageClairValide', 'string', 'max:2000'],
             'langageClairValide' => ['boolean'],
@@ -130,6 +136,8 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             'fin.required' => 'Indiquez la date de fin de diffusion.',
             'fin.date' => 'La date de fin n’est pas valide.',
             'fin.after' => 'La fin de diffusion doit être après le début.',
+            'impact_prevu_le.date' => 'L’heure de début estimée n’est pas valide.',
+            'impact_prevu_le.before' => 'Le début estimé de la perturbation doit être avant la fin de diffusion.',
             'langage_clair.required_if_accepted' => 'Rédigez la version en langage clair avant de la valider.',
             'langage_clair.max' => 'La version en langage clair ne doit pas dépasser 2000 caractères.',
         ];
@@ -165,6 +173,9 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
 
         $validated['debut'] = Carbon::parse($validated['debut'], Annonce::FUSEAU)->utc();
         $validated['fin'] = Carbon::parse($validated['fin'], Annonce::FUSEAU)->utc();
+        $validated['impact_prevu_le'] = filled($validated['impact_prevu_le'] ?? null)
+            ? Carbon::parse($validated['impact_prevu_le'], Annonce::FUSEAU)->utc()
+            : null;
         $validated['quartier_id'] = filled($validated['quartier_id'] ?? null) ? (int) $validated['quartier_id'] : null;
         $validated['consignes'] = trim((string) ($validated['consignes'] ?? '')) ?: null;
 
@@ -213,7 +224,7 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
         <div class="flex flex-wrap items-center gap-2 rounded-md border border-line bg-surface p-4">
             <flux:text class="text-sm font-medium">Partir d’un modèle :</flux:text>
             @foreach (\App\Models\Annonce::MODELES as $cle => $modele)
-                <flux:button size="sm" icon="bolt" wire:click="appliquerModele('{{ $cle }}')">{{ $modele['libelle'] }}</flux:button>
+                <flux:button size="sm" :icon="$modele['icone']" wire:click="appliquerModele('{{ $cle }}')">{{ $modele['libelle'] }}</flux:button>
             @endforeach
             <flux:text class="w-full text-xs">Le formulaire est pré-rempli (quartier, consignes, heure de fin estimée) : relisez puis publiez.</flux:text>
         </div>
@@ -265,6 +276,9 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
         </div>
         <flux:text class="-mt-3 text-xs">Heure de Madagascar.</flux:text>
 
+        <flux:input wire:model.live="impact_prevu_le" label="Début estimé de la perturbation" type="datetime-local"
+            description="Facultatif. Le bandeau affiche un compte à rebours jusqu’à cette heure (ex. tempête solaire)." />
+
         <div class="space-y-2">
             <flux:text class="text-sm font-medium">
                 Aperçu du bandeau{{ $quartier_id !== '' ? ' (tel que le voient les habitants du quartier)' : '' }}
@@ -274,6 +288,8 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
                     :variante="$quartier_id !== '' ? 'renforce' : 'standard'"
                     :officiel="$officiel"
                     :date="rescue(fn () => \Illuminate\Support\Carbon::parse($debut, \App\Models\Annonce::FUSEAU), null, false)"
+                    :impact="$impact_prevu_le !== '' ? rescue(fn () => \Illuminate\Support\Carbon::parse($impact_prevu_le, \App\Models\Annonce::FUSEAU), null, false) : null"
+                    :fin="rescue(fn () => \Illuminate\Support\Carbon::parse($fin, \App\Models\Annonce::FUSEAU), null, false)"
                     :quartier="$this->quartiers[$quartier_id] ?? null"
                     :consignes="(new \App\Models\Annonce(['consignes' => $consignes]))->listeConsignes()"
                     :niveau="$niveau"

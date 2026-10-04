@@ -69,6 +69,15 @@ class ServicePolicy
     }
 
     /**
+     * F27 : saisir les traductions de la fiche (English…) : agent rattaché à ce service (F70) ou administrateur ;
+     * jamais un citoyen.
+     */
+    public function translate(User $user, Service $service): bool
+    {
+        return $user->isAdmin() || ($user->isAgent() && $user->canAccessService($service));
+    }
+
+    /**
      * F64 : mettre à jour l'état (disponible, perturbé, indisponible) depuis la fiche du service.
      * F70 : agent rattaché à ce service ou administrateur ; jamais un citoyen.
      */

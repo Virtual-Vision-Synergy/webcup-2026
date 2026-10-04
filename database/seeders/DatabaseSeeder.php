@@ -257,6 +257,11 @@ class DatabaseSeeder extends Seeder
         // F76 : avis des habitants sur trois services (notes variées, deux réponses, un avis masqué).
         $this->call(ServiceReviewSeeder::class);
 
+        if (! app()->isProduction()) {
+            // F98 : 120 jours de consultations et de démarches pour le tableau de bord « Usage des services ».
+            $this->call(UsageServicesSeeder::class);
+        }
+
         // make:feature:seeders
     }
 

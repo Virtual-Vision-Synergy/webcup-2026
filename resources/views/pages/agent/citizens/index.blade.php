@@ -67,7 +67,7 @@ new #[Layout('layouts::agent'), Title('Comptes citoyens')] class extends Compone
         label="{{ __('Espace agent') }}"
         title="{{ __('Comptes citoyens') }}"
         :subtitle="__(':n compte(s)', ['n' => $this->items->total()])"
-        :breadcrumb="['Espace agent' => route('agent.index'), 'Comptes citoyens' => null]"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Comptes citoyens' => null]"
     >
         @can('createResidentAccounts', \App\Models\User::class)
             <x-slot:actions>
@@ -107,7 +107,7 @@ new #[Layout('layouts::agent'), Title('Comptes citoyens')] class extends Compone
     @if ($this->items->isEmpty())
         <x-tn.empty icon="users" title="{{ __('Aucun compte trouvé') }}" :text="$search !== '' || $statut !== '' || $profil !== '' ? __('Aucun compte ne correspond à votre recherche.') : __('Aucun compte citoyen pour le moment.')" />
     @else
-        <div class="overflow-x-auto">
+        <x-tn.surface padding="px-4 py-2">
             <flux:table :paginate="$this->items">
                 <flux:table.columns>
                     <flux:table.column>{{ __('Nom') }}</flux:table.column>
@@ -156,6 +156,6 @@ new #[Layout('layouts::agent'), Title('Comptes citoyens')] class extends Compone
                     @endforeach
                 </flux:table.rows>
             </flux:table>
-        </div>
+        </x-tn.surface>
     @endif
 </section>

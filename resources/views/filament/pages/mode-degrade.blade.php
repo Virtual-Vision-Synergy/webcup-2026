@@ -9,7 +9,8 @@
     />
 
     <x-filament::section heading="Ce que change le mode dégradé">
-        <ul class="list-disc space-y-1 ps-5 text-sm">
+        {{-- Styles en ligne : le CSS précompilé de Filament ne contient pas les utilitaires Tailwind du site. --}}
+        <ul style="list-style: disc; padding-inline-start: 1.25rem; display: grid; gap: 0.25rem; font-size: 0.875rem;">
             <li>Mode allégé imposé à tous : pas d’images décoratives, de flou ni d’animations.</li>
             <li>Bandeau « Service en mode allégé » affiché à tous les habitants.</li>
             <li>Rafraîchissements automatiques 4 fois moins fréquents (moins de requêtes sur le serveur).</li>

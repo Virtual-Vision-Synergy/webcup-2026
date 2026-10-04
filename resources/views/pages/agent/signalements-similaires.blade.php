@@ -122,7 +122,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes similaires')] c
 <section class="mx-auto w-full max-w-6xl space-y-6">
     <x-tn.page-header
         label="Espace agent"
-        :breadcrumb="['Espace agent' => route('agent.index'), 'Demandes similaires' => null]"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Demandes similaires' => null]"
         title="Demandes similaires"
         :subtitle="$this->groupes->count().' groupe(s) de signalements qui parlent du même problème ('.$this->groupes->sum(fn ($groupe) => $groupe->count()).' signalements)'"
     />

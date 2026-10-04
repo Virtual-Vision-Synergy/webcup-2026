@@ -63,7 +63,7 @@ new #[Layout('layouts::agent'), Title('Import de comptes habitants')] class exte
         label="{{ __('Espace agent') }}"
         title="{{ __('Importer des comptes habitants') }}"
         :subtitle="__('Jusqu\'à :n habitants par fichier, sans adresse e-mail.', ['n' => ComptesHabitants::MAX_LIGNES_CSV])"
-        :breadcrumb="['Espace agent' => route('agent.index'), 'Comptes citoyens' => route('agent.citizens.index'), 'Import CSV' => null]"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Comptes citoyens' => route('agent.citizens.index'), 'Import CSV' => null]"
     >
         <x-slot:actions>
             <flux:button icon="user-plus" :href="route('agent.citizens.create')" wire:navigate>{{ __('Créer un seul compte') }}</flux:button>
@@ -74,7 +74,7 @@ new #[Layout('layouts::agent'), Title('Import de comptes habitants')] class exte
         <form wire:submit="import" class="space-y-4">
             <flux:input type="file" wire:model="fichier" :label="__('Fichier CSV (1 Mo max)')" accept=".csv,text/csv,text/plain" />
             <div wire:loading wire:target="fichier"><flux:text>{{ __('Envoi en cours…') }}</flux:text></div>
-            @error('throttle') <flux:text class="text-red-500">{{ $message }}</flux:text> @enderror
+            @error('throttle') <flux:text class="text-magenta!">{{ $message }}</flux:text> @enderror
 
             <div class="rounded-sm border border-line p-3 text-sm text-ink-2">
                 <p class="font-medium text-ink">{{ __('Format attendu (une ligne par habitant, en-tête facultatif) :') }}</p>

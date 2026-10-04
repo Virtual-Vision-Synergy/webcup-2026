@@ -155,7 +155,7 @@ new #[Layout('layouts::agent'), Title('Journal')] class extends Component {
         label="{{ __('Espace agent') }}"
         title="{{ __('Journal') }}"
         :subtitle="__(':n opération(s) tracée(s). Journal en lecture seule : aucune entrée ne peut être modifiée ni supprimée.', ['n' => $this->items->total()])"
-        :breadcrumb="['Espace agent' => route('agent.index'), 'Journal' => null]"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Journal' => null]"
     >
         <x-slot:actions>
             <flux:button icon="arrow-down-tray" wire:click="export" wire:loading.attr="disabled">{{ __('Exporter (CSV)') }}</flux:button>

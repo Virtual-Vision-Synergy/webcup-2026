@@ -212,7 +212,7 @@ new #[Title('Démarche')] class extends Component {
 
     <x-tn.stepper :steps="$etapes" current="etape" />
 
-    <form wire:submit="save" class="space-y-6" x-on:keydown.enter="if (etape < 3 && $event.target.tagName !== 'TEXTAREA') { $event.preventDefault(); suivant(); }">
+    <form wire:submit="save" @if (! $record) data-brouillon="demarche" data-brouillon-libelle="{{ __('Nouvelle démarche') }}" @endif class="space-y-6" x-on:keydown.enter="if (etape < 3 && $event.target.tagName !== 'TEXTAREA') { $event.preventDefault(); suivant(); }">
         <div x-ref="contenu" tabindex="-1" class="outline-none">
             {{-- ÉTAPE 1 : SERVICE --}}
             <fieldset x-show="etape === 1" class="space-y-3">

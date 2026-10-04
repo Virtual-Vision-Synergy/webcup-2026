@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Policies\DatabaseNotificationPolicy;
+use App\Services\ReformulateurRequete;
+use App\Services\SansReformulation;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\DatabaseNotification;
@@ -22,7 +24,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // D10 : orientation sans IA par défaut ; une reformulation par IA pourra être liée ici plus tard.
+        $this->app->bind(ReformulateurRequete::class, SansReformulation::class);
     }
 
     /**

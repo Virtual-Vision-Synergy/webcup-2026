@@ -38,6 +38,8 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('demarches/recapitulatif', 'pages::demarches.recapitulatif')->name('demarches.recapitulatif');
     Route::livewire('demarches/create', 'pages::demarches.form')->name('demarches.create');
     Route::livewire('demarches/{demarche}', 'pages::demarches.show')->name('demarches.show');
+    // F83 : accusé de réception imprimable (auteur, personnel du service, admin : DemarchePolicy::voirAccuse).
+    Route::livewire('demarches/{demarche}/accuse', 'pages::demarches.accuse')->name('demarches.accuse');
     Route::livewire('demarches/{demarche}/edit', 'pages::demarches.form')->name('demarches.edit');
 
     Route::livewire('signalements', 'pages::signalements.index')->name('signalements.index');

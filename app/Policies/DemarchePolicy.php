@@ -34,6 +34,14 @@ class DemarchePolicy
         return $this->accesService($user, $demarche);
     }
 
+    /**
+     * F83 : accusé de réception : l'auteur, le personnel du service concerné et les admins ; autre habitant → 403.
+     */
+    public function voirAccuse(User $user, Demarche $demarche): Response
+    {
+        return $this->view($user, $demarche);
+    }
+
     public function create(User $user): bool
     {
         return true;

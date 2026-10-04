@@ -91,10 +91,8 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
         // F70 : uniquement les démarches des services de l'agent (toutes pour l'admin).
         return Demarche::query()
             ->visibleTo(auth()->user())
-            ->when($this->search !== '', function ($query) {
-                $term = '%'.$this->search.'%';
-                $query->where(fn ($q) => $q->where('titre', 'like', $term)->orWhere('description', 'like', $term));
-            })
+            // F83 : objet, description ou référence (« nt-2026-123 » retrouve NT-2026-000123).
+            ->rechercher($this->search)
             ->when($this->enAttente, fn ($query) => $query->whereIn('statut', self::STATUTS_EN_ATTENTE))
             ->when($this->sansReponse, fn ($query) => $query->sansReponse())
             ->when($this->prioritaires, fn ($query) => $query->urgencesATraiter())
@@ -242,7 +240,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
 
     {{-- Filtres --}}
     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher…" aria-label="Rechercher une demande" class="sm:max-w-xs" />
+        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Objet ou référence (NT-2026-…)" aria-label="Rechercher une demande par objet ou par référence" class="sm:max-w-xs" />
         <flux:select wire:model.live="filterStatut" aria-label="Filtrer par état" class="sm:max-w-52">
             <flux:select.option value="">État : tous</flux:select.option>
             @foreach (Demarche::STATUT_OPTIONS as $option)
@@ -290,6 +288,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Demandes des habitants')
                                 @endif
                             </div>
                             <a href="{{ route('demarches.show', $item) }}" class="block font-medium text-ink hover:text-cyan">{{ $item->titre }}</a>
+                            <p class="font-mono text-xs text-ink-2">{{ $item->numeroSuivi() }}</p>
                             @if ($item->urgence_medicale)
                                 <p class="text-xs text-ink-2">
                                     @if ($item->pris_en_charge_le)

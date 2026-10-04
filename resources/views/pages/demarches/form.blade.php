@@ -157,6 +157,9 @@ new #[Title('Démarche')] class extends Component {
             if ($record === null) {
                 return;
             }
+
+            // F83 : accusé de réception par e-mail (référence, date et heure, objet, service).
+            $record->envoyerAccuseReception();
         }
 
         if ($nouvelleUrgence) {

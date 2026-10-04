@@ -4,6 +4,8 @@ namespace App\Notifications;
 
 use App\Models\Annonce;
 use App\Models\User;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
@@ -12,8 +14,10 @@ use Illuminate\Support\Str;
  * F30 : annonce importante publiée (cloche) et, pour le niveau le plus grave, e-mail.
  * Les clés sujet / lignes / libelle / url sont celles affichées par la cloche (comme Avis).
  */
-class ImportantAnnouncementPublished extends Notification
+class ImportantAnnouncementPublished extends Notification implements ShouldQueue
 {
+    use Queueable;
+
     public function __construct(public Annonce $annonce) {}
 
     /**

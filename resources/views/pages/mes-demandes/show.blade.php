@@ -61,7 +61,7 @@ new #[Title('Suivi de ma demande')] class extends Component {
         </x-tn.surface>
 
         <x-tn.panel label="Suivi" padding="p-5 md:p-6">
-            <div wire:poll.30s.visible="rafraichir">
+            <div wire:poll.{{ \App\Support\ModeDegrade::poll(30) }}.visible="rafraichir">
                 <h2 class="sr-only">Chronologie du traitement</h2>
                 {{-- La prochaine étape attendue est affichée en grisé, sans date. --}}
                 <x-tn.timeline

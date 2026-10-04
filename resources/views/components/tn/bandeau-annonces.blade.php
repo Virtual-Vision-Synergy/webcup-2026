@@ -5,10 +5,12 @@
     - Les alertes d'un quartier qui n'est pas celui du visiteur (ou visiteur sans quartier) sont toujours repliées, en version compacte.
     - F73 : les messages officiels du Haut Conseil passent avant tout le reste et ne sont jamais repliés. Une fois masqué,
       un message officiel laisse une ligne « Relire » vers sa page : il reste consultable pendant toute sa diffusion.
+    - Chaque bandeau disparaît seul après quelques secondes pour la visite (voir tn.bandeau-annonce) ; « Afficher » les rouvre.
+    - Pleine largeur même si un parent devient une grille (grille Flux de <flux:main> : le bandeau y formait une colonne étroite à gauche).
 --}}
 @php
     $habitant = auth()->user();
-    $sansQuartier = $habitant !== null && $habitant->quartier_id === null;
+    $sansQuartier = $habitant !== null && $habitant->isCitoyen() && $habitant->quartier_id === null;
     $fermees = \App\Models\Annonce::clesFermees(request()->cookie(\App\Models\Annonce::COOKIE_FERMES));
 
     [$officiels, $ordinaires] = \App\Models\Annonce::enDiffusion($habitant)
@@ -30,7 +32,7 @@
 @endphp
 
 @if ($officiels->isNotEmpty() || $visible || $repliees->isNotEmpty())
-    <div {{ $attributes->class('tn-bandeaux-annonces') }} x-data="{ tous: false }">
+    <div {{ $attributes->class('tn-bandeaux-annonces w-full [grid-column:1/-1]') }} x-data="{ tous: false }">
         @foreach ($officielsVisibles as $annonce)
             <x-tn.bandeau-annonce
                 officiel
@@ -47,8 +49,8 @@
         @endforeach
 
         @foreach ($officielsMasques as $annonce)
-            <div class="border-b-2 border-ink bg-surface px-4 lg:px-8">
-                <p class="mx-auto flex min-h-10 max-w-7xl flex-wrap items-center gap-x-2 text-sm text-ink">
+            <div class="border-b-2 border-ink bg-surface">
+                <p class="mx-auto flex min-h-10 max-w-7xl flex-wrap items-center gap-x-2 px-4 text-sm text-ink sm:px-6 lg:px-8">
                     <flux:icon.building-library class="size-4 shrink-0" aria-hidden="true" />
                     <span class="font-semibold">Message officiel du Haut Conseil :</span>
                     <span class="min-w-0 truncate">{{ $annonce->titre }}</span>
@@ -85,9 +87,19 @@
             @endif
         @endforeach
 
+        {{-- Messages masqués automatiquement pendant la visite : un clic les rouvre. --}}
+        <div class="border-b border-line" x-show="$store.tnBandeaux?.masques.length > 0" x-cloak>
+            <div class="mx-auto flex max-w-7xl items-center gap-2 px-4 sm:px-6 lg:px-8">
+                <flux:icon.bell class="size-4 shrink-0 text-ink-2" aria-hidden="true" />
+                <button type="button" class="flex min-h-10 cursor-pointer items-center text-sm font-medium text-ink-2 hover:text-ink" x-on:click="$store.tnBandeaux.reafficher()">
+                    <span x-text="$store.tnBandeaux?.masques.length === 1 ? '1 message masqué · Afficher' : ($store.tnBandeaux?.masques.length + ' messages masqués · Afficher')"></span>
+                </button>
+            </div>
+        </div>
+
         @if ($repliees->isNotEmpty())
-            <div class="border-b border-line px-4 lg:px-8">
-                <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4">
+            <div class="border-b border-line">
+                <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 px-4 sm:px-6 lg:px-8">
                     <button
                         type="button"
                         class="flex min-h-10 cursor-pointer items-center gap-1 text-sm font-medium text-ink-2 hover:text-ink"

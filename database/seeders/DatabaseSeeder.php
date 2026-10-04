@@ -5,8 +5,6 @@ namespace Database\Seeders;
 use App\Models\Actualite;
 use App\Models\Annonce;
 use App\Models\Demarche;
-use App\Models\GenTestFiche;
-use App\Models\GenTestZone;
 use App\Models\Message;
 use App\Models\Onboarding;
 use App\Models\Role;
@@ -232,10 +230,6 @@ class DatabaseSeeder extends Seeder
 
         // F76 : avis des habitants sur trois services (notes variées, deux réponses, un avis masqué).
         $this->call(ServiceReviewSeeder::class);
-
-        GenTestZone::factory(20)->recycle($users)->create();
-
-        GenTestFiche::factory(20)->recycle($users)->create();
 
         // make:feature:seeders
     }

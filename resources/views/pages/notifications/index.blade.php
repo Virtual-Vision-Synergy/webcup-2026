@@ -23,7 +23,7 @@ new #[Title('Mes notifications')] class extends Component {
     #[Computed]
     public function nonLues(): int
     {
-        return auth()->user()->unreadNotifications()->count();
+        return auth()->user()->nombreNotificationsNonLues();
     }
 
     /**

@@ -56,7 +56,7 @@
             @endif
 
             <p style="margin-top: 0.75rem; opacity: 0.7; font-size: 0.875rem;">
-                Vérifiée le {{ $verification->created_at?->format('d/m/Y à H:i') }}
+                Vérifiée le {{ $verification->created_at?->timezone(config('app.timezone_affichage'))->format('d/m/Y à H:i') }}
                 par {{ $verification->user?->name ?? 'la vérification automatique' }}.
                 La restauration ne se fait jamais depuis l’application.
             </p>

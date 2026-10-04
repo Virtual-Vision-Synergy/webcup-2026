@@ -3,6 +3,7 @@
 use App\Http\Controllers\KnownDeviceController;
 use App\Http\Controllers\NotificationController;
 use App\Models\Onboarding;
+use App\Models\PartnerOffering;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -120,6 +121,18 @@ Route::middleware(['auth'])->group(function () {
     // F92 : « Je ne sais pas à qui m'adresser » — orientation vers le bon service à partir d'une description libre (moteur D10).
     Route::livewire('orientation', 'pages::orientation.index')->name('orientation.index');
 
+    // F99 : espace partenaire — un compte partenaire gère SES services, l'admin ceux de tous (PartnerOfferingPolicy dans chaque action).
+    Route::middleware('can:viewPartnerSpace')->prefix('partenaire/services')->name('partner.offerings.')->group(function () {
+        Route::livewire('/', 'pages::partner-offerings.index')->name('index');
+        Route::livewire('create', 'pages::partner-offerings.form')->name('create');
+        Route::livewire('{partnerOffering:id}/edit', 'pages::partner-offerings.form')->name('edit');
+    });
+
+    // F99 : « Me prévenir quand disponible » pour un invité : la connexion ramène sur la fiche (aucune action en GET,
+    // l'abonnement se fait ensuite par le bouton de la fiche, requête POST Livewire avec CSRF).
+    Route::get('catalogue/partenaires/{partnerOffering}/me-prevenir', fn (PartnerOffering $partnerOffering) => redirect()->route('catalogue.partners.show', $partnerOffering))
+        ->name('catalogue.partners.notify');
+
     // make:feature:routes
 });
 
@@ -161,6 +174,9 @@ Route::group([], function () {
 
     // F31 : canicule, consultable sans compte (information de santé : alertes par quartier, conseils écrits, numéros utiles).
     Route::livewire('canicule', 'pages::canicule.index')->name('canicule');
+
+    // F99 : fiche publique d'un service partenaire publié (non publié ou inexistant : 404, PartnerOfferingPolicy::view).
+    Route::livewire('catalogue/partenaires/{partnerOffering}', 'pages::partner-offerings.show')->name('catalogue.partners.show');
 
     // make:feature:routes-public
 });

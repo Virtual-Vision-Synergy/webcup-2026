@@ -10,7 +10,7 @@
         \App\Models\Service::ETAT_PERTURBE => 'perturbe',
         default => 'normal',
     };
-    $misAJour = $service->etatMisAJourLe()?->setTimezone(\App\Models\CreneauRendezVous::fuseau())->locale('fr');
+    $misAJour = $service->etatMisAJourLe()?->setTimezone(\App\Models\CreneauRendezVous::fuseau());
 @endphp
 
 @if ($compact)
@@ -22,7 +22,7 @@
         <span class="text-sm font-medium text-ink">{{ __('État actuel') }}</span>
         <x-tn.status-badge :etat="$etatBadge" class="text-xs">{{ __($service->libelleEtatDetaille()) }}</x-tn.status-badge>
         @if ($misAJour)
-            <span class="text-xs text-ink-2">{{ __('Mis à jour le :date', ['date' => $misAJour->translatedFormat('j F Y à H\hi')]) }}</span>
+            <span class="text-xs text-ink-2">{{ __('Mis à jour le :date', ['date' => $misAJour->isoFormat('LLL')]) }}</span>
         @endif
     </div>
 @endif

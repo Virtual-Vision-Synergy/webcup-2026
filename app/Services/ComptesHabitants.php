@@ -124,7 +124,7 @@ class ComptesHabitants
             $validation = Validator::make($donnees, [
                 'name' => ['required', 'string', 'max:255'],
                 'telephone' => ['nullable', 'string', 'max:30', 'regex:/^\+?[0-9 .()-]{6,30}$/'],
-                'langue' => ['nullable', 'in:'.implode(',', array_keys(DefinirLangue::LANGUES))],
+                'langue' => ['nullable', 'in:'.implode(',', DefinirLangue::codes())],
             ]);
 
             if ($validation->fails()) {

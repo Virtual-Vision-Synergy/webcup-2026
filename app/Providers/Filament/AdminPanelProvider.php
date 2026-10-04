@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Http\Middleware\DefinirLangue;
 use App\Http\Middleware\EnsureAccountIsActive;
 use Filament\Enums\ThemeMode;
 use Filament\FontProviders\LocalFontProvider;
@@ -48,6 +49,8 @@ class AdminPanelProvider extends PanelProvider
             // Même police que le site (IBM Plex Sans, auto-hébergée par Vite) : aucun appel à un CDN de polices.
             ->font('IBM Plex Sans', provider: LocalFontProvider::class)
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): HtmlString => app(Vite::class)->fonts())
+            // D14 : même choix de langue que le site, dans la barre du haut de l'administration.
+            ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn (): HtmlString => new HtmlString(view('filament.langue')->render()))
             // Thème sombre par défaut, comme le site.
             ->defaultThemeMode(ThemeMode::Dark)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
@@ -72,6 +75,8 @@ class AdminPanelProvider extends PanelProvider
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
                 AuthenticateSession::class,
+                // D14 : langue du compte (ou de la session) appliquée aussi à l'administration.
+                DefinirLangue::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,
                 SubstituteBindings::class,

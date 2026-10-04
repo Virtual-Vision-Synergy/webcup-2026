@@ -37,7 +37,7 @@ new #[Layout('layouts::agent'), Title('Nouveau compte habitant')] class extends 
         return [
             'name' => ['required', 'string', 'max:255'],
             'telephone' => ['nullable', 'string', 'max:30', 'regex:/^\+?[0-9 .()-]{6,30}$/'],
-            'langue' => ['required', Rule::in(array_keys(DefinirLangue::LANGUES))],
+            'langue' => ['required', Rule::in(DefinirLangue::codes())],
         ];
     }
 
@@ -85,7 +85,7 @@ new #[Layout('layouts::agent'), Title('Nouveau compte habitant')] class extends 
             <flux:input wire:model="name" :label="__('Nom complet')" required autofocus class="sm:col-span-2" />
             <flux:input wire:model="telephone" :label="__('Téléphone (facultatif)')" type="tel" icon="phone" placeholder="034 12 345 67" :description="__('Permet aussi de se connecter avec ce numéro.')" />
             <flux:select wire:model="langue" :label="__('Langue de l\'habitant')">
-                @foreach (DefinirLangue::LANGUES as $code => $libelle)
+                @foreach (DefinirLangue::langues() as $code => $libelle)
                     <flux:select.option value="{{ $code }}">{{ $libelle }}</flux:select.option>
                 @endforeach
             </flux:select>

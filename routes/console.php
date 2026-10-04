@@ -40,3 +40,6 @@ Schedule::command('demarches:prioriser')->hourly()->withoutOverlapping();
 
 // F31 : alertes canicule programmées, notifiées aux habitants des quartiers touchés à leur début (idempotent).
 Schedule::command('canicule:notify')->everyMinute()->withoutOverlapping();
+
+// F97 : interruptions de lignes de transport programmées, notifiées aux habitants abonnés à leur début (idempotent).
+Schedule::command('transports:notify')->everyMinute()->withoutOverlapping();

@@ -22,6 +22,8 @@
     };
 @endphp
 
+<x-tn.bandeau-mode-degrade />
+
 @if ($visible || $repliees->isNotEmpty())
     <div {{ $attributes->class('tn-bandeaux-annonces') }} x-data="{ tous: false }">
         @foreach (collect([$visible])->filter()->concat($repliees) as $annonce)

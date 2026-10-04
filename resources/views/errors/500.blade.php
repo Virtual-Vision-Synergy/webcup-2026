@@ -18,6 +18,7 @@
         <p class="code">{{ __('Erreur 500') }}</p>
         <h1>{{ __('Un problème technique est survenu') }}</h1>
         <p>{{ __('Le service rencontre une difficulté momentanée. Réessayez dans quelques instants ; vos démarches déjà envoyées sont bien enregistrées.') }}</p>
+        <p data-test="lien-infos-essentielles"><a href="/infos-essentielles">{{ __('Infos essentielles : consignes, numéros d’urgence et coordonnées de la mairie') }} →</a></p>
         <a href="{{ url('/') }}">{{ __('Accueil') }}</a>
     </main>
 </body>

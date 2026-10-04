@@ -105,6 +105,9 @@
             @endif
 
             <ul class="mt-3 border-t border-line pt-2">
+                @if (Route::has('partners.index'))
+                    <li><a href="{{ route('partners.index') }}" class="{{ $ligne }}"><flux:icon name="building-storefront" class="size-5 text-ink-2" />{{ __('Partenaires') }}</a></li>
+                @endif
                 @auth
                     <li><a href="{{ route('dashboard') }}" class="{{ $ligne }}"><flux:icon name="house" class="size-5 text-ink-2" />{{ __('Mon espace') }}</a></li>
                     @if (Route::has('demarches.index'))

@@ -41,6 +41,10 @@
                         Mes avis
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="building-storefront" :href="route('partners.index')" :current="request()->routeIs('partners.*')" wire:navigate>
+                        Partenaires
+                    </flux:sidebar.item>
+
                     {{-- make:feature:nav --}}
 @endsection
 @php

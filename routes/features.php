@@ -124,5 +124,9 @@ Route::group([], function () {
     // F46 : urgences et santé, consultable sans compte (numéros d'urgence, hôpitaux) ; lecture seule, aucune action.
     Route::livewire('urgences', 'pages::urgences.index')->name('urgences.index');
 
+    // F74 : partenaires publiés consultables sans compte (horaires, adresse, carte) ; gestion dans routes/agent.php.
+    Route::livewire('partenaires', 'pages::partners.index')->name('partners.index');
+    Route::livewire('partenaires/{partner:slug}', 'pages::partners.show')->name('partners.show');
+
     // make:feature:routes-public
 });

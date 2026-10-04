@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Partner;
 use App\Models\Quartier;
 use App\Models\Role;
 use App\Models\Service;
@@ -94,6 +95,17 @@ class UserFactory extends Factory
     public function agent(): static
     {
         return $this->state(fn () => ['role_id' => Role::idFor(Role::AGENT)]);
+    }
+
+    /**
+     * F99 : compte partenaire rattaché au partenaire donné (ou à un nouveau partenaire).
+     */
+    public function partenaireDe(?Partner $partner = null): static
+    {
+        return $this->state(fn () => [
+            'role_id' => Role::idFor(Role::PARTENAIRE),
+            'partner_id' => $partner->id ?? Partner::factory(),
+        ]);
     }
 
     /**

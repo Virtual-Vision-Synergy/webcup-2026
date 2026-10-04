@@ -56,6 +56,9 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('viewAgentSpace', fn (User $user): bool => $user->isAgent() || $user->isAdmin());
 
+        // F99 : espace partenaire (comptes partenaires rattachés à un partenaire, et admins qui gèrent tous les partenaires).
+        Gate::define('viewPartnerSpace', fn (User $user): bool => $user->isAdmin() || ($user->isPartenaire() && $user->partner_id !== null));
+
         // F30 : une notification n'est accessible qu'à son destinataire.
         Gate::policy(DatabaseNotification::class, DatabaseNotificationPolicy::class);
     }

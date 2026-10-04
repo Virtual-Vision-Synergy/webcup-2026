@@ -62,7 +62,8 @@ function requetesSqlDeLaPage(string $url, ?User $user = null): array
 
 dataset('pages clés', [
     'accueil' => ['home', false, 10],
-    'services' => ['services.index', true, 12],
+    // F99 : +1 requête pour les services partenaires du catalogue (partenaire lu par jointure, jamais plus d'une).
+    'services' => ['services.index', true, 13],
     'actualités' => ['actualites.index', true, 9],
     'mes demandes' => ['mes-demandes.index', true, 9],
     'mon espace' => ['dashboard', true, 16],

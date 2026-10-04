@@ -67,6 +67,13 @@
                         {{ __('Mes avis sur les services') }}
                     </flux:sidebar.item>
 
+                    {{-- F99 : espace partenaire (comptes partenaires et admins). --}}
+                    @can('viewPartnerSpace')
+                        <flux:sidebar.item icon="building-storefront" :href="route('partner.offerings.index')" :current="request()->routeIs('partner.offerings.*')" wire:navigate>
+                            Espace partenaire
+                        </flux:sidebar.item>
+                    @endcan
+
                     {{-- make:feature:nav --}}
 @endsection
 @php

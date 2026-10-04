@@ -3,7 +3,6 @@
 namespace App\Concerns;
 
 use App\Models\Service;
-use App\Models\ServiceInterruption;
 
 /**
  * F38 : à l'ouverture d'une démarche liée à un service (mount d'un composant Livewire),
@@ -21,7 +20,7 @@ trait BloqueSiServiceIndisponible
             return false;
         }
 
-        session()->flash('service-indisponible', ServiceInterruption::MESSAGE_DEMARCHE_SUSPENDUE);
+        session()->flash('service-indisponible', $service->messageIndisponibilite());
 
         $this->redirectRoute('services.show', $service, navigate: true);
 

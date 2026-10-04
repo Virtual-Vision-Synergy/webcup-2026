@@ -68,9 +68,52 @@ document.addEventListener('alpine:init', () => {
         reafficher() {
             window.dispatchEvent(new CustomEvent('tn-bandeaux-reafficher'));
         },
+        /**
+         * F104 : une perturbation est annoncée → la page « Infos essentielles » (consignes, numéros d'urgence) est rechargée
+         * une fois par visite pour que le service worker (F93) en garde la dernière version, lisible hors ligne.
+         */
+        garderInfosEssentielles(cle) {
+            try {
+                if (window.sessionStorage.getItem('tn.infos-essentielles') === String(cle)) {
+                    return;
+                }
+                window.sessionStorage.setItem('tn.infos-essentielles', String(cle));
+            } catch (e) {}
+
+            window.fetch('/infos-essentielles', { headers: { Accept: 'text/html' }, credentials: 'same-origin' }).catch(() => {});
+        },
     });
 
     window.Alpine.data('tnBandeau', bandeauAnnonce);
+
+    /**
+     * F104 : compte à rebours jusqu'au début estimé d'une perturbation (« dans 12 min 05 s »), mis à jour chaque seconde.
+     */
+    window.Alpine.data('tnCompteARebours', (cible) => ({
+        texte: '',
+        minuteur: null,
+        init() {
+            this.actualiser();
+            this.minuteur = window.setInterval(() => this.actualiser(), 1000);
+        },
+        destroy() {
+            window.clearInterval(this.minuteur);
+        },
+        actualiser() {
+            const secondes = Math.max(0, Math.round((cible - Date.now()) / 1000));
+            if (secondes === 0) {
+                this.texte = '(maintenant)';
+                window.clearInterval(this.minuteur);
+
+                return;
+            }
+
+            const heures = Math.floor(secondes / 3600);
+            const minutes = Math.floor((secondes % 3600) / 60);
+            const reste = String(secondes % 60).padStart(2, '0');
+            this.texte = '(dans ' + (heures > 0 ? heures + ' h ' : '') + minutes + ' min ' + reste + ' s)';
+        },
+    }));
 
     // F93 : état du réseau, brouillons hors ligne et page « Vous êtes hors ligne ».
     window.Alpine.data('tnEtatReseau', etatReseau);

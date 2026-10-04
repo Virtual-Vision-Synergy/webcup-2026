@@ -48,6 +48,8 @@
                 :consignes="$annonce->listeConsignes()"
                 :quartier="$annonce->nomQuartier()"
                 :date="$annonce->debut"
+                :impact="$annonce->impact_prevu_le"
+                :fin="$annonce->fin"
                 :lien="route('alertes.show', $annonce->id)"
                 :cle="$annonce->cleFermeture()"
             />
@@ -83,6 +85,8 @@
                 :contenu="$annonce->contenu"
                 :consignes="$annonce->listeConsignes()"
                 :quartier="$annonce->nomQuartier()"
+                :impact="$annonce->impact_prevu_le"
+                :fin="$annonce->fin"
                 :lien="$annonce->estCiblee() || $annonce->listeConsignes() !== [] ? route('alertes.show', $annonce->id) : null"
                 :cle="$annonce->cleFermeture()"
             />

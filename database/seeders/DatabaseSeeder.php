@@ -223,6 +223,13 @@ class DatabaseSeeder extends Seeder
         // F68 : six idées de la boîte à idées (états variés, soutiens, deux réponses de la ville).
         $this->call(IdeaSeeder::class);
 
+        // F76 : avis des habitants sur trois services (notes variées, deux réponses, un avis masqué).
+        $this->call(ServiceReviewSeeder::class);
+
+        \App\Models\GenTestZone::factory(20)->recycle($users)->create();
+
+        \App\Models\GenTestFiche::factory(20)->recycle($users)->create();
+
         // make:feature:seeders
     }
 }

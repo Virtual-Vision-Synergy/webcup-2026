@@ -106,6 +106,17 @@ new #[Title('Démarche')] class extends Component {
 
     <x-audit-history :subject="$record" variant="resume" />
 
+    {{-- F76 : démarche traitée → invitation à donner (ou modifier) son avis sur le service. --}}
+    @if ($statut === 'traitee' && $record->service && $record->user?->is(auth()->user()))
+        <flux:callout icon="star" color="cyan">
+            <flux:callout.heading>{{ __('Comment s’est passée votre démarche ? Donnez votre avis') }}</flux:callout.heading>
+            <flux:callout.text>{{ __('Votre note et votre commentaire aident la ville à améliorer le service « :service ».', ['service' => $record->service->nom]) }}</flux:callout.text>
+            <x-slot name="actions">
+                <flux:button size="sm" variant="primary" :href="route('services.reviews.edit', $record->service)" wire:navigate>{{ __('Donner mon avis') }}</flux:button>
+            </x-slot>
+        </flux:callout>
+    @endif
+
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <x-tn.surface>
             <x-tn.section-label as="h2" class="mb-2">{{ __('Détails') }}</x-tn.section-label>

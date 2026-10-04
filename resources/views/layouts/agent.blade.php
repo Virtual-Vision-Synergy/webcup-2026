@@ -3,7 +3,7 @@
     Volontairement différent de l'espace citoyen : pas de menu latéral, bandeau émeraude, badge « Espace agent ».
 --}}
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif()])>
     <head>
         @include('partials.head')
     </head>
@@ -125,6 +125,8 @@
                 <flux:toast />
             </flux:toast.group>
         @endpersist
+
+        <x-tn.chargement />
 
         @fluxScripts
     </body>

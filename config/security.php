@@ -28,4 +28,27 @@ return [
     // Inscription et « mot de passe oublié » : requêtes par minute et par IP.
     'sensitive_routes_per_minute' => 5,
 
+    /*
+    | F81 : protection des formulaires contre les robots (sans CAPTCHA).
+    | Champ piège invisible + jeton d'horodatage chiffré (délai minimal de remplissage) + limites par compte et par IP.
+    */
+    'formulaires' => [
+        // Durée de validité du jeton d'horodatage (au-delà : « rechargez la page »).
+        'jeton_valide_minutes' => 120,
+
+        // Délai minimal entre l'affichage et l'envoi, en secondes (un humain met toujours plus longtemps).
+        'delai_minimal' => [
+            'connexion' => 1,
+            'inscription' => 3,
+            'contact' => 3,
+            'signalement' => 3,
+        ],
+
+        // Envois par minute (contact et signalement) : par compte, et plus large par IP.
+        'limites' => [
+            'contact' => ['compte' => 5, 'ip' => 15],
+            'signalement' => ['compte' => 10, 'ip' => 30],
+        ],
+    ],
+
 ];

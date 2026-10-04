@@ -13,7 +13,7 @@ function echouer(string $email, int $fois = 1, string $ip = '127.0.0.1'): void
 {
     foreach (range(1, $fois) as $i) {
         test()->withServerVariables(['REMOTE_ADDR' => $ip])
-            ->post(route('login.store'), ['email' => $email, 'password' => 'mauvais-mot-de-passe']);
+            ->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $email, 'password' => 'mauvais-mot-de-passe']);
     }
 }
 
@@ -22,7 +22,7 @@ test('après 5 échecs, la 6e tentative est bloquée avec le délai en français
 
     echouer($user->email, 5);
 
-    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'mauvais-mot-de-passe'])
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'mauvais-mot-de-passe'])
         ->assertRedirect()
         ->assertSessionHasErrors(['email' => 'Trop de tentatives de connexion. Par sécurité, réessayez dans 15 minutes.']);
 
@@ -34,11 +34,11 @@ test('le 5e échec annonce déjà le blocage, et les essais restants sont indiqu
     $user = User::factory()->citoyen()->create();
 
     echouer($user->email, 2);
-    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'mauvais'])
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'mauvais'])
         ->assertSessionHasErrors(['email' => 'Ces identifiants ne correspondent à aucun compte. Il vous reste 2 tentatives avant un blocage temporaire.']);
 
     echouer($user->email);
-    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'mauvais'])
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'mauvais'])
         ->assertSessionHasErrors(['email' => 'Trop de tentatives de connexion. Par sécurité, réessayez dans 15 minutes.']);
 });
 
@@ -47,20 +47,20 @@ test('pendant le blocage, le bon mot de passe est refusé ; après expiration, l
 
     echouer($user->email, 5);
 
-    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password'])
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'password'])
         ->assertSessionHasErrors('email');
     $this->assertGuest();
 
     $this->travel(16)->minutes();
 
-    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password']);
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'password']);
     $this->assertAuthenticatedAs($user);
 });
 
 test('le formulaire garde l’e-mail saisi mais jamais le mot de passe', function () {
     $user = User::factory()->citoyen()->create();
 
-    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'mauvais'])
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'mauvais'])
         ->assertSessionHasInput('email', $user->email)
         ->assertSessionMissing('_old_input.password');
 });
@@ -69,21 +69,21 @@ test('2 échecs puis succès : connecté tout de suite et compteur remis à zér
     $user = User::factory()->citoyen()->create();
 
     echouer($user->email, 2);
-    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password']);
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'password']);
 
     $this->assertAuthenticatedAs($user);
 
     // Compteur reparti de zéro : 2 + 4 échecs ne bloquent pas, alors que 6 échecs consécutifs bloqueraient.
     auth()->logout();
     echouer($user->email, 4);
-    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password']);
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'password']);
     $this->assertAuthenticatedAs($user);
 });
 
 test('une connexion correcte du premier coup ne crée aucune entrée d’échec', function () {
     $user = User::factory()->citoyen()->create();
 
-    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password']);
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'password']);
 
     $this->assertAuthenticatedAs($user);
     expect(LoginAttempt::failed()->count())->toBe(0)
@@ -96,7 +96,7 @@ test('le blocage d’un couple e-mail + IP n’empêche pas le titulaire de se c
     echouer($user->email, 5, '41.188.37.204');
 
     $this->withServerVariables(['REMOTE_ADDR' => '102.16.44.12'])
-        ->post(route('login.store'), ['email' => $user->email, 'password' => 'password']);
+        ->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'password']);
 
     $this->assertAuthenticatedAs($user);
 });
@@ -109,7 +109,7 @@ test('une même IP qui essaie de nombreux comptes différents est bloquée', fun
     }
 
     $this->withServerVariables(['REMOTE_ADDR' => '41.188.37.204'])
-        ->post(route('login.store'), ['email' => $victime->email, 'password' => 'password'])
+        ->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $victime->email, 'password' => 'password'])
         ->assertSessionHasErrors(['email' => 'Trop de tentatives de connexion. Par sécurité, réessayez dans 10 minutes.']);
 
     $this->assertGuest();
@@ -121,7 +121,7 @@ test('un e-mail inexistant reçoit exactement les mêmes messages qu’un compte
     $messages = function (string $email): array {
         $obtenus = [];
         foreach (range(1, 6) as $i) {
-            $this->post(route('login.store'), ['email' => $email, 'password' => 'mauvais']);
+            $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $email, 'password' => 'mauvais']);
             $obtenus[] = session('errors')['default']['messages']['email'][0] ?? null;
         }
 
@@ -135,7 +135,7 @@ test('chaque échec est journalisé sans mot de passe', function () {
     $user = User::factory()->citoyen()->create();
 
     $this->withHeader('User-Agent', str_repeat('A', 400))
-        ->post(route('login.store'), ['email' => strtoupper($user->email), 'password' => 'MotDePasseSecret!42']);
+        ->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => strtoupper($user->email), 'password' => 'MotDePasseSecret!42']);
 
     $attempt = LoginAttempt::sole();
 
@@ -151,7 +151,7 @@ test('les champs réservés envoyés dans la requête de connexion n’influence
     $user = User::factory()->citoyen()->create();
     $autre = User::factory()->admin()->create();
 
-    $this->post(route('login.store'), [
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + [
         'email' => $user->email,
         'password' => 'mauvais',
         'user_id' => $autre->id,
@@ -200,7 +200,7 @@ test('le message « compte désactivé » (F34) reste intact et est journalisé 
     $user = User::factory()->citoyen()->deactivated()->create();
 
     foreach (range(1, 6) as $i) {
-        $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password'])
+        $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'password'])
             ->assertSessionHasErrors(['email' => EnsureAccountIsActive::MESSAGE]);
     }
 

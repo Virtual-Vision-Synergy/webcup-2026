@@ -20,3 +20,4 @@ parameters:
                 - app/Concerns/ExportsCsv.php
                 - app/Concerns/ThrottlesPerUser.php
                 - app/Concerns/BloqueSiServiceIndisponible.php
+                - app/Concerns/ProtegeContreRobots.php

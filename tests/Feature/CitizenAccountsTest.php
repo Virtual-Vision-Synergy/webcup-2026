@@ -136,7 +136,7 @@ test('personne ne peut désactiver son propre compte', function (string $role) {
 test('un citoyen désactivé ne peut plus se connecter : message en français', function () {
     $citoyen = User::factory()->citoyen()->deactivated()->create();
 
-    $this->post(route('login.store'), ['email' => $citoyen->email, 'password' => 'password'])
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $citoyen->email, 'password' => 'password'])
         ->assertSessionHasErrors(['email' => EnsureAccountIsActive::MESSAGE]);
 
     $this->assertGuest();
@@ -146,7 +146,7 @@ test('un citoyen désactivé avec un mauvais mot de passe reçoit le message gé
     app()->setLocale('fr');
     $citoyen = User::factory()->citoyen()->deactivated()->create();
 
-    $this->post(route('login.store'), ['email' => $citoyen->email, 'password' => 'mauvais'])
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $citoyen->email, 'password' => 'mauvais'])
         ->assertSessionHasErrors(['email' => 'Ces identifiants ne correspondent à aucun compte.']);
 
     $this->assertGuest();
@@ -171,7 +171,7 @@ test('un citoyen réactivé peut de nouveau se connecter', function () {
 
     $citoyen->reactivate();
 
-    $this->post(route('login.store'), ['email' => $citoyen->email, 'password' => 'password'])
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $citoyen->email, 'password' => 'password'])
         ->assertSessionHasNoErrors();
 
     $this->assertAuthenticatedAs($citoyen);

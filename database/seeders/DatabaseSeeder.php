@@ -179,6 +179,9 @@ class DatabaseSeeder extends Seeder
 
         if (! app()->isProduction()) {
             $this->call(LoginAttemptSeeder::class);
+
+            // F81 : envois de formulaires bloqués (robots) pour l'écran admin « Robots bloqués ».
+            $this->call(TentativeBloqueeSeeder::class);
         }
 
         if (! app()->isProduction()) {

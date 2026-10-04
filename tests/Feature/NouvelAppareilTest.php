@@ -33,7 +33,7 @@ function connexion(User $user, string $ua, string $ip = '41.188.12.34', ?string 
         $requete = $requete->withCookie(DeviceRecognizer::COOKIE, $cookie);
     }
 
-    $response = $requete->post(route('login.store'), ['email' => $user->email, 'password' => $password]);
+    $response = $requete->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => $password]);
 
     Auth::guard('web')->logout();
     test()->flushSession();

@@ -6,8 +6,10 @@ use App\Http\Middleware\DetecterActiviteInhabituelle;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\MesurerPerformance;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\VersionLegereSaveData;
 use App\Models\Annonce;
 use App\Services\AuditLogger;
+use App\Support\ModeAllege;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -28,10 +30,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [DefinirLangue::class, EnsureAccountIsActive::class, DetecterActiviteInhabituelle::class]);
         // F77 : mode dégradé → pages publiques mises en cache par le navigateur des visiteurs.
         $middleware->web(append: [CacheHttpModeDegrade::class]);
+        // F96 : « Save-Data: on » → version légère servie directement (Vary: Save-Data sur la réponse).
+        $middleware->web(append: [VersionLegereSaveData::class]);
         // F78 : placé en tête pour tout compter ; n'agit qu'hors production (en-tête Server-Timing : requêtes SQL et temps).
         $middleware->web(prepend: [MesurerPerformance::class]);
         // Écrit par le navigateur (bouton « Fermer » du bandeau D18) ; contenu filtré par Annonce::clesFermees().
-        $middleware->encryptCookies(except: [Annonce::COOKIE_FERMES]);
+        // F96 : ModeAllege::COOKIE_AUTO est écrit par la détection de connexion du navigateur (seule la valeur « 1 » est lue).
+        $middleware->encryptCookies(except: [Annonce::COOKIE_FERMES, ModeAllege::COOKIE_AUTO]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

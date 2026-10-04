@@ -2,6 +2,7 @@
 
 namespace App\View\Components;
 
+use App\Support\ModeAllege;
 use Illuminate\Contracts\View\View;
 use Illuminate\View\Component;
 use InvalidArgumentException;
@@ -41,6 +42,7 @@ class Carte extends Component
         public string $label = 'Carte',
         public string $champLat = 'latitude',
         public string $champLng = 'longitude',
+        public bool $itineraire = true,
     ) {
         if (! in_array($mode, self::MODES, true)) {
             throw new InvalidArgumentException("Mode de carte inconnu : {$mode} (lecture ou choix).");
@@ -71,6 +73,25 @@ class Carte extends Component
             'champLat' => $this->champLat,
             'champLng' => $this->champLng,
         ];
+    }
+
+    /**
+     * F96 : en version légère, une carte de consultation n'est chargée qu'à la demande (bouton « Afficher la carte ») ;
+     * la carte de choix d'un formulaire reste affichée, elle sert à la saisie.
+     */
+    public function differee(): bool
+    {
+        return $this->mode === 'lecture' && ModeAllege::actif();
+    }
+
+    /**
+     * F96 : lien d'itinéraire (OpenStreetMap) vers un point, affiché à la place de la carte en version légère.
+     *
+     * @param  array{lat: float, lng: float}  $point
+     */
+    public function lienItineraire(array $point): string
+    {
+        return 'https://www.openstreetmap.org/directions?to='.$point['lat'].'%2C'.$point['lng'];
     }
 
     public function render(): View

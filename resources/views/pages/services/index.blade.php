@@ -279,6 +279,8 @@ new #[Title('Services')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
+    <x-tn.aide id="services-index">Tapez le nom d'un service dans la recherche, puis ouvrez sa fiche pour voir ses horaires et ses contacts.</x-tn.aide>
+
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="{{ __('Rechercher un service (ex. santé)…') }}" aria-label="{{ __('Rechercher un service') }}" clearable class="sm:max-w-sm" />
         <flux:select wire:model.live="categorie" aria-label="{{ __('Filtrer par catégorie') }}" class="sm:max-w-60">

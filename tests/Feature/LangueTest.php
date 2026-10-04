@@ -24,5 +24,5 @@ test('en anglais, l\'espace connecté déclare lang="en" et traduit le menu lat�
 });
 
 test('une langue non proposée renvoie 404', function () {
-    $this->get(route('langue', 'mg'))->assertNotFound();
+    $this->get(route('langue', 'de'))->assertNotFound();
 });

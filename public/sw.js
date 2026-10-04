@@ -5,6 +5,7 @@
  *   avec sa date ; hors ligne (ou réseau trop lent), la copie est servie avec un bandeau « Version enregistrée le … ».
  * - Page jamais consultée hors ligne : page « Vous êtes hors ligne » (/hors-ligne, mise en cache à l'installation).
  * - Fichiers statiques (CSS, JS, polices, icônes) : servis depuis le cache puis rafraîchis en arrière-plan.
+ * - F94 : /infos-essentielles (page allégée sans JS) est mise en cache à l'installation et à chaque visite.
  * - Jamais mis en cache : envois (POST), Livewire, administration, espace agent, connexion et pages de modification.
  * Les pages personnelles sont effacées du cache quand l'utilisateur change (déconnexion), voir resources/js/app.js.
  */
@@ -12,13 +13,15 @@ const VERSION = 'v1';
 const CACHE_PAGES = `tn-pages-${VERSION}`;
 const CACHE_STATIQUE = `tn-statique-${VERSION}`;
 const PAGE_HORS_LIGNE = '/hors-ligne';
-const PRECACHE = [PAGE_HORS_LIGNE, '/', '/urgences', '/lexique'];
+const PAGE_INFOS_ESSENTIELLES = '/infos-essentielles';
+const PRECACHE = [PAGE_HORS_LIGNE, PAGE_INFOS_ESSENTIELLES, '/', '/urgences', '/lexique'];
 const DELAI_RESEAU_LENT = 5000;
 
 /** Pages gardées pour la consultation hors ligne (lecture et formulaires essentiels, jamais l'édition). */
 const PAGES_ESSENTIELLES = [
     /^\/$/,
     /^\/hors-ligne$/,
+    /^\/infos-essentielles$/,
     /^\/urgences$/,
     /^\/lexique$/,
     /^\/dashboard$/,
@@ -133,7 +136,7 @@ async function page(event, requete, url) {
 
         const horsLigne = await cache.match(PAGE_HORS_LIGNE);
 
-        return horsLigne ?? new Response('<h1>Vous êtes hors ligne</h1><p>Réessayez quand la connexion sera revenue.</p>', {
+        return horsLigne ?? new Response('<h1>Vous êtes hors ligne</h1><p>Réessayez quand la connexion sera revenue.</p><p><a href="/infos-essentielles">Infos essentielles</a></p>', {
             status: 503,
             headers: { 'Content-Type': 'text/html; charset=utf-8' },
         });

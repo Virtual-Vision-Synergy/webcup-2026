@@ -159,6 +159,7 @@ new #[Title('Signalement')] class extends Component {
     >
         <x-slot:meta>
             <x-tn.mots-utiles class="mt-3" :slugs="['signalement', 'statut', 'quartier']" />
+            <livewire:explication-simple cle="signalement-traitement" />
         </x-slot:meta>
     </x-tn.page-header>
 

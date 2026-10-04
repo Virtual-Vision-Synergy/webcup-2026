@@ -77,7 +77,7 @@ class ControleIntegrite
     }
 
     /**
-     * @return list<array{signature: string, type: string, table: string, id: int, description: string}>
+     * @return array<int, array{signature: string, type: string, table: string, id: int, description: string}>
      */
     public function analyser(): array
     {
@@ -159,7 +159,7 @@ class ControleIntegrite
 
     /**
      * @param  list<string>  $options
-     * @return list<array{signature: string, type: string, table: string, id: int, description: string}>
+     * @return array<int, array{signature: string, type: string, table: string, id: int, description: string}>
      */
     private function statutsImpossibles(string $table, array $options, string $libelle): array
     {
@@ -179,7 +179,7 @@ class ControleIntegrite
     }
 
     /**
-     * @return list<array{signature: string, type: string, table: string, id: int, description: string}>
+     * @return array<int, array{signature: string, type: string, table: string, id: int, description: string}>
      */
     private function referencesOrphelines(string $table, string $colonne, string $tableCible, string $libelle, string $cible): array
     {
@@ -200,7 +200,7 @@ class ControleIntegrite
     }
 
     /**
-     * @return list<array{signature: string, type: string, table: string, id: int, description: string}>
+     * @return array<int, array{signature: string, type: string, table: string, id: int, description: string}>
      */
     private function datesFutures(string $table, string $libelle): array
     {

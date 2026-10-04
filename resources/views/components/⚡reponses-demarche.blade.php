@@ -142,7 +142,7 @@ new class extends Component {
                                 {{ $reponse->auteurAffiche() }}
                             </span>
                             <time datetime="{{ $reponse->created_at->toIso8601String() }}" class="font-mono text-xs text-ink-2">
-                                {{ $reponse->created_at->copy()->setTimezone(AuditLog::FUSEAU)->locale('fr')->translatedFormat('j F Y à H:i') }}
+                                {{ $reponse->created_at->copy()->setTimezone(AuditLog::FUSEAU)->isoFormat('LLL') }}
                             </time>
                         </div>
                         <p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink">{{ $reponse->message }}</p>

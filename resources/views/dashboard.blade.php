@@ -49,6 +49,8 @@
             </x-slot:actions>
         </x-tn.page-header>
 
+        <x-tn.aide id="dashboard-accueil">Bienvenue à Nova Terra ! Commencez par « Nouvelle démarche », ou parcourez les rubriques Services, Actualités et Contact.</x-tn.aide>
+
         @if ($urgencesOuvertes->isNotEmpty())
             <section aria-labelledby="titre-mes-urgences" class="flex flex-col gap-3" data-test="mes-urgences">
                 <x-urgence-medicale-numeros />

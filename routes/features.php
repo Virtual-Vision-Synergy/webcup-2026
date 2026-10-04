@@ -104,6 +104,20 @@ Route::middleware(['auth'])->group(function () {
         ->where('idea', 'IDE-\d{4}-\d{6}')
         ->name('ideas.received');
 
+    // F76 : avis des habitants sur les services (ServiceReviewPolicy : un avis par habitant et par service, modifiable
+    // par son auteur tant qu'il n'est pas masqué). service_id vient toujours de la route, jamais du formulaire.
+    Route::livewire('services/{service}/avis', 'pages::service-reviews.show')->name('services.reviews.index');
+    Route::livewire('services/{service}/avis/donner', 'pages::service-reviews.form')->name('services.reviews.edit');
+    Route::livewire('mes-avis/services', 'pages::service-reviews.index')->name('services.reviews.mine');
+
+    Route::livewire('gen-test-zones', 'pages::gen-test-zones.index')->name('gen-test-zones.index');
+    Route::livewire('gen-test-zones/create', 'pages::gen-test-zones.form')->name('gen-test-zones.create');
+    Route::livewire('gen-test-zones/{genTestZone}', 'pages::gen-test-zones.show')->name('gen-test-zones.show');
+    Route::livewire('gen-test-zones/{genTestZone}/edit', 'pages::gen-test-zones.form')->name('gen-test-zones.edit');
+
+    Route::livewire('gen-test-fiches/create', 'pages::gen-test-fiches.form')->name('gen-test-fiches.create');
+    Route::livewire('gen-test-fiches/{genTestFiche}/edit', 'pages::gen-test-fiches.form')->name('gen-test-fiches.edit');
+
     // make:feature:routes
 });
 
@@ -139,6 +153,9 @@ Route::group([], function () {
     // Idée masquée par la modération : 404 sauf pour son auteur et le personnel (IdeaPolicy::view).
     Route::livewire('idees', 'pages::ideas.index')->name('ideas.index');
     Route::livewire('idees/{idea:reference}', 'pages::ideas.show')->where('idea', 'IDE-\d{4}-\d{6}')->name('ideas.show');
+
+    Route::livewire('gen-test-fiches', 'pages::gen-test-fiches.index')->name('gen-test-fiches.index');
+    Route::livewire('gen-test-fiches/{genTestFiche}', 'pages::gen-test-fiches.show')->name('gen-test-fiches.show')->whereNumber('genTestFiche');
 
     // make:feature:routes-public
 });

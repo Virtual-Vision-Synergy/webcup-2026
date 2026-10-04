@@ -512,3 +512,70 @@ html.hc .tn-grid {
 
 /* Alpine : masque les éléments x-show avant l’initialisation (bandeau D18). */
 [x-cloak] { display: none !important; }
+
+/*
+ * F59 : connexion lente.
+ * 1. Indicateurs de chargement : Livewire pose [data-loading] sur l'élément qui a lancé la requête ;
+ *    le bouton est grisé et ne peut pas être cliqué deux fois, et un bandeau « Chargement… » apparaît.
+ */
+form[data-loading] [type='submit'],
+button[data-loading],
+[data-flux-button][data-loading] {
+    opacity: 0.6;
+    pointer-events: none;
+    cursor: progress;
+}
+
+.tn-chargement {
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: 70;
+    display: none;
+    justify-content: center;
+    pointer-events: none;
+}
+
+body:has([data-loading]) .tn-chargement {
+    display: flex;
+    animation: tn-apparition 0s linear 400ms both;
+}
+
+@keyframes tn-apparition {
+    from { visibility: hidden; }
+    to { visibility: visible; }
+}
+
+/*
+ * 2. « Mode allégé » (html.allege, rendu côté serveur) : sans images décoratives, flou ni animations.
+ *    Les illustrations décoratives ne sont même pas envoyées (voir welcome et layouts/auth/split).
+ */
+html.allege *,
+html.allege ::before,
+html.allege ::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+}
+
+html.allege .tn-glass,
+html.allege .tn-panel,
+html.allege .tn-panel-inner {
+    background: var(--color-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+html.allege .tn-planet,
+html.allege .tn-grid,
+html.allege [data-decoratif] {
+    display: none !important;
+}
+
+html.allege .tn-sky {
+    background: var(--color-night);
+}
+
+html.allege body:has([data-loading]) .tn-chargement {
+    visibility: visible;
+}

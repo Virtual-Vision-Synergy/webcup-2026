@@ -97,6 +97,13 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('can:parOuCommencer,'.Onboarding::class)
         ->name('onboarding.par-ou-commencer');
 
+    // F68 : boîte à idées — proposer, accusé de réception (auteur seul : IdeaPolicy::viewOwn) et « Mes idées ».
+    Route::livewire('idees/proposer', 'pages::ideas.form')->name('ideas.create');
+    Route::livewire('idees/mes-idees', 'pages::ideas.mine')->name('ideas.mine');
+    Route::livewire('idees/{idea:reference}/confirmation', 'pages::ideas.confirmation')
+        ->where('idea', 'IDE-\d{4}-\d{6}')
+        ->name('ideas.received');
+
     // make:feature:routes
 });
 
@@ -127,6 +134,11 @@ Route::group([], function () {
     // F74 : partenaires publiés consultables sans compte (horaires, adresse, carte) ; gestion dans routes/agent.php.
     Route::livewire('partenaires', 'pages::partners.index')->name('partners.index');
     Route::livewire('partenaires/{partner:slug}', 'pages::partners.show')->name('partners.show');
+
+    // F68 : idées publiées consultables sans compte (décision assumée) ; soutenir exige d'être connecté.
+    // Idée masquée par la modération : 404 sauf pour son auteur et le personnel (IdeaPolicy::view).
+    Route::livewire('idees', 'pages::ideas.index')->name('ideas.index');
+    Route::livewire('idees/{idea:reference}', 'pages::ideas.show')->where('idea', 'IDE-\d{4}-\d{6}')->name('ideas.show');
 
     // make:feature:routes-public
 });

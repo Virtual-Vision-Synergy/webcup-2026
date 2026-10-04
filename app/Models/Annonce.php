@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
+use App\Models\Concerns\RegenereInfosEssentielles;
 use Carbon\CarbonInterface;
 use Database\Factories\AnnonceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\Cache;
 /**
  * Message général diffusé en bandeau à tous les habitants (D18) pendant sa période de validité.
  * F29 : une annonce peut cibler un quartier (alerte ciblée) et porter des consignes à suivre, une par ligne.
+ * F104 : les alertes graves en cours sont reprises dans la page « Infos essentielles » (régénérée à chaque modification).
  * Les dates sont stockées en UTC ; les agents les saisissent en heure de Madagascar (FUSEAU).
  *
  * @property int $id
@@ -29,6 +31,7 @@ use Illuminate\Support\Facades\Cache;
  * @property string|null $consignes
  * @property Carbon $debut
  * @property Carbon $fin
+ * @property Carbon|null $impact_prevu_le Début estimé de la perturbation annoncée (F104), pour le compte à rebours.
  * @property bool $officiel Message officiel du Haut Conseil (F73) ; assigné dans le code, par un administrateur uniquement.
  * @property Carbon|null $notified_at Envoi de la notification aux habitants (F30) ; assigné par NotifierAnnonce uniquement.
  * @property Carbon|null $created_at
@@ -38,11 +41,11 @@ use Illuminate\Support\Facades\Cache;
  *
  * user_id (l'auteur), officiel et notified_at ne sont volontairement PAS remplissables : ils sont assignés dans le code.
  */
-#[Fillable(['titre', 'contenu', 'niveau', 'debut', 'fin', 'quartier_id', 'consignes'])]
+#[Fillable(['titre', 'contenu', 'niveau', 'debut', 'fin', 'quartier_id', 'consignes', 'impact_prevu_le'])]
 class Annonce extends Model
 {
     /** @use HasFactory<AnnonceFactory> */
-    use Auditable, HasAuditHistory, HasFactory;
+    use Auditable, HasAuditHistory, HasFactory, RegenereInfosEssentielles;
 
     /** Du moins au plus grave. */
     public const NIVEAU_OPTIONS = ['information', 'vigilance', 'alerte', 'danger'];
@@ -68,17 +71,38 @@ class Annonce extends Model
 
     /**
      * F101 : modèles prêts à l'emploi pour publier une alerte en quelques secondes depuis l'espace agent.
-     * « :debut » et « :fin » sont remplacés par les heures saisies (heure de Madagascar).
+     * « :debut », « :impact » et « :fin » sont remplacés par les heures saisies (heure de Madagascar).
+     * quartier null = toute la ville ; delai_minutes = délai estimé avant le début de la perturbation (F104), null si sans objet.
      *
-     * @var array<string, array{libelle: string, titre: string, niveau: string, quartier: string, duree_heures: int, contenu: string, consignes: list<string>}>
+     * @var array<string, array{libelle: string, icone: string, titre: string, niveau: string, quartier: string|null, duree_heures: int, delai_minutes: int|null, contenu: string, consignes: list<string>}>
      */
     public const MODELES = [
+        'tempete-solaire' => [
+            'libelle' => 'Tempête solaire',
+            'icone' => 'sun',
+            'titre' => 'Tempête solaire — communications perturbées',
+            'niveau' => 'danger',
+            'quartier' => null,
+            'duree_heures' => 6,
+            'delai_minutes' => 20,
+            'contenu' => 'Ce qu’il faut savoir : une tempête solaire peut perturber les communications dans toute la ville à partir de :impact. Internet, le réseau mobile, le téléphone et le GPS peuvent être coupés par moments. Fin estimée de l’alerte : :fin.',
+            'consignes' => [
+                'Maintenant : terminez et enregistrez vos démarches en cours. Ce qui est déjà déposé reste enregistré.',
+                'Notez sur papier les numéros d’urgence : 117 (police secours), 118 (sapeurs-pompiers), 124 (SAMU).',
+                'Ce qui peut être coupé : Internet, le réseau mobile, le téléphone et le GPS.',
+                'Ouvrez la page « Infos essentielles » tant que le réseau fonctionne : elle reste lisible hors ligne sur votre appareil.',
+                'Convenez d’un point de rendez-vous avec vos proches et ne comptez pas sur le GPS pour vous déplacer.',
+                'En cas de coupure : restez calme, gardez votre téléphone chargé et réessayez plus tard. Pour une urgence, allez au poste de police, à la caserne ou au centre de santé le plus proche.',
+            ],
+        ],
         'panne-electrique' => [
             'libelle' => 'Panne électrique',
+            'icone' => 'bolt',
             'titre' => 'Panne électrique — secteur nord',
             'niveau' => 'alerte',
             'quartier' => 'nord',
             'duree_heures' => 6,
+            'delai_minutes' => null,
             'contenu' => 'Ce qu’il faut savoir : une panne électrique touche le secteur nord depuis :debut. Fin estimée : :fin. Les équipes techniques sont sur place ; de nouvelles informations seront publiées ici.',
             'consignes' => [
                 'Débranchez vos appareils sensibles (ordinateurs, télévision) pour éviter les dégâts au retour du courant.',
@@ -149,7 +173,7 @@ class Annonce extends Model
             ->where('annonces.fin', '>', now())
             ->get([
                 'annonces.id', 'annonces.titre', 'annonces.contenu', 'annonces.consignes', 'annonces.niveau',
-                'annonces.officiel', 'annonces.quartier_id', 'annonces.debut', 'annonces.fin', 'annonces.updated_at', 'quartiers.nom as quartier_nom',
+                'annonces.officiel', 'annonces.quartier_id', 'annonces.debut', 'annonces.fin', 'annonces.impact_prevu_le', 'annonces.updated_at', 'quartiers.nom as quartier_nom',
             ])
             ->map(fn (Annonce $annonce): array => $annonce->getAttributes())
             ->all());
@@ -241,8 +265,9 @@ class Annonce extends Model
     /**
      * F101 : champs d'une alerte préparés à partir d'un modèle (null si le modèle n'existe pas).
      * Les heures sont écrites en heure de Madagascar dans le texte.
+     * F104 : « impact_prevu_le » (début estimé de la perturbation) n'est présent que si le modèle prévoit un délai.
      *
-     * @return array{titre: string, contenu: string, consignes: string, niveau: string, quartier_id: int|null, debut: CarbonInterface, fin: CarbonInterface}|null
+     * @return array{titre: string, contenu: string, consignes: string, niveau: string, quartier_id: int|null, debut: CarbonInterface, fin: CarbonInterface, impact_prevu_le?: CarbonInterface}|null
      */
     public static function depuisModele(string $cle, ?CarbonInterface $debut = null, ?int $dureeHeures = null): ?array
     {
@@ -255,18 +280,27 @@ class Annonce extends Model
         $debut = ($debut ?? now())->copy()->timezone(self::FUSEAU);
         $fin = $debut->copy()->addHours($dureeHeures ?? $modele['duree_heures']);
 
-        return [
+        $impact = $modele['delai_minutes'] === null ? null : $debut->copy()->addMinutes($modele['delai_minutes']);
+
+        $champs = [
             'titre' => $modele['titre'],
             'contenu' => strtr($modele['contenu'], [
                 ':debut' => self::heureLisible($debut),
+                ':impact' => self::heureLisible($impact ?? $debut),
                 ':fin' => self::heureLisible($fin),
             ]),
             'consignes' => implode("\n", $modele['consignes']),
             'niveau' => $modele['niveau'],
-            'quartier_id' => Quartier::idPour($modele['quartier']),
+            'quartier_id' => $modele['quartier'] === null ? null : Quartier::idPour($modele['quartier']),
             'debut' => $debut,
             'fin' => $fin,
         ];
+
+        if ($impact !== null) {
+            $champs['impact_prevu_le'] = $impact;
+        }
+
+        return $champs;
     }
 
     /**
@@ -333,6 +367,7 @@ class Annonce extends Model
         return [
             'debut' => 'datetime',
             'fin' => 'datetime',
+            'impact_prevu_le' => 'datetime',
             'notified_at' => 'datetime',
             'officiel' => 'boolean',
             'quartier_id' => 'integer',

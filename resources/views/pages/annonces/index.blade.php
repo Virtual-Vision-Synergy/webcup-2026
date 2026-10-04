@@ -1,6 +1,8 @@
 <?php
 
+use App\Concerns\ThrottlesPerUser;
 use App\Models\Annonce;
+use App\Services\NotifierAnnonce;
 use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Computed;
@@ -11,7 +13,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 
 new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Component {
-    use WithPagination;
+    use ThrottlesPerUser, WithPagination;
 
     public const STATUTS = [
         'en_cours' => ['label' => 'En cours', 'etat' => 'normal'],
@@ -120,6 +122,47 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
         Flux::toast(variant: 'success', text: 'Situation rétablie : le bandeau l’indique et disparaîtra dans 30 minutes.');
     }
 
+    /**
+     * F104 : publie tout de suite une alerte à partir d'un modèle prêt (ex. « Tempête solaire »), sans passer par le formulaire.
+     * Une alerte du même modèle encore en cours est arrêtée : la nouvelle la remplace (nouvelle estimation, nouveau compte à rebours).
+     */
+    public function publierModele(string $cle): void
+    {
+        $this->authorize('create', Annonce::class);
+        $this->throttlePerUser('annonce-modele', maxAttempts: 3, decaySeconds: 60);
+
+        $champs = Annonce::depuisModele($cle);
+        if ($champs === null) {
+            return;
+        }
+
+        Annonce::query()->where('titre', $champs['titre'])->where('fin', '>', now())->get()
+            ->each(function (Annonce $ancienne): void {
+                $this->authorize('update', $ancienne);
+                $ancienne->fin = now();
+                if ($ancienne->debut->isFuture()) {
+                    $ancienne->debut = now();
+                }
+                $ancienne->save();
+            });
+
+        $annonce = new Annonce([
+            ...$champs,
+            'debut' => $champs['debut']->utc(),
+            'fin' => $champs['fin']->utc(),
+        ]);
+        if (isset($champs['impact_prevu_le'])) {
+            $annonce->impact_prevu_le = $champs['impact_prevu_le']->utc();
+        }
+        $annonce->user()->associate(auth()->user());
+        $annonce->save();
+
+        $notifiee = app(NotifierAnnonce::class)->notifierSiVisible($annonce);
+
+        Flux::toast(variant: 'success', text: 'Alerte « '.Annonce::MODELES[$cle]['libelle'].' » publiée : bandeau en ligne sur toutes les pages.'
+            .($notifiee ? ' Les habitants sont prévenus.' : ''));
+    }
+
     public function delete(int $id): void
     {
         $annonce = Annonce::findOrFail($id);
@@ -140,6 +183,9 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
     >
         <x-slot:actions>
             @can('create', \App\Models\Annonce::class)
+                <flux:button variant="danger" icon="sun" wire:click="publierModele('tempete-solaire')">
+                    Alerte tempête solaire (1 clic)
+                </flux:button>
                 <flux:button icon="bolt" :href="route('agent.annonces.create', ['modele' => 'panne-electrique'])" wire:navigate>
                     Alerte panne électrique
                 </flux:button>
@@ -149,6 +195,10 @@ new #[Layout('layouts::agent'), Title('Messages généraux')] class extends Comp
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
+
+    @error('throttle')
+        <p role="alert" class="text-sm font-medium text-magenta">{{ $message }}</p>
+    @enderror
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <flux:select wire:model.live="filterStatut" class="sm:max-w-52" aria-label="{{ __('Filtrer par statut') }}">

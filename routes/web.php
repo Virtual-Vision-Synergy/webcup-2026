@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\ActivationCompteController;
 use App\Http\Controllers\Auth\LienConnexionController;
 use App\Http\Middleware\DefinirLangue;
+use App\Support\ModeAllege;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,19 @@ Route::get('langue/{code}', function (string $code, Request $request) {
     // F71 : langue mémorisée durablement sur cet appareil, y compris sur l'écran de connexion.
     return redirect()->back(fallback: route('home'))->withCookie(cookie()->forever(DefinirLangue::COOKIE, $code));
 })->middleware('throttle:30,1')->name('langue');
+
+// F59 : page publique décidée — le « Mode allégé » doit être activable avant la connexion (accueil sur réseau lent).
+Route::post('mode-allege', function (Request $request) {
+    $actif = ! ModeAllege::actif($request);
+    $user = $request->user();
+
+    if ($user !== null) {
+        $user->forceFill(['mode_allege' => $actif])->save();
+    }
+
+    return redirect()->back(fallback: route('home'))
+        ->withCookie(cookie()->forever(ModeAllege::COOKIE, $actif ? '1' : '0'));
+})->middleware('throttle:30,1')->name('mode-allege');
 
 // D02 : connexion sans mot de passe par lien envoyé par e-mail (pages publiques réservées aux invités).
 Route::middleware('guest')->group(function () {

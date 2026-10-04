@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\EmpecheEnvoiEnDouble;
 use App\Concerns\ProtegeContreRobots;
 use App\Concerns\ThrottlesPerUser;
 use App\Models\Signalement;
@@ -12,7 +13,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 
 new #[Title('Signalement')] class extends Component {
-    use ProtegeContreRobots, ThrottlesPerUser, WithFileUploads;
+    use EmpecheEnvoiEnDouble, ProtegeContreRobots, ThrottlesPerUser, WithFileUploads;
 
     #[Locked]
     public ?Signalement $record = null;
@@ -35,6 +36,7 @@ new #[Title('Signalement')] class extends Component {
         } else {
             $this->authorize('create', Signalement::class);
             $this->initialiserAntiRobot('signalement');
+            $this->initialiserJetonEnvoi();
         }
     }
 
@@ -79,27 +81,50 @@ new #[Title('Signalement')] class extends Component {
             );
         }
 
-        if ($this->photo) {
-            $optimiseur = app(OptimiseurImage::class);
-            $optimiseur->supprimer($this->record?->photo);
-            // F60 : redimensionnée (1600 px max) et compressée en WebP à l'enregistrement.
-            $validated['photo'] = $optimiseur->enregistrer($this->photo, 'signalements');
-        } else {
-            unset($validated['photo']);
-        }
-
         if ($this->record) {
+            $this->enregistrerPhoto($validated);
             $this->record->update($validated);
             $record = $this->record;
         } else {
-            $record = new Signalement($validated);
-            $record->user()->associate(auth()->user());
-            $record->save();
+            // F82 : même signalement renvoyé (double clic, retour arrière) → rien n'est créé, message avec lien.
+            $record = $this->envoyerUneSeuleFois(
+                'signalement',
+                ['categorie' => $validated['categorie'], 'description' => $validated['description'], 'lieu' => $validated['lieu']],
+                function () use ($validated): Signalement {
+                    $this->enregistrerPhoto($validated);
+                    $record = new Signalement($validated);
+                    $record->user()->associate(auth()->user());
+                    $record->save();
+
+                    return $record;
+                },
+                fn (Signalement $signalement): string => route('signalements.show', $signalement),
+            );
+
+            if ($record === null) {
+                return;
+            }
         }
 
         Flux::toast(variant: 'success', text: $this->record ? __('Signalement mis à jour.') : __('Signalement envoyé à la mairie. Merci !'));
 
         $this->redirectRoute('signalements.show', $record, navigate: true);
+    }
+
+    /**
+     * F60 : photo redimensionnée (1600 px max) et compressée en WebP à l'enregistrement.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    private function enregistrerPhoto(array &$validated): void
+    {
+        if ($this->photo) {
+            $optimiseur = app(OptimiseurImage::class);
+            $optimiseur->supprimer($this->record?->photo);
+            $validated['photo'] = $optimiseur->enregistrer($this->photo, 'signalements');
+        } else {
+            unset($validated['photo']);
+        }
     }
 }; ?>
 
@@ -149,12 +174,11 @@ new #[Title('Signalement')] class extends Component {
 
         <flux:error name="throttle" />
 
+        <x-envoi-deja-fait :le="$envoiDejaFaitLe" :url="$envoiDejaFaitUrl" />
+
         <div class="flex items-center justify-between gap-3 border-t border-line pt-5">
             <flux:button :href="route('signalements.index')" wire:navigate variant="ghost">{{ __('Annuler') }}</flux:button>
-            <flux:button type="submit" variant="primary" class="tn-cta">
-                <span wire:loading.remove wire:target="save">{{ $record ? __('Enregistrer') : __('Envoyer le signalement') }}</span>
-                <span wire:loading wire:target="save">{{ __('Envoi…') }}</span>
-            </flux:button>
+            <x-submit-button variant="primary" class="tn-cta">{{ $record ? __('Enregistrer') : __('Envoyer le signalement') }}</x-submit-button>
         </div>
     </form>
 </section>

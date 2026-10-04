@@ -29,11 +29,8 @@ const ETATS = ['normal', 'perturbe', 'alerte', 'info'];
 // F43 : l'état n'est jamais porté par la seule couleur : symbole dans le marqueur (CSS) + libellé dans le titre.
 const LIBELLES_ETATS = { normal: 'normal', perturbe: 'perturbé', alerte: 'alerte', info: 'information' };
 
-function urlTuiles() {
-    const style = document.documentElement.classList.contains('dark') ? 'dark_all' : 'light_all';
-
-    return `https://{s}.basemaps.cartocdn.com/${style}/{z}/{x}/{y}{r}.png`;
-}
+// Tuiles OpenStreetMap officielles (sans clé API) ; le thème sombre est obtenu en CSS (resources/css/carte.css).
+const URL_TUILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 function urlSure(url) {
     if (typeof url !== 'string' || url === '') {
@@ -108,11 +105,9 @@ export function initialiser(el) {
     const carte = L.map(zone, { scrollWheelZoom: false }).setView(config.centre, config.zoom);
     cartes.set(el, carte);
 
-    // Tuiles claires (Positron) ou sombres (Dark Matter) selon le thème, échangées quand il change.
-    const tuiles = L.tileLayer(urlTuiles(), {
+    const tuiles = L.tileLayer(URL_TUILES, {
         maxZoom: 19,
-        subdomains: 'abcd',
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(carte);
     // F93 : fond de carte injoignable (réseau coupé ou fournisseur en panne) : message clair, repères conservés.
     tuiles.once('tileerror', () => {
@@ -120,9 +115,6 @@ export function initialiser(el) {
             message.textContent = 'Fond de carte momentanément indisponible (connexion coupée ou lente). Les repères et adresses restent affichés.';
         }
     });
-    const observateurTheme = new MutationObserver(() => tuiles.setUrl(urlTuiles()));
-    observateurTheme.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    carte.on('unload', () => observateurTheme.disconnect());
 
     const marqueurs = points.map((p) => {
         const options = { title: p.titre ?? '', alt: p.titre ?? '' };

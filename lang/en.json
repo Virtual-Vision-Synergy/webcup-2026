@@ -962,5 +962,16 @@
     "Disponible": "Available",
     "Déposée le :date": "Submitted on :date",
     "Se connecter": "Log in",
-    "Ce service est momentanément indisponible : la démarche est suspendue pendant l’interruption. Consultez la fiche du service pour savoir quand revenir ou quoi faire en attendant.": "This service is temporarily unavailable: procedures are suspended during the interruption. Check the service page to find out when to come back or what to do in the meantime."
+    "Ce service est momentanément indisponible : la démarche est suspendue pendant l’interruption. Consultez la fiche du service pour savoir quand revenir ou quoi faire en attendant.": "This service is temporarily unavailable: procedures are suspended during the interruption. Check the service page to find out when to come back or what to do in the meantime.",
+    "Mes demandes": "My requests",
+    "Urgences / Santé": "Emergencies / Health",
+    "Canicule": "Heatwave",
+    "À qui m'adresser ?": "Who should I contact?",
+    "Par où commencer ?": "Where to start?",
+    "Mes remontées": "My feedback",
+    "Projets de la ville": "City projects",
+    "Mes avis": "My reviews",
+    "Boîte à idées": "Idea box",
+    "Consultations": "Consultations",
+    "Mes avis sur les services": "My service reviews"
 }

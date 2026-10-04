@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AuditLog;
+use App\Models\ExportPreset;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,6 +26,11 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
     Route::livewire('/citoyens/import', 'pages::agent.citizens.import')->name('citizens.import');
     Route::livewire('/citoyens/{user}', 'pages::agent.citizens.show')->name('citizens.show');
     Route::livewire('demandes', 'pages::agent.demandes')->name('demandes');
+
+    // F88 : export personnalisé des demandes (CSV / JSON) et préréglages ; ExportPresetPolicy dans chaque action.
+    Route::livewire('exports', 'pages::agent.exports')
+        ->middleware('can:export,'.ExportPreset::class)
+        ->name('exports.index');
 
     // F75 : signalements similaires regroupés, fusion et traitement par groupe (SignalementPolicy::changerStatut).
     Route::livewire('signalements-similaires', 'pages::agent.signalements-similaires')->name('signalements.similaires');

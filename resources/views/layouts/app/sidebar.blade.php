@@ -57,7 +57,7 @@
     app(\App\Services\NotifierAnnonce::class)->traiterEchuesAuPlusUneFoisParMinute();
 @endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif()])>
     <head>
         @include('partials.head')
     </head>
@@ -129,6 +129,7 @@
                             <x-tn.contrast-toggle class="max-lg:hidden" />
                             <x-tn.text-size class="max-lg:hidden" />
                             <x-tn.theme-toggle class="max-lg:hidden" />
+                            <x-tn.mode-allege class="max-lg:hidden" />
                             <a href="{{ route('profile.edit') }}" class="flex size-11 items-center justify-center lg:hidden" wire:navigate>
                                 <flux:avatar size="sm" :name="auth()->user()->name" :initials="auth()->user()->initials()" />
                                 <span class="sr-only">{{ __('Mon compte :') }} {{ auth()->user()->name }}</span>
@@ -159,6 +160,8 @@
                 <flux:toast />
             </flux:toast.group>
         @endpersist
+
+        <x-tn.chargement />
 
         @fluxScripts
     </body>

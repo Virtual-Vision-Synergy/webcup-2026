@@ -8,7 +8,7 @@
     'fluid' => false,
 ])
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif()])>
     <head>
         @include('partials.head', ['title' => $title, 'description' => $description])
     </head>
@@ -47,6 +47,8 @@
                 <flux:toast />
             </flux:toast.group>
         @endpersist
+
+        <x-tn.chargement />
 
         @fluxScripts
     </body>

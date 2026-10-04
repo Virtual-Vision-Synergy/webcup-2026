@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\GenTestFiche;
-use App\Models\User;
 use App\Models\GenTestZone;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

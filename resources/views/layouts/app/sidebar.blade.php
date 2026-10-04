@@ -109,6 +109,10 @@
                         </flux:sidebar.item>
 
                         @yield('tn-feature-nav')
+
+                        <flux:sidebar.item icon="book-open" :href="route('lexique')" :current="request()->routeIs('lexique')" wire:navigate data-test="lexique-link">
+                            {{ __('Lexique') }}
+                        </flux:sidebar.item>
                     </flux:sidebar.group>
 
                     @can('viewAgentSpace')

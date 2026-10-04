@@ -70,6 +70,11 @@
     // F30 : filet de sécurité si le cron du planificateur ne tourne pas (annonces programmées arrivées à leur début).
     // Avant tout rendu, pour que les deux cloches affichent le même compteur.
     app(\App\Services\NotifierAnnonce::class)->traiterEchuesAuPlusUneFoisParMinute();
+    // F95 : le compteur de non lues n'est lu qu'une fois par requête ; sur la page des notifications
+    // (déjà rendue à ce stade), on le relit pour tenir compte d'une annonce tout juste notifiée.
+    if (request()->routeIs('notifications.index')) {
+        auth()->user()->oublierNotificationsNonLues();
+    }
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif(), 'simple' => \App\Support\VersionSimple::actif()])>

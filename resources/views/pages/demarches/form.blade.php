@@ -185,9 +185,11 @@ new #[Title('Démarche')] class extends Component {
             return;
         }
 
-        // Parcours de prise en main (D12) : la première démarche termine le parcours, on affiche les félicitations.
+        // Parcours de prise en main (D12) : la première démarche termine le parcours ;
+        // F83 : l'habitant arrive sur son accusé de réception (et non sur « Bienvenue »).
         if ($depuisParcours) {
-            $this->redirectRoute('onboarding.show', navigate: true);
+            OnboardingProgress::pour(auth()->user())->synchroniser();
+            $this->redirectRoute('demarches.accuse', $record);
 
             return;
         }

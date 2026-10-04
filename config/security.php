@@ -51,4 +51,28 @@ return [
         ],
     ],
 
+    /*
+    | F85 : détection d'activité inhabituelle. Aucun blocage sur un seul signal faible :
+    | chaque seuil crée un événement (et prévient l'utilisateur) ; seul un cumul de signaux forts verrouille.
+    */
+    'surveillance' => [
+        // Rafale : requêtes d'un même compte sur une minute (un usage normal, polls compris, reste loin en dessous).
+        'rafale_requetes' => (int) env('SECURITE_RAFALE_REQUETES', 120),
+
+        // Accès refusés (403) d'un même compte sur 10 minutes.
+        'refus_max' => (int) env('SECURITE_REFUS_MAX', 5),
+        'refus_minutes' => 10,
+
+        // Créations / modifications / suppressions d'un même compte sur 5 minutes.
+        'modifications_max' => (int) env('SECURITE_MODIFICATIONS_MAX', 30),
+        'modifications_minutes' => 5,
+
+        // Score de suspicion sur 24 h (info = 0, moyen = 1, élevé = 3) : à partir de ce score, le compte est « suspect ».
+        'score_suspect' => 2,
+
+        // Verrouillage automatique (jamais pour un admin) quand le score sur 1 h atteint ce seuil.
+        'score_verrouillage_auto' => (int) env('SECURITE_SCORE_VERROUILLAGE', 6),
+        'verrouillage_auto_minutes' => 15,
+    ],
+
 ];

@@ -64,6 +64,7 @@ new #[Title('Mes demandes')] class extends Component {
         :breadcrumb="['Mon espace' => route('dashboard'), 'Mes demandes' => null]"
     >
         <x-slot:actions>
+            <x-tn.version-simple />
             @can('create', Signalement::class)
                 <flux:button variant="primary" icon="plus" :href="route('signalements.create')" class="tn-cta" wire:navigate>
                     Signaler un problème

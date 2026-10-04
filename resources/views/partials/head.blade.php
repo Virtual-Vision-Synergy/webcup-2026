@@ -24,7 +24,10 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
 {{-- F58 : une seule police (IBM Plex Sans), auto-hébergée par Vite au build ; aucun appel à un CDN de polices. --}}
-@fonts
+{{-- F62 : en version simple, police du système (aucun fichier de police téléchargé). --}}
+@unless (\App\Support\VersionSimple::actif())
+    @fonts
+@endunless
 
 @vite(['resources/css/app.css', 'resources/js/app.js'])
 

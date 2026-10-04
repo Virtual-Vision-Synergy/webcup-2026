@@ -1,6 +1,7 @@
 <?php
 
 use App\Concerns\BloqueSiServiceIndisponible;
+use App\Concerns\ThrottlesPerUser;
 use App\Models\Demarche;
 use App\Models\Service;
 use App\Services\OnboardingProgress;
@@ -14,7 +15,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Démarche')] class extends Component {
-    use BloqueSiServiceIndisponible;
+    use BloqueSiServiceIndisponible, ThrottlesPerUser;
 
     #[Locked]
     public ?Demarche $record = null;
@@ -38,7 +39,7 @@ new #[Title('Démarche')] class extends Component {
             $serviceId = request()->integer('service');
             $service = $serviceId > 0 ? Service::query()->find($serviceId) : null;
 
-            // F38 : démarche sur un service interrompu → retour à sa fiche, qui explique quand revenir.
+            // F38 / F64 : lien direct vers un service indisponible → retour sur sa fiche (motif, retour prévu, alternative).
             if ($this->redirigerSiServiceIndisponible($service)) {
                 return;
             }
@@ -64,7 +65,10 @@ new #[Title('Démarche')] class extends Component {
                 function (string $attribute, mixed $value, \Closure $fail): void {
                     $service = filled($value) ? Service::query()->find($value) : null;
 
-                    if ($service?->estIndisponible()) {
+                    // F64 : une démarche déjà en cours n'est pas bloquée tant qu'elle ne change pas de service.
+                    $dejaRattachee = $this->record !== null && (string) $this->record->service_id === (string) $value;
+
+                    if ($service?->estIndisponible() && ! $dejaRattachee) {
                         $fail(__('Le service « :nom » est momentanément indisponible : choisissez un autre service ou « Je ne sais pas », la mairie orientera votre demande.', ['nom' => $service->nom]));
                     }
                 },
@@ -80,7 +84,7 @@ new #[Title('Démarche')] class extends Component {
     #[Computed]
     public function serviceOptions(): Collection
     {
-        return Service::query()->with('interruptionCourante')->orderBy('nom')->get(['id', 'nom', 'indisponible_depuis', 'motif_indisponibilite', 'retour_prevu_le']);
+        return Service::query()->with('interruptionCourante')->orderBy('nom')->get(['id', 'nom', 'indisponible_depuis', 'perturbe_depuis', 'motif_indisponibilite', 'retour_prevu_le']);
     }
 
     public function save(): void
@@ -89,13 +93,16 @@ new #[Title('Démarche')] class extends Component {
             ? $this->authorize('update', $this->record)
             : $this->authorize('create', Demarche::class);
 
+        // F38 / F64 : refus serveur d'une NOUVELLE démarche sur un service indisponible (le bouton masqué ne suffit pas).
+        // Une démarche déjà déposée reste modifiable sur son service (règle de validation de service_id).
+        if (! $this->record && filled($this->service_id) && $this->redirigerSiServiceIndisponible(Service::query()->find($this->service_id))) {
+            return;
+        }
+
         $validated = $this->validate();
 
-        // F38 : pas de nouvelle démarche sur un service interrompu (une démarche déjà déposée reste modifiable sur son service).
-        $serviceChoisi = filled($validated['service_id'] ?? null) ? Service::query()->find((int) $validated['service_id']) : null;
-        if ($serviceChoisi !== null && (! $this->record || (int) $this->record->service_id !== $serviceChoisi->id)) {
-            $serviceChoisi->assertDisponible('service_id');
-        }
+        // F78 : 10 envois par minute et par habitant au plus (message clair au-dessus du bouton).
+        $this->throttlePerUser('demarche', maxAttempts: 10, decaySeconds: 60);
 
         foreach (['service_id'] as $field) {
             if (($validated[$field] ?? null) === '') {
@@ -166,7 +173,7 @@ new #[Title('Démarche')] class extends Component {
                         <span class="font-medium text-ink">Je ne sais pas</span>
                     </label>
                     @foreach ($this->serviceOptions as $option)
-                        @php($bloque = $option->indisponible_depuis !== null || ($option->estIndisponible() && (! $record || (int) $record->service_id !== $option->id)))
+                        @php($bloque = $option->estIndisponible() && (! $record || (int) $record->service_id !== $option->id))
                         <label wire:key="service-{{ $option->id }}" @class([
                             'flex min-h-14 items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors',
                             'cursor-pointer hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8' => ! $bloque,
@@ -175,6 +182,9 @@ new #[Title('Démarche')] class extends Component {
                             <input type="radio" wire:model="service_id" name="service_id" value="{{ $option->id }}" class="size-4 accent-[var(--color-cyan)]" @disabled($bloque)>
                             <span class="min-w-0">
                                 <span class="block font-medium text-ink">{{ $option->nom }}</span>
+                                @if ($option->estPerturbe())
+                                    <span class="block text-xs text-amber">Perturbé · délais allongés</span>
+                                @endif
                                 @if ($bloque)
                                     {{-- F38 / F63 : service indisponible, statut écrit en texte (pas seulement en couleur). --}}
                                     @if ($option->indisponible_depuis)
@@ -221,6 +231,8 @@ new #[Title('Démarche')] class extends Component {
 
             <p x-ref="erreurEtape" hidden class="mt-4 text-sm text-magenta" role="alert"><flux:icon.exclamation-circle variant="micro" class="me-1 inline size-4 align-[-3px]" aria-hidden="true" />Renseignez l'objet et les détails pour continuer.</p>
         </div>
+
+        <flux:error name="throttle" />
 
         {{-- Un seul CTA par étape --}}
         <div class="flex items-center justify-between gap-3 border-t border-line pt-5">

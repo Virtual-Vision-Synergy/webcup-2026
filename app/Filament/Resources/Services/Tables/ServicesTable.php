@@ -30,8 +30,12 @@ class ServicesTable
                 TextColumn::make('indisponible_depuis')
                     ->label('État')
                     ->badge()
-                    ->state(fn (Service $record): string => $record->estIndisponible() ? 'Indisponible' : 'Disponible')
-                    ->color(fn (Service $record): string => $record->estIndisponible() ? 'danger' : 'success'),
+                    ->state(fn (Service $record): string => $record->libelleEtat())
+                    ->color(fn (Service $record): string => match ($record->etat()) {
+                        Service::ETAT_INDISPONIBLE => 'danger',
+                        Service::ETAT_PERTURBE => 'warning',
+                        default => 'success',
+                    }),
                 TextColumn::make('motif_indisponibilite')
                     ->label('Motif')
                     ->placeholder('—')

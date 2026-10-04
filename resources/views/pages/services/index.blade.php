@@ -25,7 +25,7 @@ new #[Title('Services')] class extends Component {
     #[Url(except: false)]
     public bool $mine = false;
 
-    /** F38 : masquer les services interrompus (maintenance, incident). */
+    /** F38 / F64 : n'afficher que les services disponibles (ni interrompus, ni indisponibles, ni perturbés). */
     #[Url(except: false)]
     public bool $disponibles = false;
 
@@ -100,7 +100,7 @@ new #[Title('Services')] class extends Component {
             // Une valeur inconnue (URL modifiée à la main) est ignorée.
             ->when(in_array($this->categorie, Service::CATEGORIE_OPTIONS, true), fn ($query) => $query->where('categorie', $this->categorie))
             ->when($this->mine, fn ($query) => $query->whereBelongsTo(auth()->user()))
-            ->when($this->disponibles, fn ($query) => $query->disponibles());
+            ->when($this->disponibles, fn ($query) => $query->pleinementDisponibles());
     }
 
     #[Computed]
@@ -120,7 +120,7 @@ new #[Title('Services')] class extends Component {
     #[Computed]
     public function prioritaires(): Collection
     {
-        return Service::query()->where('mis_en_avant', true)->orderBy('nom')->limit(6)->get();
+        return Service::query()->with('interruptionCourante')->where('mis_en_avant', true)->orderBy('nom')->limit(6)->get();
     }
 
     /**
@@ -141,6 +141,7 @@ new #[Title('Services')] class extends Component {
     {
         return $this->filteredQuery()
             ->geolocalises()
+            ->with('interruptionCourante')
             ->prioritaires()
             ->limit(200)
             ->get();
@@ -237,9 +238,7 @@ new #[Title('Services')] class extends Component {
                         <a href="{{ route('services.show', $prioritaire) }}" wire:navigate class="group flex min-h-11 items-center gap-3 rounded-sm border border-line bg-surface px-3 py-2 transition-colors hover:border-cyan/40">
                             <flux:icon name="landmark" class="size-4 shrink-0 text-cyan" aria-hidden="true" />
                             <span class="min-w-0 flex-1 truncate font-medium text-ink group-hover:text-cyan">{{ __($prioritaire->nom) }}</span>
-                            @if ($prioritaire->estIndisponible())
-                                <flux:badge size="sm" color="red">{{ __('Indisponible') }}</flux:badge>
-                            @endif
+                            <x-service-status :service="$prioritaire" compact />
                         </a>
                     </li>
                 @endforeach
@@ -267,6 +266,7 @@ new #[Title('Services')] class extends Component {
                         @foreach ($this->lieux as $lieu)
                             <li wire:key="lieu-{{ $lieu->id }}" class="space-y-1 px-4 py-3 text-sm">
                                 <a href="{{ route('services.show', $lieu) }}" wire:navigate class="font-semibold text-ink hover:text-cyan hover:underline">{{ __($lieu->nom) }}</a>
+                                <x-service-status :service="$lieu" compact class="ms-1" />
                                 @if ($lieu->categorie)
                                     <flux:badge size="sm" class="ms-1">{{ __(Service::labelCategorie($lieu->categorie)) }}</flux:badge>
                                 @endif
@@ -296,11 +296,7 @@ new #[Title('Services')] class extends Component {
             @foreach ($this->items as $item)
                 <li wire:key="row-{{ $item->id }}" @class(['group relative flex min-w-0 flex-col rounded-md border bg-surface p-5 transition-colors hover:border-cyan/40', 'border-cyan/40' => $item->mis_en_avant, 'border-line' => ! $item->mis_en_avant])>
                     <div class="mb-3 flex flex-wrap gap-1.5">
-                        @if ($item->estIndisponible())
-                            <flux:badge size="sm" color="red" icon="no-symbol">{{ __('Indisponible') }}</flux:badge>
-                        @else
-                            <flux:badge size="sm" color="green" icon="check-circle">{{ __('Disponible') }}</flux:badge>
-                        @endif
+                        <x-service-status :service="$item" compact />
                         @if ($item->mis_en_avant)
                             <flux:badge size="sm" color="cyan" icon="star">{{ __('Prioritaire') }}</flux:badge>
                         @endif
@@ -316,24 +312,19 @@ new #[Title('Services')] class extends Component {
                             @if ($item->categorie)
                                 <flux:badge size="sm" class="mt-1">{{ __(Service::labelCategorie($item->categorie)) }}</flux:badge>
                             @endif
-                            @if ($interruption = $item->interruptionEnCours())
-                                {{-- F38 : statut écrit en texte (pas seulement en couleur) ; le service reste listé. --}}
-                                <div class="mt-2 space-y-1">
-                                    <x-tn.status-badge :etat="$interruption->etatBadge()">Indisponible · {{ $interruption->libelleType() }}</x-tn.status-badge>
-                                    <p class="text-sm font-medium text-ink">{{ $interruption->libelleRetour() }}</p>
-                                </div>
-                            @endif
                             @if ($item->description)
                                 <p class="mt-1 line-clamp-2 text-sm text-ink-2">{{ __($item->description) }}</p>
                             @endif
                         </div>
                     </div>
-                    @if ($item->estIndisponible())
-                        <p class="mt-3 rounded-sm border border-magenta/35 bg-magenta/8 px-3 py-2 text-sm text-magenta" role="status">
-                            {{ $item->motif_indisponibilite ?: __('Service momentanément indisponible.') }}
-                            <span class="block text-xs">
-                                {{ $item->retour_prevu_le ? __('Retour prévu le :date.', ['date' => $item->retour_prevu_le->translatedFormat('j F Y')]) : __('Date de retour à confirmer.') }}
-                            </span>
+                    @if ($item->etat() !== Service::ETAT_DISPONIBLE)
+                        <p @class([
+                            'mt-3 rounded-sm border px-3 py-2 text-sm',
+                            'border-magenta/35 bg-magenta/8 text-magenta' => $item->estIndisponible(),
+                            'border-amber/35 bg-amber/8 text-amber' => $item->estPerturbe(),
+                        ])>
+                            {{ $item->motifEtat() ?: ($item->estIndisponible() ? __('Service momentanément indisponible.') : __('Délais allongés.')) }}
+                            <span class="block text-xs font-medium">{{ __($item->libelleRetourPrevu()) }}</span>
                         </p>
                     @endif
                     <dl class="mt-4 space-y-1.5 border-t border-line pt-3 text-sm">

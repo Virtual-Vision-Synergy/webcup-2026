@@ -9,7 +9,8 @@
     $connecte = auth()->check();
 
     // Données réelles de la base, mises en cache 60 s (tableaux simples, pas de modèles en cache).
-    $etat = Cache::remember('landing.etat', 60, fn (): array => [
+    // F78 : vidé dès qu'un service ou une actualité change (trait ViderCachesPublics).
+    $etat = Cache::remember(Service::CACHE_ACCUEIL, 60, fn (): array => [
         'genere_le' => now()->timestamp,
         'services' => Service::count(),
         'actualites' => Actualite::count(),
@@ -42,7 +43,8 @@
 
     $rubriques = config('navigation.rubriques');
 
-    $illustration = file_exists(public_path('images/hero/ciel-nuit.webp')) ? asset('images/hero/ciel-nuit.webp') : null;
+    // F59 : en « Mode allégé », l'illustration décorative du hero n'est pas téléchargée.
+    $illustration = ! \App\Support\ModeAllege::actif() && file_exists(public_path('images/hero/ciel-nuit.webp')) ? asset('images/hero/ciel-nuit.webp') : null;
 @endphp
 
 <x-layouts::site :title="__('Accueil')" :fluid="true" :description="__('Vos démarches, les actualités de la ville et le contact avec vos services municipaux, au même endroit : la plateforme civique officielle de la Mairie de Nova Terra.')">

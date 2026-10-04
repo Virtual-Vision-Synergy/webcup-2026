@@ -36,10 +36,11 @@ trait PrevientDuChangementDeStatut
             // La cloche d'abord : elle reste enregistrée même si l'e-mail échoue.
             $proprietaire->notifyNow($avis, ['database']);
 
+            // F78 : l'e-mail part par la file d'attente (worker HODI) : l'agent n'attend pas sendmail.
             try {
-                $proprietaire->notifyNow($avis, ['mail']);
+                dispatch(fn () => $proprietaire->notifyNow($avis, ['mail']));
             } catch (\Throwable $e) {
-                // Un échec d'envoi (sendmail synchrone en production) ne doit jamais bloquer l'agent.
+                // En file « sync » (local), un échec d'envoi ne doit jamais bloquer l'agent.
                 report($e);
             }
         });

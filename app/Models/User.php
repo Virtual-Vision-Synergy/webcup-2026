@@ -45,6 +45,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $identifiant Identifiant d'habitant (F71) pour se connecter sans e-mail.
  * @property string|null $code_activation Empreinte du code d'activation à usage unique (F71).
  * @property string|null $langue Langue mémorisée (F71).
+ * @property bool $mode_allege Mode allégé pour les connexions lentes (F59).
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
@@ -94,6 +95,7 @@ class User extends Authenticatable implements FilamentUser
             'quartier_id' => 'integer',
             'deactivated_at' => 'datetime',
             'notifier_par_email' => 'boolean',
+            'mode_allege' => 'boolean',
         ];
     }
 

@@ -57,14 +57,34 @@ class Sauvegardes
         }
 
         if ($this->estMysql()) {
-            $home = getenv('HOME') ?: ($_SERVER['HOME'] ?? null);
-
-            if (is_string($home) && $home !== '') {
-                return rtrim($home, '/\\').'/backups';
-            }
+            return $this->dossierProduction();
         }
 
         return storage_path('app/private/sauvegardes');
+    }
+
+    /**
+     * ~/backups du compte (là où le cron écrit) : HOME n'est pas toujours défini pour PHP sur le serveur,
+     * d'où les autres pistes (utilisateur système, puis trois niveaux au-dessus de l'application déployée).
+     */
+    private function dossierProduction(): string
+    {
+        $posix = function_exists('posix_getpwuid') && function_exists('posix_geteuid') ? posix_getpwuid(posix_geteuid()) : false;
+        $candidats = [];
+
+        foreach ([getenv('HOME') ?: ($_SERVER['HOME'] ?? null), is_array($posix) ? $posix['dir'] : null, dirname(base_path(), 3)] as $home) {
+            if (is_string($home) && $home !== '' && $home !== '/') {
+                $candidats[] = rtrim($home, '/\\').'/backups';
+            }
+        }
+
+        foreach ($candidats as $dossier) {
+            if (is_dir($dossier)) {
+                return $dossier;
+            }
+        }
+
+        return $candidats[0] ?? storage_path('app/private/sauvegardes');
     }
 
     /**
@@ -87,7 +107,7 @@ class Sauvegardes
             'nom' => basename($chemin),
             'chemin' => $chemin,
             'taille' => (int) filesize($chemin),
-            'date' => Carbon::createFromTimestamp((int) filemtime($chemin))->timezone(config('app.timezone')),
+            'date' => Carbon::createFromTimestamp((int) filemtime($chemin))->timezone(config()->string('app.timezone_affichage')),
         ];
     }
 
@@ -197,7 +217,7 @@ class Sauvegardes
             'taille' => 0,
             'sauvegarde_le' => now(),
             'statut' => VerificationSauvegarde::ECHEC,
-            'rapport' => 'Sauvegarde du '.now()->format('d/m/Y à H:i').' : la création a échoué ❌',
+            'rapport' => 'Sauvegarde du '.now()->timezone(config()->string('app.timezone_affichage'))->format('d/m/Y à H:i').' : la création a échoué ❌',
             'details' => null,
         ]);
     }
@@ -211,7 +231,7 @@ class Sauvegardes
         $base = [
             'fichier' => $fichier['nom'],
             'taille' => $fichier['taille'],
-            'sauvegarde_le' => $fichier['date'],
+            'sauvegarde_le' => $fichier['date']->copy()->setTimezone(config()->string('app.timezone')),
         ];
 
         $lecture = $fichier['taille'] > 0 && is_readable($fichier['chemin'])
@@ -233,7 +253,7 @@ class Sauvegardes
         $videsAnormales = [];
 
         foreach (self::TABLES_IMPORTANTES as $table => $libelle) {
-            if (! in_array($table, $tablesBase, true)) {
+            if (! Schema::hasTable($table)) {
                 continue;
             }
 
@@ -293,6 +313,9 @@ class Sauvegardes
     /**
      * Lit un export .sql.gz : tables créées, lignes insérées par table, présence du marqueur de fin.
      *
+     * mysqldump écrit un seul « INSERT INTO `t` VALUES (…),(…),(…); » par table (parfois sur plusieurs lignes) :
+     * on compte donc les n-uplets, pas les lignes INSERT.
+     *
      * @return array{tables: array<string, int>, termine: bool}|null
      */
     private function lire(string $chemin): ?array
@@ -305,15 +328,22 @@ class Sauvegardes
 
         $tables = [];
         $termine = false;
+        $insertion = null;
 
         while (($ligne = gzgets($flux)) !== false) {
-            if (preg_match('/^CREATE TABLE (?:IF NOT EXISTS )?[`"]?([^`"\s(]+)/i', $ligne, $m)) {
+            if ($insertion !== null) {
+                $tables[$insertion['table']] += self::compterTuples($ligne, $insertion);
+            } elseif (preg_match('/^CREATE TABLE (?:IF NOT EXISTS )?[`"]?([^`"\s(]+)/i', $ligne, $m)) {
                 $tables[$m[1]] ??= 0;
-            } elseif (preg_match('/^INSERT INTO [`"]?([^`"\s(]+)[`"]?[^(]*VALUES\s*/i', $ligne, $m, PREG_OFFSET_CAPTURE)) {
-                $table = $m[1][0];
-                $tables[$table] = ($tables[$table] ?? 0) + self::compterTuples(substr($ligne, strlen($m[0][0])));
+            } elseif (preg_match('/^(?:INSERT|REPLACE)\s+(?:IGNORE\s+)?INTO\s+[`"]?([^`"\s(]+)[`"]?\s*(?:\([^)]*\)\s*)?VALUES\s*/i', $ligne, $m)) {
+                $insertion = ['table' => $m[1], 'profondeur' => 0, 'dansChaine' => false, 'fini' => false];
+                $tables[$m[1]] = ($tables[$m[1]] ?? 0) + self::compterTuples(substr($ligne, strlen($m[0])), $insertion);
             } elseif (str_starts_with($ligne, self::MARQUEUR_FIN)) {
                 $termine = true;
+            }
+
+            if ($insertion !== null && $insertion['fini']) {
+                $insertion = null;
             }
         }
 
@@ -328,37 +358,42 @@ class Sauvegardes
     }
 
     /**
-     * Compte les n-uplets « (…),(…) » d'un INSERT, en ignorant les parenthèses à l'intérieur des chaînes.
+     * Compte les n-uplets « (…),(…) » d'un morceau d'INSERT, en ignorant les parenthèses à l'intérieur des chaînes.
+     * L'état est conservé d'une ligne à l'autre ; « fini » passe à true sur le « ; » final.
+     *
+     * @param  array{table: string, profondeur: int, dansChaine: bool, fini: bool}  $etat
      */
-    private static function compterTuples(string $valeurs): int
+    private static function compterTuples(string $valeurs, array &$etat): int
     {
         $nombre = 0;
-        $profondeur = 0;
-        $dansChaine = false;
         $longueur = strlen($valeurs);
 
         for ($i = 0; $i < $longueur; $i++) {
             $c = $valeurs[$i];
 
-            if ($dansChaine) {
+            if ($etat['dansChaine']) {
                 if ($c === '\\') {
                     $i++;
                 } elseif ($c === "'") {
-                    $dansChaine = false;
+                    $etat['dansChaine'] = false;
                 }
 
                 continue;
             }
 
             if ($c === "'") {
-                $dansChaine = true;
+                $etat['dansChaine'] = true;
             } elseif ($c === '(') {
-                if ($profondeur === 0) {
+                if ($etat['profondeur'] === 0) {
                     $nombre++;
                 }
-                $profondeur++;
+                $etat['profondeur']++;
             } elseif ($c === ')') {
-                $profondeur--;
+                $etat['profondeur']--;
+            } elseif ($c === ';' && $etat['profondeur'] === 0) {
+                $etat['fini'] = true;
+
+                break;
             }
         }
 

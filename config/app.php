@@ -69,6 +69,9 @@ return [
 
     'timezone' => 'UTC',
 
+    // F87 : fuseau d'affichage des dates (admin Filament, sauvegardes) ; la base reste en UTC.
+    'timezone_affichage' => env('APP_TIMEZONE_AFFICHAGE', 'Indian/Antananarivo'),
+
     /*
     |--------------------------------------------------------------------------
     | Mode dégradé (F77)

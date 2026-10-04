@@ -48,14 +48,13 @@ class MesDemandesSeeder extends Seeder
 
     private function citoyen(string $email, string $name): User
     {
-        $user = User::where('email', $email)->first();
+        $user = User::where('email', $email)->first()
+            ?? User::factory()->citoyen()->profilComplet()->create(['name' => $name, 'email' => $email]);
 
-        if ($user) {
-            return $user;
+        // Compte conservé par une réinitialisation : sa prise en main a été effacée avec les autres données.
+        if (! $user->onboarding()->exists()) {
+            Onboarding::factory()->termine()->for($user)->create();
         }
-
-        $user = User::factory()->citoyen()->profilComplet()->create(['name' => $name, 'email' => $email]);
-        Onboarding::factory()->termine()->for($user)->create();
 
         return $user;
     }

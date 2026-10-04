@@ -251,7 +251,9 @@ new #[Layout('layouts::agent'), Title('Espace agent — Partenaire')] class exte
             </flux:button>
             <flux:button :href="route('agent.partners.index')" variant="ghost">{{ __('Annuler') }}</flux:button>
             @if ($record)
+                @can('delete', $record)
                 <flux:button variant="danger" class="ms-auto" wire:click="delete" wire:confirm="{{ __('Supprimer ce partenaire ?') }}">{{ __('Supprimer') }}</flux:button>
+                @endcan
             @endif
         </div>
     </form>

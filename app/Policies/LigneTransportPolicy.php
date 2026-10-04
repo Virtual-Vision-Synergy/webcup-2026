@@ -31,8 +31,11 @@ class LigneTransportPolicy
         return $user->isAdmin() || $user->isAgent();
     }
 
+    /**
+     * D09 : suppression réservée à l'administrateur (un agent reçoit 403).
+     */
     public function delete(User $user, LigneTransport $ligneTransport): bool
     {
-        return $user->isAdmin() || $user->isAgent();
+        return $user->isAdmin();
     }
 }

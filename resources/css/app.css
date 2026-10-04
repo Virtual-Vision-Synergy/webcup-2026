@@ -579,3 +579,55 @@ html.allege .tn-sky {
 html.allege body:has([data-loading]) .tn-chargement {
     visibility: visible;
 }
+
+/*
+ * F61 : rapide sur les appareils peu puissants.
+ * Sur téléphone et tablette (petit écran ou écran tactile), on retire les effets qui coûtent cher
+ * au processeur graphique : flous d'arrière-plan, ombres portées en filtre, lueurs et animations
+ * en boucle. Les informations et les actions restent identiques.
+ */
+@media (max-width: 767px), (pointer: coarse) {
+    .tn-glass,
+    .dark .tn-glass {
+        background-color: var(--color-surface);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .tn-panel-inner,
+    .dark .tn-panel-inner {
+        background-color: var(--color-surface);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    .tn-panel {
+        filter: none;
+    }
+
+    .dark .tn-cta,
+    .dark .tn-planet,
+    .dark .tn-tab-active::after {
+        box-shadow: none;
+    }
+
+    .tn-live-dot {
+        animation: none;
+    }
+
+    .tn-grid {
+        display: none;
+    }
+
+    body {
+        transition: none;
+    }
+}
+
+/* Mouvement réduit demandé par le système : pas d'effet « la page recule » derrière le menu mobile. */
+@media (prefers-reduced-motion: reduce) {
+    .tn-page-recule {
+        transform: none;
+        border-radius: 0;
+    }
+}

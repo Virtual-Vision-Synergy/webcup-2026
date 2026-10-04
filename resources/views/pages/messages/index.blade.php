@@ -86,7 +86,7 @@ new #[Title('Messages')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
-    <x-tn.aide id="messages-index">Écrivez à un service avec « Nouveau message » ; la réponse apparaîtra dans cette liste.</x-tn.aide>
+    <x-tn.aide id="messages-index">{{ __('Écrivez à un service avec « Nouveau message » ; la réponse apparaîtra dans cette liste.') }}</x-tn.aide>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="{{ __('Rechercher un message…') }}" aria-label="{{ __('Rechercher un message') }}" class="sm:max-w-sm" />

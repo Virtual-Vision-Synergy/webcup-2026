@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Http\Middleware\DefinirLangue;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
 use App\Models\Concerns\HasConfidentialFields;
@@ -9,6 +10,7 @@ use App\Services\AuditLogger;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
@@ -58,10 +60,18 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  */
 #[Fillable(['name', 'email', 'password', 'telephone', 'quartier', 'quartier_id', 'notifier_par_email'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'code_activation'])]
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, HasLocalePreference
 {
     /** @use HasFactory<UserFactory> */
     use Auditable, HasAuditHistory, HasConfidentialFields, HasFactory, Notifiable, TwoFactorAuthenticatable;
+
+    /**
+     * D14 : e-mails et notifications envoyés dans la langue choisie par l'habitant (sinon le français).
+     */
+    public function preferredLocale(): string
+    {
+        return DefinirLangue::estProposee($this->langue) ? (string) $this->langue : DefinirLangue::REFERENCE;
+    }
 
     /** F71 : domaine réservé (RFC 2606) des adresses techniques des comptes sans e-mail ; aucun message n'y part. */
     public const DOMAINE_SANS_EMAIL = 'sans-email.invalid';

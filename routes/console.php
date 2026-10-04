@@ -29,3 +29,6 @@ Schedule::command('annonces:notify')->everyMinute()->withoutOverlapping();
 
 // F87 : vérifie la dernière sauvegarde de la base et alerte les admins si elle manque ou échoue.
 Schedule::command('sauvegardes:surveiller')->everyFifteenMinutes()->withoutOverlapping();
+
+// F80 : recalcule chaque heure la priorité suggérée des demandes ouvertes (ancienneté, relances ; jamais une priorité fixée par un agent).
+Schedule::command('demarches:prioriser')->hourly()->withoutOverlapping();

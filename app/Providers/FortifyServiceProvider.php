@@ -7,11 +7,14 @@ use App\Actions\Fortify\ResetUserPassword;
 use App\Auth\LoginThrottle;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\IgnorerEmailVide;
+use App\Http\Middleware\ProtegerFormulaireContreRobots;
 use App\Http\Responses\LockoutResponse;
 use App\Http\Responses\ParcoursApresConnexionResponse;
 use App\Models\LoginAttempt;
+use App\Models\TentativeBloquee;
 use App\Models\User;
 use App\Services\LoginAttemptRecorder;
+use App\Services\ProtectionFormulaires;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -143,11 +146,28 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         // F37 : inscription et « mot de passe oublié » limités par IP (routes enregistrées par Fortify).
+        // F81 : au-delà, réponse 429 en français avec le délai, et blocage journalisé (visible dans /admin).
         RateLimiter::for('auth-sensible', function (Request $request) {
-            return Limit::perMinute((int) config('security.sensitive_routes_per_minute'))->by($request->ip());
+            return Limit::perMinute((int) config('security.sensitive_routes_per_minute'))
+                ->by($request->ip())
+                ->response(function (Request $request, array $headers) {
+                    $formulaire = $request->routeIs('register.store')
+                        ? TentativeBloquee::FORMULAIRE_INSCRIPTION
+                        : TentativeBloquee::FORMULAIRE_MOT_DE_PASSE;
+                    app(ProtectionFormulaires::class)->journaliser($formulaire, TentativeBloquee::MOTIF_DEBIT);
+
+                    $message = ProtectionFormulaires::messageDebit((int) ($headers['Retry-After'] ?? 60));
+
+                    return $request->expectsJson()
+                        ? response()->json(['message' => $message], 429, $headers)
+                        : response()->view('errors.429', ['message' => $message], 429, $headers);
+                });
         });
 
-        $this->app->booted(function (): void {
+        // F81 : champ piège + délai minimal sur les formulaires publics de connexion et d'inscription.
+        $formulairesProteges = ['login.store' => 'connexion', 'register.store' => 'inscription'];
+
+        $this->app->booted(function () use ($formulairesProteges): void {
             foreach (Route::getRoutes()->getRoutes() as $route) {
                 if (in_array($route->getName(), ['register.store', 'password.email'], true)
                     && ! in_array('throttle:auth-sensible', $route->middleware(), true)) {
@@ -156,6 +176,13 @@ class FortifyServiceProvider extends ServiceProvider
 
                 if ($route->getName() === 'register.store' && ! in_array(IgnorerEmailVide::class, $route->middleware(), true)) {
                     $route->middleware(IgnorerEmailVide::class);
+                }
+
+                $formulaire = $formulairesProteges[$route->getName() ?? ''] ?? null;
+                $antiRobot = ProtegerFormulaireContreRobots::class.':'.$formulaire;
+
+                if ($formulaire !== null && ! in_array($antiRobot, $route->middleware(), true)) {
+                    $route->middleware($antiRobot);
                 }
             }
         });

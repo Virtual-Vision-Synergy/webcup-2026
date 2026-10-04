@@ -1,6 +1,6 @@
 <?php
 
-use App\Concerns\ThrottlesPerUser;
+use App\Concerns\ProtegeContreRobots;
 use App\Models\Message;
 use Flux\Flux;
 use Illuminate\Support\Facades\Storage;
@@ -10,7 +10,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Contacter la mairie')] class extends Component {
-    use ThrottlesPerUser;
+    use ProtegeContreRobots;
 
     #[Locked]
     public ?Message $record = null;
@@ -37,6 +37,7 @@ new #[Title('Contacter la mairie')] class extends Component {
             $this->authorize('create', Message::class);
             $this->nom = (string) auth()->user()->name;
             $this->email = (string) auth()->user()->email;
+            $this->initialiserAntiRobot('contact');
         }
     }
 
@@ -84,7 +85,12 @@ new #[Title('Contacter la mairie')] class extends Component {
             return;
         }
 
-        $this->throttlePerUser('contact-mairie', maxAttempts: 5, decaySeconds: 60);
+        // F81 : champ piège, délai minimal, 5 envois par minute par compte et 15 par IP (journalisés si bloqués).
+        $this->verifierAntiRobot(
+            'contact',
+            parCompte: (int) config('security.formulaires.limites.contact.compte'),
+            parIp: (int) config('security.formulaires.limites.contact.ip'),
+        );
 
         $record = new Message($validated);
         $record->user()->associate(auth()->user());
@@ -127,8 +133,12 @@ new #[Title('Contacter la mairie')] class extends Component {
             </div>
         </div>
     @else
-        <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6" novalidate>
+        <form wire:submit="save" class="relative space-y-6 rounded-md border border-line bg-surface p-5 md:p-6" novalidate>
             <x-tn.mention-obligatoire />
+
+            @unless ($record)
+                <x-anti-robot-livewire />
+            @endunless
 
             <flux:input wire:model="nom" label="{{ __('Nom') }}" required />
 

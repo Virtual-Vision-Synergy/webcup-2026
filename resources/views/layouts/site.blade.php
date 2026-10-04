@@ -8,7 +8,7 @@
     'fluid' => false,
 ])
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif()])>
     <head>
         @include('partials.head', ['title' => $title, 'description' => $description])
     </head>
@@ -23,16 +23,18 @@
             <x-tn.site-header />
             <x-tn.bandeau-annonces />
 
-            <main id="contenu" @class(['flex-1', 'mx-auto w-full max-w-7xl px-4 py-8 lg:px-8' => ! $fluid])>
+            <main id="contenu" tabindex="-1" @class(['flex-1', 'mx-auto w-full max-w-7xl px-4 py-8 lg:px-8' => ! $fluid])>
                 {{ $slot }}
             </main>
 
             <footer class="border-t border-line">
                 <div class="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-sm text-ink-2 sm:flex-row sm:items-center sm:justify-between lg:px-8">
                     <p>{{ config('app.name') }} · Mairie de Nova Terra · 24h by Webcup 2026</p>
-                    <a href="{{ route('lexique') }}" class="inline-flex min-h-11 items-center gap-2 text-ink underline underline-offset-4 hover:text-cyan" data-test="footer-lexique-link">
-                        <flux:icon name="book-open" class="size-4" aria-hidden="true" />{{ __('Lexique') }}
-                    </a>
+                    <nav aria-label="{{ __('Informations') }}" class="flex flex-wrap gap-x-4 gap-y-1">
+                        <a href="{{ route('privacy.show') }}" class="text-cyan hover:underline">{{ __('Vos données') }}</a>
+                        <a href="{{ route('accessibility.show') }}" class="text-cyan hover:underline">{{ __('Accessibilité') }}</a>
+                        <a href="{{ route('lexique') }}" class="text-cyan hover:underline" data-test="footer-lexique-link">{{ __('Lexique') }}</a>
+                    </nav>
                     <p class="font-mono text-xs uppercase tracking-[.06em]">Virtual Vision Synergie</p>
                 </div>
             </footer>
@@ -46,6 +48,8 @@
                 <flux:toast />
             </flux:toast.group>
         @endpersist
+
+        <x-tn.chargement />
 
         @fluxScripts
     </body>

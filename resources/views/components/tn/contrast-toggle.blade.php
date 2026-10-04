@@ -4,7 +4,6 @@
     x-data="{ on: document.documentElement.classList.contains('hc') }"
     x-on:click="on = ! on; document.documentElement.classList.toggle('hc', on); try { localStorage.setItem('tn.contrast', on ? 'high' : 'normal'); } catch (e) {}"
     x-bind:aria-pressed="on ? 'true' : 'false'"
-    x-bind:aria-label="on ? @js(__('Désactiver le contraste élevé')) : @js(__('Activer le contraste élevé'))"
     aria-label="{{ __('Contraste élevé') }}"
     title="{{ __('Contraste élevé') }}"
     {{ $attributes->class('inline-flex size-11 shrink-0 items-center justify-center rounded-sm text-ink-2 transition-colors hover:bg-cyan/8 hover:text-ink aria-pressed:bg-cyan/15 aria-pressed:text-ink') }}

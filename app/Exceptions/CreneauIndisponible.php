@@ -16,6 +16,13 @@ class CreneauIndisponible extends RuntimeException
 
     public const CHEVAUCHEMENT = 'Vous avez déjà un rendez-vous sur cet horaire. Choisissez un autre créneau.';
 
+    public const SERVICE_INDISPONIBLE = 'Ce service est momentanément indisponible : la prise de rendez-vous est suspendue. Consultez sa fiche pour la date de retour prévue ou contactez la mairie.';
+
+    public static function serviceIndisponible(): self
+    {
+        return new self(self::SERVICE_INDISPONIBLE);
+    }
+
     public static function dejaPris(): self
     {
         return new self(self::DEJA_PRIS);

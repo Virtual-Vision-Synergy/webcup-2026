@@ -14,11 +14,11 @@ test('un citoyen reçoit un 403 sur la liste des demandes', function () {
         ->assertForbidden();
 });
 
-test('un agent voit toutes les demandes des habitants avec leur état', function () {
+test('un agent voit les demandes de ses services avec leur état', function () {
     Demarche::factory()->create(['titre' => 'Lampadaire en panne', 'statut' => 'deposee']);
     Demarche::factory()->create(['titre' => 'Nid de poule réparé', 'statut' => 'traitee']);
 
-    $this->actingAs(User::factory()->agent()->create())
+    $this->actingAs(agentDeTousLesServices())
         ->get(route('agent.demandes'))
         ->assertOk()
         ->assertSee(['Lampadaire en panne', 'Nid de poule réparé', 'Action attendue']);
@@ -28,7 +28,7 @@ test('le filtre « en attente d’action » masque les demandes clôturées', fu
     Demarche::factory()->create(['titre' => 'Lampadaire en panne', 'statut' => 'en_cours']);
     Demarche::factory()->create(['titre' => 'Nid de poule réparé', 'statut' => 'refusee']);
 
-    Livewire::actingAs(User::factory()->agent()->create())
+    Livewire::actingAs(agentDeTousLesServices())
         ->test('pages::agent.demandes')
         ->set('enAttente', true)
         ->assertSee('Lampadaire en panne')
@@ -38,7 +38,7 @@ test('le filtre « en attente d’action » masque les demandes clôturées', fu
 test('un agent peut changer l’état d’une demande', function () {
     $demarche = Demarche::factory()->create(['statut' => 'deposee']);
 
-    Livewire::actingAs(User::factory()->agent()->create())
+    Livewire::actingAs(agentDeTousLesServices())
         ->test('pages::agent.demandes')
         ->call('changerStatut', $demarche->id, 'traitee')
         ->assertHasNoErrors();
@@ -49,7 +49,7 @@ test('un agent peut changer l’état d’une demande', function () {
 test('un statut inconnu est refusé', function () {
     $demarche = Demarche::factory()->create(['statut' => 'deposee']);
 
-    Livewire::actingAs(User::factory()->agent()->create())
+    Livewire::actingAs(agentDeTousLesServices())
         ->test('pages::agent.demandes')
         ->call('changerStatut', $demarche->id, 'pirate')
         ->assertStatus(422);

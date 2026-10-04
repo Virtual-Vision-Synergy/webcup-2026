@@ -25,6 +25,15 @@ class SignalementPolicy
         return $signalement->user_id === $user->id || $this->estPersonnel($user);
     }
 
+    /**
+     * Suivi citoyen « Mes demandes » (D11) : uniquement l'auteur, même pour un agent ou un admin
+     * (le personnel consulte les demandes depuis son propre espace).
+     */
+    public function viewOwn(User $user, Signalement $signalement): bool
+    {
+        return $signalement->user_id === $user->id;
+    }
+
     public function create(User $user): bool
     {
         return true;

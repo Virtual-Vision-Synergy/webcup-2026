@@ -9,7 +9,8 @@
     $connecte = auth()->check();
 
     // Données réelles de la base, mises en cache 60 s (tableaux simples, pas de modèles en cache).
-    $etat = Cache::remember('landing.etat', 60, fn (): array => [
+    // F78 : vidé dès qu'un service ou une actualité change (trait ViderCachesPublics).
+    $etat = Cache::remember(Service::CACHE_ACCUEIL, 60, fn (): array => [
         'genere_le' => now()->timestamp,
         'services' => Service::count(),
         'actualites' => Actualite::count(),
@@ -42,7 +43,8 @@
 
     $rubriques = config('navigation.rubriques');
 
-    $illustration = file_exists(public_path('images/hero/ciel-nuit.webp')) ? asset('images/hero/ciel-nuit.webp') : null;
+    // F59 : en « Mode allégé », l'illustration décorative du hero n'est pas téléchargée.
+    $illustration = ! \App\Support\ModeAllege::actif() && file_exists(public_path('images/hero/ciel-nuit.webp')) ? asset('images/hero/ciel-nuit.webp') : null;
 @endphp
 
 <x-layouts::site :title="__('Accueil')" :fluid="true" :description="__('Vos démarches, les actualités de la ville et le contact avec vos services municipaux, au même endroit : la plateforme civique officielle de la Mairie de Nova Terra.')">
@@ -100,6 +102,28 @@
                     {{ __('MAJ il y a :s s · Source : base municipale', ['s' => $majIlYa]) }}
                 </p>
             </x-tn.panel>
+        </div>
+    </section>
+
+    {{-- F46 : URGENCES / SANTÉ, accès direct depuis l'accueil --}}
+    <section class="border-t border-magenta/35 bg-magenta/8" aria-labelledby="titre-urgences">
+        <div class="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+            <h2 id="titre-urgences" class="flex items-center gap-2 font-semibold text-ink">
+                <flux:icon name="heart" class="size-5 shrink-0 text-magenta" aria-hidden="true" />
+                {{ __('Urgence ?') }}
+            </h2>
+            <ul class="flex flex-wrap gap-2">
+                @foreach (array_slice(Service::NUMEROS_URGENCE, 0, 3) as $urgence)
+                    <li>
+                        <a href="tel:{{ $urgence['numero'] }}" class="inline-flex min-h-11 items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm text-ink hover:border-magenta/50">
+                            {{ __($urgence['label']) }} <span class="font-mono font-semibold text-magenta">{{ $urgence['numero'] }}</span>
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+            <a href="{{ route('urgences.index') }}" class="inline-flex min-h-11 items-center gap-1 font-medium text-magenta hover:underline">
+                {{ __('Urgences / Santé : hôpitaux et numéros') }} <flux:icon name="arrow-right" class="size-4" aria-hidden="true" />
+            </a>
         </div>
     </section>
 

@@ -51,7 +51,8 @@ class AuditHistory extends Component
 
         $requete = AuditLog::query()
             ->where('subject_type', class_basename($this->subject))
-            ->where('subject_id', $this->subject->getKey());
+            ->where('subject_id', $this->subject->getKey())
+            ->modifications();
 
         $this->total = (clone $requete)->count();
         $this->entrees = $requete->latest('id')->limit($this->variant === 'resume' ? 1 : self::LIMITE)->get();

@@ -44,4 +44,30 @@ class ServicePolicy
     {
         return $user->isAdmin() || $user->isAgent();
     }
+
+    /**
+     * Marquer un service indisponible (maintenance, incident) ou le rétablir (F38) : agents et admins uniquement.
+     * Sans service : accès à la liste des disponibilités de l'espace agent.
+     */
+    public function manageAvailability(User $user, ?Service $service = null): bool
+    {
+        return $user->isAdmin() || $user->isAgent();
+    }
+
+    /**
+     * Rendre un service indisponible ou le rétablir (F63) : administrateurs uniquement.
+     */
+    public function toggleAvailability(User $user, Service $service): bool
+    {
+        return $user->isAdmin();
+    }
+
+    /**
+     * F64 : mettre à jour l'état (disponible, perturbé, indisponible) depuis la fiche du service.
+     * F70 : agent rattaché à ce service ou administrateur ; jamais un citoyen.
+     */
+    public function updateStatus(User $user, Service $service): bool
+    {
+        return $user->isAdmin() || ($user->isAgent() && $user->canAccessService($service));
+    }
 }

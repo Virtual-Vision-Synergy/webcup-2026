@@ -44,6 +44,11 @@ return [
         'key' => env('WEB_CUP_API_KEY'),
     ],
 
+    // F87 : dossier des sauvegardes de la base (par défaut ~/backups en production, storage en local).
+    'sauvegardes' => [
+        'dossier' => env('BACKUP_DIR'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

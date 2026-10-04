@@ -6,10 +6,20 @@
 
         <flux:heading size="xl" level="1">Accès refusé</flux:heading>
 
-        <flux:text>
-            Vous n’avez pas les droits nécessaires pour consulter cette page ou effectuer cette action.
-            Si vous pensez qu’il s’agit d’une erreur, contactez la Mairie de Nova Terra.
-        </flux:text>
+        {{-- F70 : motif précis venant de la policy (Response::deny), sans rien révéler du contenu demandé. --}}
+        @php($motif = isset($exception) ? trim((string) $exception->getMessage()) : '')
+        @if ($motif !== '' && $motif !== 'This action is unauthorized.' && $motif !== 'Forbidden')
+            <flux:text class="text-base text-ink" data-test="motif-refus">{{ $motif }}</flux:text>
+        @else
+            <flux:text>
+                Vous n’avez pas les droits nécessaires pour consulter cette page ou effectuer cette action.
+                Si vous pensez qu’il s’agit d’une erreur, contactez votre administrateur ou la Mairie de Nova Terra.
+            </flux:text>
+        @endif
+
+        @auth
+            <flux:text class="text-sm">Cette tentative a été enregistrée dans le journal de sécurité.</flux:text>
+        @endauth
 
         <div class="flex flex-wrap justify-center gap-3">
             @php($precedente = url()->previous())

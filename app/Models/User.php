@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
+use App\Models\Concerns\HasConfidentialFields;
+use App\Services\AuditLogger;
 use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -12,6 +14,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -42,6 +45,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $identifiant Identifiant d'habitant (F71) pour se connecter sans e-mail.
  * @property string|null $code_activation Empreinte du code d'activation à usage unique (F71).
  * @property string|null $langue Langue mémorisée (F71).
+ * @property bool $mode_allege Mode allégé pour les connexions lentes (F59).
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
@@ -54,13 +58,29 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<UserFactory> */
-    use Auditable, HasAuditHistory, HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use Auditable, HasAuditHistory, HasConfidentialFields, HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /** F71 : domaine réservé (RFC 2606) des adresses techniques des comptes sans e-mail ; aucun message n'y part. */
     public const DOMAINE_SANS_EMAIL = 'sans-email.invalid';
 
     /** @var list<string> Champs non journalisés (F47) : l'empreinte du code d'activation reste hors du journal. */
     protected array $auditIgnore = ['code_activation'];
+
+    /** F70 : champs jamais affichés en clair dans le journal (F47/F48), remplacés par « [masqué] ». */
+    public const CHAMPS_CONFIDENTIELS = ['telephone', 'email'];
+
+    /**
+     * F70 : coordonnées d'un habitant, masquées par défaut sur sa fiche dans l'espace agent (F34).
+     *
+     * @return array<string, array{label: string, valeur: \Closure(): (string|null)}>
+     */
+    public function confidentialFields(): array
+    {
+        return [
+            'telephone' => ['label' => 'Téléphone', 'valeur' => fn (): ?string => $this->telephone],
+            'email' => ['label' => 'E-mail', 'valeur' => fn (): ?string => $this->emailAffichable()],
+        ];
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -75,6 +95,7 @@ class User extends Authenticatable implements FilamentUser
             'quartier_id' => 'integer',
             'deactivated_at' => 'datetime',
             'notifier_par_email' => 'boolean',
+            'mode_allege' => 'boolean',
         ];
     }
 
@@ -228,6 +249,67 @@ class User extends Authenticatable implements FilamentUser
     public function knownDevices(): HasMany
     {
         return $this->hasMany(KnownDevice::class);
+    }
+
+    /**
+     * F70 : services couverts par un agent. Affectation réservée à l'admin (UserPolicy::assignServices).
+     *
+     * @return BelongsToMany<Service, $this>
+     */
+    public function services(): BelongsToMany
+    {
+        return $this->belongsToMany(Service::class)->withTimestamps();
+    }
+
+    /** @var list<int>|null Ids des services couverts, mis en cache pour la durée de la requête. */
+    private ?array $serviceIdsEnCache = null;
+
+    /**
+     * Ids des services couverts par l'agent (vide pour un citoyen).
+     *
+     * @return list<int>
+     */
+    public function serviceIds(): array
+    {
+        if (! $this->isAgent()) {
+            return [];
+        }
+
+        return $this->serviceIdsEnCache ??= array_values(array_map(intval(...), $this->services()->pluck('services.id')->all()));
+    }
+
+    /**
+     * Change les services couverts (à appeler après l'autorisation) et le note au journal (F47).
+     *
+     * @param  list<int>  $serviceIds
+     */
+    public function affecterServices(array $serviceIds): void
+    {
+        $avant = $this->services()->orderBy('nom')->pluck('nom')->implode(', ');
+
+        $this->services()->sync(Service::query()->whereKey($serviceIds)->pluck('id')->all());
+        $this->serviceIdsEnCache = null;
+
+        $apres = $this->services()->orderBy('nom')->pluck('nom')->implode(', ');
+
+        if ($avant !== $apres) {
+            AuditLogger::log('services_changed', $this, ['services' => ['avant' => $avant ?: null, 'apres' => $apres ?: null]]);
+        }
+    }
+
+    /**
+     * F70 : l'utilisateur peut-il traiter les données de ce service ? Admin : tout ; agent : ses services ;
+     * une donnée sans service est réservée à l'admin ; citoyen : jamais (côté agent).
+     */
+    public function canAccessService(Service|int|null $service): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        $serviceId = $service instanceof Service ? $service->id : $service;
+
+        return $serviceId !== null && in_array((int) $serviceId, $this->serviceIds(), true);
     }
 
     public function hasRole(string $code): bool

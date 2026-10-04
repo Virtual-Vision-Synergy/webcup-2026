@@ -1,5 +1,6 @@
 <?php
 
+use App\Concerns\ThrottlesPerUser;
 use App\Models\Signalement;
 use App\Services\OptimiseurImage;
 use Flux\Flux;
@@ -10,7 +11,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 
 new #[Title('Signalement')] class extends Component {
-    use WithFileUploads;
+    use ThrottlesPerUser, WithFileUploads;
 
     #[Locked]
     public ?Signalement $record = null;
@@ -64,6 +65,9 @@ new #[Title('Signalement')] class extends Component {
 
         $validated = $this->validate();
 
+        // F78 : 10 envois par minute et par habitant au plus (message clair sous le formulaire).
+        $this->throttlePerUser('signalement', maxAttempts: 10, decaySeconds: 60);
+
         if ($this->photo) {
             $optimiseur = app(OptimiseurImage::class);
             $optimiseur->supprimer($this->record?->photo);
@@ -99,12 +103,14 @@ new #[Title('Signalement')] class extends Component {
     />
 
     <form wire:submit="save" class="space-y-6">
-        <fieldset class="space-y-3">
+        <x-tn.mention-obligatoire />
+
+        <fieldset class="space-y-3" data-requis>
             <legend class="tn-display mb-1 text-lg font-semibold text-ink">{{ __('Type de problème') }}</legend>
             <div class="grid gap-2 sm:grid-cols-2">
                 @foreach (Signalement::CATEGORIE_OPTIONS as $option)
                     <label wire:key="categorie-{{ $option }}" class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
-                        <input type="radio" wire:model="categorie" value="{{ $option }}" class="size-4 accent-[var(--color-cyan)]">
+                        <input type="radio" wire:model="categorie" name="categorie" value="{{ $option }}" required class="size-4 accent-[var(--color-cyan)]">
                         <span class="font-medium text-ink">{{ __(Signalement::libelleCategorie($option)) }}</span>
                     </label>
                 @endforeach
@@ -125,6 +131,8 @@ new #[Title('Signalement')] class extends Component {
                 <x-tn.image :chemin="$record->photo" :alt="__('Photo du signalement')" sizes="320px" class="h-40 w-auto rounded-lg object-cover" />
             @endif
         </div>
+
+        <flux:error name="throttle" />
 
         <div class="flex items-center justify-between gap-3 border-t border-line pt-5">
             <flux:button :href="route('signalements.index')" wire:navigate variant="ghost">{{ __('Annuler') }}</flux:button>

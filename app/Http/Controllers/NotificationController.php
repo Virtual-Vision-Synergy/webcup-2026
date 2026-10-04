@@ -3,7 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Annonce;
+use App\Models\Demarche;
 use App\Models\RendezVous;
+use App\Models\Signalement;
+use App\Notifications\ReponseDemarcheRecue;
+use App\Notifications\StatutDemandeChange;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,13 +41,26 @@ class NotificationController extends Controller
 
     /**
      * Ouvre la notification : la marque comme lue puis mène à l'annonce (ou à la liste si elle n'est plus en ligne),
-     * ou à la fiche du rendez-vous pour un rappel (F40).
+     * à la demande dont l'état a changé (F49), ou à la fiche du rendez-vous pour un rappel (F40).
      */
     public function ouvrir(DatabaseNotification $notification): RedirectResponse
     {
         Gate::authorize('update', $notification);
 
         $notification->markAsRead();
+
+        if ($notification->type === StatutDemandeChange::class) {
+            return $this->ouvrirDemande($notification);
+        }
+
+        // F84 : réponse d'un agent → fiche de la démarche (DemarchePolicy::view y est vérifiée).
+        if ($notification->type === ReponseDemarcheRecue::class) {
+            $demarcheId = $notification->data['demarche_id'] ?? null;
+
+            return is_int($demarcheId) && Demarche::query()->whereKey($demarcheId)->exists()
+                ? redirect()->route('demarches.show', $demarcheId)
+                : redirect()->route('notifications.index')->with('status', __('Cette demande n’est plus disponible.'));
+        }
 
         // F40 : rappel de rendez-vous → sa fiche (RendezVousPolicy::view y est vérifiée).
         $rendezVousId = $notification->data['rendez_vous_id'] ?? null;
@@ -61,6 +78,29 @@ class NotificationController extends Controller
         }
 
         return redirect()->route('alertes.show', $annonce);
+    }
+
+    /**
+     * F49 : l'URL est reconstruite depuis le type (liste blanche) et l'identifiant, jamais lue dans data['url']
+     * (pas de redirection ouverte). La page de la demande garde sa propre Policy.
+     */
+    private function ouvrirDemande(DatabaseNotification $notification): RedirectResponse
+    {
+        $data = (array) $notification->data;
+
+        if (! StatutDemandeChange::estAvisDeStatut($data)) {
+            return redirect()->route('notifications.index')->with('status', __('Cette demande n’est plus disponible.'));
+        }
+
+        $existe = $data['demande_type'] === StatutDemandeChange::TYPE_DEMARCHE
+            ? Demarche::query()->whereKey((int) $data['demande_id'])->exists()
+            : Signalement::query()->whereKey((int) $data['demande_id'])->exists();
+
+        if (! $existe) {
+            return redirect()->route('notifications.index')->with('status', __('Cette demande n’est plus disponible.'));
+        }
+
+        return redirect()->to((string) StatutDemandeChange::urlDepuis($data));
     }
 
     /**

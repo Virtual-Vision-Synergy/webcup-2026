@@ -19,6 +19,9 @@
                     <flux:sidebar.item icon="heart" :href="route('urgences.index')" :current="request()->routeIs('urgences.*')" wire:navigate>
                         Urgences / Santé
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="sun" :href="route('canicule')" :current="request()->routeIs('canicule')" wire:navigate>
+                        Canicule
+                    </flux:sidebar.item>
                     <flux:sidebar.item icon="question-mark-circle" :href="route('orientation.index')" :current="request()->routeIs('orientation.*')" wire:navigate>
                         À qui m'adresser ?
                     </flux:sidebar.item>
@@ -176,6 +179,7 @@
                 </header>
 
                 <x-tn.bandeau-version-simple />
+                <x-tn.bandeau-version-legere />
                 <x-tn.bandeau-annonces />
                 <x-tn.bandeau-consultations />
 

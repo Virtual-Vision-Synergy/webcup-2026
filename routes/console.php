@@ -37,3 +37,6 @@ Schedule::command('securite:controle-integrite')->hourly()->withoutOverlapping()
 
 // F80 : recalcule chaque heure la priorité suggérée des demandes ouvertes (ancienneté, relances ; jamais une priorité fixée par un agent).
 Schedule::command('demarches:prioriser')->hourly()->withoutOverlapping();
+
+// F31 : alertes canicule programmées, notifiées aux habitants des quartiers touchés à leur début (idempotent).
+Schedule::command('canicule:notify')->everyMinute()->withoutOverlapping();

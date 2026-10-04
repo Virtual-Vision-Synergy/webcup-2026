@@ -389,3 +389,28 @@ document.addEventListener('livewire:navigated', () => {
     formulaireSoumis = null;
     planifierLiaison();
 });
+
+/**
+ * F96 : version légère — la carte (et Leaflet) n'est téléchargée qu'au clic sur « Afficher la carte ».
+ * La configuration passe de data-carte-differee à data-carte, que resources/js/carte.js surveille.
+ */
+document.addEventListener('click', (evenement) => {
+    const bouton = evenement.target instanceof Element ? evenement.target.closest('[data-carte-afficher]') : null;
+    const carte = bouton?.closest('[data-carte-differee]');
+
+    if (! carte) {
+        return;
+    }
+
+    carte.dataset.carte = carte.dataset.carteDifferee;
+    delete carte.dataset.carteDifferee;
+    carte.querySelector('[data-carte-zone]')?.removeAttribute('hidden');
+    bouton.remove();
+
+    import('./carte.js').catch(() => {
+        const message = carte.querySelector('[data-carte-message]');
+        if (message) {
+            message.textContent = 'Carte momentanément indisponible. Les adresses de la page restent valables.';
+        }
+    });
+});

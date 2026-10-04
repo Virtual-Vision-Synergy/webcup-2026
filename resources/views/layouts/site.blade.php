@@ -22,6 +22,7 @@
         >
             <x-tn.site-header />
             <x-tn.bandeau-version-simple />
+            <x-tn.bandeau-version-legere />
             <x-tn.bandeau-annonces />
 
             <main id="contenu" tabindex="-1" @class(['flex-1', 'mx-auto w-full max-w-7xl px-4 py-8 lg:px-8' => ! $fluid])>

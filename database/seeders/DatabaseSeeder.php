@@ -271,6 +271,9 @@ class DatabaseSeeder extends Seeder
             $this->call(UsageServicesSeeder::class);
         }
 
+        // F97 : ligne 7 interrompue avec solutions de remplacement, trajet habituel de user@example.com sur cette ligne.
+        $this->call(InterruptionTransportSeeder::class);
+
         // make:feature:seeders
     }
 

@@ -73,7 +73,7 @@ new #[Layout('layouts::agent'), Title('Nouveau compte habitant')] class extends 
         label="{{ __('Espace agent') }}"
         title="{{ __('Nouveau compte habitant') }}"
         :subtitle="__('Pour un habitant sans adresse e-mail : il recevra une fiche avec son identifiant et un code d\'activation à usage unique.')"
-        :breadcrumb="['Espace agent' => route('agent.index'), 'Comptes citoyens' => route('agent.citizens.index'), 'Nouveau compte' => null]"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Comptes citoyens' => route('agent.citizens.index'), 'Nouveau compte' => null]"
     >
         <x-slot:actions>
             <flux:button icon="arrow-up-tray" :href="route('agent.citizens.import')" wire:navigate>{{ __('Importer un fichier CSV') }}</flux:button>
@@ -89,7 +89,7 @@ new #[Layout('layouts::agent'), Title('Nouveau compte habitant')] class extends 
                     <flux:select.option value="{{ $code }}">{{ $libelle }}</flux:select.option>
                 @endforeach
             </flux:select>
-            @error('throttle') <flux:text class="text-red-500 sm:col-span-2">{{ $message }}</flux:text> @enderror
+            @error('throttle') <flux:text class="text-magenta! sm:col-span-2">{{ $message }}</flux:text> @enderror
             <div class="flex justify-end sm:col-span-2">
                 <flux:button type="submit" variant="primary" icon="user-plus" wire:loading.attr="disabled">{{ __('Créer le compte') }}</flux:button>
             </div>

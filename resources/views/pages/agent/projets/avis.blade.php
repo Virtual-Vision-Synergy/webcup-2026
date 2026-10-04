@@ -115,7 +115,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Avis sur un projet')] cl
                 @endforeach
             </div>
         @endif
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
             @foreach ($this->repartition as $position => $nombre)
                 <button
                     type="button"

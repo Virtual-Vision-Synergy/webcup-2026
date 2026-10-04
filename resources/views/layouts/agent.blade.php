@@ -74,6 +74,11 @@
                         <flux:sidebar.item icon="building-storefront" :href="route('agent.partners.index')" :current="request()->routeIs('agent.partners.*')">
                             Partenaires
                         </flux:sidebar.item>
+                        @can('viewPartnerSpace')
+                            <flux:sidebar.item icon="squares-plus" :href="route('partner.offerings.index')" :current="request()->routeIs('partner.offerings.*')">
+                                Services des partenaires
+                            </flux:sidebar.item>
+                        @endcan
                     </flux:sidebar.group>
 
                     <flux:sidebar.group heading="Contrôle" class="grid">
@@ -102,7 +107,7 @@
 
             <div class="flex min-w-0 flex-1 flex-col">
                 <header class="tn-glass sticky top-0 z-30 border-b border-t-2 border-t-cyan">
-                    <div class="flex h-16 items-center gap-3 px-4 lg:h-[72px] lg:px-8">
+                    <div class="flex min-h-16 items-center gap-3 px-4 py-1 lg:min-h-[4.5rem] lg:px-8">
                         <a href="{{ route('agent.tableau-de-bord') }}" class="flex min-w-0 items-center gap-3 lg:hidden" aria-label="Espace agent : tableau de bord">
                             <x-app-logo-icon class="size-[26px] shrink-0" />
                             <span class="tn-display text-[0.9375rem] font-semibold tracking-[.16em] max-sm:hidden">TERRA NOVA</span>
@@ -145,6 +150,7 @@
                                     <flux:menu.item icon="chat-bubble-left-right" :href="route('consultations.index')">Consultations</flux:menu.item>
                                     <flux:menu.item icon="building-office-2" :href="route('projets.index')">Projets de la ville</flux:menu.item>
                                     <flux:menu.item icon="building-storefront" :href="route('agent.partners.index')">Partenaires</flux:menu.item>
+                                    @can('viewPartnerSpace')<flux:menu.item icon="squares-plus" :href="route('partner.offerings.index')">Services des partenaires</flux:menu.item>@endcan
                                     <flux:menu.item icon="shield-exclamation" :href="route('agent.securite.index')">Sécurité{{ $securiteNonLus > 0 ? ' ('.$securiteNonLus.' non lus)' : '' }}</flux:menu.item>
                                     <flux:menu.item icon="key" :href="route('agent.security.index')">Sécurité des connexions</flux:menu.item>
                                     <flux:menu.item icon="document-text" :href="route('agent.audit.index')">Journal</flux:menu.item>

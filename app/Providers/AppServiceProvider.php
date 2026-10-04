@@ -7,6 +7,8 @@ use App\Notifications\Channels\MailChannelTolerant;
 use App\Policies\DatabaseNotificationPolicy;
 use App\Services\RecommandationProvider;
 use App\Services\RecommandationsEcrites;
+use App\Services\RedacteurLangageClair;
+use App\Services\RedacteurLangageClairRegles;
 use App\Services\ReformulateurRequete;
 use App\Services\SansReformulation;
 use App\Services\Simplificateur;
@@ -40,6 +42,9 @@ class AppServiceProvider extends ServiceProvider
         // F90 : explications simples rédigées et règles en base (aucune IA) ; une implémentation IA pourra être liée ici.
         $this->app->bind(Simplificateur::class, SimplificateurRegles::class);
 
+        // F89 : version en langage clair de secours par les synonymes en base (aucune IA) ; une implémentation IA pourra être liée ici.
+        $this->app->bind(RedacteurLangageClair::class, RedacteurLangageClairRegles::class);
+
         // F93 : une panne du serveur d'e-mails n'empêche plus d'afficher la page (erreur journalisée + bandeau).
         $this->app->bind(MailChannel::class, MailChannelTolerant::class);
     }
@@ -58,6 +63,9 @@ class AppServiceProvider extends ServiceProvider
 
         // F103 : le rapport d'activité (page admin, version imprimable, CSV) est réservé aux administrateurs.
         Gate::define('voirRapportActivite', fn (User $user): bool => $user->isAdmin());
+
+        // F99 : espace partenaire (comptes partenaires rattachés à un partenaire, et admins qui gèrent tous les partenaires).
+        Gate::define('viewPartnerSpace', fn (User $user): bool => $user->isAdmin() || ($user->isPartenaire() && $user->partner_id !== null));
 
         // F30 : une notification n'est accessible qu'à son destinataire.
         Gate::policy(DatabaseNotification::class, DatabaseNotificationPolicy::class);

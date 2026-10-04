@@ -45,6 +45,7 @@ class DatabaseSeeder extends Seeder
      *   - nouveau@example.com     Citoyen tout neuf (prise en main jamais vue → /bienvenue)
      *   - parcours@example.com    Citoyen à mi-parcours (profil complet, 1/3)
      *   - passe@example.com       Citoyen ayant passé la prise en main
+     *   - partenaire.fanilo@example.com, partenaire.sakafo@example.com, partenaire.transports@example.com  Comptes partenaires (F99)
      * En production : aucun compte avec un mot de passe connu n'est créé ;
      * les comptes jury sont créés à la main (/register) puis passés agent ou admin dans /admin/users.
      */
@@ -119,6 +120,9 @@ class DatabaseSeeder extends Seeder
 
         // F90 : explications simples des passages administratifs et synonymes, éditables dans Filament.
         $this->call(ExplicationsSimplesSeeder::class);
+
+        // F89 : versions en langage clair des services principaux, validées par la mairie.
+        $this->call(LangageClairSeeder::class);
 
         // F31 : recommandations canicule écrites (profil × niveau), éditables dans Filament.
         $this->call(RecommandationsCaniculeSeeder::class);
@@ -276,6 +280,9 @@ class DatabaseSeeder extends Seeder
             // F98 : 120 jours de consultations et de démarches pour le tableau de bord « Usage des services ».
             $this->call(UsageServicesSeeder::class);
         }
+
+        // F99 : services partenaires (états variés), comptes partenaires de démo et un abonnement « Me prévenir ».
+        $this->call(PartnerOfferingSeeder::class);
 
         // F97 : ligne 7 interrompue avec solutions de remplacement, trajet habituel de user@example.com sur cette ligne.
         $this->call(InterruptionTransportSeeder::class);

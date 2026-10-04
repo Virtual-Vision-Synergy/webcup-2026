@@ -13,7 +13,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Partenaire de la ville (F74) : horaires, adresse et emplacement consultables sans compte.
@@ -232,6 +234,70 @@ class Partner extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * F99 : services proposés par ce partenaire dans le catalogue.
+     *
+     * @return HasMany<PartnerOffering, $this>
+     */
+    public function offerings(): HasMany
+    {
+        return $this->hasMany(PartnerOffering::class);
+    }
+
+    /**
+     * F99 : comptes partenaires rattachés (users.partner_id, assigné par un admin).
+     *
+     * @return HasMany<User, $this>
+     */
+    public function comptes(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
+
+    /**
+     * F99 : plages saisies dans un formulaire (« hours.lundi.0.start »…) → format opening_hours, lignes vides retirées.
+     * Chaque plage doit commencer avant de finir et ne pas chevaucher la précédente.
+     *
+     * @param  array<string, mixed>  $saisie
+     * @return array<string, array<int, array{start: string, end: string}>>
+     *
+     * @throws ValidationException
+     */
+    public static function horairesDepuisSaisie(array $saisie, string $champ = 'hours'): array
+    {
+        $semaine = [];
+        $erreurs = [];
+
+        foreach (self::JOURS as $jour) {
+            $plages = [];
+
+            foreach (array_slice((array) ($saisie[$jour] ?? []), 0, self::PLAGES_PAR_JOUR) as $i => $plage) {
+                $debut = (string) (is_array($plage) ? ($plage['start'] ?? '') : '');
+                $fin = (string) (is_array($plage) ? ($plage['end'] ?? '') : '');
+
+                if ($debut === '' && $fin === '') {
+                    continue;
+                }
+
+                if ($debut >= $fin) {
+                    $erreurs["{$champ}.{$jour}.{$i}.end"] = "Le {$jour}, l'heure de fermeture doit être après l'heure d'ouverture.";
+                } elseif ($plages !== [] && $debut < end($plages)['end']) {
+                    $erreurs["{$champ}.{$jour}.{$i}.start"] = "Le {$jour}, la seconde plage doit commencer après la fin de la première.";
+                }
+
+                $plages[] = ['start' => $debut, 'end' => $fin];
+            }
+
+            $semaine[$jour] = $plages;
+        }
+
+        if ($erreurs !== []) {
+            throw ValidationException::withMessages($erreurs);
+        }
+
+        return $semaine;
     }
 
     /**

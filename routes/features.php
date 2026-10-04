@@ -131,6 +131,10 @@ Route::group([], function () {
     // F46 : urgences et santé, consultable sans compte (numéros d'urgence, hôpitaux) ; lecture seule, aucune action.
     Route::livewire('urgences', 'pages::urgences.index')->name('urgences.index');
 
+    // F74 : partenaires publiés consultables sans compte (horaires, adresse, carte) ; gestion dans routes/agent.php.
+    Route::livewire('partenaires', 'pages::partners.index')->name('partners.index');
+    Route::livewire('partenaires/{partner:slug}', 'pages::partners.show')->name('partners.show');
+
     // F68 : idées publiées consultables sans compte (décision assumée) ; soutenir exige d'être connecté.
     // Idée masquée par la modération : 404 sauf pour son auteur et le personnel (IdeaPolicy::view).
     Route::livewire('idees', 'pages::ideas.index')->name('ideas.index');

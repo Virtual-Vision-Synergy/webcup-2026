@@ -3,7 +3,7 @@
     Volontairement différent de l'espace citoyen : pas de menu latéral, bandeau émeraude, badge « Espace agent ».
 --}}
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif()])>
     <head>
         @include('partials.head')
     </head>
@@ -54,6 +54,9 @@
                 <flux:navbar.item icon="building-office-2" :href="route('projets.index')">
                     Projets
                 </flux:navbar.item>
+                <flux:navbar.item icon="building-storefront" :href="route('agent.partners.index')" :current="request()->routeIs('agent.partners.*')">
+                    Partenaires
+                </flux:navbar.item>
                 <flux:navbar.item icon="shield-check" :href="route('agent.security.index')" :current="request()->routeIs('agent.security.*')">
                     Sécurité
                 </flux:navbar.item>
@@ -95,6 +98,7 @@
                     <flux:menu.item icon="calendar-days" :href="route('agent.appointments.index')" class="md:hidden">Rendez-vous du jour</flux:menu.item>
                     <flux:menu.item icon="wrench-screwdriver" :href="route('agent.services.index')" class="md:hidden">Disponibilité des services</flux:menu.item>
                     <flux:menu.item icon="building-office-2" :href="route('projets.index')" class="md:hidden">Projets de la ville</flux:menu.item>
+                    <flux:menu.item icon="building-storefront" :href="route('agent.partners.index')" class="md:hidden">Partenaires</flux:menu.item>
                     <flux:menu.item icon="document-text" :href="route('agent.audit.index')" class="md:hidden">Journal</flux:menu.item>
                     <flux:menu.item icon="shield-check" :href="route('agent.security.index')" class="md:hidden">Sécurité des connexions</flux:menu.item>
                     <flux:menu.item icon="arrow-uturn-left" :href="route('dashboard')">Retour à l'espace citoyen</flux:menu.item>
@@ -125,6 +129,8 @@
                 <flux:toast />
             </flux:toast.group>
         @endpersist
+
+        <x-tn.chargement />
 
         @fluxScripts
     </body>

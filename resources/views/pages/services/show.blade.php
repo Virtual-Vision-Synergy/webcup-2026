@@ -5,6 +5,7 @@ use App\Models\CreneauRendezVous;
 use App\Models\RendezVous;
 use App\Models\Service;
 use App\Models\ServiceInterruption;
+use App\Models\ServiceReview;
 use App\Services\OnboardingProgress;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
@@ -138,6 +139,37 @@ new #[Title('Service')] class extends Component {
         return $this->record->interruptionEnCours();
     }
 
+    /**
+     * F76 : statistiques des avis publiés (moyenne, nombre, répartition).
+     *
+     * @return array{moyenne: float|null, total: int, repartition: array<int, int>}
+     */
+    #[Computed]
+    public function statsAvis(): array
+    {
+        return $this->record->statistiquesAvis();
+    }
+
+    /**
+     * F76 : les 5 avis publiés les plus récents (auteur : id et nom seulement, jamais l'e-mail).
+     *
+     * @return Collection<int, ServiceReview>
+     */
+    #[Computed]
+    public function avisRecents(): Collection
+    {
+        return $this->record->reviews()->visibles()->with('user:id,name')->latest('updated_at')->latest('id')->limit(5)->get();
+    }
+
+    /**
+     * F76 : avis de l'utilisateur connecté sur ce service (bouton « Donner » ou « Modifier mon avis »).
+     */
+    #[Computed]
+    public function monAvis(): ?ServiceReview
+    {
+        return $this->record->reviews()->where('user_id', auth()->id())->first();
+    }
+
     #[Computed]
     public function prendRendezVous(): bool
     {
@@ -265,6 +297,31 @@ new #[Title('Service')] class extends Component {
             @endif
         </x-tn.panel>
     </div>
+
+    {{-- F76 : avis des habitants (distinct de la cloche « Avis » des notifications). --}}
+    <x-tn.surface id="avis">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <x-tn.section-label as="h2">{{ __('Avis des habitants') }}</x-tn.section-label>
+            @if ($this->monAvis?->estMasque())
+                <flux:button size="sm" icon="eye-slash" :href="route('services.reviews.edit', $record)" wire:navigate>{{ __('Mon avis (masqué)') }}</flux:button>
+            @elseif ($this->monAvis)
+                <flux:button size="sm" icon="pencil-square" :href="route('services.reviews.edit', $record)" wire:navigate>{{ __('Modifier mon avis') }}</flux:button>
+            @else
+                <flux:button size="sm" variant="primary" icon="star" :href="route('services.reviews.edit', $record)" wire:navigate>{{ __('Donner mon avis') }}</flux:button>
+            @endif
+        </div>
+
+        <x-service-reviews-summary :service="$record" :stats="$this->statsAvis" />
+
+        @if ($this->avisRecents->isNotEmpty())
+            <div class="mt-5 space-y-3">
+                @foreach ($this->avisRecents as $avis)
+                    <x-service-review :review="$avis" wire:key="avis-recent-{{ $avis->id }}" />
+                @endforeach
+            </div>
+            <flux:link class="mt-4 inline-block text-sm" :href="route('services.reviews.index', $record)" wire:navigate>{{ __('Voir tous les avis (:count)', ['count' => $this->statsAvis['total']]) }}</flux:link>
+        @endif
+    </x-tn.surface>
 
     <x-audit-history :subject="$record" />
 </section>

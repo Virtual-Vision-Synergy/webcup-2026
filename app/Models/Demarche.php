@@ -6,8 +6,10 @@ use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
 use App\Models\Concerns\HasConfidentialFields;
 use App\Models\Concerns\PrevientDuChangementDeStatut;
+use App\Notifications\Avis;
 use App\Notifications\ReponseDemarcheRecue;
 use App\Services\ParOuCommencer;
+use Carbon\CarbonInterface;
 use Database\Factories\DemarcheFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 /**
  * Démarche administrative déposée par un habitant auprès d'un service municipal.
@@ -26,6 +30,13 @@ use Illuminate\Support\Facades\DB;
  *
  * F70 : un agent ne voit que les démarches de ses services (scope visibleTo + DemarchePolicy) ;
  * les coordonnées et la situation du demandeur sont confidentielles (confidentialFields).
+ *
+ * F86 : urgence_medicale, pris_en_charge_par et pris_en_charge_le ne sont PAS remplissables :
+ * l'urgence est déterminée dans le code (case cochée ou mots-clés), la prise en charge par prendreEnCharge().
+ *
+ * @property bool $urgence_medicale
+ * @property int|null $pris_en_charge_par
+ * @property CarbonInterface|null $pris_en_charge_le
  */
 #[Fillable(['titre', 'description', 'service_id'])]
 class Demarche extends Model
@@ -52,7 +63,33 @@ class Demarche extends Model
      *
      * @var array<string, mixed>
      */
-    protected $attributes = ['statut' => self::STATUT_OPTIONS[0]];
+    protected $attributes = ['statut' => self::STATUT_OPTIONS[0], 'urgence_medicale' => false];
+
+    /**
+     * F86 : mots-clés qui signalent une urgence médicale (comparés sans accents ni majuscules, mots entiers).
+     *
+     * @var array<int, string>
+     */
+    public const MOTS_CLES_URGENCE = [
+        'urgence medicale', 'urgence vitale', 'malaise', 'inconscient', 'inconsciente', 'evanoui', 'evanouie',
+        'ne respire plus', 'respire mal', 'etouffe', 'arret cardiaque', 'crise cardiaque', 'infarctus', 'avc',
+        'hemorragie', 'saigne beaucoup', 'convulsion', 'convulsions', 'overdose', 'intoxication', 'douleur thoracique',
+        'douleur a la poitrine', 'blesse grave', 'blessee grave', 'accouchement', 'ambulance', 'samu',
+    ];
+
+    /** F86 : états où une urgence médicale reste « à traiter en priorité ». */
+    public const STATUTS_URGENCE_OUVERTE = ['deposee', 'en_cours'];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'urgence_medicale' => 'boolean',
+            'pris_en_charge_le' => 'datetime',
+        ];
+    }
 
     /**
      * @return BelongsTo<User, $this>
@@ -60,6 +97,102 @@ class Demarche extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * F86 : agent ou admin qui a pris en charge l'urgence médicale.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function prisEnChargePar(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'pris_en_charge_par');
+    }
+
+    /**
+     * F86 : vrai si le texte évoque une urgence médicale (mots-clés, sans accents ni majuscules).
+     */
+    public static function detecterUrgenceMedicale(string ...$textes): bool
+    {
+        $texte = ' '.trim((string) preg_replace('/[^a-z0-9]+/', ' ', Str::lower(Str::ascii(implode(' ', $textes))))).' ';
+
+        foreach (self::MOTS_CLES_URGENCE as $motCle) {
+            if (str_contains($texte, ' '.$motCle.' ')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * F86 : urgences médicales encore ouvertes (déposées ou en cours) : la vue « À traiter en priorité ».
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeUrgencesATraiter(Builder $query): void
+    {
+        $query->where('urgence_medicale', true)->whereIn('statut', self::STATUTS_URGENCE_OUVERTE);
+    }
+
+    public function estUrgenceOuverte(): bool
+    {
+        return $this->urgence_medicale && in_array($this->statut, self::STATUTS_URGENCE_OUVERTE, true);
+    }
+
+    /**
+     * F86 : prise en charge d'une urgence (droits vérifiés avant : policy prendreEnCharge).
+     * Trace qui et quand, passe la demande « en cours » (l'habitant est prévenu). Sans effet si déjà prise en charge.
+     */
+    public function prendreEnCharge(User $agent): bool
+    {
+        if ($this->pris_en_charge_le !== null) {
+            return false;
+        }
+
+        $this->prisEnChargePar()->associate($agent);
+        $this->pris_en_charge_le = now();
+
+        $this->changerStatut('en_cours');
+
+        return true;
+    }
+
+    /**
+     * F86 : prévient tout de suite les agents du service concerné et les admins (cloche immédiate, e-mail par la file).
+     */
+    public function alerterUrgenceMedicale(): void
+    {
+        $destinataires = User::query()
+            ->whereNull('deactivated_at')
+            ->where(fn (Builder $query) => $query
+                ->where('role_id', Role::idFor(Role::ADMIN))
+                ->when($this->service_id !== null, fn (Builder $q) => $q->orWhere(fn (Builder $agent) => $agent
+                    ->where('role_id', Role::idFor(Role::AGENT))
+                    ->whereHas('services', fn (Builder $service) => $service->whereKey($this->service_id)))))
+            ->get();
+
+        $avis = new Avis(
+            __('Urgence médicale signalée : « :demande »', ['demande' => Str::limit((string) $this->titre, 80)]),
+            [
+                __('Un habitant vient de déposer une demande signalée comme urgence médicale.'),
+                __('Elle est placée en tête de la liste « À traiter en priorité » : prenez-la en charge sans attendre.'),
+            ],
+            __('Ouvrir la demande'),
+            route('demarches.show', $this),
+        );
+
+        DB::afterCommit(function () use ($destinataires, $avis): void {
+            // Avis : cloche enregistrée tout de suite, e-mail par la file. Un destinataire à la fois :
+            // un échec d'envoi ne prive pas les suivants de l'alerte et ne bloque jamais le dépôt de l'habitant.
+            foreach ($destinataires as $destinataire) {
+                try {
+                    Notification::send($destinataire, $avis);
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            }
+        });
     }
 
     /**

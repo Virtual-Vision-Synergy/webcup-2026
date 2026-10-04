@@ -1,6 +1,7 @@
 <?php
 
 use App\Concerns\BloqueSiServiceIndisponible;
+use App\Concerns\EmpecheEnvoiEnDouble;
 use App\Concerns\ThrottlesPerUser;
 use App\Models\Demarche;
 use App\Models\Service;
@@ -15,7 +16,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Démarche')] class extends Component {
-    use BloqueSiServiceIndisponible, ThrottlesPerUser;
+    use BloqueSiServiceIndisponible, EmpecheEnvoiEnDouble, ThrottlesPerUser;
 
     #[Locked]
     public ?Demarche $record = null;
@@ -38,6 +39,7 @@ new #[Title('Démarche')] class extends Component {
             $this->urgenceMedicale = $demarche->urgence_medicale;
         } else {
             $this->authorize('create', Demarche::class);
+            $this->initialiserJetonEnvoi();
 
             // Pré-sélection du service (lien « Commencer une démarche » du parcours de prise en main, D12).
             $serviceId = request()->integer('service');
@@ -126,15 +128,30 @@ new #[Title('Démarche')] class extends Component {
 
         $record->fill($validated);
 
-        if (! $record->exists) {
-            $record->user()->associate(auth()->user());
-        }
-
         if ($nouvelleUrgence) {
             $record->urgence_medicale = true;
         }
 
-        $record->save();
+        if ($record->exists) {
+            $record->save();
+        } else {
+            // F82 : même démarche renvoyée (double clic, retour arrière) → rien n'est créé, message avec lien.
+            $record = $this->envoyerUneSeuleFois(
+                'demarche',
+                ['titre' => $validated['titre'], 'description' => $validated['description'], 'service_id' => $validated['service_id'] ?? null],
+                function () use ($record): Demarche {
+                    $record->user()->associate(auth()->user());
+                    $record->save();
+
+                    return $record;
+                },
+                fn (Demarche $demarche): string => route('demarches.show', $demarche),
+            );
+
+            if ($record === null) {
+                return;
+            }
+        }
 
         if ($nouvelleUrgence) {
             $record->alerterUrgenceMedicale();
@@ -279,6 +296,8 @@ new #[Title('Démarche')] class extends Component {
 
         <flux:error name="throttle" />
 
+        <x-envoi-deja-fait :le="$envoiDejaFaitLe" :url="$envoiDejaFaitUrl" />
+
         {{-- Un seul CTA par étape --}}
         <div class="flex items-center justify-between gap-3 border-t border-line pt-5">
             <div>
@@ -287,10 +306,7 @@ new #[Title('Démarche')] class extends Component {
             </div>
 
             <flux:button type="button" variant="primary" icon:trailing="arrow-right" x-show="etape < 3" x-on:click="suivant()">Continuer</flux:button>
-            <flux:button type="submit" variant="primary" class="tn-cta" x-show="etape === 3" x-cloak>
-                <span wire:loading.remove wire:target="save">{{ $record ? 'Enregistrer' : 'Envoyer la démarche' }}</span>
-                <span wire:loading wire:target="save">Enregistrement…</span>
-            </flux:button>
+            <x-submit-button variant="primary" class="tn-cta" x-show="etape === 3" x-cloak>{{ $record ? 'Enregistrer' : 'Envoyer la démarche' }}</x-submit-button>
         </div>
     </form>
 </section>

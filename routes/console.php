@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\FormSubmission;
 use App\Models\KnownDevice;
 use App\Models\LoginAttempt;
 use App\Models\SecurityEvent;
@@ -16,7 +17,8 @@ Artisan::command('inspire', function () {
 // F54 : purge des appareils inactifs depuis plus de 6 mois.
 // F81 : purge du journal des envois de formulaires bloqués (même rétention que F37).
 // F85 : purge des événements de sécurité de plus de 90 jours.
-Schedule::command('model:prune', ['--model' => [LoginAttempt::class, KnownDevice::class, TentativeBloquee::class, SecurityEvent::class]])->daily();
+// F82 : purge des envois de formulaires mémorisés pour les doublons (plus d'un jour).
+Schedule::command('model:prune', ['--model' => [LoginAttempt::class, KnownDevice::class, TentativeBloquee::class, SecurityEvent::class, FormSubmission::class]])->daily();
 
 // F39 : prolonge chaque nuit l'agenda des créneaux de rendez-vous (idempotent).
 Schedule::command('appointments:generate-slots')->dailyAt('01:00');
@@ -32,3 +34,6 @@ Schedule::command('sauvegardes:surveiller')->everyFifteenMinutes()->withoutOverl
 
 // F85 : contrôle d'intégrité des données (anomalies listées aux admins dans Filament → Sécurité).
 Schedule::command('securite:controle-integrite')->hourly()->withoutOverlapping();
+
+// F80 : recalcule chaque heure la priorité suggérée des demandes ouvertes (ancienneté, relances ; jamais une priorité fixée par un agent).
+Schedule::command('demarches:prioriser')->hourly()->withoutOverlapping();

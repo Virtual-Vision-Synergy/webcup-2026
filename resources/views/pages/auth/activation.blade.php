@@ -25,6 +25,7 @@
             <flux:input
                 name="identifiant"
                 :label="__('Identifiant d\'habitant ou téléphone')"
+                :aria-label="__('Identifiant d\'habitant ou téléphone')"
                 :value="old('identifiant')"
                 type="text"
                 required
@@ -37,6 +38,7 @@
             <flux:input
                 name="code"
                 :label="__('Code d\'activation')"
+                :aria-label="__('Code d\'activation')"
                 type="text"
                 required
                 autocomplete="one-time-code"
@@ -48,6 +50,7 @@
             <flux:input
                 name="password"
                 :label="__('Nouveau code personnel')"
+                :aria-label="__('Nouveau code personnel')"
                 type="password"
                 required
                 autocomplete="new-password"
@@ -59,6 +62,7 @@
             <flux:input
                 name="password_confirmation"
                 :label="__('Confirmer le code personnel')"
+                :aria-label="__('Confirmer le code personnel')"
                 type="password"
                 required
                 autocomplete="new-password"

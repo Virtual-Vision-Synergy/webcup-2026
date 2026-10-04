@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ActionLog;
 use App\Models\Annonce;
 use App\Models\Quartier;
 use App\Services\NotifierAnnonce;
@@ -30,6 +31,9 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
     public string $debut = '';
     public string $fin = '';
 
+    /** F73 : message officiel du Haut Conseil (administrateurs uniquement, revérifié à l'enregistrement). */
+    public bool $officiel = false;
+
     public function mount(?Annonce $annonce = null): void
     {
         if ($annonce?->exists) {
@@ -40,6 +44,7 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             $this->niveau = $annonce->niveau;
             $this->quartier_id = (string) ($annonce->quartier_id ?? '');
             $this->consignes = (string) $annonce->consignes;
+            $this->officiel = $annonce->estOfficiel();
             $this->debut = $annonce->debut->timezone(Annonce::FUSEAU)->format('Y-m-d\TH:i');
             $this->fin = $annonce->fin->timezone(Annonce::FUSEAU)->format('Y-m-d\TH:i');
         } else {
@@ -64,6 +69,7 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             'consignes' => ['nullable', 'string', 'max:2000'],
             'debut' => ['required', 'date'],
             'fin' => ['required', 'date', 'after:debut'],
+            'officiel' => ['boolean'],
         ];
     }
 
@@ -106,6 +112,13 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             : $this->authorize('create', Annonce::class);
 
         $validated = $this->validate();
+        unset($validated['officiel']);
+
+        // F73 : la mention officielle ne s'ajoute ni ne se retire sans être administrateur.
+        $etaitOfficiel = (bool) $this->record?->estOfficiel();
+        if ($this->officiel !== $etaitOfficiel) {
+            $this->authorize('publierOfficiel', Annonce::class);
+        }
 
         $validated['debut'] = Carbon::parse($validated['debut'], Annonce::FUSEAU)->utc();
         $validated['fin'] = Carbon::parse($validated['fin'], Annonce::FUSEAU)->utc();
@@ -114,11 +127,16 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
 
         if ($this->record) {
             $annonce = $this->record;
-            $annonce->update($validated);
+            $annonce->fill($validated);
         } else {
             $annonce = new Annonce($validated);
             $annonce->user()->associate(auth()->user());
-            $annonce->save();
+        }
+        $annonce->officiel = $this->officiel;
+        $annonce->save();
+
+        if ($this->officiel && ! $etaitOfficiel) {
+            ActionLog::record('message_officiel_publie', $annonce);
         }
 
         // F30 : annonce importante déjà visible → habitants prévenus tout de suite (une seule fois) ;
@@ -149,10 +167,17 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
         <flux:input wire:model.live.debounce.400ms="titre" label="Titre" maxlength="120" required
             placeholder="Ex. Coupure d’eau à Ambohijanahary" />
 
-        <flux:textarea wire:model.live.debounce.400ms="contenu" label="Contenu" rows="4" maxlength="2000" required
+        @can('publierOfficiel', \App\Models\Annonce::class)
+            <div class="rounded-md border border-line p-4">
+                <flux:checkbox wire:model.live="officiel" label="Message officiel du Haut Conseil"
+                    description="Affiché en tête de toutes les pages, au-dessus des autres messages, avec la signature du Haut Conseil. Réservé aux administrateurs ; la publication est journalisée." />
+            </div>
+        @endcan
+
+        <flux:textarea wire:model.live.debounce.400ms="contenu" :label="$officiel ? 'Ce qu’il faut savoir' : 'Contenu'" rows="4" maxlength="2000" required
             description="Dites ce qu’il faut savoir et ce qu’il faut faire." />
 
-        <flux:textarea wire:model.live.debounce.400ms="consignes" label="Consignes à suivre" rows="4" maxlength="2000"
+        <flux:textarea wire:model.live.debounce.400ms="consignes" :label="$officiel ? 'Ce qu’il faut faire' : 'Consignes à suivre'" rows="4" maxlength="2000"
             description="Une consigne par ligne. Facultatif." placeholder="Éloignez-vous des berges et des zones basses." />
 
         <div class="grid gap-4 sm:grid-cols-2">
@@ -183,6 +208,8 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             <div class="overflow-hidden rounded-md border border-line">
                 <x-tn.bandeau-annonce
                     :variante="$quartier_id !== '' ? 'renforce' : 'standard'"
+                    :officiel="$officiel"
+                    :date="rescue(fn () => \Illuminate\Support\Carbon::parse($debut, \App\Models\Annonce::FUSEAU), null, false)"
                     :quartier="$this->quartiers[$quartier_id] ?? null"
                     :consignes="(new \App\Models\Annonce(['consignes' => $consignes]))->listeConsignes()"
                     :niveau="$niveau"

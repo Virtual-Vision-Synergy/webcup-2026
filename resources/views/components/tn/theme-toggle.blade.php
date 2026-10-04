@@ -10,4 +10,5 @@
 >
     <flux:icon.sun class="hidden size-5 dark:block" />
     <flux:icon.moon class="size-5 dark:hidden" />
+    <span class="sr-only">{{ __('Thème sombre') }}</span>
 </button>

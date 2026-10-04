@@ -9,6 +9,8 @@ use Livewire\Livewire;
 
 beforeEach(function () {
     Storage::fake('local');
+    // Un composant Livewire rendu par un test précédent ne doit pas faire injecter ses scripts dans cette page.
+    Livewire::flushState();
 });
 
 /**
@@ -59,7 +61,7 @@ test('base coupée sans version statique : une version de secours est servie (20
 
     $response->assertOk()
         ->assertSee('tel:124', false)
-        ->assertSee(InfosEssentielles::MAIRIE['adresse'], false)
+        ->assertSee(InfosEssentielles::MAIRIE['adresse'])
         ->assertSee('data-test="etat-inconnu"', false);
 });
 

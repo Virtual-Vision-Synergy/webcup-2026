@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Service;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -154,10 +155,13 @@ class InfosEssentielles
      */
     public static function rendre(?Collection $services): string
     {
+        $genereeLe = Carbon::now((string) config('rendez_vous.fuseau', 'UTC'));
+        $genereeLe->locale('fr');
+
         return view('infos-essentielles', [
             'consigne' => self::consigne(),
             'services' => $services,
-            'genereeLe' => now()->setTimezone((string) config('rendez_vous.fuseau', 'UTC'))->locale('fr')->translatedFormat('l j F Y à H:i'),
+            'genereeLe' => $genereeLe->translatedFormat('l j F Y à H:i'),
         ])->render();
     }
 

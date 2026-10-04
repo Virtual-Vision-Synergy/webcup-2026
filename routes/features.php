@@ -115,6 +115,9 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('services/{service}/avis/donner', 'pages::service-reviews.form')->name('services.reviews.edit');
     Route::livewire('mes-avis/services', 'pages::service-reviews.index')->name('services.reviews.mine');
 
+    // F92 : « Je ne sais pas à qui m'adresser » — orientation vers le bon service à partir d'une description libre (moteur D10).
+    Route::livewire('orientation', 'pages::orientation.index')->name('orientation.index');
+
     // make:feature:routes
 });
 
@@ -150,6 +153,9 @@ Route::group([], function () {
     // Idée masquée par la modération : 404 sauf pour son auteur et le personnel (IdeaPolicy::view).
     Route::livewire('idees', 'pages::ideas.index')->name('ideas.index');
     Route::livewire('idees/{idea:reference}', 'pages::ideas.show')->where('idea', 'IDE-\d{4}-\d{6}')->name('ideas.show');
+
+    // D13 : lexique des mots administratifs, consultable sans compte (informations générales, aucune donnée personnelle, lecture seule).
+    Route::livewire('lexique', 'pages::lexique.index')->name('lexique');
 
     // make:feature:routes-public
 });

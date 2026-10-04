@@ -81,6 +81,12 @@
             </div>
         </form>
 
+        <div class="space-y-2 rounded-md border border-line p-4">
+            <p class="text-sm text-ink-2">{{ __('Une fois inscrit, vous pourrez protéger votre compte dans les paramètres.') }}</p>
+            <x-tn.mots-utiles :slugs="['verification-deux-etapes', 'demarche']" />
+            <a href="{{ route('lexique') }}" class="inline-block text-sm text-cyan underline underline-offset-4">{{ __('Un mot vous bloque ? Ouvrir le lexique') }}</a>
+        </div>
+
         <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-600 dark:text-zinc-400">
             <span>{{ __('Already have an account?') }}</span>
             <flux:link :href="route('login')" wire:navigate>{{ __('Log in') }}</flux:link>

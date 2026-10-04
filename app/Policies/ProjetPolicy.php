@@ -32,9 +32,12 @@ class ProjetPolicy
         return $this->gere($user);
     }
 
+    /**
+     * D09 : suppression réservée à l'administrateur (un agent reçoit 403).
+     */
     public function delete(User $user, Projet $projet): bool
     {
-        return $this->gere($user);
+        return $user->isAdmin();
     }
 
     /**

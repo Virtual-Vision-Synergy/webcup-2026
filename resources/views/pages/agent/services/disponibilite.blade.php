@@ -214,7 +214,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Disponibilité du servic
     <x-tn.page-header
         label="Disponibilité du service"
         :title="$service->nom"
-        :breadcrumb="['Espace agent' => route('agent.index'), 'Services' => route('agent.services.index'), $service->nom => null]"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Services' => route('agent.services.index'), $service->nom => null]"
     >
         <x-slot:actions>
             <flux:button icon="eye" :href="route('services.show', $service)" wire:navigate>Voir la fiche publique</flux:button>

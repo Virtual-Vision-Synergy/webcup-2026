@@ -543,6 +543,16 @@ class Service extends Model
     }
 
     /**
+     * D10 : mots-clés et synonymes qui orientent vers ce service (éditables par l'admin).
+     *
+     * @return HasMany<MotCleService, $this>
+     */
+    public function motsCles(): HasMany
+    {
+        return $this->hasMany(MotCleService::class);
+    }
+
+    /**
      * F76 : note moyenne (une décimale), nombre d'avis et répartition 5 → 1, sur les seuls avis publiés.
      * Une seule requête groupée.
      *

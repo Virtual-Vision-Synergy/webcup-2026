@@ -6,6 +6,7 @@ use App\Models\LoginAttempt;
 use App\Models\User;
 use App\Notifications\TentativesConnexionSuspectes;
 use App\Services\LoginAttemptRecorder;
+use App\Services\SurveillanceSecurite;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -26,6 +27,9 @@ class RecordLockout
         $user = $email === '' ? null : User::where('email', $email)->first();
 
         $this->recorder->record($event->request, $email, $user, successful: false, reason: LoginAttempt::REASON_LOCKED_OUT);
+
+        // F85 : événement de sécurité « connexion bloquée ».
+        app(SurveillanceSecurite::class)->connexionBloquee($user, $email, $event->request);
 
         if ($user === null) {
             return;

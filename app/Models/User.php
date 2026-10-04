@@ -41,15 +41,17 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $two_factor_confirmed_at
  * @property string|null $remember_token
  * @property Carbon|null $deactivated_at
+ * @property Carbon|null $verrouille_jusqu_au Verrouillage temporaire posé par un admin (F85).
  * @property bool $notifier_par_email Préférence de l'habitant (F30) : annonces urgentes par e-mail.
  * @property string|null $identifiant Identifiant d'habitant (F71) pour se connecter sans e-mail.
  * @property string|null $code_activation Empreinte du code d'activation à usage unique (F71).
  * @property string|null $langue Langue mémorisée (F71).
  * @property bool $mode_allege Mode allégé pour les connexions lentes (F59).
+ * @property bool $version_simple Version simple des pages clés (F62).
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *
- * role_id et deactivated_at ne sont volontairement PAS remplissables : ils sont assignés dans le code
+ * role_id, deactivated_at et verrouille_jusqu_au ne sont volontairement PAS remplissables : ils sont assignés dans le code
  * (inscription, admin, deactivate()/reactivate()).
  * L'ancienne colonne texte « role » existe encore en base mais n'est plus utilisée.
  */
@@ -94,9 +96,57 @@ class User extends Authenticatable implements FilamentUser
             'password' => 'hashed',
             'quartier_id' => 'integer',
             'deactivated_at' => 'datetime',
+            'verrouille_jusqu_au' => 'datetime',
             'notifier_par_email' => 'boolean',
             'mode_allege' => 'boolean',
+            'version_simple' => 'boolean',
         ];
+    }
+
+    /**
+     * F95 : nombre de notifications non lues, compté une seule fois par requête HTTP
+     * (les deux cloches et la page des notifications affichent le même chiffre).
+     */
+    public function nombreNotificationsNonLues(): int
+    {
+        $requete = request();
+        $cle = 'tn.notifications-non-lues.'.$this->getKey();
+
+        if (! $requete->attributes->has($cle)) {
+            $requete->attributes->set($cle, $this->unreadNotifications()->count());
+        }
+
+        return (int) $requete->attributes->get($cle);
+    }
+
+    /**
+     * À appeler après avoir marqué des notifications comme lues dans la même requête.
+     */
+    public function oublierNotificationsNonLues(): void
+    {
+        request()->attributes->remove('tn.notifications-non-lues.'.$this->getKey());
+    }
+
+    /**
+     * F95 : l'habitant a-t-il déjà déposé une démarche ? Un « oui » est retenu pour la requête HTTP en cours
+     * (le tableau de bord posait la question deux fois) ; un « non » est toujours revérifié.
+     */
+    public function aCommenceUneDemarche(): bool
+    {
+        $requete = request();
+        $cle = 'tn.demarche-commencee.'.$this->getKey();
+
+        if ($requete->attributes->get($cle) === true) {
+            return true;
+        }
+
+        $commencee = $this->demarches()->exists();
+
+        if ($commencee) {
+            $requete->attributes->set($cle, true);
+        }
+
+        return $commencee;
     }
 
     /**
@@ -252,6 +302,16 @@ class User extends Authenticatable implements FilamentUser
     }
 
     /**
+     * F85 : événements de sécurité concernant ce compte. Écrits uniquement par SurveillanceSecurite.
+     *
+     * @return HasMany<SecurityEvent, $this>
+     */
+    public function securityEvents(): HasMany
+    {
+        return $this->hasMany(SecurityEvent::class);
+    }
+
+    /**
      * F70 : services couverts par un agent. Affectation réservée à l'admin (UserPolicy::assignServices).
      *
      * @return BelongsToMany<Service, $this>
@@ -349,6 +409,25 @@ class User extends Authenticatable implements FilamentUser
     public function reactivate(): void
     {
         $this->forceFill(['deactivated_at' => null])->save();
+    }
+
+    /**
+     * F85 : compte verrouillé temporairement par un admin (le verrou se lève tout seul à l'échéance).
+     */
+    public function estVerrouille(): bool
+    {
+        return $this->verrouille_jusqu_au !== null && $this->verrouille_jusqu_au->isFuture();
+    }
+
+    /**
+     * F85 : message affiché à la connexion ou à la déconnexion forcée d'un compte verrouillé.
+     */
+    public function messageVerrouillage(): string
+    {
+        $fin = $this->verrouille_jusqu_au?->copy()->timezone(Annonce::FUSEAU)->format('d/m/Y à H:i') ?? '';
+
+        return 'Par sécurité, votre compte est temporairement verrouillé jusqu’au '.$fin.' (heure de Nova Terra). '
+            .'Contactez la mairie de Nova Terra si vous pensez qu’il s’agit d’une erreur.';
     }
 
     /**

@@ -13,7 +13,7 @@
 
 <link rel="canonical" href="{{ url()->current() }}" />
 <meta property="og:type" content="website" />
-<meta property="og:locale" content="fr_FR" />
+<meta property="og:locale" content="{{ app()->getLocale() === 'en' ? 'en_US' : 'fr_FR' }}" />
 <meta property="og:site_name" content="Terra Nova" />
 <meta property="og:title" content="{{ $pageTitle }}" />
 <meta property="og:description" content="{{ $pageDescription }}" />

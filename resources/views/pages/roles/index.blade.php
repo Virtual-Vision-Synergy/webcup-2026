@@ -57,42 +57,42 @@ new #[Title('Rôles')] class extends Component {
 
         $record->delete();
 
-        Flux::toast(variant: 'success', text: 'Rôle supprimé(e).');
+        Flux::toast(variant: 'success', text: __('Rôle supprimé(e).'));
     }
 }; ?>
 
 <section class="mx-auto w-full max-w-6xl space-y-6">
     <x-tn.page-header
-        label="Administration"
-        title="Rôles"
-        :subtitle="$this->items->total().' élément(s)'"
+        label="{{ __('Administration') }}"
+        title="{{ __('Rôles') }}"
+        :subtitle="__(':n élément(s)', ['n' => $this->items->total()])"
         :breadcrumb="['Mon espace' => route('dashboard'), 'Rôles' => null]"
     >
         <x-slot:actions>
             @can('create', \App\Models\Role::class)
                 <flux:button variant="primary" icon="plus" :href="route('roles.create')" wire:navigate>
-                    Ajouter
+                    {{ __('Ajouter') }}
                 </flux:button>
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="Rechercher…" class="sm:max-w-xs" />
+        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="{{ __('Rechercher…') }}" class="sm:max-w-xs" />
     </div>
 
     @if ($this->items->isEmpty())
         <flux:card class="py-12 text-center">
-            <flux:heading>Aucun élément pour le moment</flux:heading>
-            <flux:text class="mt-2">Modifie les filtres ou ajoute un premier élément.</flux:text>
+            <flux:heading>{{ __('Aucun élément pour le moment') }}</flux:heading>
+            <flux:text class="mt-2">{{ __('Modifie les filtres ou ajoute un premier élément.') }}</flux:text>
         </flux:card>
     @else
         <flux:table :paginate="$this->items">
             <flux:table.columns>
-                <flux:table.column>Code</flux:table.column>
-                <flux:table.column>Libellé</flux:table.column>
-                <flux:table.column>Comptes</flux:table.column>
-                <flux:table.column>Créé le</flux:table.column>
+                <flux:table.column>{{ __('Code') }}</flux:table.column>
+                <flux:table.column>{{ __('Libellé') }}</flux:table.column>
+                <flux:table.column>{{ __('Comptes') }}</flux:table.column>
+                <flux:table.column>{{ __('Créé le') }}</flux:table.column>
                 <flux:table.column></flux:table.column>
             </flux:table.columns>
 
@@ -110,7 +110,7 @@ new #[Title('Rôles')] class extends Component {
                                     <flux:button size="sm" variant="ghost" icon="pencil-square" :href="route('roles.edit', $item)" wire:navigate />
                                 @endcan
                                 @can('delete', $item)
-                                    <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="Supprimer cet élément ?" />
+                                    <flux:button size="sm" variant="ghost" icon="trash" wire:click="delete({{ $item->id }})" wire:confirm="{{ __('Supprimer cet élément ?') }}" />
                                 @endcan
                             </div>
                         </flux:table.cell>

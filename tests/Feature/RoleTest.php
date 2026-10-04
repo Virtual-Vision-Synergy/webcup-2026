@@ -16,7 +16,7 @@ test('les trois rôles de base existent après les migrations', function () {
 });
 
 test('un nouvel inscrit est citoyen, même s\'il envoie un role_id', function () {
-    $this->post(route('register.store'), [
+    $this->post(route('register.store'), jetonAntiRobot('inscription') + [
         'name' => 'Pirate',
         'email' => 'pirate@example.com',
         'password' => 'Password123!',

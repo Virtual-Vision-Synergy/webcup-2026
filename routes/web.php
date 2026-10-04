@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\ActivationCompteController;
 use App\Http\Controllers\Auth\LienConnexionController;
 use App\Http\Middleware\DefinirLangue;
+use App\Support\InfosEssentielles;
 use App\Support\ModeAllege;
 use App\Support\VersionSimple;
 use Illuminate\Http\Request;
@@ -13,6 +14,13 @@ Route::view('/', 'welcome')->name('home');
 // F93 : page publique décidée — affichée sans réseau à tous (connectés ou non) par le service worker ; aucune donnée personnelle.
 Route::view('hors-ligne', 'hors-ligne')->name('hors-ligne');
 
+// F94 : page publique décidée — consignes, urgences et mairie lisibles par tous pendant un incident.
+// Hors du groupe « web » (session, CSRF) et sans limiteur (cache en base) : servie depuis un fichier statique, même base coupée.
+Route::get('infos-essentielles', fn () => response(InfosEssentielles::html(), 200, [
+    'Content-Type' => 'text/html; charset=UTF-8',
+    'Cache-Control' => 'public, max-age=300',
+]))->withoutMiddleware('web')->name('infos-essentielles');
+
 // F51 : page publique décidée — un habitant doit comprendre l'usage de ses données avant de créer un compte.
 Route::view('vos-donnees', 'vos-donnees')->name('privacy.show');
 
@@ -22,13 +30,21 @@ Route::view('accessibilite', 'accessibilite')->name('accessibility.show');
 // F95 : page publique décidée — les mesures de sobriété (requêtes, poids des pages) sont consultables sans compte.
 Route::view('sobriete', 'sobriete')->name('sobriete.show');
 
-Route::get('langue/{code}', function (string $code, Request $request) {
-    abort_unless(array_key_exists($code, DefinirLangue::LANGUES), 404);
+// D14 : route publique décidée — un visiteur choisit sa langue avant de se connecter. POST + CSRF (groupe web),
+// langue validée contre config('app.langues'). Connecté : seule la préférence de SON compte est mise à jour.
+Route::post('langue/{code}', function (string $code, Request $request) {
+    abort_unless(DefinirLangue::estProposee($code), 404);
 
     $request->session()->put('langue', $code);
+    $request->user()?->forceFill(['langue' => $code])->saveQuietly();
+
+    // Retour à la page d'origine, uniquement si elle appartient à l'application (pas de redirection ouverte).
+    $precedente = url()->previous();
+    $racine = rtrim(url('/'), '/');
+    $retour = $precedente === $racine || str_starts_with($precedente, $racine.'/') ? $precedente : route('home');
 
     // F71 : langue mémorisée durablement sur cet appareil, y compris sur l'écran de connexion.
-    return redirect()->back(fallback: route('home'))->withCookie(cookie()->forever(DefinirLangue::COOKIE, $code));
+    return redirect()->to($retour)->withCookie(cookie()->forever(DefinirLangue::COOKIE, $code));
 })->middleware('throttle:30,1')->name('langue');
 
 // F59 : page publique décidée — le « Mode allégé » doit être activable avant la connexion (accueil sur réseau lent).

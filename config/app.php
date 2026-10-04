@@ -97,6 +97,17 @@ return [
 
     'locale' => env('APP_LOCALE', 'fr'),
 
+    /*
+    | D14 : langues proposées (code => nom écrit dans sa propre langue). Le français est la langue de référence :
+    | contenus saisis en français, repli sur le français si une traduction manque. Pour ajouter une langue :
+    | une ligne ici + lang/{code}.json (interface) ; les contenus traduisibles (F27) la proposeront automatiquement.
+    */
+    'langues' => [
+        'fr' => 'Français',
+        'en' => 'English',
+        'mg' => 'Malagasy',
+    ],
+
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),

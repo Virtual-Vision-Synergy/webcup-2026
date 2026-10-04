@@ -2,6 +2,7 @@
 
 use App\Models\AuditLog;
 use App\Models\ExportPreset;
+use App\Services\FilSecurite;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -34,6 +35,13 @@ Route::middleware(['auth', 'can:viewAgentSpace'])->prefix('agent')->name('agent.
 
     // F75 : signalements similaires regroupés, fusion et traitement par groupe (SignalementPolicy::changerStatut).
     Route::livewire('signalements-similaires', 'pages::agent.signalements-similaires')->name('signalements.similaires');
+
+    // F100 : derniers événements de sécurité en phrases claires, données masquées (SecurityEventPolicy::consulterFil).
+    Route::livewire('securite', 'pages::agent.securite.index')->name('securite.index');
+    Route::livewire('securite/evenements/{source}/{id}', 'pages::agent.securite.show')
+        ->whereIn('source', array_keys(FilSecurite::SOURCE_OPTIONS))
+        ->whereNumber('id')
+        ->name('securite.show');
 
     // F37 : journal des tentatives de connexion (LoginAttemptPolicy : viewAny agent/admin, unlock admin).
     Route::livewire('securite/connexions', 'pages::agent.security.index')->name('security.index');

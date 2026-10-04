@@ -6,6 +6,8 @@
 @php
     $annoncesEnCours = \App\Models\Annonce::query()->active()->count();
     $remonteesEnAttente = \App\Models\Remontee::query()->enAttente()->count();
+    // F100 : événements de sécurité non lus par l'agent connecté.
+    $securiteNonLus = auth()->user()->can('consulterFil', \App\Models\SecurityEvent::class) ? app(\App\Services\FilSecurite::class)->nonLus(auth()->user()) : 0;
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif()])>
@@ -75,8 +77,11 @@
                     </flux:sidebar.group>
 
                     <flux:sidebar.group heading="Contrôle" class="grid">
-                        <flux:sidebar.item icon="shield-check" :href="route('agent.security.index')" :current="request()->routeIs('agent.security.*')">
+                        <flux:sidebar.item icon="shield-exclamation" :href="route('agent.securite.index')" :current="request()->routeIs('agent.securite.*')" :badge="$securiteNonLus ?: null" :aria-label="'Sécurité, '.$securiteNonLus.' événement(s) non lu(s)'" data-test="agent-securite-link">
                             Sécurité
+                        </flux:sidebar.item>
+                        <flux:sidebar.item icon="key" :href="route('agent.security.index')" :current="request()->routeIs('agent.security.*')">
+                            Connexions
                         </flux:sidebar.item>
                         <flux:sidebar.item icon="document-text" :href="route('agent.audit.index')" :current="request()->routeIs('agent.audit.*', 'agent.history.*')">
                             Journal
@@ -139,7 +144,8 @@
                                     <flux:menu.item icon="chat-bubble-left-right" :href="route('consultations.index')">Consultations</flux:menu.item>
                                     <flux:menu.item icon="building-office-2" :href="route('projets.index')">Projets de la ville</flux:menu.item>
                                     <flux:menu.item icon="building-storefront" :href="route('agent.partners.index')">Partenaires</flux:menu.item>
-                                    <flux:menu.item icon="shield-check" :href="route('agent.security.index')">Sécurité des connexions</flux:menu.item>
+                                    <flux:menu.item icon="shield-exclamation" :href="route('agent.securite.index')">Sécurité{{ $securiteNonLus > 0 ? ' ('.$securiteNonLus.' non lus)' : '' }}</flux:menu.item>
+                                    <flux:menu.item icon="key" :href="route('agent.security.index')">Sécurité des connexions</flux:menu.item>
                                     <flux:menu.item icon="document-text" :href="route('agent.audit.index')">Journal</flux:menu.item>
 
                                     <flux:menu.separator />

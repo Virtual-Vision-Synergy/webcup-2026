@@ -54,6 +54,7 @@ class ActionLog extends Model
         'consultation_creee' => 'Consultation créée',
         'consultation_reponse' => 'Réponse à une consultation',
         'consultation_decision' => 'Décision de consultation publiée',
+        'donnees_reinitialisees' => 'Données de test réinitialisées',
     ];
 
     /**

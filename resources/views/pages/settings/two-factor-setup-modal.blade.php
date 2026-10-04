@@ -198,6 +198,14 @@ new class extends Component {
                             label:sr-only
                             class="mx-auto"
                         />
+
+                        @error('code')
+                            <flux:callout variant="danger" icon="x-circle" class="w-full" role="alert">
+                                <flux:callout.text>
+                                    Code incorrect. Vérifiez que vous saisissez le code actuellement affiché par votre application (il change toutes les 30 secondes) et que l'heure de votre téléphone est juste.
+                                </flux:callout.text>
+                            </flux:callout>
+                        @enderror
                     </div>
 
                     <div class="flex items-center space-x-3">
@@ -221,7 +229,7 @@ new class extends Component {
                 </div>
             @else
                 @error('setupData')
-                    <flux:callout variant="danger" icon="x-circle" heading="{{ $message }}"/>
+                    <flux:callout variant="danger" icon="x-circle" heading="{{ $message }}" role="alert" />
                 @enderror
 
                 <div class="flex justify-center">

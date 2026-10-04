@@ -13,6 +13,41 @@
                     <flux:sidebar.item icon="calendar-days" :href="route('appointments.index')" :current="request()->routeIs('appointments.*')" wire:navigate>
                         {{ __('Mes rendez-vous') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="clipboard-document-list" :href="route('mes-demandes.index')" :current="request()->routeIs('mes-demandes.*')" wire:navigate>
+                        Mes demandes
+                    </flux:sidebar.item>
+                    <flux:sidebar.item icon="heart" :href="route('urgences.index')" :current="request()->routeIs('urgences.*')" wire:navigate>
+                        Urgences / Santé
+                    </flux:sidebar.item>
+                    @can('parOuCommencer', \App\Models\Onboarding::class)
+                        <flux:sidebar.item icon="sparkles" :href="route('onboarding.par-ou-commencer')" :current="request()->routeIs('onboarding.par-ou-commencer')" wire:navigate>
+                            Par où commencer ?
+                        </flux:sidebar.item>
+                    @endcan
+
+                    <flux:sidebar.item icon="chat-bubble-left-ellipsis" :href="route('concerns.index')" :current="request()->routeIs('concerns.*')" wire:navigate>
+                        Mes remontées
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="shield-check" :href="route('privacy.show')" :current="request()->routeIs('privacy.show')" wire:navigate>
+                        Vos données
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="building-office-2" :href="route('projets.index')" :current="request()->routeIs('projets.*')" wire:navigate>
+                        Projets de la ville
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="chat-bubble-bottom-center-text" :href="route('avis.index')" :current="request()->routeIs('avis.*')" wire:navigate>
+                        Mes avis
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="light-bulb" :href="route('ideas.index')" :current="request()->routeIs('ideas.*')" wire:navigate>
+                        Boîte à idées
+                    </flux:sidebar.item>
+
+                    <flux:sidebar.item icon="eye" :href="route('accessibility.show')" :current="request()->routeIs('accessibility.show')" wire:navigate>
+                        Accessibilité
+                    </flux:sidebar.item>
 
                     {{-- make:feature:nav --}}
 @endsection
@@ -90,7 +125,7 @@
                         <div class="ms-auto flex items-center gap-2">
                             <x-tn.api-status class="max-sm:hidden" />
                             <x-tn.cloche />
-                            <x-tn.langue />
+                            <x-tn.langue class="max-lg:hidden" />
                             <x-tn.contrast-toggle class="max-lg:hidden" />
                             <x-tn.text-size class="max-lg:hidden" />
                             <x-tn.theme-toggle class="max-lg:hidden" />
@@ -104,9 +139,9 @@
 
                 <x-tn.bandeau-annonces />
 
-                <div id="contenu" class="flex flex-1 flex-col">
+                <main id="contenu" tabindex="-1" class="flex flex-1 flex-col">
                     {{ $slot }}
-                </div>
+                </main>
             </div>
         </div>
 

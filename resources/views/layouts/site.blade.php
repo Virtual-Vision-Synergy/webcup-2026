@@ -23,13 +23,17 @@
             <x-tn.site-header />
             <x-tn.bandeau-annonces />
 
-            <main id="contenu" @class(['flex-1', 'mx-auto w-full max-w-7xl px-4 py-8 lg:px-8' => ! $fluid])>
+            <main id="contenu" tabindex="-1" @class(['flex-1', 'mx-auto w-full max-w-7xl px-4 py-8 lg:px-8' => ! $fluid])>
                 {{ $slot }}
             </main>
 
             <footer class="border-t border-line">
                 <div class="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-sm text-ink-2 sm:flex-row sm:items-center sm:justify-between lg:px-8">
                     <p>{{ config('app.name') }} · Mairie de Nova Terra · 24h by Webcup 2026</p>
+                    <nav aria-label="{{ __('Informations') }}" class="flex flex-wrap gap-x-4 gap-y-1">
+                        <a href="{{ route('privacy.show') }}" class="text-cyan hover:underline">{{ __('Vos données') }}</a>
+                        <a href="{{ route('accessibility.show') }}" class="text-cyan hover:underline">{{ __('Accessibilité') }}</a>
+                    </nav>
                     <p class="font-mono text-xs uppercase tracking-[.06em]">Virtual Vision Synergie</p>
                 </div>
             </footer>

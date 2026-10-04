@@ -128,6 +128,8 @@ new #[Title('Contacter la mairie')] class extends Component {
         </div>
     @else
         <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6" novalidate>
+            <x-tn.mention-obligatoire />
+
             <flux:input wire:model="nom" label="{{ __('Nom') }}" required />
 
             <flux:input wire:model="email" type="email" label="{{ __('Adresse e-mail') }}" required />

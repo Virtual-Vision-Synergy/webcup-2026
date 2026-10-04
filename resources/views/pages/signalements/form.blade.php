@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\Signalement;
+use App\Services\OptimiseurImage;
 use Flux\Flux;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
@@ -65,10 +65,10 @@ new #[Title('Signalement')] class extends Component {
         $validated = $this->validate();
 
         if ($this->photo) {
-            if ($this->record?->photo) {
-                Storage::disk('public')->delete($this->record->photo);
-            }
-            $validated['photo'] = $this->photo->store('signalements', 'public');
+            $optimiseur = app(OptimiseurImage::class);
+            $optimiseur->supprimer($this->record?->photo);
+            // F60 : redimensionnée (1600 px max) et compressée en WebP à l'enregistrement.
+            $validated['photo'] = $optimiseur->enregistrer($this->photo, 'signalements');
         } else {
             unset($validated['photo']);
         }
@@ -99,12 +99,14 @@ new #[Title('Signalement')] class extends Component {
     />
 
     <form wire:submit="save" class="space-y-6">
-        <fieldset class="space-y-3">
+        <x-tn.mention-obligatoire />
+
+        <fieldset class="space-y-3" data-requis>
             <legend class="tn-display mb-1 text-lg font-semibold text-ink">{{ __('Type de problème') }}</legend>
             <div class="grid gap-2 sm:grid-cols-2">
                 @foreach (Signalement::CATEGORIE_OPTIONS as $option)
                     <label wire:key="categorie-{{ $option }}" class="flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-line bg-surface px-4 py-3 transition-colors hover:border-cyan/40 has-checked:border-cyan has-checked:bg-cyan/8">
-                        <input type="radio" wire:model="categorie" value="{{ $option }}" class="size-4 accent-[var(--color-cyan)]">
+                        <input type="radio" wire:model="categorie" name="categorie" value="{{ $option }}" required class="size-4 accent-[var(--color-cyan)]">
                         <span class="font-medium text-ink">{{ __(Signalement::libelleCategorie($option)) }}</span>
                     </label>
                 @endforeach
@@ -122,7 +124,7 @@ new #[Title('Signalement')] class extends Component {
             @if ($photo && ! $errors->has('photo'))
                 <img src="{{ $photo->temporaryUrl() }}" alt="{{ __('Aperçu de la photo') }}" class="h-40 rounded-lg object-cover" />
             @elseif ($record?->photo)
-                <img src="{{ Storage::url($record->photo) }}" alt="{{ __('Photo du signalement') }}" class="h-40 rounded-lg object-cover" />
+                <x-tn.image :chemin="$record->photo" :alt="__('Photo du signalement')" sizes="320px" class="h-40 w-auto rounded-lg object-cover" />
             @endif
         </div>
 

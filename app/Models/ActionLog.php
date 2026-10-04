@@ -41,9 +41,15 @@ class ActionLog extends Model
         'export' => 'Export',
         'account_deactivated' => 'Compte désactivé',
         'account_reactivated' => 'Compte réactivé',
+        'login_unlocked' => 'Connexion débloquée',
         'rendez_vous_reserve' => 'Rendez-vous réservé',
         'rendez_vous_annule' => 'Rendez-vous annulé',
         'rendez_vous_statut' => 'Statut de rendez-vous modifié',
+        'service_indisponible' => 'Service rendu indisponible',
+        'service_retabli' => 'Service rétabli',
+        'export_donnees_document' => 'Export de ses données (document)',
+        'export_donnees_json' => 'Export de ses données (JSON)',
+        'export_donnees_csv' => 'Export de ses données (CSV)',
     ];
 
     /**

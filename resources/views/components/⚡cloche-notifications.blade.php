@@ -38,9 +38,13 @@ new class extends Component {
     }
 }; ?>
 
-<div x-data="{ ouvert: false }" x-on:keydown.escape.window="ouvert = false">
+<div
+    x-data="{ ouvert: false }"
+    x-init="$watch('ouvert', (valeur) => valeur && $nextTick(() => $refs.panneau.focus()))"
+    x-on:keydown.escape.window="if (ouvert) { ouvert = false; $root.querySelector('[data-test=cloche-notifications]')?.focus() }"
+>
     <div>
-        <flux:sidebar.item icon="bell" x-on:click="ouvert = ! ouvert" data-test="cloche-notifications"
+        <flux:sidebar.item icon="bell" x-on:click="ouvert = ! ouvert" x-bind:aria-expanded="ouvert.toString()" aria-controls="cloche-panneau" data-test="cloche-notifications"
             :aria-label="$this->unreadCount === 0 ? 'Notifications, aucune non lue' : 'Notifications, '.$this->unreadCount.' non lue'.($this->unreadCount > 1 ? 's' : '')">
             {{ __('Notifications') }}
             @if ($this->unreadCount > 0)
@@ -48,7 +52,7 @@ new class extends Component {
             @endif
         </flux:sidebar.item>
 
-        <div x-show="ouvert" x-cloak x-on:click.outside="ouvert = false" class="fixed bottom-20 start-3 z-50 w-80 max-w-[calc(100vw-1.5rem)] rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+        <div id="cloche-panneau" x-ref="panneau" x-show="ouvert" x-cloak x-on:click.outside="ouvert = false" x-on:focusout="if ($event.relatedTarget && ! $el.contains($event.relatedTarget) && ! $event.relatedTarget.closest('[data-test=cloche-notifications]')) { ouvert = false }" role="dialog" aria-label="{{ __('Notifications') }}" tabindex="-1" class="fixed bottom-20 start-3 z-50 w-80 max-w-[calc(100vw-1.5rem)] rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
             <div class="flex items-center justify-between gap-2 border-b border-zinc-200 px-3 py-2 dark:border-zinc-700">
                 <flux:heading size="sm">{{ __('Notifications') }}</flux:heading>
                 @if ($this->unreadCount > 0)
@@ -61,21 +65,32 @@ new class extends Component {
             <div class="max-h-96 divide-y divide-zinc-100 overflow-y-auto dark:divide-zinc-700">
                 @forelse ($this->items as $notification)
                     @php
-                        $url = $notification->data['url'] ?? null;
+                        $data = (array) $notification->data;
+                        $url = $data['url'] ?? null;
                         $urlSure = is_string($url) && preg_match('#^(https?://|/)#i', $url) === 1 && ! str_starts_with($url, '//');
+                        $sujet = $data['sujet'] ?? '';
+                        $lignes = $data['lignes'] ?? [];
+                        // F49 : avis d'état d'une demande, retraduit dans la langue courante et ouvert par notifications.open.
+                        if ($notification->type === \App\Notifications\StatutDemandeChange::class && \App\Notifications\StatutDemandeChange::estAvisDeStatut($data)) {
+                            $sujet = \App\Notifications\StatutDemandeChange::sujetDepuis($data);
+                            $lignes = [\App\Notifications\StatutDemandeChange::ligneQuoiFaire((string) $data['demande_type'], (string) ($data['statut_apres'] ?? ''))];
+                            $url = route('notifications.open', $notification->id);
+                            $urlSure = true;
+                            $data['libelle'] = __('Voir ma demande');
+                        }
                     @endphp
                     <div wire:key="notification-{{ $notification->id }}" class="space-y-1 px-3 py-2 {{ $notification->read_at ? 'opacity-60' : '' }}">
                         <div class="flex items-start justify-between gap-2">
-                            <flux:heading size="sm">{{ $notification->data['sujet'] ?? '' }}</flux:heading>
+                            <flux:heading size="sm">{{ $sujet }}</flux:heading>
                             @if (! $notification->read_at)
                                 <flux:button size="xs" variant="ghost" icon="check" inset wire:click="markAsRead('{{ $notification->id }}')" :aria-label="__('Mark as read')" />
                             @endif
                         </div>
-                        @foreach ($notification->data['lignes'] ?? [] as $ligne)
+                        @foreach ($lignes as $ligne)
                             <flux:text size="sm">{{ $ligne }}</flux:text>
                         @endforeach
                         @if ($urlSure)
-                            <flux:link :href="$url" class="text-sm">{{ $notification->data['libelle'] ?? __('Open') }}</flux:link>
+                            <flux:link :href="$url" class="text-sm">{{ $data['libelle'] ?? __('Open') }}</flux:link>
                         @endif
                         <flux:text size="xs" class="text-zinc-500">{{ $notification->created_at?->diffForHumans() }}</flux:text>
                     </div>

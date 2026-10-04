@@ -19,8 +19,9 @@
                    pour Alerte et Danger, « Replier » remplace « Fermer » : le bandeau reste visible tant que l'alerte est active ;
       - compact  : alerte d'un autre quartier → une ligne, « Quartier X uniquement » et lien vers les consignes.
 
-    Avec une clé : bouton mémorisé dans le navigateur (si le stockage échoue, il agit quand même pour la page).
-    Sans clé : aperçu (formulaire agent, tableau de bord), sans bouton.
+    Avec une clé : « Fermer » est mémorisé dans un cookie lu par le serveur (le message n'est plus rendu ensuite),
+    « Replier » dans le navigateur. Sans clé : aperçu (formulaire agent, tableau de bord), sans bouton.
+    Le rôle alert/status est posé sur le texte seul : le lecteur d'écran n'annonce le titre qu'une fois.
 --}}
 @php
     $style = match ($niveau) {
@@ -33,6 +34,7 @@
     $grave = in_array($niveau, \App\Models\Annonce::NIVEAUX_GRAVES, true);
     $repliable = $cle && $variante === 'renforce' && $grave;
     $fermable = $cle && ! $repliable;
+    $long = $variante !== 'compact' && mb_strlen((string) $contenu) > 140;
     $bouton = 'flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-sm hover:bg-black/5 focus-visible:outline-2 dark:hover:bg-white/5';
 @endphp
 
@@ -40,27 +42,39 @@
     {{ $attributes->class([
         'tn-bandeau-annonce',
         'border-b px-4 lg:px-8',
-        $variante === 'renforce' ? 'border-y-2 py-4' : ($variante === 'compact' ? 'py-2' : 'py-3'),
+        $variante === 'renforce' ? 'border-y-2 py-3' : 'py-2',
         $style['fond'],
     ]) }}
-    role="{{ $grave ? 'alert' : 'status' }}"
     data-variante="{{ $variante }}"
     @if ($fermable)
-        x-data="{ ouvert: true, cle: @js($cle) }"
-        x-init="try { ouvert = window.localStorage.getItem(cle) !== '1' } catch (e) {}"
+        x-data="{
+            ouvert: true,
+            deplie: false,
+            cle: @js($cle),
+            fermer() {
+                this.ouvert = false;
+                try {
+                    const nom = @js(\App\Models\Annonce::COOKIE_FERMES);
+                    const brut = document.cookie.split('; ').find((c) => c.startsWith(nom + '='));
+                    const cles = brut ? decodeURIComponent(brut.slice(nom.length + 1)).split(',').filter((c) => c && c !== this.cle) : [];
+                    cles.push(this.cle);
+                    document.cookie = nom + '=' + encodeURIComponent(cles.slice(-50).join(',')) + '; path=/; max-age=2592000; SameSite=Lax' + (location.protocol === 'https:' ? '; Secure' : '');
+                } catch (e) {}
+            },
+        }"
         x-show="ouvert"
     @elseif ($repliable)
-        x-data="{ replie: false, cle: @js($cle.'.replie') }"
+        x-data="{ replie: false, deplie: false, cle: @js('tn.annonce.'.$cle.'.replie') }"
         x-init="try { replie = window.localStorage.getItem(cle) === '1' } catch (e) {}"
+    @else
+        x-data="{ deplie: false }"
     @endif
 >
     <div class="mx-auto flex max-w-7xl items-start gap-3">
         <flux:icon :name="$style['icone']" @class(['mt-0.5 shrink-0', $style['accent'], $variante === 'renforce' ? 'size-6' : 'size-5']) aria-hidden="true" />
 
-        <div class="min-w-0 flex-1">
+        <div class="min-w-0 flex-1" role="{{ $grave ? 'alert' : 'status' }}">
             <p class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span class="rounded-xs border border-current px-1.5 font-mono text-[0.65625rem] font-semibold uppercase leading-5 tracking-[.06em]">{{ $libelle }}</span>
-                <span class="font-semibold text-ink">{{ $titre }}</span>
                 <span @class(['rounded-xs border border-current px-1.5 font-mono text-[10.5px] font-semibold uppercase leading-5 tracking-[.06em]', $style['accent']])>{{ $libelle }}</span>
                 @if ($variante === 'renforce' && $quartier)
                     <span @class(['rounded-xs px-1.5 font-mono text-[10.5px] font-semibold uppercase leading-5 tracking-[.06em] ring-1 ring-current', $style['accent']])>Concerne votre quartier : {{ $quartier }}</span>
@@ -76,7 +90,13 @@
                 @endif
             @else
                 <div @if ($repliable) x-show="! replie" @endif>
-                    <p @class(['mt-1 whitespace-pre-line text-sm', $style['texte2']])>{{ $contenu }}</p>
+                    <p @class(['mt-1 whitespace-pre-line text-sm', $style['texte2'], 'line-clamp-2' => $long]) @if ($long) x-bind:class="deplie && 'line-clamp-none'" @endif>{{ $contenu }}</p>
+                    @if ($long)
+                        <button type="button" @class(['cursor-pointer text-sm font-medium underline underline-offset-2', $style['texte']]) x-on:click="deplie = ! deplie" x-bind:aria-expanded="deplie ? 'true' : 'false'">
+                            <span x-show="! deplie">Lire la suite</span>
+                            <span x-show="deplie" x-cloak>Réduire</span>
+                        </button>
+                    @endif
 
                     @if (count($consignes))
                         <p @class(['mt-3 text-sm font-semibold', $style['texte']])>Consignes à suivre</p>
@@ -105,8 +125,9 @@
             <button
                 type="button"
                 @class([$bouton, '-me-2 -mt-1', $style['texte2']])
-                aria-label="Fermer le message : {{ $titre }}"
-                x-on:click="ouvert = false; try { window.localStorage.setItem(cle, '1') } catch (e) {}"
+                aria-label="Fermer ce message"
+                title="Fermer ce message"
+                x-on:click="fermer()"
             >
                 <flux:icon.x-mark class="size-5" aria-hidden="true" />
             </button>
@@ -118,7 +139,7 @@
                 x-on:click="replie = ! replie; try { window.localStorage.setItem(cle, replie ? '1' : '0') } catch (e) {}"
             >
                 <span x-text="replie ? 'Déplier' : 'Replier'">Replier</span>
-                <span class="sr-only">l’alerte : {{ $titre }}</span>
+                <span class="sr-only">l’alerte</span>
             </button>
         @endif
     </div>

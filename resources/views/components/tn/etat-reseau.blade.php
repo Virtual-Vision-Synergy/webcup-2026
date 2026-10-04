@@ -36,7 +36,7 @@
                         <span x-text="`« ${brouillon.libelle} », brouillon du ${date(brouillon.le)}`"></span>
                     </p>
                     <flux:button size="sm" variant="primary" x-on:click="envoyer(brouillon)">{{ __('Envoyer') }}</flux:button>
-                    <flux:button size="sm" variant="ghost" x-on:click="oublier(brouillon)">{{ __('Supprimer le brouillon') }}</flux:button>
+                    <flux:button size="sm" variant="ghost" x-on:click="oublier(brouillon)">{{ __('Effacer le brouillon') }}</flux:button>
                 </div>
             </template>
         </div>

@@ -43,7 +43,8 @@
 
     $rubriques = config('navigation.rubriques');
 
-    $illustration = file_exists(public_path('images/hero/ciel-nuit.webp')) ? asset('images/hero/ciel-nuit.webp') : null;
+    // F59 : en « Mode allégé », l'illustration décorative du hero n'est pas téléchargée.
+    $illustration = ! \App\Support\ModeAllege::actif() && file_exists(public_path('images/hero/ciel-nuit.webp')) ? asset('images/hero/ciel-nuit.webp') : null;
 @endphp
 
 <x-layouts::site :title="__('Accueil')" :fluid="true" :description="__('Vos démarches, les actualités de la ville et le contact avec vos services municipaux, au même endroit : la plateforme civique officielle de la Mairie de Nova Terra.')">

@@ -45,6 +45,10 @@
                         Boîte à idées
                     </flux:sidebar.item>
 
+                    <flux:sidebar.item icon="eye" :href="route('accessibility.show')" :current="request()->routeIs('accessibility.show')" wire:navigate>
+                        Accessibilité
+                    </flux:sidebar.item>
+
                     {{-- make:feature:nav --}}
 @endsection
 @php
@@ -53,12 +57,12 @@
     app(\App\Services\NotifierAnnonce::class)->traiterEchuesAuPlusUneFoisParMinute();
 @endphp
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif()])>
     <head>
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-black antialiased" x-data>
-        <a href="#contenu" class="sr-only z-[60] rounded-sm bg-cyan px-4 py-2 text-on-cyan focus:not-sr-only focus:fixed focus:start-4 focus:top-4">Aller au contenu</a>
+        <a href="#contenu" class="sr-only z-[60] rounded-sm bg-cyan px-4 py-2 text-on-cyan focus:not-sr-only focus:fixed focus:start-4 focus:top-4">{{ __('Aller au contenu') }}</a>
 
         <div
             id="tn-page"
@@ -121,9 +125,11 @@
                         <div class="ms-auto flex items-center gap-2">
                             <x-tn.api-status class="max-sm:hidden" />
                             <x-tn.cloche />
+                            <x-tn.langue class="max-lg:hidden" />
                             <x-tn.contrast-toggle class="max-lg:hidden" />
                             <x-tn.text-size class="max-lg:hidden" />
                             <x-tn.theme-toggle class="max-lg:hidden" />
+                            <x-tn.mode-allege class="max-lg:hidden" />
                             <a href="{{ route('profile.edit') }}" class="flex size-11 items-center justify-center lg:hidden" wire:navigate>
                                 <flux:avatar size="sm" :name="auth()->user()->name" :initials="auth()->user()->initials()" />
                                 <span class="sr-only">Mon compte : {{ auth()->user()->name }}</span>
@@ -154,6 +160,8 @@
                 <flux:toast />
             </flux:toast.group>
         @endpersist
+
+        <x-tn.chargement />
 
         @fluxScripts
     </body>

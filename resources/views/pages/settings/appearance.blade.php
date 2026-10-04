@@ -24,5 +24,16 @@ new #[Title('Appearance settings')] class extends Component {
             <flux:text class="mb-3">{{ __('Agrandissez les caractères : le choix est mémorisé sur cet appareil.') }}</flux:text>
             <x-tn.text-size />
         </div>
+
+        <div class="mt-8">
+            <flux:heading level="3">{{ __('Mode allégé') }}</flux:heading>
+            <flux:text class="mb-3">
+                {{ __('Connexion lente ? Le mode allégé retire les images décoratives, les effets de flou et les animations pour que les pages s\'affichent plus vite. Le choix est mémorisé sur votre compte.') }}
+            </flux:text>
+            <div class="flex items-center gap-3">
+                <x-tn.mode-allege />
+                <flux:text>{{ \App\Support\ModeAllege::actif() ? __('Activé') : __('Désactivé') }}</flux:text>
+            </div>
+        </div>
     </x-pages::settings.layout>
 </section>

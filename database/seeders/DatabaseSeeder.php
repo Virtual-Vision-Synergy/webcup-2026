@@ -108,6 +108,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call(ServiceSeeder::class);
 
+        // F27 : versions anglaises de quatre fiches (deux services laissés en français pour montrer le repli).
+        $this->call(ServiceTranslationSeeder::class);
+
         // D10 : synonymes d'orientation (« poubelle » → Environnement et propreté), éditables dans Filament.
         $this->call(MotsClesServiceSeeder::class);
 

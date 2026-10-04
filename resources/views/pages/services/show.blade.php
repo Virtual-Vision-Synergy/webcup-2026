@@ -38,7 +38,11 @@ new #[Title('Service')] class extends Component {
     public function mount(Service $service): void
     {
         $this->authorize('view', $service);
-        $this->record = $service->load('interruptionCourante.alternativeService');
+        // F27 : traduction de la langue courante chargée avec la fiche (et celle du service de remplacement).
+        $this->record = $service->load([
+            'interruptionCourante.alternativeService' => fn ($query) => $query->avecTraduction(),
+            'translations' => fn ($query) => $query->where('locale', app()->getLocale()),
+        ]);
         $this->remplirFormulaireEtat();
 
         // Parcours de prise en main (D12), étape « Trouver un service » : sans effet hors parcours en cours.
@@ -65,6 +69,7 @@ new #[Title('Service')] class extends Component {
             ->whereKeyNot($this->record->id)
             ->when($this->record->categorie, fn ($query) => $query->where('categorie', $this->record->categorie))
             ->prioritaires()
+            ->avecTraduction()
             ->limit(3)
             ->get(['id', 'nom', 'slug']);
     }
@@ -104,7 +109,7 @@ new #[Title('Service')] class extends Component {
         ActionLog::record('service_etat_modifie', $this->record);
         Cache::forget('landing.etat');
 
-        $this->record->load('interruptionCourante.alternativeService');
+        $this->record->load(['interruptionCourante.alternativeService' => fn ($query) => $query->avecTraduction()]);
         unset($this->alternatives, $this->interruption);
         $this->remplirFormulaireEtat();
         $this->modal('etat-service')->close();
@@ -184,8 +189,8 @@ new #[Title('Service')] class extends Component {
 <section class="mx-auto w-full max-w-5xl space-y-6">
     <x-tn.page-header
         :label="__(Service::labelCategorie($record->categorie) ?? __('Service municipal'))"
-        :title="__($record->nom)"
-        :breadcrumb="[__('Mon espace') => route('dashboard'), __('Services') => route('services.index'), __($record->nom) => null]"
+        :title="$record->t('nom')"
+        :breadcrumb="[__('Mon espace') => route('dashboard'), __('Services') => route('services.index'), $record->t('nom') => null]"
     >
         <x-slot:actions>
             @if (Route::has('messages.create'))
@@ -199,6 +204,11 @@ new #[Title('Service')] class extends Component {
             @endcan
         </x-slot:actions>
     </x-tn.page-header>
+
+    {{-- F27 : fiche non traduite dans la langue choisie → affichée en français, avec une mention. --}}
+    @if ($record->afficheEnFrancais(['nom', 'description', 'horaires', 'adresse']))
+        <x-contenu-en-francais />
+    @endif
 
     @if (session('service-indisponible'))
         <flux:callout variant="danger" icon="exclamation-triangle" role="alert">
@@ -272,14 +282,14 @@ new #[Title('Service')] class extends Component {
     <div class="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <x-tn.surface>
             <x-tn.section-label as="h2" class="mb-3">{{ __('Missions') }}</x-tn.section-label>
-            <p class="whitespace-pre-line leading-relaxed text-ink">{{ __($record->description ?? __('Description à venir.')) }}</p>
+            <p class="whitespace-pre-line leading-relaxed text-ink">{{ $record->t('description') ?? __('Description à venir.') }}</p>
         </x-tn.surface>
 
         {{-- F96 : en version légère, l'essentiel (horaires, contact, adresse) passe avant les missions sur mobile. --}}
         <x-tn.panel :label="__('Infos pratiques')" padding="p-5 md:p-6" @class(['max-lg:order-first' => \App\Support\ModeAllege::actif()])>
             <dl>
                 @if ($record->horaires)
-                    <x-tn.field :label="__('Horaires')"><p class="whitespace-pre-line font-mono text-sm leading-6">{{ __($record->horaires) }}</p></x-tn.field>
+                    <x-tn.field :label="__('Horaires')"><p class="whitespace-pre-line font-mono text-sm leading-6">{{ $record->t('horaires') }}</p></x-tn.field>
                 @endif
                 @if ($record->telephone)
                     <x-tn.field :label="__('Téléphone')"><a href="tel:{{ preg_replace('/[^0-9+]/', '', $record->telephone) }}" class="font-mono text-sm text-cyan hover:underline">{{ $record->telephone }}</a></x-tn.field>
@@ -288,11 +298,11 @@ new #[Title('Service')] class extends Component {
                     <x-tn.field :label="__('E-mail')"><a href="mailto:{{ $record->email }}" class="break-all text-sm text-cyan hover:underline">{{ $record->email }}</a></x-tn.field>
                 @endif
                 @if ($record->adresse)
-                    <x-tn.field :label="__('Adresse')"><p class="whitespace-pre-line text-sm">{{ __($record->adresse) }}</p></x-tn.field>
+                    <x-tn.field :label="__('Adresse')"><p class="whitespace-pre-line text-sm">{{ $record->t('adresse') }}</p></x-tn.field>
                 @endif
             </dl>
-            @if ($point = $record->pointCarte(__($record->nom)))
-                <x-carte :points="[$point]" :itineraire="false" hauteur="14rem" :zoom="16" :label="__('Emplacement de :nom', ['nom' => __($record->nom)])" class="mt-4" />
+            @if ($point = $record->pointCarte($record->t('nom')))
+                <x-carte :points="[$point]" :itineraire="false" hauteur="14rem" :zoom="16" :label="__('Emplacement de :nom', ['nom' => $record->t('nom')])" class="mt-4" />
                 <a href="https://www.openstreetmap.org/directions?to={{ $record->latitude }}%2C{{ $record->longitude }}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-flex items-center gap-1 text-sm text-cyan hover:underline">
                     <flux:icon name="arrow-top-right-on-square" class="size-4" />{{ __('Itinéraire (nouvel onglet)') }}
                 </a>

@@ -42,7 +42,7 @@ new #[Title('Suivi de ma demande')] class extends Component {
             <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink-2">
                 <span class="sr-only">État actuel :</span>
                 <flux:badge :color="$record->statutCouleur()" size="sm">{{ $record->statutLibelle() }}</flux:badge>
-                <span class="font-mono text-xs">Déposée le {{ $record->created_at->copy()->setTimezone(AuditLog::FUSEAU)->locale('fr')->translatedFormat('j F Y à H:i') }}</span>
+                <span class="font-mono text-xs">{{ __('Déposée le :date', ['date' => $record->created_at->copy()->setTimezone(AuditLog::FUSEAU)->isoFormat('LLL')]) }}</span>
             </div>
         </x-slot:meta>
     </x-tn.page-header>

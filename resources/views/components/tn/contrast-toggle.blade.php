@@ -9,4 +9,5 @@
     {{ $attributes->class('inline-flex size-11 shrink-0 items-center justify-center rounded-sm text-ink-2 transition-colors hover:bg-cyan/8 hover:text-ink aria-pressed:bg-cyan/15 aria-pressed:text-ink') }}
 >
     <flux:icon.eye class="size-5" />
+    <span class="sr-only">{{ __('Contraste élevé') }}</span>
 </button>

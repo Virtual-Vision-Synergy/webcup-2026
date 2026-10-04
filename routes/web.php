@@ -30,13 +30,21 @@ Route::view('accessibilite', 'accessibilite')->name('accessibility.show');
 // F95 : page publique décidée — les mesures de sobriété (requêtes, poids des pages) sont consultables sans compte.
 Route::view('sobriete', 'sobriete')->name('sobriete.show');
 
-Route::get('langue/{code}', function (string $code, Request $request) {
-    abort_unless(array_key_exists($code, DefinirLangue::LANGUES), 404);
+// D14 : route publique décidée — un visiteur choisit sa langue avant de se connecter. POST + CSRF (groupe web),
+// langue validée contre config('app.langues'). Connecté : seule la préférence de SON compte est mise à jour.
+Route::post('langue/{code}', function (string $code, Request $request) {
+    abort_unless(DefinirLangue::estProposee($code), 404);
 
     $request->session()->put('langue', $code);
+    $request->user()?->forceFill(['langue' => $code])->saveQuietly();
+
+    // Retour à la page d'origine, uniquement si elle appartient à l'application (pas de redirection ouverte).
+    $precedente = url()->previous();
+    $racine = rtrim(url('/'), '/');
+    $retour = $precedente === $racine || str_starts_with($precedente, $racine.'/') ? $precedente : route('home');
 
     // F71 : langue mémorisée durablement sur cet appareil, y compris sur l'écran de connexion.
-    return redirect()->back(fallback: route('home'))->withCookie(cookie()->forever(DefinirLangue::COOKIE, $code));
+    return redirect()->to($retour)->withCookie(cookie()->forever(DefinirLangue::COOKIE, $code));
 })->middleware('throttle:30,1')->name('langue');
 
 // F59 : page publique décidée — le « Mode allégé » doit être activable avant la connexion (accueil sur réseau lent).

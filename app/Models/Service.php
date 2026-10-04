@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Http\Middleware\DefinirLangue;
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
 use App\Models\Concerns\HasCoordinates;
@@ -33,6 +34,9 @@ use Illuminate\Validation\ValidationException;
  * réservés aux admins via rendreIndisponible() / retablir() (ServicePolicy::toggleAvailability, F63).
  * F64 : perturbe_depuis, alternative_texte, alternative_url et etat_mis_a_jour_le non plus : l'état complet
  * passe uniquement par mettreAJourEtat() (ServicePolicy::updateStatus : agent du service ou admin).
+ *
+ * F27 : les champs de TRADUCTIBLES ont une version par langue (ServiceTranslation) ; le français de cette table
+ * reste la référence. Affichage : $service->t('description') (langue courante, sinon français).
  *
  * @property CarbonInterface|null $indisponible_depuis
  * @property CarbonInterface|null $perturbe_depuis
@@ -136,6 +140,11 @@ class Service extends Model
         self::ETAT_INDISPONIBLE => 'Indisponible',
     ];
 
+    /**
+     * F27 : champs affichés aux habitants qui peuvent être traduits (fiche, catalogue, informations de démarche).
+     */
+    public const TRADUCTIBLES = ['nom', 'description', 'horaires', 'adresse', 'lieu_rendez_vous', 'pieces_a_fournir'];
+
     /** Slugs qui entreraient en conflit avec les routes /services/... */
     private const RESERVED_SLUGS = ['create'];
 
@@ -227,7 +236,7 @@ class Service extends Model
     {
         $interruption = $this->interruptionEnCours();
 
-        return $this->libelleEtat().($interruption !== null ? ' · '.$interruption->libelleType() : '');
+        return __($this->libelleEtat()).($interruption !== null ? ' · '.__($interruption->libelleType()) : '');
     }
 
     /**
@@ -269,10 +278,10 @@ class Service extends Model
         $remplacement = $this->interruptionEnCours()?->alternativeService;
 
         if ($remplacement !== null) {
-            return ['url' => route('services.show', $remplacement), 'libelle' => $remplacement->nom, 'interne' => true];
+            return ['url' => route('services.show', $remplacement), 'libelle' => (string) $remplacement->t('nom'), 'interne' => true];
         }
 
-        return filled($this->alternative_url) ? ['url' => (string) $this->alternative_url, 'libelle' => 'Ouvrir l\'alternative', 'interne' => false] : null;
+        return filled($this->alternative_url) ? ['url' => (string) $this->alternative_url, 'libelle' => __('Ouvrir l\'alternative'), 'interne' => false] : null;
     }
 
     /**
@@ -310,9 +319,10 @@ class Service extends Model
 
         $retour = $this->retourPrevuEtat();
 
+        // D14 : date écrite dans la langue de l'habitant (locale Carbon alignée sur celle de l'application).
         return $retour !== null
-            ? 'Retour prévu le '.$retour->copy()->setTimezone(CreneauRendezVous::fuseau())->locale('fr')->translatedFormat('l j F Y')
-            : 'Date de retour non connue';
+            ? __('Retour prévu le :date', ['date' => $retour->copy()->setTimezone(CreneauRendezVous::fuseau())->isoFormat('dddd LL')])
+            : __('Date de retour non connue');
     }
 
     /**
@@ -320,14 +330,14 @@ class Service extends Model
      */
     public function messageIndisponibilite(): string
     {
-        $message = 'Ce service est actuellement indisponible : '
-            .rtrim($this->motifEtat() ?: 'interruption en cours', '. ').'. '
+        $message = __('Ce service est actuellement indisponible :').' '
+            .rtrim($this->motifEtat() ?: __('interruption en cours'), '. ').'. '
             .$this->libelleRetourPrevu().'.';
 
         $alternative = $this->alternativeTexteEtat() ?: $this->alternativeLienEtat()['url'] ?? null;
 
         if (filled($alternative)) {
-            $message .= ' Vous pouvez : '.rtrim((string) $alternative, '. ').'.';
+            $message .= ' '.__('Vous pouvez :').' '.rtrim((string) $alternative, '. ').'.';
         }
 
         return $message;
@@ -470,7 +480,7 @@ class Service extends Model
      */
     public function lieuRendezVous(): ?string
     {
-        return $this->lieu_rendez_vous ?: $this->adresse;
+        return $this->t('lieu_rendez_vous') ?: $this->t('adresse');
     }
 
     /**
@@ -480,7 +490,7 @@ class Service extends Model
      */
     public function piecesAFournir(): array
     {
-        return array_values(array_filter(array_map('trim', preg_split('/\R/', (string) $this->pieces_a_fournir) ?: [])));
+        return array_values(array_filter(array_map('trim', preg_split('/\R/', (string) $this->t('pieces_a_fournir')) ?: [])));
     }
 
     /**
@@ -531,6 +541,124 @@ class Service extends Model
         if ($this->estIndisponible()) {
             throw ValidationException::withMessages([$champ => $this->messageIndisponibilite()]);
         }
+    }
+
+    /**
+     * F27 : traductions de la fiche (une par langue, hors français).
+     *
+     * @return HasMany<ServiceTranslation, $this>
+     */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(ServiceTranslation::class);
+    }
+
+    /**
+     * F27 : charge la seule traduction de la langue courante (catalogue : une requête pour toute la page).
+     *
+     * @param  Builder<Service>  $query
+     */
+    #[Scope]
+    protected function avecTraduction(Builder $query): void
+    {
+        // En français (langue de référence), les traductions ne sont jamais lues : pas de requête inutile.
+        if (app()->getLocale() === DefinirLangue::REFERENCE) {
+            return;
+        }
+
+        $query->with(['translations' => fn ($q) => $q->where('locale', app()->getLocale())]);
+    }
+
+    public function traduction(?string $locale = null): ?ServiceTranslation
+    {
+        $locale ??= app()->getLocale();
+
+        if ($locale === DefinirLangue::REFERENCE || ! $this->exists) {
+            return null;
+        }
+
+        return $this->translations->firstWhere('locale', $locale);
+    }
+
+    /**
+     * F27 : valeur d'un champ dans la langue courante, sinon en français (référence).
+     * Ordre : traduction saisie par un agent (service_translations), puis traduction de l'interface (lang/{code}.json,
+     * contenus de démonstration historiques), puis le texte français.
+     */
+    public function t(string $champ): ?string
+    {
+        $francais = $this->getAttribute($champ);
+
+        if (! in_array($champ, self::TRADUCTIBLES, true) || blank($francais) || app()->getLocale() === DefinirLangue::REFERENCE) {
+            return $francais === null ? null : (string) $francais;
+        }
+
+        $traduit = $this->traduction()?->getAttribute($champ);
+
+        if (filled($traduit)) {
+            return (string) $traduit;
+        }
+
+        $interface = __((string) $francais);
+
+        return is_string($interface) ? $interface : (string) $francais;
+    }
+
+    /**
+     * F27 : vrai si au moins un des champs renseignés s'affiche en français faute de traduction dans la langue
+     * courante (mention « affiché en français » sur la fiche et le catalogue).
+     *
+     * @param  array<int, string>  $champs
+     */
+    public function afficheEnFrancais(array $champs = ['nom', 'description', 'horaires']): bool
+    {
+        if (app()->getLocale() === DefinirLangue::REFERENCE) {
+            return false;
+        }
+
+        foreach ($champs as $champ) {
+            $francais = $this->getAttribute($champ);
+
+            if (filled($francais) && $this->t($champ) === (string) $francais) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * F27 : crée, met à jour ou supprime (tous les champs vides) la traduction d'une langue proposée.
+     * Appeler après l'autorisation (ServicePolicy::translate). service_id et locale sont assignés ici, jamais en masse.
+     *
+     * @param  array<string, mixed>  $valeurs
+     */
+    public function enregistrerTraduction(string $locale, array $valeurs): void
+    {
+        if (! array_key_exists($locale, DefinirLangue::languesDeTraduction())) {
+            return;
+        }
+
+        $valeurs = array_map(
+            fn (mixed $valeur): ?string => filled($valeur) ? trim((string) $valeur) : null,
+            array_intersect_key($valeurs, array_flip(self::TRADUCTIBLES)),
+        );
+
+        $traduction = $this->translations()->where('locale', $locale)->first();
+
+        if (array_filter($valeurs) === []) {
+            $traduction?->delete();
+
+            return;
+        }
+
+        $traduction ??= new ServiceTranslation;
+        $traduction->fill($valeurs);
+        $traduction->locale = $locale;
+        $traduction->service()->associate($this);
+        $traduction->save();
+
+        $this->unsetRelation('translations');
     }
 
     /**

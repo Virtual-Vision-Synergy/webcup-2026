@@ -16,7 +16,7 @@ Comptes jury : voir le README (section « Accès jury »).
 
 | # | Fonctionnalité | Où la voir | Compte | Comment tester |
 |---|---|---|---|---|
-| A1 | | | | |
+| F21 | Accessibilité au lecteur d'écran : lien « Aller au contenu », zones repérables (en-tête, navigation, contenu, pied de page), erreurs de formulaire reliées à leur champ, navigation au clavier avec focus visible | Toutes les pages (accueil, connexion, espace citoyen, espace agent) | Aucun compte (accueil, /login), puis user | 1. Sur l'accueil, appuyer sur Tab : le lien « Aller au contenu » apparaît, Entrée amène au contenu principal. 2. Parcourir la page avec Tab : chaque élément actif a un contour visible. 3. Sur /login, envoyer le formulaire vide : le lecteur d'écran annonce l'erreur avec le champ concerné (`aria-describedby`, `aria-invalid`). |
 
 ## Sécurité
 

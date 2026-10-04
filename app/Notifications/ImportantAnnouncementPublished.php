@@ -27,7 +27,9 @@ class ImportantAnnouncementPublished extends Notification implements ShouldQueue
     {
         $canaux = ['database'];
 
-        if (in_array($this->annonce->niveau, (array) config('annonces.niveaux_email', []), true)
+        $niveauxEmail = (array) config($this->annonce->estCiblee() ? 'annonces.niveaux_email_quartier' : 'annonces.niveaux_email', []);
+
+        if (in_array($this->annonce->niveau, $niveauxEmail, true)
             && $notifiable instanceof User
             && $notifiable->notifier_par_email
             && $notifiable->isActive()) {
@@ -56,6 +58,14 @@ class ImportantAnnouncementPublished extends Notification implements ShouldQueue
         return Str::limit(Str::squish($this->annonce->contenu), 140);
     }
 
+    /**
+     * F101 : « Depuis samedi 4 octobre à 14 h 30 · fin estimée samedi 4 octobre à 20 h 30 » (heure de Madagascar).
+     */
+    public function periode(): string
+    {
+        return 'Depuis '.Annonce::heureLisible($this->annonce->debut).' · fin estimée '.Annonce::heureLisible($this->annonce->fin);
+    }
+
     public function toMail(object $notifiable): MailMessage
     {
         $message = (new MailMessage)
@@ -63,6 +73,7 @@ class ImportantAnnouncementPublished extends Notification implements ShouldQueue
             ->greeting('Annonce importante de la ville')
             ->line('Niveau : '.$this->annonce->libelleNiveau())
             ->line('Concerne : '.($this->annonce->nomQuartier() !== null ? 'quartier '.$this->annonce->nomQuartier() : 'toute la ville'))
+            ->line($this->periode().' (heure de Madagascar).')
             ->line($this->extrait());
 
         $consignes = $this->annonce->listeConsignes();
@@ -90,6 +101,7 @@ class ImportantAnnouncementPublished extends Notification implements ShouldQueue
             'type' => 'annonce_importante',
             'sujet' => $this->sujet(),
             'lignes' => array_values(array_filter([
+                $this->periode(),
                 $this->extrait(),
                 $consignes !== [] ? 'Consigne : '.$consignes[0] : null,
             ])),

@@ -560,6 +560,11 @@ class Service extends Model
     #[Scope]
     protected function avecTraduction(Builder $query): void
     {
+        // En français (langue de référence), les traductions ne sont jamais lues : pas de requête inutile.
+        if (app()->getLocale() === DefinirLangue::REFERENCE) {
+            return;
+        }
+
         $query->with(['translations' => fn ($q) => $q->where('locale', app()->getLocale())]);
     }
 

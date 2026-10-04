@@ -269,6 +269,7 @@ new #[Title('Services')] class extends Component {
         :breadcrumb="[__('Mon espace') => route('dashboard'), __('Services') => null]"
     >
         <x-slot:actions>
+            <flux:button variant="outline" icon="question-mark-circle" :href="route('orientation.index')" wire:navigate>{{ __('Je ne sais pas à qui m\'adresser') }}</flux:button>
             @can('create', Service::class)
                 <flux:button variant="primary" icon="plus" :href="route('services.create')" wire:navigate>{{ __('Ajouter') }}</flux:button>
             @endcan

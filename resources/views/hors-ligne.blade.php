@@ -26,6 +26,10 @@
                     </li>
                 @endforeach
             </ul>
+            {{-- F94 : page allégée gardée par le service worker (consignes, mairie, état des services). --}}
+            <p data-test="lien-infos-essentielles">
+                <a href="{{ route('infos-essentielles') }}" class="font-medium text-cyan hover:underline">{{ __('Infos essentielles : consignes en cours, coordonnées de la mairie, horaires et état des services') }} →</a>
+            </p>
         </section>
 
         <section aria-labelledby="hl-pages" class="space-y-3">

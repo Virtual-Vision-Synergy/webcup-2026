@@ -55,6 +55,8 @@ class ActionLog extends Model
         'consultation_reponse' => 'Réponse à une consultation',
         'consultation_decision' => 'Décision de consultation publiée',
         'donnees_reinitialisees' => 'Données de test réinitialisées',
+        'consigne_incident_publiee' => 'Consigne d’incident publiée',
+        'consigne_incident_retiree' => 'Consigne d’incident retirée',
     ];
 
     /**

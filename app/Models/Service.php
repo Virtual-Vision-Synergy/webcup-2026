@@ -533,6 +533,44 @@ class Service extends Model
     }
 
     /**
+     * F76 : avis des habitants sur ce service (masqués compris : filtrer avec ->visibles()).
+     *
+     * @return HasMany<ServiceReview, $this>
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ServiceReview::class);
+    }
+
+    /**
+     * F76 : note moyenne (une décimale), nombre d'avis et répartition 5 → 1, sur les seuls avis publiés.
+     * Une seule requête groupée.
+     *
+     * @return array{moyenne: float|null, total: int, repartition: array<int, int>}
+     */
+    public function statistiquesAvis(): array
+    {
+        $parNote = $this->reviews()->visibles()
+            ->selectRaw('rating, count(*) as total')
+            ->groupBy('rating')
+            ->pluck('total', 'rating');
+
+        $repartition = [];
+        foreach ([5, 4, 3, 2, 1] as $note) {
+            $repartition[$note] = (int) ($parNote[$note] ?? 0);
+        }
+
+        $total = array_sum($repartition);
+        $somme = array_sum(array_map(fn (int $note, int $nombre): int => $note * $nombre, array_keys($repartition), $repartition));
+
+        return [
+            'moyenne' => $total > 0 ? round($somme / $total, 1) : null,
+            'total' => $total,
+            'repartition' => $repartition,
+        ];
+    }
+
+    /**
      * F70 : agents rattachés à ce service.
      *
      * @return BelongsToMany<User, $this>

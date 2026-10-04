@@ -128,6 +128,9 @@ new #[Title('Démarche')] class extends Component {
             </div>
         </x-slot:meta>
         <x-slot:actions>
+            @can('voirAccuse', $record)
+                <flux:button icon="document-text" :href="route('demarches.accuse', $record)" target="_blank">{{ __('Accusé de réception') }}</flux:button>
+            @endcan
             @can('update', $record)
                 <flux:button icon="pencil-square" :href="route('demarches.edit', $record)" wire:navigate>{{ __('Modifier') }}</flux:button>
             @endcan
@@ -139,15 +142,29 @@ new #[Title('Démarche')] class extends Component {
 
     @if (session('demarche_envoyee'))
         {{-- Confirmation immédiate après l'envoi (D16) --}}
-        <div class="flex flex-col gap-3 rounded-md border border-green/35 bg-green/8 p-4 sm:flex-row sm:items-center sm:justify-between" role="status">
+        {{-- F83 : accusé de réception (référence, date et heure, objet, service), téléchargeable. --}}
+        <div class="space-y-4 rounded-md border border-green/35 bg-green/8 p-4" role="status" data-test="accuse-reception">
             <div class="flex items-start gap-3">
                 <flux:icon.check-circle class="mt-0.5 size-6 shrink-0 text-green" aria-hidden="true" />
                 <div>
                     <p class="font-semibold text-ink">Votre démarche a bien été envoyée.</p>
-                    <p class="text-ink-2">Numéro de suivi : <strong class="font-mono text-ink">{{ session('demarche_envoyee') }}</strong>. Inutile de la renvoyer : vous pouvez suivre son avancement ici.</p>
+                    <p class="text-ink-2">Inutile de la renvoyer : un accusé de réception vient de vous être envoyé par e-mail.</p>
                 </div>
             </div>
-            <flux:button size="sm" icon="arrow-down" href="#suivi">Voir le suivi</flux:button>
+            <div class="rounded-md border border-line bg-surface p-4">
+                <p class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-ink-2">Référence</p>
+                <p class="tn-display mt-1 font-mono text-2xl font-semibold tracking-wide text-cyan sm:text-3xl">{{ $record->numeroSuivi() }}</p>
+                <dl class="mt-3">
+                    <x-tn.field label="Reçue le">{{ $record->dateReceptionLocale() }}</x-tn.field>
+                    <x-tn.field label="Objet">{{ $record->titre }}</x-tn.field>
+                    <x-tn.field label="Service">{{ $record->service?->nom ?? 'Non précisé (la mairie orientera votre demande)' }}</x-tn.field>
+                </dl>
+                <p class="mt-3 text-sm text-ink-2">Conservez cette référence : elle permet de retrouver votre demande ou de la citer auprès de la mairie.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <flux:button size="sm" variant="primary" icon="arrow-down-tray" :href="route('demarches.accuse', $record)" target="_blank">Télécharger l’accusé de réception</flux:button>
+                <flux:button size="sm" icon="arrow-down" href="#suivi">Voir le suivi de la demande</flux:button>
+            </div>
         </div>
     @endif
 

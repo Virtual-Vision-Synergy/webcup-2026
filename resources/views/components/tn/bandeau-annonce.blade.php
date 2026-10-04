@@ -10,6 +10,8 @@
     'inviterQuartier' => false,
     'officiel' => false,
     'date' => null,
+    'impact' => null,
+    'fin' => null,
 ])
 
 {{--
@@ -29,6 +31,8 @@
       - « Fermer » est mémorisé dans un cookie lu par le serveur (le message n'est plus rendu ensuite), « Replier » dans le navigateur ;
       - disparition automatique après Annonce::DUREE_AFFICHAGE_SECONDES : même fermeture / même repli, pour la visite seulement ;
         minuteur en pause au survol, au focus clavier et quand le texte est déplié.
+    F104 : avec « impact » (début estimé de la perturbation), une ligne toujours visible donne l'heure de début estimée,
+    un compte à rebours (Alpine `tnCompteARebours`, masqué au lecteur d'écran qui lit l'heure) et la fin de l'alerte.
     Sans clé : aperçu (formulaire agent, tableau de bord), sans bouton ni minuteur.
     Le rôle alert/status est posé sur le texte seul : le lecteur d'écran n'annonce le titre qu'une fois.
 --}}
@@ -104,6 +108,22 @@
             @if ($officiel && $date)
                 <p @class(['mt-0.5 text-xs', $style['texte2']])>
                     Publié le <time datetime="{{ $date->toIso8601String() }}">{{ $date->copy()->timezone(\App\Models\Annonce::FUSEAU)->translatedFormat('d F Y à H\hi') }}</time> (heure de Madagascar)
+                </p>
+            @endif
+
+            @if ($impact)
+                <p @class(['mt-1 text-sm font-semibold', $style['texte']]) data-test="compte-a-rebours"
+                    @if ($cle) x-init="$store.tnBandeaux?.garderInfosEssentielles(@js($cle))" @endif>
+                    @if ($impact->isFuture())
+                        Début estimé de la perturbation : <time datetime="{{ $impact->toIso8601String() }}">{{ \App\Models\Annonce::heureLisible($impact) }}</time>
+                        <span aria-hidden="true" x-data="tnCompteARebours({{ $impact->getTimestampMs() }})" x-text="texte"></span>
+                    @else
+                        Perturbation possible depuis <time datetime="{{ $impact->toIso8601String() }}">{{ \App\Models\Annonce::heureLisible($impact) }}</time>
+                    @endif
+                    @if ($fin)
+                        · Fin de l’alerte : <time datetime="{{ $fin->toIso8601String() }}">{{ \App\Models\Annonce::heureLisible($fin) }}</time>
+                    @endif
+                    <span @class(['font-normal', $style['texte2']])>(heure de Madagascar)</span>
                 </p>
             @endif
 

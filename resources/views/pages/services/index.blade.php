@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Service;
+use App\Services\OrientationServices;
 use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -82,6 +83,64 @@ new #[Title('Services')] class extends Component {
     }
 
     /**
+     * D10 : orientation tolérante (fautes, accents, pluriels, synonymes de l'admin), calculée une fois par requête.
+     *
+     * @return array{resultats: list<array{id: int, score: int, raisons: list<string>}>, exact: bool, suggestion: string|null}|null
+     */
+    #[Computed]
+    public function orientation(): ?array
+    {
+        return trim($this->search) === '' ? null : app(OrientationServices::class)->rechercher(trim($this->search));
+    }
+
+    /**
+     * D10 : identifiants trouvés, du plus pertinent au moins pertinent.
+     *
+     * @return list<int>
+     */
+    protected function idsOrientes(): array
+    {
+        return array_column($this->orientation['resultats'] ?? [], 'id');
+    }
+
+    /**
+     * D10 : raisons affichées sous un résultat (« Correspond à : poubelle »).
+     *
+     * @return list<string>
+     */
+    public function raisons(int $serviceId): array
+    {
+        foreach ($this->orientation['resultats'] ?? [] as $resultat) {
+            if ($resultat['id'] === $serviceId) {
+                return array_slice($resultat['raisons'], 0, 3);
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * D10 : aucun mot n'a été reconnu tel quel ; les résultats sont les services les plus proches.
+     */
+    public function resultatsApproches(): bool
+    {
+        return $this->orientation !== null && ! $this->orientation['exact'] && $this->idsOrientes() !== [];
+    }
+
+    public function utiliserSuggestion(): void
+    {
+        $this->authorize('viewAny', Service::class);
+
+        $suggestion = $this->orientation['suggestion'] ?? null;
+
+        if ($suggestion !== null) {
+            $this->search = $suggestion;
+            unset($this->orientation);
+            $this->resetPage();
+        }
+    }
+
+    /**
      * Recherche et filtres, partagés par la liste (et la carte si l'entité a des coordonnées).
      *
      * @return Builder<Service>
@@ -93,9 +152,12 @@ new #[Title('Services')] class extends Component {
                 $search = trim($this->search);
                 $term = '%'.$search.'%';
                 $categories = Service::categoriesCorrespondant($search);
+                // D10 : services trouvés par l'orientation tolérante, en plus de la recherche exacte (F32).
+                $ids = $this->idsOrientes();
                 $query->where(fn ($q) => $q->where('nom', 'like', $term)
                     ->orWhere('description', 'like', $term)
-                    ->when($categories !== [], fn ($q) => $q->orWhereIn('categorie', $categories)));
+                    ->when($categories !== [], fn ($q) => $q->orWhereIn('categorie', $categories))
+                    ->when($ids !== [], fn ($q) => $q->orWhereIn('id', $ids)));
             })
             // Une valeur inconnue (URL modifiée à la main) est ignorée.
             ->when(in_array($this->categorie, Service::CATEGORIE_OPTIONS, true), fn ($query) => $query->where('categorie', $this->categorie))
@@ -106,8 +168,15 @@ new #[Title('Services')] class extends Component {
     #[Computed]
     public function items(): LengthAwarePaginator
     {
+        $ids = $this->idsOrientes();
+
         return $this->filteredQuery()
             ->with(['user', 'interruptionCourante'])
+            // D10 : les plus pertinents d'abord quand on cherche.
+            ->when($ids !== [], fn ($query) => $query->orderByRaw(
+                'case id '.implode(' ', array_fill(0, count($ids), 'when ? then ?')).' else ? end',
+                [...array_merge(...array_map(fn (int $id, int $rang): array => [$id, $rang], $ids, array_keys($ids))), count($ids)],
+            ))
             ->prioritaires()
             ->paginate(10);
     }
@@ -225,6 +294,22 @@ new #[Title('Services')] class extends Component {
         <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">{{ __('Mise à jour…') }}</span>
     </div>
 
+    {{-- D10 : « Vouliez-vous dire… » et résultats approchés : jamais une page vide quand on cherche. --}}
+    @if (! $this->enCarte() && $this->orientation !== null)
+        @if ($this->orientation['suggestion'] !== null && Str::lower(trim($search)) !== $this->orientation['suggestion'])
+            <p class="text-sm text-ink-2" data-test="vouliez-vous-dire">
+                {{ __('Vouliez-vous dire') }}
+                <button type="button" wire:click="utiliserSuggestion" class="font-semibold text-cyan underline-offset-2 hover:underline">« {{ $this->orientation['suggestion'] }} »</button> ?
+            </p>
+        @endif
+        @if ($this->resultatsApproches())
+            <div class="flex items-start gap-2 rounded-md border border-amber/35 bg-amber/8 p-3 text-sm text-ink" role="status" data-test="resultats-approches">
+                <flux:icon name="light-bulb" class="mt-0.5 size-5 shrink-0 text-amber" aria-hidden="true" />
+                <p>{{ __('Aucun service ne correspond exactement à « :q ». Voici les services les plus proches ; en cas de doute, l’Accueil de la Mairie vous oriente.', ['q' => trim($search)]) }}</p>
+            </div>
+        @endif
+    @endif
+
     @if ($this->afficherPrioritaires())
         <section aria-labelledby="titre-prioritaires" class="rounded-md border border-cyan/40 bg-cyan/5 p-4 md:p-5">
             <h2 id="titre-prioritaires" class="flex items-center gap-2 font-semibold text-ink">
@@ -314,6 +399,9 @@ new #[Title('Services')] class extends Component {
                             @endif
                             @if ($item->description)
                                 <p class="mt-1 line-clamp-2 text-sm text-ink-2">{{ __($item->description) }}</p>
+                            @endif
+                            @if ($this->raisons($item->id) !== [])
+                                <p class="mt-1 text-xs text-ink-2" data-test="raisons">{{ __('Correspond à :') }} {{ implode(', ', array_map(fn (string $r): string => '« '.$r.' »', $this->raisons($item->id))) }}</p>
                             @endif
                         </div>
                     </div>

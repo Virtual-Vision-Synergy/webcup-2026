@@ -26,5 +26,10 @@
             </flux:button>
             <flux:button variant="ghost" :href="route('home')">{{ __('Accueil') }}</flux:button>
         </div>
+
+        {{-- F94 : consignes, numéros d'urgence et coordonnées utiles, toujours disponibles. --}}
+        <flux:text class="text-sm" data-test="lien-infos-essentielles">
+            <a href="{{ route('infos-essentielles') }}" class="font-medium text-cyan hover:underline">{{ __('Infos essentielles : consignes, urgences et mairie') }} →</a>
+        </flux:text>
     </section>
 </x-layouts::public>

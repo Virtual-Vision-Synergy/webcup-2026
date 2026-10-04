@@ -7,6 +7,8 @@ use App\Notifications\Channels\MailChannelTolerant;
 use App\Policies\DatabaseNotificationPolicy;
 use App\Services\RecommandationProvider;
 use App\Services\RecommandationsEcrites;
+use App\Services\RedacteurLangageClair;
+use App\Services\RedacteurLangageClairRegles;
 use App\Services\ReformulateurRequete;
 use App\Services\SansReformulation;
 use App\Services\Simplificateur;
@@ -38,6 +40,9 @@ class AppServiceProvider extends ServiceProvider
 
         // F90 : explications simples rédigées et règles en base (aucune IA) ; une implémentation IA pourra être liée ici.
         $this->app->bind(Simplificateur::class, SimplificateurRegles::class);
+
+        // F89 : version en langage clair de secours par les synonymes en base (aucune IA) ; une implémentation IA pourra être liée ici.
+        $this->app->bind(RedacteurLangageClair::class, RedacteurLangageClairRegles::class);
 
         // F93 : une panne du serveur d'e-mails n'empêche plus d'afficher la page (erreur journalisée + bandeau).
         $this->app->bind(MailChannel::class, MailChannelTolerant::class);

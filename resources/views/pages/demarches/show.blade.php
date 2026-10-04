@@ -223,6 +223,13 @@ new #[Title('Démarche')] class extends Component {
                 <x-tn.field :label="__('Service')">{{ $record->service?->nom ? __($record->service->nom) : __('Non précisé') }}</x-tn.field>
                 <x-tn.field :label="__('Description')"><p class="whitespace-pre-line leading-relaxed">{{ $record->description ?? '—' }}</p></x-tn.field>
             </dl>
+
+            {{-- F89 : ce qu'il faut savoir sur le service de la démarche, en langage clair ou en version complète. --}}
+            @if ($record->service)
+                <x-tn.langage-clair class="mt-5 border-t border-line pt-5" :version="\App\Support\LangageClair::pourService($record->service)" :titre="__('Ce qu’il faut savoir')">
+                    <p class="whitespace-pre-line leading-relaxed text-ink">{{ __($record->service->description ?? __('Description à venir.')) }}</p>
+                </x-tn.langage-clair>
+            @endif
         </x-tn.surface>
 
         <div class="flex flex-col gap-6">

@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\ActivationCompteController;
 use App\Http\Controllers\Auth\LienConnexionController;
 use App\Http\Middleware\DefinirLangue;
 use App\Support\ModeAllege;
+use App\Support\VersionSimple;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -36,6 +37,19 @@ Route::post('mode-allege', function (Request $request) {
     return redirect()->back(fallback: route('home'))
         ->withCookie(cookie()->forever(ModeAllege::COOKIE, $actif ? '1' : '0'));
 })->middleware('throttle:30,1')->name('mode-allege');
+
+// F62 : page publique décidée — la « Version simple » doit être disponible dès l'accueil, avant la connexion.
+Route::post('version-simple', function (Request $request) {
+    $actif = ! VersionSimple::actif($request);
+    $user = $request->user();
+
+    if ($user !== null) {
+        $user->forceFill(['version_simple' => $actif])->save();
+    }
+
+    return redirect()->back(fallback: route('home'))
+        ->withCookie(cookie()->forever(VersionSimple::COOKIE, $actif ? '1' : '0'));
+})->middleware('throttle:30,1')->name('version-simple');
 
 // D02 : connexion sans mot de passe par lien envoyé par e-mail (pages publiques réservées aux invités).
 Route::middleware('guest')->group(function () {

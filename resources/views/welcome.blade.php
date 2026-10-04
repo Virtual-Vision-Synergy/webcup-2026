@@ -76,6 +76,7 @@
                         <a href="{{ route('login') }}" class="tn-btn-secondary h-[52px]">{{ __('Connexion') }}</a>
                     @endunless
                 </div>
+                <x-tn.version-simple class="mt-4" />
             </div>
 
             <x-tn.panel padding="p-5 md:p-7">

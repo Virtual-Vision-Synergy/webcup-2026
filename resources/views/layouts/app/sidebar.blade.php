@@ -72,7 +72,7 @@
     app(\App\Services\NotifierAnnonce::class)->traiterEchuesAuPlusUneFoisParMinute();
 @endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif()])>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif(), 'simple' => \App\Support\VersionSimple::actif()])>
     <head>
         @include('partials.head')
     </head>
@@ -129,9 +129,12 @@
 
                 <flux:spacer />
 
-                <flux:sidebar.nav>
-                    <livewire:cloche-notifications />
-                </flux:sidebar.nav>
+                {{-- F62 : en version simple, pas de cloche rafraîchie automatiquement (la cloche du header reste un lien). --}}
+                @unless (\App\Support\VersionSimple::actif())
+                    <flux:sidebar.nav>
+                        <livewire:cloche-notifications />
+                    </flux:sidebar.nav>
+                @endunless
 
                 <x-desktop-user-menu :name="auth()->user()->name" />
             </flux:sidebar>
@@ -142,7 +145,9 @@
                         <x-app-logo href="{{ route('dashboard') }}" class="lg:hidden" wire:navigate />
 
                         <div class="ms-auto flex items-center gap-2">
-                            <x-tn.api-status class="max-sm:hidden" />
+                            @unless (\App\Support\VersionSimple::actif())
+                                <x-tn.api-status class="max-sm:hidden" />
+                            @endunless
                             <x-tn.cloche />
                             <x-tn.langue class="max-lg:hidden" />
                             <x-tn.contrast-toggle class="max-lg:hidden" />
@@ -157,6 +162,7 @@
                     </div>
                 </header>
 
+                <x-tn.bandeau-version-simple />
                 <x-tn.bandeau-annonces />
                 <x-tn.bandeau-consultations />
 

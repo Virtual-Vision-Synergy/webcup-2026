@@ -2,6 +2,7 @@
 
 use App\Models\Service;
 use App\Services\OrientationServices;
+use App\Support\VersionSimple;
 use Flux\Flux;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -68,7 +69,8 @@ new #[Title('Services')] class extends Component {
 
     public function enCarte(): bool
     {
-        return $this->vue === 'carte';
+        // F62 : en version simple, pas de carte (ni Leaflet) : la liste garde les mêmes informations.
+        return $this->vue === 'carte' && ! VersionSimple::actif();
     }
 
     public function resetFilters(): void
@@ -269,6 +271,7 @@ new #[Title('Services')] class extends Component {
         :breadcrumb="[__('Mon espace') => route('dashboard'), __('Services') => null]"
     >
         <x-slot:actions>
+            <x-tn.version-simple />
             <flux:button variant="outline" icon="question-mark-circle" :href="route('orientation.index')" wire:navigate>{{ __('Je ne sais pas à qui m\'adresser') }}</flux:button>
             @can('create', Service::class)
                 <flux:button variant="primary" icon="plus" :href="route('services.create')" wire:navigate>{{ __('Ajouter') }}</flux:button>
@@ -288,10 +291,12 @@ new #[Title('Services')] class extends Component {
         @can('create', Service::class)
             <flux:checkbox wire:model.live="mine" label="{{ __('Mes services uniquement') }}" />
         @endcan
-        <div class="flex gap-1 sm:ms-auto" role="group" aria-label="{{ __('Mode d\'affichage') }}">
-            <flux:button size="sm" icon="list-bullet" :variant="$this->enCarte() ? 'ghost' : 'filled'" wire:click="afficher('liste')" aria-pressed="{{ $this->enCarte() ? 'false' : 'true' }}">{{ __('Liste') }}</flux:button>
-            <flux:button size="sm" icon="map" :variant="$this->enCarte() ? 'filled' : 'ghost'" wire:click="afficher('carte')" aria-pressed="{{ $this->enCarte() ? 'true' : 'false' }}">{{ __('Carte') }}</flux:button>
-        </div>
+        @unless (VersionSimple::actif())
+            <div class="flex gap-1 sm:ms-auto" role="group" aria-label="{{ __('Mode d\'affichage') }}">
+                <flux:button size="sm" icon="list-bullet" :variant="$this->enCarte() ? 'ghost' : 'filled'" wire:click="afficher('liste')" aria-pressed="{{ $this->enCarte() ? 'false' : 'true' }}">{{ __('Liste') }}</flux:button>
+                <flux:button size="sm" icon="map" :variant="$this->enCarte() ? 'filled' : 'ghost'" wire:click="afficher('carte')" aria-pressed="{{ $this->enCarte() ? 'true' : 'false' }}">{{ __('Carte') }}</flux:button>
+            </div>
+        @endunless
         <span wire:loading class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-cyan">{{ __('Mise à jour…') }}</span>
     </div>
 

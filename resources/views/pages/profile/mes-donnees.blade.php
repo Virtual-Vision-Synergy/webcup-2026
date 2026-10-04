@@ -136,7 +136,10 @@ new #[Layout('layouts::imprimable'), Title('Mes données personnelles')] class e
 }; ?>
 
 <div class="space-y-8 text-zinc-900">
-    @php($d = $this->donnees)
+    {{-- Toujours un bloc php fermé par endphp dans ce fichier : la forme en ligne avale le bloc $rubriques plus bas. --}}
+    @php
+        $d = $this->donnees;
+    @endphp
 
     {{-- Barre d'actions (masquée à l'impression) --}}
     <div class="flex flex-wrap items-center justify-between gap-3 print:hidden">
@@ -257,7 +260,9 @@ new #[Layout('layouts::imprimable'), Title('Mes données personnelles')] class e
             @else
                 <ul class="divide-y divide-zinc-200 rounded-md border border-zinc-300 text-sm">
                     @foreach ($elements as $element)
-                        @php([$principal, $detail, $etat, $date] = $colonnes($element))
+                        @php
+                            [$principal, $detail, $etat, $date] = $colonnes($element);
+                        @endphp
                         <li class="flex flex-col gap-1 p-3 break-inside-avoid sm:flex-row sm:items-start sm:justify-between">
                             <div class="min-w-0">
                                 <p class="font-medium break-words">{{ $principal }}</p>

@@ -60,9 +60,14 @@ class ImportantAnnouncementPublished extends Notification implements ShouldQueue
 
     /**
      * F101 : « Depuis samedi 4 octobre à 14 h 30 · fin estimée samedi 4 octobre à 20 h 30 » (heure de Madagascar).
+     * F104 : « Perturbation estimée à partir de … · fin de l’alerte … » quand un début de perturbation est annoncé.
      */
     public function periode(): string
     {
+        if ($this->annonce->impact_prevu_le !== null) {
+            return 'Perturbation estimée à partir de '.Annonce::heureLisible($this->annonce->impact_prevu_le).' · fin de l’alerte '.Annonce::heureLisible($this->annonce->fin);
+        }
+
         return 'Depuis '.Annonce::heureLisible($this->annonce->debut).' · fin estimée '.Annonce::heureLisible($this->annonce->fin);
     }
 

@@ -14,57 +14,57 @@
                         {{ __('Mes rendez-vous') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="clipboard-document-list" :href="route('mes-demandes.index')" :current="request()->routeIs('mes-demandes.*')" wire:navigate>
-                        Mes demandes
+                        {{ __('Mes demandes') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="heart" :href="route('urgences.index')" :current="request()->routeIs('urgences.*')" wire:navigate>
-                        Urgences / Santé
+                        {{ __('Urgences / Santé') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="sun" :href="route('canicule')" :current="request()->routeIs('canicule')" wire:navigate>
-                        Canicule
+                        {{ __('Canicule') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="question-mark-circle" :href="route('orientation.index')" :current="request()->routeIs('orientation.*')" wire:navigate>
-                        À qui m'adresser ?
+                        {{ __("À qui m'adresser ?") }}
                     </flux:sidebar.item>
                     @can('parOuCommencer', \App\Models\Onboarding::class)
                         <flux:sidebar.item icon="sparkles" :href="route('onboarding.par-ou-commencer')" :current="request()->routeIs('onboarding.par-ou-commencer')" wire:navigate>
-                            Par où commencer ?
+                            {{ __('Par où commencer ?') }}
                         </flux:sidebar.item>
                     @endcan
 
                     <flux:sidebar.item icon="chat-bubble-left-ellipsis" :href="route('concerns.index')" :current="request()->routeIs('concerns.*')" wire:navigate>
-                        Mes remontées
+                        {{ __('Mes remontées') }}
                     </flux:sidebar.item>
 
                     <flux:sidebar.item icon="shield-check" :href="route('privacy.show')" :current="request()->routeIs('privacy.show')" wire:navigate>
-                        Vos données
+                        {{ __('Vos données') }}
                     </flux:sidebar.item>
 
                     <flux:sidebar.item icon="building-office-2" :href="route('projets.index')" :current="request()->routeIs('projets.*')" wire:navigate>
-                        Projets de la ville
+                        {{ __('Projets de la ville') }}
                     </flux:sidebar.item>
 
                     <flux:sidebar.item icon="chat-bubble-bottom-center-text" :href="route('avis.index')" :current="request()->routeIs('avis.*')" wire:navigate>
-                        Mes avis
+                        {{ __('Mes avis') }}
                     </flux:sidebar.item>
 
                     <flux:sidebar.item icon="building-storefront" :href="route('partners.index')" :current="request()->routeIs('partners.*')" wire:navigate>
-                        Partenaires
+                        {{ __('Partenaires') }}
                     </flux:sidebar.item>
 
                     <flux:sidebar.item icon="light-bulb" :href="route('ideas.index')" :current="request()->routeIs('ideas.*')" wire:navigate>
-                        Boîte à idées
+                        {{ __('Boîte à idées') }}
                     </flux:sidebar.item>
 
                     <flux:sidebar.item icon="chat-bubble-left-right" :href="route('consultations.index')" :current="request()->routeIs('consultations.*')" wire:navigate>
-                        Consultations
+                        {{ __('Consultations') }}
                     </flux:sidebar.item>
 
                     <flux:sidebar.item icon="eye" :href="route('accessibility.show')" :current="request()->routeIs('accessibility.show')" wire:navigate>
-                        Accessibilité
+                        {{ __('Accessibilité') }}
                     </flux:sidebar.item>
 
                     <flux:sidebar.item icon="star" :href="route('services.reviews.mine')" :current="request()->routeIs('services.reviews.mine')" wire:navigate>
-                        Mes avis sur les services
+                        {{ __('Mes avis sur les services') }}
                     </flux:sidebar.item>
 
                     {{-- make:feature:nav --}}

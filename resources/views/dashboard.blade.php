@@ -12,6 +12,7 @@
     $parStatut = $user->demarches()->selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut');
     // F95 : le total se déduit du décompte par statut (une requête de moins).
     $totalDemarches = (int) $parStatut->sum();
+    $user->retenirDemarchesParStatut($parStatut);
     // Alertes : démarches traitées ou refusées dans les 7 derniers jours.
     $alertes = $user->demarches()
         ->whereIn('statut', ['traitee', 'refusee'])
@@ -34,6 +35,12 @@
     $mesDemandesParStatut = \App\Models\Signalement::duCitoyen($user)->selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut');
     $totalMesDemandes = (int) $mesDemandesParStatut->sum();
     $mesDemandesEnCours = (int) $mesDemandesParStatut->except(\App\Models\Signalement::STATUTS_TERMINES)->sum();
+    // F97 : trajets habituels de l'habitant dont la ligne est interrompue en ce moment (uniquement les siens).
+    $trajetsInterrompus = $user->abonnementsLigne()
+        ->whereHas('ligne.interruptions', fn ($query) => $query->enCours())
+        ->with('ligne.interruptionsEnCours')
+        ->limit(3)
+        ->get();
 @endphp
 
 <x-layouts::app :title="__('Dashboard')">
@@ -49,7 +56,7 @@
             </x-slot:actions>
         </x-tn.page-header>
 
-        <x-tn.aide id="dashboard-accueil">Bienvenue à Nova Terra ! Commencez par « Nouvelle démarche », ou parcourez les rubriques Services, Actualités et Contact.</x-tn.aide>
+        <x-tn.aide id="dashboard-accueil">{{ __('Bienvenue à Nova Terra ! Commencez par « Nouvelle démarche », ou parcourez les rubriques Services, Actualités et Contact.') }}</x-tn.aide>
 
         @if ($urgencesOuvertes->isNotEmpty())
             <section aria-labelledby="titre-mes-urgences" class="flex flex-col gap-3" data-test="mes-urgences">
@@ -72,6 +79,19 @@
                     @endforeach
                 </ul>
             </section>
+        @endif
+
+        @if ($trajetsInterrompus->isNotEmpty())
+            <section aria-labelledby="titre-mes-trajets" class="flex flex-col gap-3" data-test="dashboard-trajets-interrompus">
+                <h2 id="titre-mes-trajets" class="tn-display text-lg font-semibold text-ink">Vos trajets habituels</h2>
+                @foreach ($trajetsInterrompus as $trajet)
+                    @if ($trajet->ligne->interruptionCourante())
+                        <x-transport-interruption :interruption="$trajet->ligne->interruptionCourante()" :ligne="$trajet->ligne" :arret="$trajet->arret" personnel />
+                    @endif
+                @endforeach
+            </section>
+        @else
+            <x-tn.bandeau-transports />
         @endif
 
         @if ($alertesQuartier->isNotEmpty())

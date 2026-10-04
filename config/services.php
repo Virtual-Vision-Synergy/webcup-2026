@@ -44,7 +44,8 @@ return [
         'key' => env('WEB_CUP_API_KEY'),
     ],
 
-    // F87 : dossier des sauvegardes de la base (par défaut ~/backups en production, storage en local).
+    // F87 : dossier des sauvegardes de la base (BACKUP_DIR). Vide : ~/backups du compte en production
+    // ($HOME, sinon dirname(base_path(), 3).'/backups'), storage/app/private/sauvegardes en local.
     'sauvegardes' => [
         'dossier' => env('BACKUP_DIR'),
     ],

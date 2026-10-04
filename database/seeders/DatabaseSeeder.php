@@ -108,6 +108,9 @@ class DatabaseSeeder extends Seeder
 
         $this->call(ServiceSeeder::class);
 
+        // F27 : versions anglaises de quatre fiches (deux services laissés en français pour montrer le repli).
+        $this->call(ServiceTranslationSeeder::class);
+
         // D10 : synonymes d'orientation (« poubelle » → Environnement et propreté), éditables dans Filament.
         $this->call(MotsClesServiceSeeder::class);
 
@@ -174,6 +177,9 @@ class DatabaseSeeder extends Seeder
 
         // F101 : alerte « Panne électrique — secteur nord » en cours (nord@example.com la voit et est notifié).
         $this->call(AlertePanneElectriqueSeeder::class);
+
+        // F104 : alerte « Tempête solaire » en cours sur toute la ville (tous les habitants la voient et sont notifiés).
+        $this->call(AlerteTempeteSolaireSeeder::class);
 
         if (! app()->isProduction()) {
             // F30 : notifications lues et non lues pour user@example.com + annonce « Danger » programmée dans 5 min.
@@ -273,6 +279,9 @@ class DatabaseSeeder extends Seeder
             // F98 : 120 jours de consultations et de démarches pour le tableau de bord « Usage des services ».
             $this->call(UsageServicesSeeder::class);
         }
+
+        // F97 : ligne 7 interrompue avec solutions de remplacement, trajet habituel de user@example.com sur cette ligne.
+        $this->call(InterruptionTransportSeeder::class);
 
         // make:feature:seeders
     }

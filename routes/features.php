@@ -104,6 +104,11 @@ Route::middleware(['auth'])->group(function () {
         ->where('idea', 'IDE-\d{4}-\d{6}')
         ->name('ideas.received');
 
+    // F65 : consultations des habitants (ConsultationPolicy : création et décision agents/admins, réponse unique de l'habitant concerné).
+    Route::livewire('consultations', 'pages::consultations.index')->name('consultations.index');
+    Route::livewire('consultations/create', 'pages::consultations.form')->name('consultations.create');
+    Route::livewire('consultations/{consultation}', 'pages::consultations.show')->name('consultations.show');
+
     // make:feature:routes
 });
 

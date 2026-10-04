@@ -6,7 +6,7 @@ use App\Models\Actualite;
 use App\Models\User;
 
 /**
- * Par défaut : tout utilisateur connecté peut lire et créer ;
+ * Tout utilisateur connecté peut lire ; agents et admins publient (D09 : un citoyen reçoit 403, comme pour les services) ;
  * seuls le propriétaire et les admins peuvent modifier ou supprimer.
  */
 class ActualitePolicy
@@ -23,7 +23,7 @@ class ActualitePolicy
 
     public function create(User $user): bool
     {
-        return true;
+        return $user->isAdmin() || $user->isAgent();
     }
 
     public function update(User $user, Actualite $actualite): bool

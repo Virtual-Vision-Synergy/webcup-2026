@@ -3,6 +3,7 @@
     HTML simple, styles en ligne, ni JavaScript ni image : enregistrée telle quelle en fichier statique
     (App\Support\InfosEssentielles) et servie sans base de données ni session. Aucune donnée personnelle.
     $services = null : état des services inconnu (base indisponible au moment de la génération).
+    $alertes (F104) : alertes graves en cours avec leurs consignes ; la page étant gardée hors ligne (F93), elles restent lisibles pendant une coupure.
 --}}
 <!DOCTYPE html>
 <html lang="fr">
@@ -27,6 +28,9 @@
         .consigne.alerte { border-color: var(--alerte); }
         .consigne strong { display: block; font-size: 1.1rem; }
         .consigne p { white-space: pre-line; }
+        .consigne ul { list-style: disc; margin: .5rem 0 0; padding-left: 1.25rem; }
+        .consigne li { margin: .25rem 0; }
+        .consigne .titre { display: inline; font-size: 1rem; }
         .grille { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
         .carte { background: var(--carte); border: 1px solid var(--ligne); border-radius: .5rem; padding: .75rem; }
         .numero { font-size: 1.5rem; font-weight: 700; text-decoration: none; }
@@ -53,6 +57,29 @@
             <strong>Aucune consigne particulière en cours</strong>
             <p>La mairie n’a pas publié de consigne d’incident. En cas de danger, appelez les numéros d’urgence ci-dessous.</p>
         </section>
+    @endif
+
+    @if ($alertes !== null && $alertes->isNotEmpty())
+        <h2>Alertes en cours</h2>
+        @foreach ($alertes as $alerte)
+            <section class="consigne alerte" data-test="alerte-en-cours">
+                <strong>{{ $alerte->libelleNiveau() }} — {{ $alerte->titre }}</strong>
+                <p class="doux">{{ $alerte->estCiblee() ? 'Quartier '.$alerte->nomQuartier().' uniquement' : 'Toute la ville' }}</p>
+                @if ($alerte->impact_prevu_le)
+                    <p><strong class="titre">Début estimé de la perturbation :</strong> {{ \App\Models\Annonce::heureLisible($alerte->impact_prevu_le) }}</p>
+                @endif
+                <p><strong class="titre">Fin estimée de l’alerte :</strong> {{ \App\Models\Annonce::heureLisible($alerte->fin) }} (heure de Madagascar)</p>
+                <p>{{ $alerte->contenu }}</p>
+                @if ($alerte->listeConsignes() !== [])
+                    <p><strong class="titre">Consignes à suivre</strong></p>
+                    <ul>
+                        @foreach ($alerte->listeConsignes() as $ligne)
+                            <li>{{ $ligne }}</li>
+                        @endforeach
+                    </ul>
+                @endif
+            </section>
+        @endforeach
     @endif
 
     <h2>Numéros d’urgence (24 h/24, gratuits)</h2>

@@ -112,7 +112,7 @@ new #[Layout('layouts::imprimable'), Title('Récapitulatif de mes demandes')] cl
         $this->authorize('viewAny', Demarche::class);
 
         return $this->streamCsv('viewAny', Demarche::class, auth()->user()->demarches()->with('service')->getQuery(), [
-            'Référence' => fn (Demarche $d) => '#'.$d->id,
+            'Référence' => fn (Demarche $d) => $d->numeroSuivi(),
             'Titre' => fn (Demarche $d) => $d->titre,
             'Service' => fn (Demarche $d) => $d->service?->nom ?? 'Non précisé',
             'Déposée le' => fn (Demarche $d) => $d->created_at,
@@ -200,7 +200,7 @@ new #[Layout('layouts::imprimable'), Title('Récapitulatif de mes demandes')] cl
                     <tbody>
                         @foreach ($this->demandes as $demande)
                             <tr wire:key="r-{{ $demande->id }}" class="border-b border-zinc-200 align-top break-inside-avoid">
-                                <td class="py-2 pe-3 font-mono text-xs text-zinc-500">#{{ $demande->id }}</td>
+                                <td class="py-2 pe-3 font-mono text-xs text-zinc-500">{{ $demande->numeroSuivi() }}</td>
                                 <td class="py-2 pe-3">
                                     <span class="font-medium">{{ $demande->titre }}</span>
                                     <span class="block text-xs text-zinc-500">{{ $demande->service?->nom ?? 'Service non précisé' }}</span>
@@ -223,7 +223,7 @@ new #[Layout('layouts::imprimable'), Title('Récapitulatif de mes demandes')] cl
                             <span class="shrink-0 text-sm font-semibold">{{ Demarche::libelleStatut($demande->statut) }}</span>
                         </div>
                         <p class="mt-1 text-xs text-zinc-500">
-                            #{{ $demande->id }} · {{ $demande->service?->nom ?? 'Service non précisé' }}<br>
+                            {{ $demande->numeroSuivi() }} · {{ $demande->service?->nom ?? 'Service non précisé' }}<br>
                             Déposée le {{ $demande->created_at->format('d/m/Y') }} · mise à jour le {{ $demande->updated_at->format('d/m/Y') }}
                         </p>
                     </li>

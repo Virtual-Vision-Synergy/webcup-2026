@@ -55,6 +55,18 @@ class DemarchePolicy
     }
 
     /**
+     * F86 : prendre en charge une urgence médicale (personnel du service, ou admin).
+     */
+    public function prendreEnCharge(User $user, Demarche $demarche): Response
+    {
+        if (! $demarche->urgence_medicale) {
+            return Response::deny('Seules les urgences médicales se prennent en charge ainsi.');
+        }
+
+        return $this->accesService($user, $demarche);
+    }
+
+    /**
      * F84 : écrire dans le fil d'une démarche. Le personnel du service y répond ; l'habitant auteur
      * peut répondre à son tour. Tout autre habitant : refusé.
      */

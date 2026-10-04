@@ -457,3 +457,22 @@ document.addEventListener('click', (evenement) => {
         }
     });
 });
+
+/**
+ * F45 : carte ajoutée par une mise à jour Livewire (bouton « Carte » d'une liste). Le navigateur n'exécute pas
+ * la balise <script> insérée avec le composant <x-carte> : on charge donc ici resources/js/carte.js,
+ * qui repère ensuite la carte tout seul. Sans effet si le script est déjà chargé.
+ */
+const chargerCarteAjoutee = () => {
+    window.Livewire.hook('morphed', ({ el }) => {
+        if (el.querySelector?.('[data-carte]')) {
+            import('./carte.js').catch(() => {});
+        }
+    });
+};
+
+if (window.Livewire) {
+    chargerCarteAjoutee();
+} else {
+    document.addEventListener('livewire:init', chargerCarteAjoutee, { once: true });
+}

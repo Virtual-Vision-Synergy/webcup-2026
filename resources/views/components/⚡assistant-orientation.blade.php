@@ -113,7 +113,8 @@ new class extends Component {
         data-test="assistant-bulle"
     >
         <flux:icon.chat-bubble-oval-left-ellipsis class="size-5" />
-        <span>{{ __('Besoin d’aide ?') }}</span>
+        {{-- F44 : en A++, le libellé n'est plus affiché (il reste lu par le lecteur d'écran) : la bulle ne recouvre plus le contenu. --}}
+        <span class="tn-bulle-libelle">{{ __('Besoin d’aide ?') }}</span>
     </button>
 
     <section

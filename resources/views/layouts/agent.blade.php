@@ -107,7 +107,7 @@
 
             <div class="flex min-w-0 flex-1 flex-col">
                 <header class="tn-glass sticky top-0 z-30 border-b border-t-2 border-t-cyan">
-                    <div class="flex h-16 items-center gap-3 px-4 lg:h-[72px] lg:px-8">
+                    <div class="flex min-h-16 items-center gap-3 px-4 py-1 lg:min-h-[4.5rem] lg:px-8">
                         <a href="{{ route('agent.tableau-de-bord') }}" class="flex min-w-0 items-center gap-3 lg:hidden" aria-label="Espace agent : tableau de bord">
                             <x-app-logo-icon class="size-[26px] shrink-0" />
                             <span class="tn-display text-[0.9375rem] font-semibold tracking-[.16em] max-sm:hidden">TERRA NOVA</span>

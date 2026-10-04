@@ -19,6 +19,9 @@
                     <flux:sidebar.item icon="heart" :href="route('urgences.index')" :current="request()->routeIs('urgences.*')" wire:navigate>
                         Urgences / Santé
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="question-mark-circle" :href="route('orientation.index')" :current="request()->routeIs('orientation.*')" wire:navigate>
+                        À qui m'adresser ?
+                    </flux:sidebar.item>
                     @can('parOuCommencer', \App\Models\Onboarding::class)
                         <flux:sidebar.item icon="sparkles" :href="route('onboarding.par-ou-commencer')" :current="request()->routeIs('onboarding.par-ou-commencer')" wire:navigate>
                             Par où commencer ?

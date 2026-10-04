@@ -27,7 +27,11 @@
                     @if ($interruption)
                         <p class="text-sm text-ink-2">{{ __($interruption->libelleType()) }} · {{ __('depuis le :date', ['date' => \App\Models\ServiceInterruption::libelleDate($interruption->debut_at)]) }}</p>
                     @endif
-                    <p class="mt-1 text-ink"><span class="font-medium">{{ __('Motif :') }}</span> {{ $service->motifEtat() ?: __('Information en attente de la mairie.') }}</p>
+                    <p class="mt-1 text-ink"><span class="font-medium">{{ __('Motif :') }}</span> <span lang="fr">{{ $service->motifEtat() ?: __('Information en attente de la mairie.') }}</span></p>
+                    {{-- F27 : motif et alternative sont saisis en français au moment de l'incident (repli signalé). --}}
+                    @if (app()->getLocale() !== \App\Http\Middleware\DefinirLangue::REFERENCE && filled($service->motifEtat()))
+                        <x-contenu-en-francais compact class="mt-1" />
+                    @endif
                     <p class="mt-2 font-medium text-ink">
                         <flux:icon name="calendar-days" class="me-1 inline size-4 align-[-2px] text-cyan" aria-hidden="true" />{{ __($service->libelleRetourPrevu()) }}
                     </p>
@@ -45,12 +49,12 @@
                     <div class="rounded-sm border border-line bg-surface p-4">
                         <h3 class="font-semibold text-ink">{{ __('Que faire en attendant ?') }}</h3>
                         @if (filled($service->alternativeTexteEtat()))
-                            <p class="mt-1 whitespace-pre-line text-ink">{{ $service->alternativeTexteEtat() }}</p>
+                            <p class="mt-1 whitespace-pre-line text-ink" lang="fr">{{ $service->alternativeTexteEtat() }}</p>
                         @endif
                         @if ($lienAlternative !== null && $lienAlternative['interne'])
-                            <flux:link :href="$lienAlternative['url']" wire:navigate class="mt-2 inline-flex items-center gap-1">{{ __('Voir le service :nom', ['nom' => __($lienAlternative['libelle'])]) }}</flux:link>
+                            <flux:link :href="$lienAlternative['url']" wire:navigate class="mt-2 inline-flex items-center gap-1">{{ __('Voir le service :nom', ['nom' => $lienAlternative['libelle']]) }}</flux:link>
                         @elseif ($lienAlternative !== null)
-                            <a href="{{ $lienAlternative['url'] }}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-flex items-center gap-1 text-cyan hover:underline">{{ __($lienAlternative['libelle']) }}<span class="sr-only"> {{ __('(nouvel onglet)') }}</span></a>
+                            <a href="{{ $lienAlternative['url'] }}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-flex items-center gap-1 text-cyan hover:underline">{{ $lienAlternative['libelle'] }}<span class="sr-only"> {{ __('(nouvel onglet)') }}</span></a>
                         @endif
                     </div>
                 @endif
@@ -62,7 +66,7 @@
                             <span>
                                 {{ __('Autre service disponible :') }}
                                 @foreach ($alternatives as $alternative)
-                                    <a href="{{ route('services.show', $alternative) }}" wire:navigate class="text-cyan hover:underline">{{ __($alternative->nom) }}</a>@if (! $loop->last), @endif
+                                    <a href="{{ route('services.show', $alternative) }}" wire:navigate class="text-cyan hover:underline">{{ $alternative->t('nom') }}</a>@if (! $loop->last), @endif
                                 @endforeach
                             </span>
                         </li>

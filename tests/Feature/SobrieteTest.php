@@ -7,6 +7,7 @@ use App\Models\Signalement;
 use App\Models\User;
 use App\Notifications\Avis;
 use App\Services\NotifierAnnonce;
+use Illuminate\Support\Defer\DeferredCallbackCollection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -42,6 +43,8 @@ function requetesSqlDeLaPage(string $url, ?User $user = null): array
     Cache::flush();
     // Le filet des annonces programmées (une fois par minute) n'est pas une requête de la page.
     Cache::put(NotifierAnnonce::VERROU, true, 60);
+    // F94 : la régénération des infos essentielles, différée par la création des services de test, n'est pas une requête de la page.
+    app(DeferredCallbackCollection::class)->forget('infos-essentielles');
 
     DB::flushQueryLog();
     DB::enableQueryLog();

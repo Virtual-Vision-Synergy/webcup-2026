@@ -19,7 +19,7 @@ new #[Title('Démarche')] class extends Component {
     {
         // F70 : refus explicite et journalisé pour un agent d'un autre service (DemarchePolicy::view).
         AuditLogger::autoriser('view', $demarche);
-        $this->record = $demarche->loadMissing(['service', 'user', 'prisEnChargePar:id,name']);
+        $this->record = $demarche->loadMissing(['service' => fn ($query) => $query->avecTraduction(), 'user', 'prisEnChargePar:id,name']);
     }
 
     /**
@@ -122,10 +122,11 @@ new #[Title('Démarche')] class extends Component {
                 @if ($record->urgence_medicale)
                     <x-badge-urgence-medicale />
                 @endif
-                <span>Par {{ $record->user?->name }}</span>
-                <span class="font-mono text-xs">N° {{ $record->numeroSuivi() }}</span>
+                <span>{{ __('Par :nom', ['nom' => $record->user?->name]) }}</span>
+                <span class="font-mono text-xs">{{ __('N°') }} {{ $record->numeroSuivi() }}</span>
                 <span class="font-mono text-xs">{{ $record->created_at->format('d.m.Y · H:i') }}</span>
             </div>
+            <livewire:explication-simple cle="statut-demarche" />
         </x-slot:meta>
         <x-slot:actions>
             @can('voirAccuse', $record)
@@ -147,23 +148,23 @@ new #[Title('Démarche')] class extends Component {
             <div class="flex items-start gap-3">
                 <flux:icon.check-circle class="mt-0.5 size-6 shrink-0 text-green" aria-hidden="true" />
                 <div>
-                    <p class="font-semibold text-ink">Votre démarche a bien été envoyée.</p>
-                    <p class="text-ink-2">Inutile de la renvoyer : un accusé de réception vient de vous être envoyé par e-mail.</p>
+                    <p class="font-semibold text-ink">{{ __('Votre démarche a bien été envoyée.') }}</p>
+                    <p class="text-ink-2">{{ __('Inutile de la renvoyer : un accusé de réception vient de vous être envoyé par e-mail.') }}</p>
                 </div>
             </div>
             <div class="rounded-md border border-line bg-surface p-4">
-                <p class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-ink-2">Référence</p>
+                <p class="font-mono text-[0.6875rem] uppercase tracking-[.06em] text-ink-2">{{ __('Référence') }}</p>
                 <p class="tn-display mt-1 font-mono text-2xl font-semibold tracking-wide text-cyan sm:text-3xl">{{ $record->numeroSuivi() }}</p>
                 <dl class="mt-3">
                     <x-tn.field label="Reçue le">{{ $record->dateReceptionLocale() }}</x-tn.field>
                     <x-tn.field label="Objet">{{ $record->titre }}</x-tn.field>
-                    <x-tn.field label="Service">{{ $record->service?->nom ?? 'Non précisé (la mairie orientera votre demande)' }}</x-tn.field>
+                    <x-tn.field label="Service">{{ $record->service?->t('nom') ?? __('Non précisé (la mairie orientera votre demande)') }}</x-tn.field>
                 </dl>
-                <p class="mt-3 text-sm text-ink-2">Conservez cette référence : elle permet de retrouver votre demande ou de la citer auprès de la mairie.</p>
+                <p class="mt-3 text-sm text-ink-2">{{ __('Conservez cette référence : elle permet de retrouver votre demande ou de la citer auprès de la mairie.') }}</p>
             </div>
             <div class="flex flex-wrap gap-2">
-                <flux:button size="sm" variant="primary" icon="arrow-down-tray" :href="route('demarches.accuse', $record)" target="_blank">Télécharger l’accusé de réception</flux:button>
-                <flux:button size="sm" icon="arrow-down" href="#suivi">Voir le suivi de la demande</flux:button>
+                <flux:button size="sm" variant="primary" icon="arrow-down-tray" :href="route('demarches.accuse', $record)" target="_blank">{{ __('Télécharger l’accusé de réception') }}</flux:button>
+                <flux:button size="sm" icon="arrow-down" href="#suivi">{{ __('Voir le suivi de la demande') }}</flux:button>
             </div>
         </div>
     @endif
@@ -207,7 +208,7 @@ new #[Title('Démarche')] class extends Component {
     @if ($statut === 'traitee' && $record->service && $record->user?->is(auth()->user()))
         <flux:callout icon="star" color="cyan">
             <flux:callout.heading>{{ __('Comment s’est passée votre démarche ? Donnez votre avis') }}</flux:callout.heading>
-            <flux:callout.text>{{ __('Votre note et votre commentaire aident la ville à améliorer le service « :service ».', ['service' => $record->service->nom]) }}</flux:callout.text>
+            <flux:callout.text>{{ __('Votre note et votre commentaire aident la ville à améliorer le service « :service ».', ['service' => $record->service->t('nom')]) }}</flux:callout.text>
             <x-slot name="actions">
                 <flux:button size="sm" variant="primary" :href="route('services.reviews.edit', $record->service)" wire:navigate>{{ __('Donner mon avis') }}</flux:button>
             </x-slot>
@@ -219,7 +220,7 @@ new #[Title('Démarche')] class extends Component {
             <x-tn.section-label as="h2" class="mb-2">{{ __('Détails') }}</x-tn.section-label>
             <dl>
                 <x-tn.field :label="__('Objet')">{{ $record->titre ?? '—' }}</x-tn.field>
-                <x-tn.field :label="__('Service')">{{ $record->service?->nom ? __($record->service->nom) : __('Non précisé') }}</x-tn.field>
+                <x-tn.field :label="__('Service')">{{ $record->service?->t('nom') ?? __('Non précisé') }}</x-tn.field>
                 <x-tn.field :label="__('Description')"><p class="whitespace-pre-line leading-relaxed">{{ $record->description ?? '—' }}</p></x-tn.field>
             </dl>
         </x-tn.surface>

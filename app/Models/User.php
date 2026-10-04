@@ -32,6 +32,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string|null $telephone
  * @property string|null $quartier Ancienne saisie libre (D12), tenue à jour avec le nom du quartier choisi.
  * @property int|null $quartier_id
+ * @property string|null $profil_canicule F31 : profil choisi pour les conseils canicule ; assigné dans le code (jamais en masse).
  * @property-read Quartier|null $quartierResidence
  * @property-read Onboarding|null $onboarding
  * @property Carbon|null $email_verified_at

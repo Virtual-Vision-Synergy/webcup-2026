@@ -40,6 +40,12 @@ class DatabaseSeeder extends Seeder
         $this->call(RoleSeeder::class);
         $this->call(QuartierSeeder::class);
 
+        // D09 : seeder relançable sans doublon. Les comptes de démo existent déjà → rien à recréer
+        // (php artisan migrate:fresh --seed pour repartir de zéro, en local uniquement).
+        if (User::where('email', 'admin@example.com')->exists()) {
+            return;
+        }
+
         if (! app()->isProduction()) {
             User::factory()->admin()->create([
                 'name' => 'Admin Démo',
@@ -109,6 +115,12 @@ class DatabaseSeeder extends Seeder
         $users = User::query()->whereNotIn('email', ['nouveau@example.com', 'parcours@example.com', 'passe@example.com'])->get();
 
         $this->call(ServiceSeeder::class);
+
+        // D10 : synonymes d'orientation (« poubelle » → Environnement et propreté), éditables dans Filament.
+        $this->call(MotsClesServiceSeeder::class);
+
+        // F91 : règles de l'assistant d'orientation (questions fréquentes), éditables dans Filament.
+        $this->call(ReglesAssistantSeeder::class);
 
         Actualite::factory(20)->recycle($users)->create();
 

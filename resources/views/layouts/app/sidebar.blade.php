@@ -19,6 +19,9 @@
                     <flux:sidebar.item icon="heart" :href="route('urgences.index')" :current="request()->routeIs('urgences.*')" wire:navigate>
                         Urgences / Santé
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="question-mark-circle" :href="route('orientation.index')" :current="request()->routeIs('orientation.*')" wire:navigate>
+                        À qui m'adresser ?
+                    </flux:sidebar.item>
                     @can('parOuCommencer', \App\Models\Onboarding::class)
                         <flux:sidebar.item icon="sparkles" :href="route('onboarding.par-ou-commencer')" :current="request()->routeIs('onboarding.par-ou-commencer')" wire:navigate>
                             Par où commencer ?
@@ -67,9 +70,14 @@
     // F30 : filet de sécurité si le cron du planificateur ne tourne pas (annonces programmées arrivées à leur début).
     // Avant tout rendu, pour que les deux cloches affichent le même compteur.
     app(\App\Services\NotifierAnnonce::class)->traiterEchuesAuPlusUneFoisParMinute();
+    // F95 : le compteur de non lues n'est lu qu'une fois par requête ; sur la page des notifications
+    // (déjà rendue à ce stade), on le relit pour tenir compte d'une annonce tout juste notifiée.
+    if (request()->routeIs('notifications.index')) {
+        auth()->user()->oublierNotificationsNonLues();
+    }
 @endphp
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif()])>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif(), 'simple' => \App\Support\VersionSimple::actif()])>
     <head>
         @include('partials.head')
     </head>
@@ -109,6 +117,10 @@
                         </flux:sidebar.item>
 
                         @yield('tn-feature-nav')
+
+                        <flux:sidebar.item icon="book-open" :href="route('lexique')" :current="request()->routeIs('lexique')" wire:navigate data-test="lexique-link">
+                            {{ __('Lexique') }}
+                        </flux:sidebar.item>
                     </flux:sidebar.group>
 
                     @can('viewAgentSpace')
@@ -122,9 +134,12 @@
 
                 <flux:spacer />
 
-                <flux:sidebar.nav>
-                    <livewire:cloche-notifications />
-                </flux:sidebar.nav>
+                {{-- F62 : en version simple, pas de cloche rafraîchie automatiquement (la cloche du header reste un lien). --}}
+                @unless (\App\Support\VersionSimple::actif())
+                    <flux:sidebar.nav>
+                        <livewire:cloche-notifications />
+                    </flux:sidebar.nav>
+                @endunless
 
                 <x-desktop-user-menu :name="auth()->user()->name" />
             </flux:sidebar>
@@ -135,7 +150,9 @@
                         <x-app-logo href="{{ route('dashboard') }}" class="lg:hidden" wire:navigate />
 
                         <div class="ms-auto flex items-center gap-2">
-                            <x-tn.api-status class="max-sm:hidden" />
+                            @unless (\App\Support\VersionSimple::actif())
+                                <x-tn.api-status class="max-sm:hidden" />
+                            @endunless
                             <x-tn.cloche />
                             <x-tn.langue class="max-lg:hidden" />
                             <x-tn.contrast-toggle class="max-lg:hidden" />
@@ -150,6 +167,7 @@
                     </div>
                 </header>
 
+                <x-tn.bandeau-version-simple />
                 <x-tn.bandeau-annonces />
                 <x-tn.bandeau-consultations />
 
@@ -168,6 +186,11 @@
             </x-slot:autres>
         </x-tn.menu-sheet>
 
+        {{-- F91 : assistant d'orientation, gardé ouvert d'une page à l'autre (wire:navigate). --}}
+        @persist('assistant-orientation')
+            <livewire:assistant-orientation />
+        @endpersist
+
         @persist('toast')
             <flux:toast.group>
                 <flux:toast />
@@ -175,6 +198,7 @@
         @endpersist
 
         <x-tn.chargement />
+        <x-tn.etat-reseau />
 
         @fluxScripts
     </body>

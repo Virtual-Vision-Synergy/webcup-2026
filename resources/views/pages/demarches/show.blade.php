@@ -23,6 +23,19 @@ new #[Title('Démarche')] class extends Component {
     }
 
     /**
+     * F80 : l'agent fixe la priorité du dossier (ou revient à la suggestion avec « auto »).
+     */
+    public function changerPriorite(string $priorite): void
+    {
+        AuditLogger::autoriser('changerPriorite', $this->record);
+        abort_unless($priorite === 'auto' || in_array($priorite, Demarche::PRIORITE_OPTIONS, true), 422);
+
+        $this->record->changerPriorite($priorite);
+
+        Flux::toast(variant: 'success', text: __('Priorité mise à jour : :p.', ['p' => Demarche::libellePriorite($this->record->priorite)]));
+    }
+
+    /**
      * F86 : prise en charge d'une urgence médicale, tracée (qui, quand).
      */
     public function prendreEnCharge(): void
@@ -107,7 +120,7 @@ new #[Title('Démarche')] class extends Component {
             <div class="mt-3 flex flex-wrap items-center gap-3 text-sm text-ink-2">
                 <x-tn.status-badge :etat="$record->etatStatut()">{{ __(Demarche::libelleStatut($statut)) }}</x-tn.status-badge>
                 @if ($record->urgence_medicale)
-                    <x-tn.status-badge etat="alerte">{{ __('Urgence médicale') }}</x-tn.status-badge>
+                    <x-badge-urgence-medicale />
                 @endif
                 <span>Par {{ $record->user?->name }}</span>
                 <span class="font-mono text-xs">N° {{ $record->numeroSuivi() }}</span>
@@ -215,6 +228,34 @@ new #[Title('Démarche')] class extends Component {
                     </x-tn.surface>
                 @endcan
             @endif
+
+            {{-- F80 : priorité du dossier (personnel uniquement), suggérée automatiquement et ajustable. --}}
+            @can('changerPriorite', $record)
+                @php($suggestion = $record->prioriteSuggeree())
+                <x-tn.surface data-test="priorite-dossier">
+                    <x-tn.section-label as="h2" class="mb-3">{{ __('Priorité du dossier') }}</x-tn.section-label>
+                    <div class="flex flex-wrap items-center gap-2">
+                        @if ($record->urgence_medicale)
+                            <x-badge-urgence-medicale />
+                        @endif
+                        <x-badge-priorite :priorite="$record->priorite" />
+                    </div>
+                    <p class="mt-2 text-sm text-ink-2">
+                        {{ $record->priorite_manuelle ? __('Fixée par un agent.') : __('Suggestion automatique.') }}
+                        {{ __('Suggestion : :p (:motif).', ['p' => Demarche::libellePriorite($suggestion['priorite']), 'motif' => $suggestion['motif']]) }}
+                    </p>
+                    <div class="mt-3 grid grid-cols-2 gap-2">
+                        @foreach (array_reverse(Demarche::PRIORITE_OPTIONS) as $option)
+                            <flux:button size="sm" wire:click="changerPriorite('{{ $option }}')" :variant="$record->priorite_manuelle && $record->priorite === $option ? 'primary' : 'outline'">
+                                {{ Demarche::libellePriorite($option) }}
+                            </flux:button>
+                        @endforeach
+                    </div>
+                    @if ($record->priorite_manuelle)
+                        <flux:button size="sm" variant="ghost" icon="arrow-path" class="mt-2" wire:click="changerPriorite('auto')">{{ __('Revenir à la suggestion automatique') }}</flux:button>
+                    @endif
+                </x-tn.surface>
+            @endcan
 
             @can('changerStatut', $record)
                 <x-tn.surface>

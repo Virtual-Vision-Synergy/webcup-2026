@@ -1,6 +1,7 @@
 <?php
 
 use App\Concerns\BloqueSiServiceIndisponible;
+use App\Concerns\EmpecheEnvoiEnDouble;
 use App\Concerns\ThrottlesPerUser;
 use App\Models\Demarche;
 use App\Models\Service;
@@ -8,6 +9,7 @@ use App\Services\OnboardingProgress;
 use Flux\Flux;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Locked;
@@ -15,7 +17,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Démarche')] class extends Component {
-    use BloqueSiServiceIndisponible, ThrottlesPerUser;
+    use BloqueSiServiceIndisponible, EmpecheEnvoiEnDouble, ThrottlesPerUser;
 
     #[Locked]
     public ?Demarche $record = null;
@@ -38,6 +40,7 @@ new #[Title('Démarche')] class extends Component {
             $this->urgenceMedicale = $demarche->urgence_medicale;
         } else {
             $this->authorize('create', Demarche::class);
+            $this->initialiserJetonEnvoi();
 
             // Pré-sélection du service (lien « Commencer une démarche » du parcours de prise en main, D12).
             $serviceId = request()->integer('service');
@@ -51,6 +54,9 @@ new #[Title('Démarche')] class extends Component {
             if ($service !== null) {
                 $this->service_id = (string) $service->id;
             }
+
+            // F92 : besoin décrit sur la page d'orientation, repris comme description de la démarche.
+            $this->description = Str::limit(trim(request()->string('besoin')->toString()), 5000, '');
         }
     }
 
@@ -126,17 +132,32 @@ new #[Title('Démarche')] class extends Component {
 
         $record->fill($validated);
 
-        if (! $record->exists) {
-            $record->user()->associate(auth()->user());
-        }
-
         if ($nouvelleUrgence) {
             $record->urgence_medicale = true;
         }
 
         $nouvelle = ! $record->exists;
 
-        $record->save();
+        if ($record->exists) {
+            $record->save();
+        } else {
+            // F82 : même démarche renvoyée (double clic, retour arrière) → rien n'est créé, message avec lien.
+            $record = $this->envoyerUneSeuleFois(
+                'demarche',
+                ['titre' => $validated['titre'], 'description' => $validated['description'], 'service_id' => $validated['service_id'] ?? null],
+                function () use ($record): Demarche {
+                    $record->user()->associate(auth()->user());
+                    $record->save();
+
+                    return $record;
+                },
+                fn (Demarche $demarche): string => route('demarches.show', $demarche),
+            );
+
+            if ($record === null) {
+                return;
+            }
+        }
 
         if ($nouvelleUrgence) {
             $record->alerterUrgenceMedicale();
@@ -198,7 +219,7 @@ new #[Title('Démarche')] class extends Component {
 
     <x-tn.stepper :steps="$etapes" current="etape" />
 
-    <form wire:submit="save" class="space-y-6" x-on:keydown.enter="if (etape < 3 && $event.target.tagName !== 'TEXTAREA') { $event.preventDefault(); suivant(); }">
+    <form wire:submit="save" @if (! $record) data-brouillon="demarche" data-brouillon-libelle="{{ __('Nouvelle démarche') }}" @endif class="space-y-6" x-on:keydown.enter="if (etape < 3 && $event.target.tagName !== 'TEXTAREA') { $event.preventDefault(); suivant(); }">
         <div x-ref="contenu" tabindex="-1" class="outline-none">
             {{-- ÉTAPE 1 : SERVICE --}}
             <fieldset x-show="etape === 1" class="space-y-3">
@@ -286,6 +307,8 @@ new #[Title('Démarche')] class extends Component {
 
         <flux:error name="throttle" />
 
+        <x-envoi-deja-fait :le="$envoiDejaFaitLe" :url="$envoiDejaFaitUrl" />
+
         {{-- Un seul CTA par étape --}}
         <div class="flex items-center justify-between gap-3 border-t border-line pt-5">
             <div>
@@ -294,10 +317,7 @@ new #[Title('Démarche')] class extends Component {
             </div>
 
             <flux:button type="button" variant="primary" icon:trailing="arrow-right" x-show="etape < 3" x-on:click="suivant()">Continuer</flux:button>
-            <flux:button type="submit" variant="primary" class="tn-cta" x-show="etape === 3" x-cloak wire:loading.attr="disabled" wire:target="save">
-                <span wire:loading.remove wire:target="save">{{ $record ? 'Enregistrer' : 'Envoyer la démarche' }}</span>
-                <span wire:loading wire:target="save">Envoi en cours…</span>
-            </flux:button>
+            <x-submit-button variant="primary" class="tn-cta" x-show="etape === 3" x-cloak>{{ $record ? 'Enregistrer' : 'Envoyer la démarche' }}</x-submit-button>
         </div>
     </form>
 </section>

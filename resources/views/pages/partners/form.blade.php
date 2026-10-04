@@ -185,14 +185,13 @@ new #[Layout('layouts::agent'), Title('Espace agent — Partenaire')] class exte
 }; ?>
 
 <section class="mx-auto w-full max-w-3xl space-y-6">
-    <div>
-        <flux:link :href="route('agent.partners.index')" class="text-sm">&larr; {{ __('Partenaires') }}</flux:link>
-        <flux:heading size="xl" level="1" class="mt-2">
-            {{ $record ? __('Modifier le partenaire') : __('Ajouter un partenaire') }}
-        </flux:heading>
-    </div>
+    <x-tn.page-header
+        label="Espace agent"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Partenaires' => route('agent.partners.index'), ($record ? 'Modifier' : 'Ajouter') => null]"
+        :title="$record ? 'Modifier le partenaire' : 'Ajouter un partenaire'"
+    />
 
-    <form wire:submit="save" class="space-y-6">
+    <form wire:submit="save" class="space-y-6 rounded-md border border-line bg-surface p-5 md:p-6">
         <div class="grid gap-4 sm:grid-cols-2">
             <flux:input wire:model="name" :label="__('Nom')" required />
 
@@ -218,13 +217,13 @@ new #[Layout('layouts::agent'), Title('Espace agent — Partenaire')] class exte
             <flux:text class="text-sm">{{ __('Laissez vide un jour de fermeture.') }}</flux:text>
 
             @foreach (Partner::JOURS as $jour)
-                <div class="grid grid-cols-[6rem_1fr] items-start gap-2" wire:key="jour-{{ $jour }}">
-                    <span class="pt-2 text-sm font-medium">{{ ucfirst($jour) }}</span>
-                    <div class="grid gap-2 sm:grid-cols-2">
+                <div class="grid grid-cols-1 items-start gap-2 sm:grid-cols-[6rem_minmax(0,1fr)]" wire:key="jour-{{ $jour }}">
+                    <span class="text-sm font-medium sm:pt-2">{{ ucfirst($jour) }}</span>
+                    <div class="grid min-w-0 gap-2 md:grid-cols-2">
                         @for ($i = 0; $i < Partner::PLAGES_PAR_JOUR; $i++)
-                            <div class="flex items-start gap-1">
+                            <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-1">
                                 <flux:input type="time" size="sm" wire:model="hours.{{ $jour }}.{{ $i }}.start" :aria-label="ucfirst($jour).', plage '.($i + 1).', ouverture'" />
-                                <span class="pt-1.5" aria-hidden="true">–</span>
+                                <span class="pt-1.5 text-ink-2" aria-hidden="true">–</span>
                                 <flux:input type="time" size="sm" wire:model="hours.{{ $jour }}.{{ $i }}.end" :aria-label="ucfirst($jour).', plage '.($i + 1).', fermeture'" />
                             </div>
                         @endfor
@@ -251,7 +250,9 @@ new #[Layout('layouts::agent'), Title('Espace agent — Partenaire')] class exte
             </flux:button>
             <flux:button :href="route('agent.partners.index')" variant="ghost">{{ __('Annuler') }}</flux:button>
             @if ($record)
+                @can('delete', $record)
                 <flux:button variant="danger" class="ms-auto" wire:click="delete" wire:confirm="{{ __('Supprimer ce partenaire ?') }}">{{ __('Supprimer') }}</flux:button>
+                @endcan
             @endif
         </div>
     </form>

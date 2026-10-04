@@ -33,14 +33,28 @@ class AnnoncePolicy
         return $this->gere($user);
     }
 
+    /**
+     * Un message officiel du Haut Conseil (F73) n'est modifiable que par un administrateur.
+     */
     public function update(User $user, Annonce $annonce): bool
     {
-        return $this->gere($user);
+        return $annonce->estOfficiel() ? $user->isAdmin() : $this->gere($user);
     }
 
+    /**
+     * D09 : suppression réservée à l'administrateur (un agent reçoit 403).
+     */
     public function delete(User $user, Annonce $annonce): bool
     {
-        return $this->gere($user);
+        return $user->isAdmin();
+    }
+
+    /**
+     * F73 : publier (ou retirer) la mention « Message officiel du Haut Conseil » est réservé aux administrateurs.
+     */
+    public function publierOfficiel(User $user): bool
+    {
+        return $user->isAdmin();
     }
 
     private function gere(User $user): bool

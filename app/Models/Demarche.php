@@ -6,6 +6,7 @@ use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
 use App\Models\Concerns\HasConfidentialFields;
 use App\Models\Concerns\PrevientDuChangementDeStatut;
+use App\Notifications\ReponseDemarcheRecue;
 use App\Services\ParOuCommencer;
 use Database\Factories\DemarcheFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -13,6 +14,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Démarche administrative déposée par un habitant auprès d'un service municipal.
@@ -97,6 +101,88 @@ class Demarche extends Model
                 ->filter()
                 ->implode(', ')],
         ];
+    }
+
+    /**
+     * F84 : fil de messages (réponses des agents et de l'habitant), du plus ancien au plus récent.
+     *
+     * @return HasMany<ReponseDemarche, $this>
+     */
+    public function reponses(): HasMany
+    {
+        return $this->hasMany(ReponseDemarche::class)->oldest('id');
+    }
+
+    /**
+     * F84 : dernier message du fil (sert au badge « Réponse envoyée / En attente de réponse »).
+     *
+     * @return HasOne<ReponseDemarche, $this>
+     */
+    public function derniereReponse(): HasOne
+    {
+        return $this->hasOne(ReponseDemarche::class)->latestOfMany();
+    }
+
+    /**
+     * F84 : démarches dont le dernier message n'est pas une réponse d'agent (aucune réponse, ou l'habitant a relancé).
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeSansReponse(Builder $query): void
+    {
+        $query->whereDoesntHave('derniereReponse', fn ($reponse) => $reponse->where('de_agent', true));
+    }
+
+    /**
+     * F84 : vrai si le dernier message du fil est une réponse d'agent (charger derniereReponse avant dans une liste).
+     */
+    public function reponseEnvoyee(): bool
+    {
+        return (bool) $this->derniereReponse?->de_agent;
+    }
+
+    /**
+     * F84 : seul point de passage pour écrire dans le fil (droits vérifiés avant : policy repondre).
+     * demarche_id, user_id et de_agent sont assignés ici, jamais depuis le navigateur.
+     * Une réponse d'agent prévient l'habitant (cloche + e-mail).
+     */
+    public function ajouterReponse(User $auteur, string $message): ReponseDemarche
+    {
+        $reponse = new ReponseDemarche(['message' => $message]);
+        $reponse->demarche()->associate($this);
+        $reponse->user()->associate($auteur);
+        $reponse->de_agent = $auteur->id !== $this->user_id && ($auteur->isAgent() || $auteur->isAdmin());
+        $reponse->save();
+
+        if ($reponse->de_agent) {
+            $this->prevenirDeLaReponse($reponse);
+        }
+
+        return $reponse;
+    }
+
+    private function prevenirDeLaReponse(ReponseDemarche $reponse): void
+    {
+        // Rechargé en entier : un user chargé partiellement n'aurait pas d'e-mail.
+        $proprietaire = User::query()->find($this->user_id);
+
+        if ($proprietaire === null) {
+            return;
+        }
+
+        $avis = new ReponseDemarcheRecue($this, $reponse);
+
+        DB::afterCommit(function () use ($proprietaire, $avis): void {
+            // La cloche d'abord : elle reste enregistrée même si l'e-mail échoue.
+            $proprietaire->notifyNow($avis, ['database']);
+
+            try {
+                $proprietaire->notifyNow($avis, ['mail']);
+            } catch (\Throwable $e) {
+                // Un échec d'envoi (sendmail synchrone en production) ne doit jamais bloquer l'agent.
+                report($e);
+            }
+        });
     }
 
     /**

@@ -52,6 +52,11 @@ new #[Title('Mes demandes')] class extends Component {
     #[Computed]
     public function aDesDemandes(): bool
     {
+        // F95 : sans filtre d'onglet, le total de la liste répond déjà à la question (pas de requête en plus).
+        if ($this->onglet === '') {
+            return $this->items->total() > 0;
+        }
+
         return Signalement::duCitoyen(auth()->user())->exists();
     }
 }; ?>

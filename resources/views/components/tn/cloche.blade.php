@@ -4,7 +4,7 @@
     Rafraîchi au chargement de page, puis toutes les 60 s par un petit appel JSON (notifications.count).
 --}}
 @php
-    $nonLues = auth()->user()->unreadNotifications()->count();
+    $nonLues = auth()->user()->nombreNotificationsNonLues();
     $libelle = match (true) {
         $nonLues === 0 => 'Aucune notification non lue',
         $nonLues === 1 => '1 notification non lue',

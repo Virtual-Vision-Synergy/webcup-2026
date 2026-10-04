@@ -6,6 +6,8 @@ use App\Models\CreneauRendezVous;
 use App\Models\RendezVous;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
@@ -15,8 +17,10 @@ use Illuminate\Support\Str;
  * Reprend la formulation de F39 (CreneauRendezVous::libelleDate / libelleHoraire) pour lever toute ambiguïté.
  * Les clés sujet / lignes / libelle / url sont celles affichées par la cloche (comme Avis).
  */
-class RappelRendezVous extends Notification
+class RappelRendezVous extends Notification implements ShouldQueue
 {
+    use Queueable;
+
     public function __construct(public RendezVous $rendezVous) {}
 
     /**

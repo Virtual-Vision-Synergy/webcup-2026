@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CacheHttpModeDegrade;
 use App\Http\Middleware\DefinirLangue;
 use App\Http\Middleware\DetecterActiviteInhabituelle;
 use App\Http\Middleware\EnsureAccountIsActive;
@@ -25,6 +26,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(SecurityHeaders::class);
         // F85 : DetecterActiviteInhabituelle compte les requêtes des comptes connectés (rafales), sans jamais bloquer.
         $middleware->web(append: [DefinirLangue::class, EnsureAccountIsActive::class, DetecterActiviteInhabituelle::class]);
+        // F77 : mode dégradé → pages publiques mises en cache par le navigateur des visiteurs.
+        $middleware->web(append: [CacheHttpModeDegrade::class]);
         // F78 : placé en tête pour tout compter ; n'agit qu'hors production (en-tête Server-Timing : requêtes SQL et temps).
         $middleware->web(prepend: [MesurerPerformance::class]);
         // Écrit par le navigateur (bouton « Fermer » du bandeau D18) ; contenu filtré par Annonce::clesFermees().

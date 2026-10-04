@@ -120,5 +120,9 @@
     "Open": "Ouvrir",
     "Mark as read": "Marquer comme lu",
     "Reset your password": "Réinitialisation de votre mot de passe",
-    "Verify your email address": "Vérification de votre adresse e-mail"
+    "Verify your email address": "Vérification de votre adresse e-mail",
+    "Go to page :page": "Aller à la page :page",
+    "Pagination Navigation": "Navigation entre les pages",
+    "Toggle password visibility": "Afficher ou masquer le mot de passe",
+    "Langue et affichage": "Langue et affichage"
 }

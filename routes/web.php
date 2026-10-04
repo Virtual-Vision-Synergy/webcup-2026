@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\ActivationCompteController;
 use App\Http\Controllers\Auth\LienConnexionController;
 use App\Http\Middleware\DefinirLangue;
+use App\Support\InfosEssentielles;
 use App\Support\ModeAllege;
 use App\Support\VersionSimple;
 use Illuminate\Http\Request;
@@ -12,6 +13,13 @@ Route::view('/', 'welcome')->name('home');
 
 // F93 : page publique décidée — affichée sans réseau à tous (connectés ou non) par le service worker ; aucune donnée personnelle.
 Route::view('hors-ligne', 'hors-ligne')->name('hors-ligne');
+
+// F94 : page publique décidée — consignes, urgences et mairie lisibles par tous pendant un incident.
+// Hors du groupe « web » (session, CSRF) et sans limiteur (cache en base) : servie depuis un fichier statique, même base coupée.
+Route::get('infos-essentielles', fn () => response(InfosEssentielles::html(), 200, [
+    'Content-Type' => 'text/html; charset=UTF-8',
+    'Cache-Control' => 'public, max-age=300',
+]))->withoutMiddleware('web')->name('infos-essentielles');
 
 // F51 : page publique décidée — un habitant doit comprendre l'usage de ses données avant de créer un compte.
 Route::view('vos-donnees', 'vos-donnees')->name('privacy.show');

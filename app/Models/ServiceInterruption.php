@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\RegenereInfosEssentielles;
 use Carbon\CarbonInterface;
 use Database\Factories\ServiceInterruptionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -26,7 +27,7 @@ use Illuminate\Support\Str;
 class ServiceInterruption extends Model
 {
     /** @use HasFactory<ServiceInterruptionFactory> */
-    use HasFactory;
+    use HasFactory, RegenereInfosEssentielles;
 
     public const TYPE_OPTIONS = ['maintenance', 'incident'];
 

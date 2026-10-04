@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\DefinirLangue;
+use App\Http\Middleware\DetecterActiviteInhabituelle;
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\MesurerPerformance;
 use App\Http\Middleware\SecurityHeaders;
@@ -22,7 +23,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(SecurityHeaders::class);
-        $middleware->web(append: [DefinirLangue::class, EnsureAccountIsActive::class]);
+        // F85 : DetecterActiviteInhabituelle compte les requêtes des comptes connectés (rafales), sans jamais bloquer.
+        $middleware->web(append: [DefinirLangue::class, EnsureAccountIsActive::class, DetecterActiviteInhabituelle::class]);
         // F78 : placé en tête pour tout compter ; n'agit qu'hors production (en-tête Server-Timing : requêtes SQL et temps).
         $middleware->web(prepend: [MesurerPerformance::class]);
         // Écrit par le navigateur (bouton « Fermer » du bandeau D18) ; contenu filtré par Annonce::clesFermees().

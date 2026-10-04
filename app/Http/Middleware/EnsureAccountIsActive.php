@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * F34 : un compte désactivé pendant qu'il était connecté est déconnecté à la requête suivante.
+ * F85 : idem pour un compte verrouillé temporairement (par un admin ou par cumul de signaux suspects).
  */
 class EnsureAccountIsActive
 {
@@ -19,16 +20,18 @@ class EnsureAccountIsActive
     {
         $user = $request->user();
 
-        if ($user instanceof User && ! $user->isActive()) {
+        if ($user instanceof User && (! $user->isActive() || $user->estVerrouille())) {
+            $message = $user->isActive() ? $user->messageVerrouillage() : self::MESSAGE;
+
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
             if ($request->expectsJson()) {
-                abort(403, self::MESSAGE);
+                abort(403, $message);
             }
 
-            return redirect()->route('login')->withErrors(['email' => self::MESSAGE]);
+            return redirect()->route('login')->withErrors(['email' => $message]);
         }
 
         return $next($request);

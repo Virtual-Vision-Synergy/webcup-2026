@@ -197,6 +197,8 @@ class DeviceRecognizer
 
         if (! $premierAppareil) {
             $user->notify(new NewDeviceLogin($device, $maintenant));
+            // F85 : événement de sécurité (signal faible : enregistré, jamais bloquant).
+            app(SurveillanceSecurite::class)->nouvelAppareil($user, $device);
         }
     }
 

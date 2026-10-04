@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
+use Carbon\CarbonInterface;
 use Database\Factories\AnnonceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -64,6 +65,30 @@ class Annonce extends Model
     public const FUSEAU = 'Indian/Antananarivo';
 
     public const CACHE_KEY = 'annonces.en-diffusion';
+
+    /**
+     * F101 : modèles prêts à l'emploi pour publier une alerte en quelques secondes depuis l'espace agent.
+     * « :debut » et « :fin » sont remplacés par les heures saisies (heure de Madagascar).
+     *
+     * @var array<string, array{libelle: string, titre: string, niveau: string, quartier: string, duree_heures: int, contenu: string, consignes: list<string>}>
+     */
+    public const MODELES = [
+        'panne-electrique' => [
+            'libelle' => 'Panne électrique',
+            'titre' => 'Panne électrique — secteur nord',
+            'niveau' => 'alerte',
+            'quartier' => 'nord',
+            'duree_heures' => 6,
+            'contenu' => 'Ce qu’il faut savoir : une panne électrique touche le secteur nord depuis :debut. Fin estimée : :fin. Les équipes techniques sont sur place ; de nouvelles informations seront publiées ici.',
+            'consignes' => [
+                'Débranchez vos appareils sensibles (ordinateurs, télévision) pour éviter les dégâts au retour du courant.',
+                'Gardez le réfrigérateur et le congélateur fermés : les aliments restent au froid environ 4 heures.',
+                'Utilisez des lampes à piles plutôt que des bougies.',
+                'Personne sous appareil médical électrique (oxygène, dialyse) : appelez le 124 (SAMU) ou consultez la page Urgences et santé.',
+                'Ne touchez jamais un câble électrique tombé au sol : appelez le 118 (sapeurs-pompiers).',
+            ],
+        ],
+    ];
 
     /**
      * Cookie (non chiffré, écrit par le navigateur) listant les messages fermés : « id-version,id-version ».
@@ -211,6 +236,60 @@ class Annonce extends Model
         $heure = now(self::FUSEAU)->format('G \h i');
         $this->contenu = rtrim($this->contenu)."\nMise à jour {$heure} : ".trim($texte);
         $this->save();
+    }
+
+    /**
+     * F101 : champs d'une alerte préparés à partir d'un modèle (null si le modèle n'existe pas).
+     * Les heures sont écrites en heure de Madagascar dans le texte.
+     *
+     * @return array{titre: string, contenu: string, consignes: string, niveau: string, quartier_id: int|null, debut: CarbonInterface, fin: CarbonInterface}|null
+     */
+    public static function depuisModele(string $cle, ?CarbonInterface $debut = null, ?int $dureeHeures = null): ?array
+    {
+        $modele = self::MODELES[$cle] ?? null;
+
+        if ($modele === null) {
+            return null;
+        }
+
+        $debut = ($debut ?? now())->copy()->timezone(self::FUSEAU);
+        $fin = $debut->copy()->addHours($dureeHeures ?? $modele['duree_heures']);
+
+        return [
+            'titre' => $modele['titre'],
+            'contenu' => strtr($modele['contenu'], [
+                ':debut' => self::heureLisible($debut),
+                ':fin' => self::heureLisible($fin),
+            ]),
+            'consignes' => implode("\n", $modele['consignes']),
+            'niveau' => $modele['niveau'],
+            'quartier_id' => Quartier::idPour($modele['quartier']),
+            'debut' => $debut,
+            'fin' => $fin,
+        ];
+    }
+
+    /**
+     * « samedi 4 octobre à 14 h 30 » (heure de Madagascar).
+     */
+    public static function heureLisible(CarbonInterface $date): string
+    {
+        return $date->copy()->timezone(self::FUSEAU)->translatedFormat('l j F \à G \h i');
+    }
+
+    /**
+     * F101 : situation rétablie (ex. « courant rétabli ») : ligne horodatée ajoutée, puis fin de diffusion
+     * 30 minutes plus tard pour que les habitants voient le retour à la normale avant que le bandeau disparaisse.
+     */
+    public function retablir(string $texte): void
+    {
+        $finRapprochee = now()->addMinutes(30);
+
+        if ($this->fin->gt($finRapprochee)) {
+            $this->setAttribute('fin', $finRapprochee);
+        }
+
+        $this->ajouterMiseAJour($texte);
     }
 
     /**

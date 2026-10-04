@@ -271,7 +271,8 @@ new #[Title('Service')] class extends Component {
             <p class="whitespace-pre-line leading-relaxed text-ink">{{ __($record->description ?? __('Description à venir.')) }}</p>
         </x-tn.surface>
 
-        <x-tn.panel :label="__('Infos pratiques')" padding="p-5 md:p-6">
+        {{-- F96 : en version légère, l'essentiel (horaires, contact, adresse) passe avant les missions sur mobile. --}}
+        <x-tn.panel :label="__('Infos pratiques')" padding="p-5 md:p-6" @class(['max-lg:order-first' => \App\Support\ModeAllege::actif()])>
             <dl>
                 @if ($record->horaires)
                     <x-tn.field :label="__('Horaires')"><p class="whitespace-pre-line font-mono text-sm leading-6">{{ __($record->horaires) }}</p></x-tn.field>
@@ -287,7 +288,7 @@ new #[Title('Service')] class extends Component {
                 @endif
             </dl>
             @if ($point = $record->pointCarte(__($record->nom)))
-                <x-carte :points="[$point]" hauteur="14rem" :zoom="16" :label="__('Emplacement de :nom', ['nom' => __($record->nom)])" class="mt-4" />
+                <x-carte :points="[$point]" :itineraire="false" hauteur="14rem" :zoom="16" :label="__('Emplacement de :nom', ['nom' => __($record->nom)])" class="mt-4" />
                 <a href="https://www.openstreetmap.org/directions?to={{ $record->latitude }}%2C{{ $record->longitude }}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-flex items-center gap-1 text-sm text-cyan hover:underline">
                     <flux:icon name="arrow-top-right-on-square" class="size-4" />{{ __('Itinéraire (nouvel onglet)') }}
                 </a>

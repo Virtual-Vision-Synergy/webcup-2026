@@ -33,6 +33,7 @@
 
 <x-tn.bandeau-mode-degrade />
 <x-tn.bandeau-dependances />
+<x-tn.bandeau-canicule />
 
 @if ($officiels->isNotEmpty() || $visible || $repliees->isNotEmpty())
     <div {{ $attributes->class('tn-bandeaux-annonces w-full [grid-column:1/-1]') }} x-data="{ tous: false }">

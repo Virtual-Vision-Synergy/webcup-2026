@@ -164,10 +164,11 @@
 
             <div class="flex min-w-0 flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
                 <header class="tn-glass sticky top-0 z-30 border-b">
-                    <div class="flex h-16 items-center gap-3 px-4 lg:h-[72px] lg:px-8">
+                    {{-- F44 : hauteur minimale en rem (et non fixe en px) : en A+ / A++ l'en-tête grandit au lieu de déborder sur les bandeaux. --}}
+                    <div class="flex min-h-16 items-center gap-3 px-4 py-1 lg:min-h-[4.5rem] lg:px-8">
                         <x-app-logo href="{{ route('dashboard') }}" class="lg:hidden" wire:navigate />
 
-                        <div class="ms-auto flex items-center gap-2">
+                        <div class="ms-auto flex flex-wrap items-center justify-end gap-2">
                             @unless (\App\Support\VersionSimple::actif())
                                 <x-tn.api-status class="max-sm:hidden" />
                             @endunless
@@ -190,7 +191,8 @@
                 <x-tn.bandeau-annonces />
                 <x-tn.bandeau-consultations />
 
-                <main id="contenu" tabindex="-1" class="flex flex-1 flex-col">
+                {{-- F44 : marge basse pour que la bulle « Besoin d'aide ? » (fixe) ne recouvre jamais le dernier contenu. --}}
+                <main id="contenu" tabindex="-1" class="flex flex-1 flex-col pb-16">
                     {{ $slot }}
                 </main>
             </div>

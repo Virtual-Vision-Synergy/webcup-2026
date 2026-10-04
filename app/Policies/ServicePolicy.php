@@ -76,4 +76,12 @@ class ServicePolicy
     {
         return $user->isAdmin() || ($user->isAgent() && $user->canAccessService($service));
     }
+
+    /**
+     * F89 : rédiger et valider la version en langage clair : agent rattaché à ce service ou administrateur.
+     */
+    public function redigerLangageClair(User $user, Service $service): bool
+    {
+        return $user->isAdmin() || ($user->isAgent() && $user->canAccessService($service));
+    }
 }

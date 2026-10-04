@@ -34,6 +34,11 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
     /** F73 : message officiel du Haut Conseil (administrateurs uniquement, revérifié à l'enregistrement). */
     public bool $officiel = false;
 
+    /** F89 : version en langage clair rédigée par l'agent, publiée seulement une fois validée. */
+    public string $langage_clair = '';
+
+    public bool $langageClairValide = false;
+
     public function mount(?Annonce $annonce = null): void
     {
         if ($annonce?->exists) {
@@ -45,6 +50,8 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             $this->quartier_id = (string) ($annonce->quartier_id ?? '');
             $this->consignes = (string) $annonce->consignes;
             $this->officiel = $annonce->estOfficiel();
+            $this->langage_clair = (string) $annonce->langage_clair;
+            $this->langageClairValide = $annonce->langageClairPublie();
             $this->debut = $annonce->debut->timezone(Annonce::FUSEAU)->format('Y-m-d\TH:i');
             $this->fin = $annonce->fin->timezone(Annonce::FUSEAU)->format('Y-m-d\TH:i');
         } else {
@@ -98,6 +105,8 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             'debut' => ['required', 'date'],
             'fin' => ['required', 'date', 'after:debut'],
             'officiel' => ['boolean'],
+            'langage_clair' => ['nullable', 'required_if_accepted:langageClairValide', 'string', 'max:2000'],
+            'langageClairValide' => ['boolean'],
         ];
     }
 
@@ -121,6 +130,8 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             'fin.required' => 'Indiquez la date de fin de diffusion.',
             'fin.date' => 'La date de fin n’est pas valide.',
             'fin.after' => 'La fin de diffusion doit être après le début.',
+            'langage_clair.required_if_accepted' => 'Rédigez la version en langage clair avant de la valider.',
+            'langage_clair.max' => 'La version en langage clair ne doit pas dépasser 2000 caractères.',
         ];
     }
 
@@ -140,7 +151,11 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             : $this->authorize('create', Annonce::class);
 
         $validated = $this->validate();
-        unset($validated['officiel']);
+        unset($validated['officiel'], $validated['langageClairValide']);
+
+        // F89 : la date de validation est conservée tant que le texte validé ne change pas.
+        $validated['langage_clair'] = trim((string) ($validated['langage_clair'] ?? '')) ?: null;
+        $dejaValide = (bool) $this->record?->langageClairPublie() && $this->record->langage_clair === $validated['langage_clair'];
 
         // F73 : la mention officielle ne s'ajoute ni ne se retire sans être administrateur.
         $etaitOfficiel = (bool) $this->record?->estOfficiel();
@@ -161,6 +176,9 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
             $annonce->user()->associate(auth()->user());
         }
         $annonce->officiel = $this->officiel;
+        $annonce->langage_clair_valide_le = $this->langageClairValide && $validated['langage_clair'] !== null
+            ? ($dejaValide ? $annonce->langage_clair_valide_le : now())
+            : null;
         $annonce->save();
 
         if ($this->officiel && ! $etaitOfficiel) {
@@ -217,6 +235,14 @@ new #[Layout('layouts::agent'), Title('Message général')] class extends Compon
 
         <flux:textarea wire:model.live.debounce.400ms="consignes" :label="$officiel ? 'Ce qu’il faut faire' : 'Consignes à suivre'" rows="4" maxlength="2000"
             description="Une consigne par ligne. Facultatif." placeholder="Éloignez-vous des berges et des zones basses." />
+
+        {{-- F89 : version en langage clair, affichée aux habitants avec « Relu par la mairie » une fois validée. --}}
+        <div class="space-y-3 rounded-md border border-line p-4">
+            <flux:textarea wire:model="langage_clair" label="Version en langage clair" rows="4" maxlength="2000"
+                description="Phrases courtes, mots de tous les jours. Gardez les heures, les montants et les numéros utiles. Facultatif : sans version validée, les habitants voient une version simplifiée automatiquement."
+                placeholder="Ex. Il n’y a plus d’eau au robinet dans le quartier Nord jusqu’à 18 h. Gardez de l’eau en bouteille." />
+            <flux:checkbox wire:model="langageClairValide" label="J’ai relu cette version : la publier avec le badge « Relu par la mairie »" />
+        </div>
 
         <div class="grid gap-4 sm:grid-cols-2">
             <flux:select wire:model.live="niveau" label="Gravité">

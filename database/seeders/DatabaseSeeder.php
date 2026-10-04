@@ -117,6 +117,9 @@ class DatabaseSeeder extends Seeder
         // F90 : explications simples des passages administratifs et synonymes, éditables dans Filament.
         $this->call(ExplicationsSimplesSeeder::class);
 
+        // F89 : versions en langage clair des services principaux, validées par la mairie.
+        $this->call(LangageClairSeeder::class);
+
         // F31 : recommandations canicule écrites (profil × niveau), éditables dans Filament.
         $this->call(RecommandationsCaniculeSeeder::class);
 

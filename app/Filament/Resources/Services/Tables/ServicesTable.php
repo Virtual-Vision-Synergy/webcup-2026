@@ -3,10 +3,14 @@
 namespace App\Filament\Resources\Services\Tables;
 
 use App\Models\Service;
+use App\Support\LangageClair;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
@@ -44,6 +48,19 @@ class ServicesTable
                     ->label('Retour prévu')
                     ->date('d/m/Y')
                     ->placeholder('—'),
+                TextColumn::make('langage_clair_valide_le')
+                    ->label('Langage clair')
+                    ->badge()
+                    ->state(fn (Service $record): string => match (true) {
+                        $record->langageClairPublie() => 'Relu par la mairie',
+                        filled($record->langage_clair) => 'Brouillon',
+                        default => 'À rédiger',
+                    })
+                    ->color(fn (Service $record): string => match (true) {
+                        $record->langageClairPublie() => 'success',
+                        filled($record->langage_clair) => 'warning',
+                        default => 'gray',
+                    }),
             ])
             ->defaultSort('nom')
             ->filters([
@@ -54,6 +71,40 @@ class ServicesTable
                     ->falseLabel('Disponibles'),
             ])
             ->recordActions([
+                // F89 : l'agent ou l'admin rédige la version en langage clair et la valide avant publication.
+                Action::make('langageClair')
+                    ->label('Langage clair')
+                    ->icon('heroicon-o-chat-bubble-bottom-center-text')
+                    ->color('gray')
+                    ->visible(fn (Service $record): bool => auth()->user()?->can('redigerLangageClair', $record) ?? false)
+                    ->modalHeading(fn (Service $record): string => 'Version en langage clair : '.$record->nom)
+                    ->modalDescription('Phrases courtes, mots de tous les jours. Gardez les délais, les pièces, les montants et les contacts : ils sont aussi rappelés automatiquement sous le texte.')
+                    ->modalSubmitActionLabel('Enregistrer')
+                    ->fillForm(fn (Service $record): array => [
+                        // Sans version rédigée, on part de la proposition automatique (synonymes en base) à relire.
+                        'langage_clair' => $record->langage_clair ?? LangageClair::pourService($record)['texte'],
+                        'valider' => $record->langageClairPublie(),
+                    ])
+                    ->schema([
+                        Textarea::make('langage_clair')
+                            ->label('Version simple')
+                            ->rows(8)
+                            ->maxLength(3000)
+                            ->required(fn (Get $get): bool => (bool) $get('valider')),
+                        Toggle::make('valider')
+                            ->label('Validée : publier avec le badge « Relu par la mairie »')
+                            ->helperText('Non validée, la version reste un brouillon : les habitants voient la version simplifiée automatiquement.'),
+                    ])
+                    ->action(function (Service $record, array $data): void {
+                        Gate::authorize('redigerLangageClair', $record);
+
+                        $record->enregistrerLangageClair($data['langage_clair'] ?? null, (bool) ($data['valider'] ?? false));
+
+                        Notification::make()
+                            ->title($record->langageClairPublie() ? 'Version en langage clair publiée.' : 'Brouillon enregistré (non publié).')
+                            ->success()
+                            ->send();
+                    }),
                 Action::make('rendreIndisponible')
                     ->label('Rendre indisponible')
                     ->icon('heroicon-o-no-symbol')

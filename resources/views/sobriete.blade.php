@@ -7,7 +7,7 @@
     // [page, requêtes SQL avant, après, requêtes en double avant, après, poids de la page compressée (Ko)]
     $mesures = [
         ['Accueil', 9, 9, 0, 0, 17],
-        ['Services', 12, 11, 1, 0, 39],
+        ['Services', 12, 12, 1, 0, 39],
         ['Actualités', 9, 8, 1, 0, 35],
         ['Mes demandes', 10, 8, 1, 0, 37],
         ['Mon espace', 21, 15, 1, 0, 36],

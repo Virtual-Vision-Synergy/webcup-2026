@@ -9,6 +9,7 @@ use Database\Factories\PartnerOfferingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -132,6 +133,48 @@ class PartnerOffering extends Model
     protected function published(Builder $query): void
     {
         $query->where('is_published', true)->whereHas('partner', fn (Builder $partner) => $partner->where('is_published', true));
+    }
+
+    /**
+     * Catalogue (F95 : sobriété) : services publiés d'un partenaire publié, avec les colonnes du partenaire lues dans
+     * la MÊME requête (jointure) ; appeler ensuite attacherPartenaireJoint() pour obtenir $offre->partner sans requête.
+     *
+     * @param  Builder<PartnerOffering>  $query
+     */
+    #[Scope]
+    protected function publieAvecPartenaire(Builder $query): void
+    {
+        $query->join('partners', 'partners.id', '=', 'partner_offerings.partner_id')
+            ->where('partner_offerings.is_published', true)
+            ->where('partners.is_published', true)
+            ->select('partner_offerings.*')
+            ->addSelect(collect(self::COLONNES_PARTENAIRE_JOINT)->map(fn (string $colonne): string => "partners.{$colonne} as partenaire_{$colonne}")->all());
+    }
+
+    /** Colonnes du partenaire utiles au catalogue (nom, horaires, téléphone pour « Contacter »). */
+    private const COLONNES_PARTENAIRE_JOINT = ['id', 'name', 'slug', 'type', 'phone', 'opening_hours', 'is_published'];
+
+    /**
+     * Construit la relation « partner » à partir des colonnes jointes par publieAvecPartenaire(), sans requête.
+     *
+     * @param  EloquentCollection<int, PartnerOffering>  $offres
+     * @return EloquentCollection<int, PartnerOffering>
+     */
+    public static function attacherPartenaireJoint(EloquentCollection $offres): EloquentCollection
+    {
+        foreach ($offres as $offre) {
+            $attributs = [];
+
+            foreach (self::COLONNES_PARTENAIRE_JOINT as $colonne) {
+                $attributs[$colonne] = $offre->getAttribute('partenaire_'.$colonne);
+                $offre->offsetUnset('partenaire_'.$colonne);
+            }
+
+            $offre->setRelation('partner', (new Partner)->newFromBuilder($attributs));
+            $offre->syncOriginal();
+        }
+
+        return $offres;
     }
 
     /**

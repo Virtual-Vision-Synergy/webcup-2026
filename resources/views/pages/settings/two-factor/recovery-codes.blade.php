@@ -137,7 +137,7 @@ new class extends Component {
         >
             <div class="mt-3 space-y-3">
                 @error('recoveryCodes')
-                    <flux:callout variant="danger" icon="x-circle" heading="{{$message}}"/>
+                    <flux:callout variant="danger" icon="x-circle" heading="{{ $message }}" role="alert" />
                 @enderror
 
                 @if (filled($recoveryCodes))

@@ -127,7 +127,8 @@ new #[Title('Mon rendez-vous')] class extends Component {
         </flux:callout>
     @endif
 
-    <div class="flex flex-wrap items-center gap-3">
+    {{-- Cible du lien « Annuler ce rendez-vous » du rappel (F40) : l'annulation reste confirmée ici. --}}
+    <div id="annuler" class="flex scroll-mt-24 flex-wrap items-center gap-3">
         @if ($record->estConfirme() && $record->estAVenir())
             <flux:button icon="calendar" wire:click="telechargerAgenda">Ajouter à mon agenda (.ics)</flux:button>
         @endif

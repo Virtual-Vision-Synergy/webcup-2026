@@ -73,11 +73,33 @@ new #[Title('Mes rendez-vous')] class extends Component {
         </x-slot:actions>
     </x-tn.page-header>
 
-    <div class="flex gap-2" role="tablist" aria-label="Période">
-        <flux:button size="sm" wire:click="choisirOnglet('a-venir')" :variant="$onglet === 'a-venir' ? 'primary' : 'ghost'" role="tab" :aria-selected="$onglet === 'a-venir' ? 'true' : 'false'">À venir</flux:button>
-        <flux:button size="sm" wire:click="choisirOnglet('passes')" :variant="$onglet === 'passes' ? 'primary' : 'ghost'" role="tab" :aria-selected="$onglet === 'passes' ? 'true' : 'false'">Passés</flux:button>
-        <span wire:loading class="self-center font-mono text-[11px] uppercase tracking-[.06em] text-cyan">Mise à jour…</span>
+    {{-- Onglets ARIA : flèches gauche/droite, Début/Fin ; seul l'onglet actif est dans l'ordre de tabulation. --}}
+    <div
+        class="flex gap-2"
+        role="tablist"
+        aria-label="Période"
+        x-data
+        x-on:keydown.right.prevent="const o = [...$el.querySelectorAll('[role=tab]')]; const i = o.indexOf(document.activeElement); o[(i + 1) % o.length].focus(); o[(i + 1) % o.length].click()"
+        x-on:keydown.left.prevent="const o = [...$el.querySelectorAll('[role=tab]')]; const i = o.indexOf(document.activeElement); o[(i - 1 + o.length) % o.length].focus(); o[(i - 1 + o.length) % o.length].click()"
+        x-on:keydown.home.prevent="const o = $el.querySelectorAll('[role=tab]'); o[0].focus(); o[0].click()"
+        x-on:keydown.end.prevent="const o = $el.querySelectorAll('[role=tab]'); o[o.length - 1].focus(); o[o.length - 1].click()"
+    >
+        @foreach (['a-venir' => 'À venir', 'passes' => 'Passés'] as $cle => $libelle)
+            <flux:button
+                size="sm"
+                wire:click="choisirOnglet('{{ $cle }}')"
+                :variant="$onglet === $cle ? 'primary' : 'ghost'"
+                role="tab"
+                id="onglet-rdv-{{ $cle }}"
+                aria-controls="panneau-rdv"
+                :aria-selected="$onglet === $cle ? 'true' : 'false'"
+                :tabindex="$onglet === $cle ? '0' : '-1'"
+            >{{ $libelle }}</flux:button>
+        @endforeach
+        <span wire:loading class="self-center font-mono text-[11px] uppercase tracking-[.06em] text-cyan" role="status">Mise à jour…</span>
     </div>
+
+    <div id="panneau-rdv" role="tabpanel" aria-labelledby="onglet-rdv-{{ $onglet }}" tabindex="0" class="outline-none">
 
     @if ($this->items->isEmpty())
         <x-tn.empty
@@ -104,4 +126,5 @@ new #[Title('Mes rendez-vous')] class extends Component {
         </ul>
         {{ $this->items->links() }}
     @endif
+    </div>
 </section>

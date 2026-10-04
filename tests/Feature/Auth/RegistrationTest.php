@@ -14,7 +14,7 @@ test('registration screen can be rendered', function () {
 });
 
 test('new users can register', function () {
-    $response = $this->post(route('register.store'), [
+    $response = $this->post(route('register.store'), jetonAntiRobot('inscription') + [
         'name' => 'John Doe',
         'email' => 'test@example.com',
         'password' => 'password',
@@ -30,7 +30,7 @@ test('new users can register', function () {
 
 test('après inscription, l\'habitant passe par la prise en main puis retrouve son espace personnel', function () {
     $this->followingRedirects()
-        ->post(route('register.store'), [
+        ->post(route('register.store'), jetonAntiRobot('inscription') + [
             'name' => 'Hery Rakoto',
             'email' => 'hery@example.com',
             'password' => 'password',
@@ -47,7 +47,7 @@ test('après inscription, l\'habitant passe par la prise en main puis retrouve s
 });
 
 test('un formulaire vide est refusé', function () {
-    $this->post(route('register.store'), [])
+    $this->post(route('register.store'), jetonAntiRobot('inscription') + [])
         ->assertSessionHasErrors(['name', 'email', 'password']);
 
     $this->assertGuest();
@@ -57,7 +57,7 @@ test('un e-mail déjà utilisé est refusé avec un message en français', funct
     app()->setLocale('fr');
     User::factory()->create(['email' => 'pris@example.com']);
 
-    $this->post(route('register.store'), [
+    $this->post(route('register.store'), jetonAntiRobot('inscription') + [
         'name' => 'Doublon',
         'email' => 'pris@example.com',
         'password' => 'password',

@@ -20,12 +20,12 @@ test('un invité est renvoyé vers la connexion depuis le parcours', function ()
 test('un nouveau citoyen est redirigé vers le parcours après connexion', function () {
     $user = User::factory()->create();
 
-    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password'])
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'password'])
         ->assertRedirect(route('onboarding.show'));
 });
 
 test('un nouvel inscrit est redirigé vers le parcours', function () {
-    $this->post(route('register.store'), [
+    $this->post(route('register.store'), jetonAntiRobot('inscription') + [
         'name' => 'Hery Rakoto',
         'email' => 'hery@example.com',
         'password' => 'password',
@@ -36,7 +36,7 @@ test('un nouvel inscrit est redirigé vers le parcours', function () {
 test('un agent ou un admin n\'est jamais redirigé vers le parcours', function (string $role) {
     $user = User::factory()->{$role}()->create();
 
-    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password'])
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'password'])
         ->assertRedirect(route('dashboard'));
 })->with(['agent', 'admin']);
 
@@ -73,7 +73,7 @@ test('passer le parcours supprime redirection et rappel', function () {
     expect($user->onboarding()->value('skipped_at'))->not->toBeNull();
 
     $this->post(route('logout'));
-    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password'])
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'password'])
         ->assertRedirect(route('dashboard'));
 
     $this->get(route('dashboard'))->assertOk()->assertDontSee('Reprendre la prise en main');
@@ -120,7 +120,7 @@ test('la progression suit les vraies actions du citoyen jusqu\'à la fin du parc
     expect($user->onboarding()->value('completed_at'))->not->toBeNull();
 
     $this->post(route('logout'));
-    $this->post(route('login.store'), ['email' => $user->email, 'password' => 'password'])
+    $this->post(route('login.store'), jetonAntiRobot('connexion') + ['email' => $user->email, 'password' => 'password'])
         ->assertRedirect(route('dashboard'));
 });
 
@@ -170,7 +170,7 @@ test('les champs du parcours ne peuvent pas être envoyés par le citoyen', func
 });
 
 test('à l\'inscription, les champs réservés envoyés sont ignorés', function () {
-    $this->post(route('register.store'), [
+    $this->post(route('register.store'), jetonAntiRobot('inscription') + [
         'name' => 'Hery Rakoto',
         'email' => 'hery@example.com',
         'password' => 'password',

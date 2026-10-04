@@ -14,9 +14,9 @@
  * La couleur indique un ÉTAT : cyan = action, ambre = perturbé, magenta = alerte, vert = normal.
  */
 @theme {
-    --font-display: 'Saira', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
     --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
-    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
 
     /* Clair : « salle de contrôle de jour » */
     --color-night: #F2F8FB;
@@ -125,6 +125,20 @@ body { overflow-wrap: anywhere; }
         outline-offset: 2px;
     }
 
+    /* F41 : zone de contenu ciblée par « Aller au contenu » (focus programmatique, pas d'action). */
+    main[tabindex='-1']:focus {
+        outline: none;
+    }
+
+    /* F42 : astérisque visuelle sur les champs obligatoires (le lecteur d'écran annonce déjà « requis »). */
+    [data-flux-field]:has(> [data-flux-control]:required, > * > [data-flux-control]:required) > [data-flux-label]::after,
+    fieldset[data-requis] > legend::after {
+        content: ' *';
+        content: ' *' / '';
+        margin-inline-start: 0.125rem;
+        color: var(--color-magenta);
+    }
+
     @media (prefers-reduced-motion: reduce) {
         *,
         ::before,
@@ -138,16 +152,14 @@ body { overflow-wrap: anywhere; }
 }
 
 @layer components {
-    /* Titres Saira élargis */
+    /* Titres (IBM Plex Sans) */
     .tn-display {
         font-family: var(--font-display);
-        font-stretch: 112%;
     }
 
     .tn-h1 {
         font-family: var(--font-display);
-        font-stretch: 112%;
-        font-weight: 700;
+        font-weight: 600;
         font-size: 2.375rem;
         line-height: 1.02;
         letter-spacing: -0.01em;
@@ -161,7 +173,6 @@ body { overflow-wrap: anywhere; }
 
     .tn-h2 {
         font-family: var(--font-display);
-        font-stretch: 112%;
         font-weight: 600;
         font-size: 1.625rem;
         line-height: 1.1;
@@ -425,83 +436,6 @@ select:focus[data-flux-control] {
     box-shadow: inset 2px 0 0 var(--color-cyan);
 }
 
-/* Carte Leaflet aux couleurs Terra Nova : contrôles vitrés, bulles en surface, marqueurs d'état. */
-.leaflet-container {
-    background-color: var(--color-surface-2);
-    font-family: var(--font-sans);
-}
-
-.leaflet-bar,
-.leaflet-control-attribution {
-    border: 1px solid var(--color-line) !important;
-    border-radius: var(--radius-sm) !important;
-    overflow: hidden;
-    background-color: rgb(255 255 255 / .75) !important;
-    backdrop-filter: blur(14px);
-    box-shadow: none !important;
-}
-
-.dark .leaflet-bar,
-.dark .leaflet-control-attribution {
-    background-color: rgb(5 10 22 / .6) !important;
-}
-
-.leaflet-bar a,
-.leaflet-control-attribution,
-.leaflet-control-attribution a {
-    color: var(--color-ink) !important;
-    background-color: transparent !important;
-    border-color: var(--color-line) !important;
-}
-
-.leaflet-bar a {
-    width: 36px !important;
-    height: 36px !important;
-    line-height: 36px !important;
-}
-
-.leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
-    background-color: var(--color-surface);
-    color: var(--color-ink);
-    border: 1px solid var(--color-line);
-    box-shadow: 0 8px 24px -8px rgb(0 0 0 / .35);
-}
-
-.leaflet-popup-content a {
-    color: var(--color-cyan);
-}
-
-.tn-marqueur {
-    border-radius: 9999px;
-    border: 3px solid var(--color-surface);
-    background-color: var(--color-cyan);
-}
-
-.tn-marqueur-normal { background-color: var(--color-green); }
-.tn-marqueur-perturbe { background-color: var(--color-amber); }
-.tn-marqueur-alerte { background-color: var(--color-magenta); }
-
-/* F43 : un symbole par état dans le marqueur, pour ne pas dépendre de la couleur. */
-.tn-marqueur::after {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: var(--color-surface);
-    font: 700 11px/1 var(--font-sans);
-    content: 'i';
-}
-
-.tn-marqueur-normal::after { content: '✓'; }
-.tn-marqueur-perturbe::after { content: '!'; }
-.tn-marqueur-alerte::after { content: '✕'; }
-
-.dark .tn-marqueur-normal { box-shadow: 0 0 0 4px rgb(86 231 149 / .25); }
-.dark .tn-marqueur-perturbe { box-shadow: 0 0 0 4px rgb(255 180 75 / .25); }
-.dark .tn-marqueur-alerte { box-shadow: 0 0 0 4px rgb(255 66 133 / .25); }
-.dark .tn-marqueur-info { box-shadow: 0 0 0 4px rgb(65 221 248 / .25); }
-
 /*
  * CONTRASTE ÉLEVÉ (classe `hc` sur <html>, posée par partials/head selon la préférence mémorisée).
  * Textes noir sur blanc / blanc sur noir (rapport > 15:1), bordures nettes, soulignement des liens.
@@ -574,4 +508,74 @@ html.hc .tn-sky,
 html.hc .tn-planet,
 html.hc .tn-grid {
     opacity: 0.15;
+}
+
+/* Alpine : masque les éléments x-show avant l’initialisation (bandeau D18). */
+[x-cloak] { display: none !important; }
+
+/*
+ * F59 : connexion lente.
+ * 1. Indicateurs de chargement : Livewire pose [data-loading] sur l'élément qui a lancé la requête ;
+ *    le bouton est grisé et ne peut pas être cliqué deux fois, et un bandeau « Chargement… » apparaît.
+ */
+form[data-loading] [type='submit'],
+button[data-loading],
+[data-flux-button][data-loading] {
+    opacity: 0.6;
+    pointer-events: none;
+    cursor: progress;
+}
+
+.tn-chargement {
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: 70;
+    display: none;
+    justify-content: center;
+    pointer-events: none;
+}
+
+body:has([data-loading]) .tn-chargement {
+    display: flex;
+    animation: tn-apparition 0s linear 400ms both;
+}
+
+@keyframes tn-apparition {
+    from { visibility: hidden; }
+    to { visibility: visible; }
+}
+
+/*
+ * 2. « Mode allégé » (html.allege, rendu côté serveur) : sans images décoratives, flou ni animations.
+ *    Les illustrations décoratives ne sont même pas envoyées (voir welcome et layouts/auth/split).
+ */
+html.allege *,
+html.allege ::before,
+html.allege ::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+}
+
+html.allege .tn-glass,
+html.allege .tn-panel,
+html.allege .tn-panel-inner {
+    background: var(--color-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+html.allege .tn-planet,
+html.allege .tn-grid,
+html.allege [data-decoratif] {
+    display: none !important;
+}
+
+html.allege .tn-sky {
+    background: var(--color-night);
+}
+
+html.allege body:has([data-loading]) .tn-chargement {
+    visibility: visible;
 }

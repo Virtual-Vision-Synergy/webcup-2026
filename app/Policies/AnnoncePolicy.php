@@ -41,9 +41,12 @@ class AnnoncePolicy
         return $annonce->estOfficiel() ? $user->isAdmin() : $this->gere($user);
     }
 
+    /**
+     * D09 : suppression réservée à l'administrateur (un agent reçoit 403).
+     */
     public function delete(User $user, Annonce $annonce): bool
     {
-        return $annonce->estOfficiel() ? $user->isAdmin() : $this->gere($user);
+        return $user->isAdmin();
     }
 
     /**

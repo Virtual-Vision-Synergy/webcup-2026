@@ -2,7 +2,10 @@
 
 use App\Concerns\PasswordValidationRules;
 use App\Livewire\Actions\Logout;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 new class extends Component {
@@ -19,7 +22,17 @@ new class extends Component {
             'password' => $this->currentPasswordRules(),
         ]);
 
-        tap(Auth::user(), $logout(...))->delete();
+        /** @var User $user */
+        $user = Auth::user();
+
+        // D09 : la ville ne doit jamais se retrouver sans administrateur.
+        if ($user->isAdmin() && User::where('role_id', Role::idFor(Role::ADMIN))->count() <= 1) {
+            throw ValidationException::withMessages([
+                'password' => 'Vous êtes le dernier administrateur : nommez-en un autre avant de supprimer votre compte.',
+            ]);
+        }
+
+        tap($user, $logout(...))->delete();
 
         $this->redirect('/', navigate: true);
     }

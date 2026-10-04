@@ -8,6 +8,8 @@
     // Uniquement les démarches de l'utilisateur connecté (jamais d'ID venant du navigateur).
     $demarches = $user->demarches()->with('service')->latest()->limit(5)->get();
     $totalDemarches = $user->demarches()->count();
+    // F86 : urgences médicales encore ouvertes de l'habitant, affichées tout en haut avec les numéros d'urgence.
+    $urgencesOuvertes = $user->demarches()->urgencesATraiter()->latest()->limit(3)->get();
     $parStatut = $user->demarches()->selectRaw('statut, count(*) as total')->groupBy('statut')->pluck('total', 'statut');
     // Alertes : démarches traitées ou refusées dans les 7 derniers jours.
     $alertes = $user->demarches()
@@ -41,6 +43,29 @@
                 @endcan
             </x-slot:actions>
         </x-tn.page-header>
+
+        @if ($urgencesOuvertes->isNotEmpty())
+            <section aria-labelledby="titre-mes-urgences" class="flex flex-col gap-3" data-test="mes-urgences">
+                <x-urgence-medicale-numeros />
+                <h2 id="titre-mes-urgences" class="tn-display text-lg font-semibold text-ink">Vos urgences médicales en cours</h2>
+                <ul class="flex flex-col gap-2">
+                    @foreach ($urgencesOuvertes as $urgence)
+                        <li wire:key="urgence-{{ $urgence->id }}">
+                            <a href="{{ route('demarches.show', $urgence) }}" wire:navigate class="flex flex-col gap-1 rounded-md border border-magenta/40 bg-surface p-4 transition hover:border-magenta sm:flex-row sm:items-center sm:justify-between">
+                                <span class="font-medium text-ink">{{ $urgence->titre }}</span>
+                                <span class="text-sm text-ink-2">
+                                    @if ($urgence->pris_en_charge_le)
+                                        Prise en charge par un agent le <span class="font-mono">{{ $urgence->pris_en_charge_le->timezone(config('app.timezone'))->format('d.m.Y · H:i') }}</span>
+                                    @else
+                                        <span class="font-medium text-magenta">En attente de prise en charge (agents prévenus)</span>
+                                    @endif
+                                </span>
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+            </section>
+        @endif
 
         @if ($alertesQuartier->isNotEmpty())
             <section aria-labelledby="titre-alertes-quartier" class="flex flex-col gap-3">
@@ -137,6 +162,9 @@
                                     <span class="block truncate font-medium text-ink group-hover:text-cyan">{{ $demarche->titre }}</span>
                                     <span class="block truncate text-sm text-ink-2">{{ $demarche->service?->nom ?? 'Service non précisé' }} · <span class="font-mono text-xs">{{ $demarche->created_at->format('d.m.Y') }}</span></span>
                                     <x-slot:aside>
+                                        @if ($demarche->urgence_medicale)
+                                            <x-tn.status-badge etat="alerte">Urgence médicale</x-tn.status-badge>
+                                        @endif
                                         <x-tn.status-badge :etat="$demarche->etatStatut()">{{ Demarche::libelleStatut($demarche->statut) }}</x-tn.status-badge>
                                     </x-slot:aside>
                                 </x-tn.list-row>

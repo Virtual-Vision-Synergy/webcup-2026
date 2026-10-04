@@ -52,7 +52,7 @@ class OnboardingProgress
 
     public function demarcheCommencee(): bool
     {
-        return $this->demarcheCommencee ??= $this->user->demarches()->exists();
+        return $this->demarcheCommencee ??= $this->user->aCommenceUneDemarche();
     }
 
     /**

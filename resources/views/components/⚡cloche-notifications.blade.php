@@ -9,7 +9,7 @@ new class extends Component {
     #[Computed]
     public function unreadCount(): int
     {
-        return auth()->user()->unreadNotifications()->count();
+        return auth()->user()->nombreNotificationsNonLues();
     }
 
     /**
@@ -27,6 +27,7 @@ new class extends Component {
         $notification = auth()->user()->notifications()->findOrFail($id);
         $notification->markAsRead();
 
+        auth()->user()->oublierNotificationsNonLues();
         unset($this->unreadCount, $this->items);
     }
 
@@ -34,6 +35,7 @@ new class extends Component {
     {
         auth()->user()->unreadNotifications()->update(['read_at' => now()]);
 
+        auth()->user()->oublierNotificationsNonLues();
         unset($this->unreadCount, $this->items);
     }
 }; ?>

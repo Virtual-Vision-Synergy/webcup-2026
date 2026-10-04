@@ -89,7 +89,7 @@ class ParOuCommencer
      */
     public function demarcheCommencee(): bool
     {
-        return $this->user->demarches()->exists();
+        return $this->user->aCommenceUneDemarche();
     }
 
     /**

@@ -6,6 +6,7 @@ use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasAuditHistory;
 use App\Models\Concerns\HasConfidentialFields;
 use App\Models\Concerns\PrevientDuChangementDeStatut;
+use App\Notifications\AccuseReceptionDemarche;
 use App\Notifications\Avis;
 use App\Notifications\ReponseDemarcheRecue;
 use App\Services\ParOuCommencer;
@@ -42,6 +43,9 @@ use Illuminate\Support\Str;
  * (prioriteSuggeree) ou fixée par un agent (changerPriorite, policy changerPriorite).
  * @property string $priorite
  * @property bool $priorite_manuelle
+ *
+ * F83 : reference n'est PAS remplissable : elle est attribuée par le code à la création (événement created).
+ * @property string|null $reference
  */
 #[Fillable(['titre', 'description', 'service_id'])]
 class Demarche extends Model
@@ -62,6 +66,9 @@ class Demarche extends Model
 
     /** États « en attente de prise en charge » : aucun agent ne s'en occupe encore (D17). */
     public const STATUTS_EN_ATTENTE_PRISE_EN_CHARGE = ['deposee'];
+
+    /** F83 : préfixe de la référence de l'accusé de réception : NT-2026-000123. */
+    public const PREFIXE_REFERENCE = 'NT';
 
     /**
      * Valeur par défaut du statut : la première de STATUT_OPTIONS.
@@ -124,6 +131,18 @@ class Demarche extends Model
             if (! $demarche->priorite_manuelle && (! $demarche->exists || $demarche->isDirty(['statut', 'urgence_medicale', 'service_id']))) {
                 $demarche->priorite = $demarche->prioriteSuggeree()['priorite'];
             }
+        });
+
+        // F83 : référence attribuée côté serveur dès la création, à partir de l'identifiant (donc unique),
+        // sans toucher au journal d'audit ni à la date de mise à jour.
+        static::created(function (Demarche $demarche): void {
+            if ($demarche->reference !== null) {
+                return;
+            }
+
+            $demarche->reference = self::formaterReference((int) $demarche->getKey(), $demarche->created_at->year);
+            static::query()->whereKey($demarche->getKey())->toBase()->update(['reference' => $demarche->reference]);
+            $demarche->syncOriginalAttribute('reference');
         });
     }
 
@@ -319,11 +338,96 @@ class Demarche extends Model
     }
 
     /**
-     * Numéro de suivi communiqué à l'habitant après l'envoi (D16), dérivé de l'identifiant.
+     * Numéro de suivi communiqué à l'habitant après l'envoi (D16) : la référence de l'accusé de réception (F83).
      */
     public function numeroSuivi(): string
     {
-        return 'DEM-'.str_pad((string) $this->getKey(), 6, '0', STR_PAD_LEFT);
+        return $this->reference ?? self::formaterReference((int) $this->getKey(), $this->created_at->year);
+    }
+
+    /**
+     * F83 : référence lisible et unique (NT-2026-000123), dérivée de l'identifiant : année de dépôt + id sur 6 chiffres.
+     */
+    public static function formaterReference(int $id, int $annee): string
+    {
+        return sprintf('%s-%d-%06d', self::PREFIXE_REFERENCE, $annee, $id);
+    }
+
+    /**
+     * F83 : date et heure de réception, au fuseau local et en français (« 4 octobre 2026 à 10:42 »).
+     */
+    public function dateReceptionLocale(): string
+    {
+        return $this->created_at?->copy()->setTimezone(Annonce::FUSEAU)->settings(['locale' => 'fr'])->translatedFormat('j F Y \à H:i') ?? '—';
+    }
+
+    /**
+     * F83 : ramène une saisie libre (« nt-2026-123 », « NT 2026 000123 ») à la référence exacte, ou null si ce n'en est pas une.
+     */
+    public static function normaliserReference(string $saisie): ?string
+    {
+        $compacte = strtoupper((string) preg_replace('/\s+/', '', $saisie));
+
+        if (preg_match('/^'.self::PREFIXE_REFERENCE.'-?(\d{4})-?(\d{1,6})$/', $compacte, $morceaux) !== 1) {
+            return null;
+        }
+
+        return self::formaterReference((int) $morceaux[2], (int) $morceaux[1]);
+    }
+
+    /**
+     * F83 : recherche libre (objet, description) ou par référence, insensible à la casse et aux espaces.
+     * À combiner avec visibleTo() : ne lève jamais le filtre par propriétaire ou par service.
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeRechercher(Builder $query, string $saisie): void
+    {
+        $saisie = trim($saisie);
+
+        if ($saisie === '') {
+            return;
+        }
+
+        $reference = self::normaliserReference($saisie);
+
+        if ($reference !== null) {
+            $query->where('reference', $reference);
+
+            return;
+        }
+
+        $term = '%'.$saisie.'%';
+        $referencePartielle = '%'.strtoupper((string) preg_replace('/\s+/', '', $saisie)).'%';
+
+        $query->where(fn (Builder $q) => $q
+            ->where('titre', 'like', $term)
+            ->orWhere('description', 'like', $term)
+            ->orWhere('reference', 'like', $referencePartielle));
+    }
+
+    /**
+     * F83 : accusé de réception envoyé par e-mail à l'auteur (cloche + e-mail par la file), après la transaction.
+     * Un échec d'envoi ne bloque jamais le dépôt.
+     */
+    public function envoyerAccuseReception(): void
+    {
+        // Rechargé en entier : un user chargé partiellement n'aurait pas d'e-mail.
+        $proprietaire = User::query()->find($this->user_id);
+
+        if ($proprietaire === null) {
+            return;
+        }
+
+        $avis = new AccuseReceptionDemarche($this->loadMissing('service'));
+
+        DB::afterCommit(function () use ($proprietaire, $avis): void {
+            try {
+                $proprietaire->notify($avis);
+            } catch (\Throwable $e) {
+                report($e);
+            }
+        });
     }
 
     /**

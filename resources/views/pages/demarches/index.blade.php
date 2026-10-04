@@ -142,10 +142,8 @@ new #[Title('Mes démarches')] class extends Component {
         // F70 : un agent ne voit que les démarches de ses services, un habitant les siennes.
         return Demarche::query()
             ->visibleTo(auth()->user())
-            ->when($this->search !== '', function ($query) {
-                $term = '%'.$this->search.'%';
-                $query->where(fn ($q) => $q->where('titre', 'like', $term)->orWhere('description', 'like', $term));
-            })
+            // F83 : objet, description ou référence (« nt-2026-123 » retrouve NT-2026-000123).
+            ->rechercher($this->search)
             ->when(! $this->voitToutesLesDemarches || $this->mine, fn ($query) => $query->whereBelongsTo(auth()->user()))
             ->when($this->filterCategorie !== '', fn ($query) => $query->whereHas('service', fn ($q) => $q->where('categorie', $this->filterCategorie)))
             ->when($this->filterServiceId !== '', fn ($query) => $query->where('service_id', $this->filterServiceId))
@@ -243,7 +241,7 @@ new #[Title('Mes démarches')] class extends Component {
 
     {{-- Filtres --}}
     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="{{ __('Rechercher…') }}" aria-label="{{ __('Rechercher une démarche') }}" class="sm:max-w-xs" />
+        <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" placeholder="{{ __('Objet ou référence (NT-2026-…)') }}" aria-label="{{ __('Rechercher une démarche par objet ou par référence') }}" class="sm:max-w-xs" />
         <flux:select wire:model.live="filterCategorie" aria-label="{{ __('Filtrer par sujet') }}" class="sm:max-w-52">
             <flux:select.option value="">{{ __('Sujet : tous') }}</flux:select.option>
             @foreach (Service::CATEGORIE_OPTIONS as $option)
@@ -291,7 +289,7 @@ new #[Title('Mes démarches')] class extends Component {
                 <li wire:key="m-{{ $item->id }}">
                     <x-tn.list-row icon="file-text" :href="route('demarches.show', $item)" :stack="true">
                         <span class="block truncate font-medium text-ink">{{ $item->titre }}</span>
-                        <span class="block truncate text-sm text-ink-2">{{ $item->service?->nom ?? __('Service non précisé') }} · <span class="font-mono text-xs">{{ $item->created_at->format('d.m.Y') }}</span></span>
+                        <span class="block truncate text-sm text-ink-2"><span class="font-mono text-xs">{{ $item->numeroSuivi() }}</span> · {{ $item->service?->nom ?? __('Service non précisé') }} · <span class="font-mono text-xs">{{ $item->created_at->format('d.m.Y') }}</span></span>
                         <x-slot:aside>
                             <span class="flex flex-wrap gap-1">
                                 @if ($item->urgence_medicale)
@@ -326,7 +324,10 @@ new #[Title('Mes démarches')] class extends Component {
                 <flux:table.rows>
                     @foreach ($this->items as $item)
                         <flux:table.row wire:key="row-{{ $item->id }}">
-                            <flux:table.cell><a href="{{ route('demarches.show', $item) }}" wire:navigate class="font-medium text-ink hover:text-cyan">{{ $item->titre }}</a></flux:table.cell>
+                            <flux:table.cell>
+                                <a href="{{ route('demarches.show', $item) }}" wire:navigate class="font-medium text-ink hover:text-cyan">{{ $item->titre }}</a>
+                                <span class="block font-mono text-xs text-ink-2">{{ $item->numeroSuivi() }}</span>
+                            </flux:table.cell>
                             <flux:table.cell>{{ $item->service?->nom ?? '—' }}</flux:table.cell>
                             <flux:table.cell>
                                 <div class="flex flex-wrap gap-1">

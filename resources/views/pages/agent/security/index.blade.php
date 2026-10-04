@@ -146,37 +146,37 @@ new #[Layout('layouts::agent'), Title('Sécurité des connexions')] class extend
         label="Espace agent"
         title="Sécurité des connexions"
         subtitle="Tentatives de connexion échouées et blocages temporaires. Les mots de passe ne sont jamais enregistrés."
-        :breadcrumb="['Espace agent' => route('agent.index'), 'Sécurité des connexions' => null]"
+        :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Sécurité des connexions' => null]"
     />
 
     @php($resume = $this->resume)
 
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <flux:card class="space-y-1">
-            <flux:text size="sm">Échecs (24 h)</flux:text>
+        <x-tn.surface padding="p-4" class="space-y-1">
+            <x-tn.section-label class="text-xs!">Échecs (24 h)</x-tn.section-label>
             <flux:heading size="xl" data-test="stat-echecs">{{ $resume['echecs'] }}</flux:heading>
-        </flux:card>
-        <flux:card class="space-y-1">
-            <flux:text size="sm">Blocages (24 h)</flux:text>
+        </x-tn.surface>
+        <x-tn.surface padding="p-4" class="space-y-1">
+            <x-tn.section-label class="text-xs!">Blocages (24 h)</x-tn.section-label>
             <flux:heading size="xl" data-test="stat-blocages">{{ $resume['blocages'] }}</flux:heading>
             <flux:text size="sm">couple(s) e-mail + IP bloqué(s)</flux:text>
-        </flux:card>
-        <flux:card class="space-y-2">
-            <flux:text size="sm">Comptes les plus ciblés</flux:text>
+        </x-tn.surface>
+        <x-tn.surface padding="p-4" class="space-y-2">
+            <x-tn.section-label class="text-xs!">Comptes les plus ciblés</x-tn.section-label>
             @forelse ($resume['comptes'] as $compte)
                 <div class="flex items-center justify-between gap-2 text-sm">
-                    <span class="truncate" title="{{ $compte->email }}">{{ $compte->email }}</span>
+                    <span class="min-w-0 truncate" title="{{ $compte->email }}">{{ $compte->email }}</span>
                     <span class="shrink-0 font-mono">{{ $compte->getAttribute('total') }}</span>
                 </div>
             @empty
                 <flux:text size="sm">Aucun échec.</flux:text>
             @endforelse
-        </flux:card>
-        <flux:card class="space-y-2">
-            <flux:text size="sm">IP les plus actives</flux:text>
+        </x-tn.surface>
+        <x-tn.surface padding="p-4" class="space-y-2">
+            <x-tn.section-label class="text-xs!">IP les plus actives</x-tn.section-label>
             @forelse ($resume['ips'] as $source)
                 <div class="flex items-center justify-between gap-2 text-sm">
-                    <span class="truncate font-mono">{{ $source->ip ?? 'inconnue' }}</span>
+                    <span class="min-w-0 truncate font-mono">{{ $source->ip ?? 'inconnue' }}</span>
                     <span class="shrink-0 font-mono" title="{{ $source->getAttribute('comptes') }} compte(s) visé(s)">
                         {{ $source->getAttribute('total') }} · {{ $source->getAttribute('comptes') }} cpt
                     </span>
@@ -184,7 +184,7 @@ new #[Layout('layouts::agent'), Title('Sécurité des connexions')] class extend
             @empty
                 <flux:text size="sm">Aucun échec.</flux:text>
             @endforelse
-        </flux:card>
+        </x-tn.surface>
     </div>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
@@ -217,7 +217,7 @@ new #[Layout('layouts::agent'), Title('Sécurité des connexions')] class extend
     @if ($this->items->isEmpty())
         <x-tn.empty icon="shield-check" title="Aucune tentative échouée" :text="$email !== '' || $ip !== '' || $motif !== '' ? 'Aucune tentative ne correspond à vos filtres.' : 'Aucune tentative de connexion échouée sur cette période.'" />
     @else
-        <div class="overflow-x-auto">
+        <x-tn.surface padding="px-4 py-2">
             <flux:table :paginate="$this->items">
                 <flux:table.columns>
                     <flux:table.column>Date</flux:table.column>
@@ -270,6 +270,6 @@ new #[Layout('layouts::agent'), Title('Sécurité des connexions')] class extend
                     @endforeach
                 </flux:table.rows>
             </flux:table>
-        </div>
+        </x-tn.surface>
     @endif
 </section>

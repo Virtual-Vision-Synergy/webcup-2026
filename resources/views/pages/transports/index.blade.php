@@ -60,6 +60,7 @@ new #[Title('Transports')] class extends Component {
         return $this->filteredQuery()
             ->orderByRaw("case when etat = 'normal' then 1 else 0 end")
             ->orderBy('numero')
+            ->limit(30)
             ->paginate(12);
     }
 
@@ -75,6 +76,7 @@ new #[Title('Transports')] class extends Component {
             ->where('etat', '!=', 'normal')
             ->orderByRaw("case when etat = 'interrompu' then 0 else 1 end")
             ->orderBy('numero')
+            ->limit(30)
             ->get();
     }
 

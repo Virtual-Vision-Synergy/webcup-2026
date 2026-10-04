@@ -86,6 +86,8 @@ test('inscription : un envoi en moins de 3 secondes est rejeté', function () {
 });
 
 test('inscription : au-delà de 5 envois par minute, réponse 429 avec le délai, journalisée', function () {
+    $this->freezeTime();
+
     foreach (range(1, 5) as $i) {
         $this->post(route('register.store'), jetonAntiRobot('inscription') + inscription());
         auth()->logout();

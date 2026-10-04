@@ -89,6 +89,7 @@ new #[Title('Actualites')] class extends Component {
         :breadcrumb="['Mon espace' => route('dashboard'), 'Actualités' => null]"
     >
         <x-slot:actions>
+            <x-tn.version-simple />
             @can('create', Actualite::class)
                 <flux:button variant="primary" icon="plus" :href="route('actualites.create')" wire:navigate>{{ __('Publier') }}</flux:button>
             @endcan
@@ -110,17 +111,24 @@ new #[Title('Actualites')] class extends Component {
     @else
         @if ($aLaUne)
             {{-- À LA UNE --}}
-            <article class="grid overflow-hidden rounded-md border border-line bg-surface lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-                <div class="tn-sky relative min-h-56 overflow-hidden lg:min-h-80">
-                    @if ($aLaUne->image)
-                        <x-tn.image :chemin="$aLaUne->image" :prioritaire="true" sizes="(min-width: 1024px) 55vw, 100vw" class="absolute inset-0 size-full object-cover" />
-                    @else
-                        <div class="tn-planet -right-16 -bottom-24 size-[280px]" aria-hidden="true"></div>
-                        <div class="tn-grid" aria-hidden="true"></div>
-                    @endif
-                    <x-tn.status-badge etat="info" :live="true" class="absolute top-4 left-4 bg-night/60! backdrop-blur">{{ __('À la une') }}</x-tn.status-badge>
-                </div>
+            @php($simple = \App\Support\VersionSimple::actif())
+            <article @class(['grid overflow-hidden rounded-md border border-line bg-surface', 'lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]' => ! $simple])>
+                {{-- F62 : en version simple, ni image ni décor : le titre, la date et l'extrait suffisent. --}}
+                @unless ($simple)
+                    <div class="tn-sky relative min-h-56 overflow-hidden lg:min-h-80">
+                        @if ($aLaUne->image)
+                            <x-tn.image :chemin="$aLaUne->image" :prioritaire="true" sizes="(min-width: 1024px) 55vw, 100vw" class="absolute inset-0 size-full object-cover" />
+                        @else
+                            <div class="tn-planet -right-16 -bottom-24 size-[280px]" aria-hidden="true"></div>
+                            <div class="tn-grid" aria-hidden="true"></div>
+                        @endif
+                        <x-tn.status-badge etat="info" :live="true" class="absolute top-4 left-4 bg-night/60! backdrop-blur">{{ __('À la une') }}</x-tn.status-badge>
+                    </div>
+                @endunless
                 <div class="flex flex-col p-6 md:p-8">
+                    @if ($simple)
+                        <p class="text-sm font-semibold text-cyan">{{ __('À la une') }}</p>
+                    @endif
                     <time datetime="{{ $aLaUne->date?->toDateString() }}" class="font-mono text-sm text-ink-2">{{ $aLaUne->date?->translatedFormat('l j F Y') }}</time>
                     <h2 class="tn-display mt-3 text-2xl leading-tight font-semibold text-ink md:text-[1.875rem]">
                         <a href="{{ route('actualites.show', $aLaUne) }}" wire:navigate class="hover:text-cyan">{{ $aLaUne->titre }}</a>

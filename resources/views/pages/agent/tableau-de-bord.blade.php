@@ -147,7 +147,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
     $totalSemaine = array_sum(array_column($activite, 'total'));
 @endphp
 
-<section class="mx-auto w-full max-w-6xl space-y-6" wire:poll.60s.visible>
+<section class="mx-auto w-full max-w-6xl space-y-6" wire:poll.{{ \App\Support\ModeDegrade::poll(60) }}.visible>
     <x-tn.page-header
         label="Espace agent"
         :breadcrumb="['Espace agent' => route('agent.tableau-de-bord'), 'Tableau de bord' => null]"
@@ -187,7 +187,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
 
     {{-- Compteurs du suivi quotidien --}}
     <div class="grid grid-cols-2 gap-3 lg:grid-cols-4" data-test="compteurs">
-        <a href="{{ route('agent.demandes') }}" class="rounded-md border border-line p-4 transition hover:border-cyan" wire:navigate>
+        <a href="{{ route('agent.demandes') }}" class="rounded-md border border-line bg-surface p-4 transition hover:border-cyan" wire:navigate>
             <span class="text-sm text-ink-2">Nouvelles aujourd’hui</span>
             <span class="tn-display mt-1 block text-3xl font-semibold text-ink" data-test="compteur-aujourdhui">{{ $compteurs['aujourdhui'] }}</span>
             <span class="text-xs text-ink-2">demande(s) déposée(s)</span>
@@ -201,12 +201,12 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
                 <span class="text-xs text-green">Rien en attente</span>
             @endif
         </a>
-        <a href="{{ route('agent.demandes') }}" class="rounded-md border border-line p-4 transition hover:border-cyan" wire:navigate>
+        <a href="{{ route('agent.demandes') }}" class="rounded-md border border-line bg-surface p-4 transition hover:border-cyan" wire:navigate>
             <span class="text-sm text-ink-2">Demandes au total</span>
             <span class="tn-display mt-1 block text-3xl font-semibold text-ink" data-test="compteur-total">{{ $compteurs['total'] }}</span>
             <span class="text-xs text-ink-2">{{ $totalSemaine }} sur 7 jours</span>
         </a>
-        <a href="{{ route('signalements.index') }}" class="rounded-md border border-line p-4 transition hover:border-cyan" wire:navigate>
+        <a href="{{ route('signalements.index') }}" class="rounded-md border border-line bg-surface p-4 transition hover:border-cyan" wire:navigate>
             <span class="text-sm text-ink-2">Signalements</span>
             <span class="tn-display mt-1 block text-3xl font-semibold text-ink" data-test="compteur-signalements">{{ $compteurs['signalements'] }}</span>
             <span @class(['text-xs', 'text-magenta' => $compteurs['signalements_nouveaux'] > 0, 'text-ink-2' => $compteurs['signalements_nouveaux'] === 0])>
@@ -287,7 +287,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
             @if ($this->dernieresDemandes->isEmpty())
                 <x-tn.empty icon="inbox" title="Aucune demande pour l’instant" text="Les habitants n’ont encore déposé aucune demande." />
             @else
-                <ul class="divide-y divide-line rounded-md border border-line">
+                <ul class="divide-y divide-line rounded-md border border-line bg-surface">
                     @foreach ($this->dernieresDemandes as $demande)
                         <li wire:key="demande-{{ $demande->id }}">
                             <a href="{{ route('demarches.show', $demande) }}" class="flex flex-col gap-1 p-4 transition hover:bg-surface-2 sm:flex-row sm:items-center sm:justify-between" wire:navigate>
@@ -309,7 +309,7 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
         </div>
 
         {{-- Derniers signalements --}}
-        <div class="space-y-3 lg:col-span-2">
+        <div class="min-w-0 space-y-3 lg:col-span-2">
             <div class="flex items-center justify-between gap-2">
                 <x-tn.section-label as="h2">Derniers signalements</x-tn.section-label>
                 <flux:link :href="route('signalements.index')" wire:navigate class="text-sm">Tous les signalements</flux:link>
@@ -318,12 +318,12 @@ new #[Layout('layouts::agent'), Title('Espace agent — Tableau de bord')] class
             @if ($this->derniersSignalements->isEmpty())
                 <x-tn.empty icon="exclamation-triangle" title="Aucun signalement" text="Aucun problème n’a été signalé dans l’espace public." />
             @else
-                <ul class="divide-y divide-line rounded-md border border-line">
+                <ul class="divide-y divide-line rounded-md border border-line bg-surface">
                     @foreach ($this->derniersSignalements as $signalement)
                         <li wire:key="signalement-{{ $signalement->id }}">
                             <a href="{{ route('signalements.show', $signalement) }}" class="block p-4 transition hover:bg-surface-2" wire:navigate>
                                 <div class="flex items-center justify-between gap-2">
-                                    <p class="truncate font-medium text-ink">{{ Signalement::libelleCategorie($signalement->categorie) }}</p>
+                                    <p class="min-w-0 truncate font-medium text-ink">{{ Signalement::libelleCategorie($signalement->categorie) }}</p>
                                     <x-tn.status-badge :etat="$signalement->etatStatut()">{{ Signalement::libelleStatut($signalement->statut) }}</x-tn.status-badge>
                                 </div>
                                 <p class="truncate text-sm text-ink-2">{{ $signalement->lieu }}</p>

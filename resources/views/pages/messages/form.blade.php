@@ -1,16 +1,18 @@
 <?php
 
+use App\Concerns\EmpecheEnvoiEnDouble;
 use App\Concerns\ProtegeContreRobots;
 use App\Models\Message;
 use Flux\Flux;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
 new #[Title('Contacter la mairie')] class extends Component {
-    use ProtegeContreRobots;
+    use EmpecheEnvoiEnDouble, ProtegeContreRobots;
 
     #[Locked]
     public ?Message $record = null;
@@ -37,7 +39,11 @@ new #[Title('Contacter la mairie')] class extends Component {
             $this->authorize('create', Message::class);
             $this->nom = (string) auth()->user()->name;
             $this->email = (string) auth()->user()->email;
+            // F92 : sujet et message pré-remplis depuis l'orientation « Je ne sais pas à qui m'adresser ».
+            $this->sujet = Str::limit(trim(request()->string('sujet')->toString()), 255, '');
+            $this->message = Str::limit(trim(request()->string('message')->toString()), 5000, '');
             $this->initialiserAntiRobot('contact');
+            $this->initialiserJetonEnvoi();
         }
     }
 
@@ -92,9 +98,23 @@ new #[Title('Contacter la mairie')] class extends Component {
             parIp: (int) config('security.formulaires.limites.contact.ip'),
         );
 
-        $record = new Message($validated);
-        $record->user()->associate(auth()->user());
-        $record->save();
+        // F82 : même message renvoyé (double clic, retour arrière) → rien n'est créé, message avec lien.
+        $record = $this->envoyerUneSeuleFois(
+            'contact',
+            ['sujet' => $validated['sujet'], 'message' => $validated['message']],
+            function () use ($validated): Message {
+                $record = new Message($validated);
+                $record->user()->associate(auth()->user());
+                $record->save();
+
+                return $record;
+            },
+            fn (Message $message): string => route('messages.show', $message),
+        );
+
+        if ($record === null) {
+            return;
+        }
 
         $this->envoyeId = $record->id;
         $this->reset('sujet', 'message');
@@ -133,7 +153,7 @@ new #[Title('Contacter la mairie')] class extends Component {
             </div>
         </div>
     @else
-        <form wire:submit="save" class="relative space-y-6 rounded-md border border-line bg-surface p-5 md:p-6" novalidate>
+        <form wire:submit="save" @if (! $record) data-brouillon="contact" data-brouillon-libelle="{{ __('Message à la mairie') }}" @endif class="relative space-y-6 rounded-md border border-line bg-surface p-5 md:p-6" novalidate>
             <x-tn.mention-obligatoire />
 
             @unless ($record)
@@ -150,11 +170,10 @@ new #[Title('Contacter la mairie')] class extends Component {
 
             <flux:error name="throttle" />
 
+            <x-envoi-deja-fait :le="$envoiDejaFaitLe" :url="$envoiDejaFaitUrl" message="Ce message a déjà été envoyé" lien="voir mon message" />
+
             <div class="flex items-center gap-3">
-                <flux:button type="submit" variant="primary">
-                    <span wire:loading.remove wire:target="save">{{ $record ? __('Enregistrer') : __('Envoyer à la mairie') }}</span>
-                    <span wire:loading wire:target="save">{{ __('Envoi…') }}</span>
-                </flux:button>
+                <x-submit-button variant="primary">{{ $record ? __('Enregistrer') : __('Envoyer à la mairie') }}</x-submit-button>
                 <flux:button :href="route('messages.index')" wire:navigate variant="ghost">{{ __('Annuler') }}</flux:button>
             </div>
         </form>

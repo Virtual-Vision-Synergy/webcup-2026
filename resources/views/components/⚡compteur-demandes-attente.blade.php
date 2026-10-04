@@ -39,7 +39,7 @@ new class extends Component {
     }
 }; ?>
 
-<div wire:poll.60s.visible data-test="compteur-demandes-attente">
+<div wire:poll.{{ \App\Support\ModeDegrade::poll(60) }}.visible data-test="compteur-demandes-attente">
     <div @class([
         'flex flex-col gap-4 rounded-md border p-5 sm:flex-row sm:items-center sm:justify-between',
         'border-amber/50 bg-amber/5' => $this->total > 0,

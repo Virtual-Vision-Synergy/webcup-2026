@@ -8,7 +8,7 @@
     'fluid' => false,
 ])
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif()])>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif(), 'simple' => \App\Support\VersionSimple::actif()])>
     <head>
         @include('partials.head', ['title' => $title, 'description' => $description])
     </head>
@@ -21,6 +21,7 @@
             x-bind:class="$store.menu?.ouvert && 'tn-page-recule'"
         >
             <x-tn.site-header />
+            <x-tn.bandeau-version-simple />
             <x-tn.bandeau-annonces />
 
             <main id="contenu" tabindex="-1" @class(['flex-1', 'mx-auto w-full max-w-7xl px-4 py-8 lg:px-8' => ! $fluid])>
@@ -33,6 +34,8 @@
                     <nav aria-label="{{ __('Informations') }}" class="flex flex-wrap gap-x-4 gap-y-1">
                         <a href="{{ route('privacy.show') }}" class="text-cyan hover:underline">{{ __('Vos données') }}</a>
                         <a href="{{ route('accessibility.show') }}" class="text-cyan hover:underline">{{ __('Accessibilité') }}</a>
+                        <a href="{{ route('sobriete.show') }}" class="text-cyan hover:underline" data-test="footer-sobriete-link">{{ __('Sobriété') }}</a>
+                        <a href="{{ route('lexique') }}" class="text-cyan hover:underline" data-test="footer-lexique-link">{{ __('Lexique') }}</a>
                     </nav>
                     <p class="font-mono text-xs uppercase tracking-[.06em]">Virtual Vision Synergie</p>
                 </div>
@@ -49,6 +52,7 @@
         @endpersist
 
         <x-tn.chargement />
+        <x-tn.etat-reseau />
 
         @fluxScripts
     </body>

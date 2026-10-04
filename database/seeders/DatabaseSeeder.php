@@ -11,6 +11,7 @@ use App\Models\Role;
 use App\Models\Service;
 use App\Models\Signalement;
 use App\Models\User;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -18,6 +19,17 @@ use Illuminate\Support\Str;
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
+
+    /**
+     * Réinitialisation depuis l'admin (App\Services\ReinitialisationDonnees) : les comptes existent déjà,
+     * ils sont conservés et les comptes de démo sont remis dans leur état d'origine au lieu d'être recréés.
+     */
+    public bool $reinitialisation = false;
+
+    /**
+     * Compte à ne pas modifier pendant la réinitialisation (l'admin connecté qui l'a lancée).
+     */
+    public ?int $compteProtegeId = null;
 
     /**
      * Données de démonstration.
@@ -40,44 +52,29 @@ class DatabaseSeeder extends Seeder
         $this->call(RoleSeeder::class);
         $this->call(QuartierSeeder::class);
 
+        // D09 : seeder relançable sans doublon. Les comptes de démo existent déjà → rien à recréer
+        // (php artisan migrate:fresh --seed pour repartir de zéro, en local uniquement).
+        if (! $this->reinitialisation && User::where('email', 'admin@example.com')->exists()) {
+            return;
+        }
+
         if (! app()->isProduction()) {
-            User::factory()->admin()->create([
-                'name' => 'Admin Démo',
-                'email' => 'admin@example.com',
-            ]);
+            $this->compteDemo(User::factory()->admin(), 'Admin Démo', 'admin@example.com');
 
-            User::factory()->agent()->create([
-                'name' => 'Agent Démo',
-                'email' => 'agent@example.com',
-            ]);
+            $this->compteDemo(User::factory()->agent(), 'Agent Démo', 'agent@example.com');
 
-            User::factory()->agent()->create([
-                'name' => 'Jury Agent',
-                'email' => 'jury.agent@example.com',
-            ]);
+            $this->compteDemo(User::factory()->agent(), 'Jury Agent', 'jury.agent@example.com');
 
-            $citoyenDemo = User::factory()->profilComplet()->create([
-                'name' => 'Citoyen Démo',
-                'email' => 'user@example.com',
-            ]);
+            $citoyenDemo = $this->compteDemo(User::factory()->profilComplet(), 'Citoyen Démo', 'user@example.com');
             // Compte de démo historique : parcours de prise en main déjà terminé (pas de redirection vers /bienvenue).
             Onboarding::factory()->termine()->for($citoyenDemo)->create();
 
             // Parcours de prise en main (D12) : un nouvel habitant, un à mi-parcours, un qui l'a passé.
-            User::factory()->create([
-                'name' => 'Fanja Nouvelle',
-                'email' => 'nouveau@example.com',
-            ]);
+            $this->compteDemo(User::factory(), 'Fanja Nouvelle', 'nouveau@example.com');
 
-            User::factory()->profilComplet()->create([
-                'name' => 'Tahina Enchemin',
-                'email' => 'parcours@example.com',
-            ]);
+            $this->compteDemo(User::factory()->profilComplet(), 'Tahina Enchemin', 'parcours@example.com');
 
-            $citoyenPasse = User::factory()->create([
-                'name' => 'Mialy Pressée',
-                'email' => 'passe@example.com',
-            ]);
+            $citoyenPasse = $this->compteDemo(User::factory(), 'Mialy Pressée', 'passe@example.com');
             Onboarding::factory()->passe()->for($citoyenPasse)->create();
 
             // F34 : citoyens aux noms variés pour démontrer la recherche, dont un compte déjà désactivé.
@@ -92,23 +89,29 @@ class DatabaseSeeder extends Seeder
                 ['Chloé Martin', 'chloe.martin@example.com'],
                 ['Kevin Ramanantsoa', 'kevin.ramanantsoa@example.com'],
             ] as [$name, $email]) {
-                User::factory()->citoyen()->create(['name' => $name, 'email' => $email]);
+                $this->compteDemo(User::factory()->citoyen(), $name, $email);
             }
 
-            User::factory()->citoyen()->deactivated()->create([
-                'name' => 'Compte Désactivé',
-                'email' => 'desactive@example.com',
-            ]);
+            $this->compteDemo(User::factory()->citoyen()->deactivated(), 'Compte Désactivé', 'desactive@example.com');
         }
 
-        User::factory(8)->create([
-            'password' => Str::password(32),
-        ]);
+        // Habitants anonymes : créés au premier seed seulement (la réinitialisation réutilise les comptes existants).
+        if (! $this->reinitialisation) {
+            User::factory(8)->create([
+                'password' => Str::password(32),
+            ]);
+        }
 
         // Les comptes de démo du parcours de prise en main ne reçoivent pas de démarches aléatoires (sinon l'étape 3 serait faite).
         $users = User::query()->whereNotIn('email', ['nouveau@example.com', 'parcours@example.com', 'passe@example.com'])->get();
 
         $this->call(ServiceSeeder::class);
+
+        // D10 : synonymes d'orientation (« poubelle » → Environnement et propreté), éditables dans Filament.
+        $this->call(MotsClesServiceSeeder::class);
+
+        // F91 : règles de l'assistant d'orientation (questions fréquentes), éditables dans Filament.
+        $this->call(ReglesAssistantSeeder::class);
 
         Actualite::factory(20)->recycle($users)->create();
 
@@ -237,5 +240,25 @@ class DatabaseSeeder extends Seeder
         $this->call(ServiceReviewSeeder::class);
 
         // make:feature:seeders
+    }
+
+    /**
+     * Crée un compte de démo, ou le remet dans son état d'origine s'il existe déjà (mot de passe, rôle, activation…).
+     * Le compte de l'admin qui lance la réinitialisation n'est pas modifié : sa session reste valide.
+     */
+    private function compteDemo(UserFactory $factory, string $name, string $email): User
+    {
+        $attributs = ['name' => $name, 'email' => $email];
+        $existant = User::where('email', $email)->first();
+
+        if ($existant === null) {
+            return $factory->createOne($attributs);
+        }
+
+        if ($existant->id !== $this->compteProtegeId) {
+            $existant->forceFill(['deactivated_at' => null, ...$factory->makeOne($attributs)->getAttributes()])->save();
+        }
+
+        return $existant;
     }
 }

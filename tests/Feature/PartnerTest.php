@@ -184,7 +184,7 @@ test('created_by et is_published ne sont pas assignables en masse', function () 
         ->and($partner->slug)->toBeNull();
 });
 
-test('un agent modifie puis supprime un partenaire', function () {
+test('un agent modifie un partenaire mais seul un admin le supprime (D09)', function () {
     $agent = User::factory()->agent()->create();
     $partner = Partner::factory()->create(['name' => 'Ancien nom']);
 
@@ -199,6 +199,13 @@ test('un agent modifie puis supprime un partenaire', function () {
         ->and($partner->fresh()->is_published)->toBeFalse();
 
     Livewire::actingAs($agent)
+        ->test('pages::partners.form', ['partner' => $partner->fresh()])
+        ->call('delete')
+        ->assertForbidden();
+
+    expect(Partner::query()->find($partner->id))->not->toBeNull();
+
+    Livewire::actingAs(User::factory()->admin()->create())
         ->test('pages::partners.form', ['partner' => $partner->fresh()])
         ->call('delete');
 

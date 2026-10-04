@@ -6,6 +6,7 @@ use App\Models\Annonce;
 use App\Models\Demarche;
 use App\Models\RendezVous;
 use App\Models\Signalement;
+use App\Notifications\ReponseDemarcheRecue;
 use App\Notifications\StatutDemandeChange;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -50,6 +51,15 @@ class NotificationController extends Controller
 
         if ($notification->type === StatutDemandeChange::class) {
             return $this->ouvrirDemande($notification);
+        }
+
+        // F84 : réponse d'un agent → fiche de la démarche (DemarchePolicy::view y est vérifiée).
+        if ($notification->type === ReponseDemarcheRecue::class) {
+            $demarcheId = $notification->data['demarche_id'] ?? null;
+
+            return is_int($demarcheId) && Demarche::query()->whereKey($demarcheId)->exists()
+                ? redirect()->route('demarches.show', $demarcheId)
+                : redirect()->route('notifications.index')->with('status', __('Cette demande n’est plus disponible.'));
         }
 
         // F40 : rappel de rendez-vous → sa fiche (RendezVousPolicy::view y est vérifiée).

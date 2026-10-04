@@ -153,6 +153,9 @@ new #[Title('Démarche')] class extends Component {
         </div>
     </div>
 
+    {{-- F84 : échanges entre les agents et l'habitant (réponses, réponses types, relance de l'habitant). --}}
+    <livewire:reponses-demarche :demarche="$record" />
+
     @if (auth()->user()->isAdmin())
         <x-tn.surface data-test="consultations-confidentielles">
             <x-tn.section-label as="h2" class="mb-3">{{ __('Consultations des données confidentielles') }}</x-tn.section-label>

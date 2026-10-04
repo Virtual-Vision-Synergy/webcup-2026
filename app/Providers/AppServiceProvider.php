@@ -56,6 +56,9 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('viewAgentSpace', fn (User $user): bool => $user->isAgent() || $user->isAdmin());
 
+        // F103 : le rapport d'activité (page admin, version imprimable, CSV) est réservé aux administrateurs.
+        Gate::define('voirRapportActivite', fn (User $user): bool => $user->isAdmin());
+
         // F30 : une notification n'est accessible qu'à son destinataire.
         Gate::policy(DatabaseNotification::class, DatabaseNotificationPolicy::class);
     }

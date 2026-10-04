@@ -280,6 +280,11 @@ class DatabaseSeeder extends Seeder
         // F97 : ligne 7 interrompue avec solutions de remplacement, trajet habituel de user@example.com sur cette ligne.
         $this->call(InterruptionTransportSeeder::class);
 
+        if (! app()->isProduction()) {
+            // F103 : délais de réponse et signalements datés pour le « Rapport d'activité ».
+            $this->call(RapportActiviteSeeder::class);
+        }
+
         // make:feature:seeders
     }
 

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Actualite;
+use App\Models\AlerteCanicule;
 use App\Models\Annonce;
 use App\Models\Demarche;
 use App\Models\Message;
@@ -112,6 +113,23 @@ class DatabaseSeeder extends Seeder
 
         // F91 : règles de l'assistant d'orientation (questions fréquentes), éditables dans Filament.
         $this->call(ReglesAssistantSeeder::class);
+
+        // F31 : recommandations canicule écrites (profil × niveau), éditables dans Filament.
+        $this->call(RecommandationsCaniculeSeeder::class);
+
+        // F31 : alerte canicule de démonstration sur le quartier du citoyen de démo (bandeau + page « Canicule »).
+        $quartierDemo = User::query()->where('email', 'user@example.com')->value('quartier_id');
+        if (! app()->isProduction() && $quartierDemo !== null) {
+            $canicule = AlerteCanicule::factory()->create([
+                'user_id' => User::query()->where('email', 'admin@example.com')->value('id'),
+                'niveau' => 'alerte',
+                'temperature_max' => 39,
+                'message' => 'Vague de chaleur extrême jusqu’à jeudi : jusqu’à 39 °C l’après-midi. Protégez les personnes âgées, les jeunes enfants et les malades.',
+                'notified_at' => now(),
+            ]);
+            $canicule->quartiers()->sync([$quartierDemo]);
+            AlerteCanicule::oublierCache();
+        }
 
         Actualite::factory(20)->recycle($users)->create();
 

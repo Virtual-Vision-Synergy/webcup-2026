@@ -5,6 +5,7 @@ use App\Concerns\ProtegeContreRobots;
 use App\Models\Message;
 use Flux\Flux;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
@@ -38,6 +39,9 @@ new #[Title('Contacter la mairie')] class extends Component {
             $this->authorize('create', Message::class);
             $this->nom = (string) auth()->user()->name;
             $this->email = (string) auth()->user()->email;
+            // F92 : sujet et message pré-remplis depuis l'orientation « Je ne sais pas à qui m'adresser ».
+            $this->sujet = Str::limit(trim(request()->string('sujet')->toString()), 255, '');
+            $this->message = Str::limit(trim(request()->string('message')->toString()), 5000, '');
             $this->initialiserAntiRobot('contact');
             $this->initialiserJetonEnvoi();
         }

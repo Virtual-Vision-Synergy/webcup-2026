@@ -8,7 +8,7 @@
     'fluid' => false,
 ])
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif()])>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['allege' => \App\Support\ModeAllege::actif(), 'simple' => \App\Support\VersionSimple::actif()])>
     <head>
         @include('partials.head', ['title' => $title, 'description' => $description])
     </head>
@@ -21,6 +21,7 @@
             x-bind:class="$store.menu?.ouvert && 'tn-page-recule'"
         >
             <x-tn.site-header />
+            <x-tn.bandeau-version-simple />
             <x-tn.bandeau-annonces />
 
             <main id="contenu" tabindex="-1" @class(['flex-1', 'mx-auto w-full max-w-7xl px-4 py-8 lg:px-8' => ! $fluid])>

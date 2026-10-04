@@ -115,6 +115,9 @@ Route::middleware(['auth'])->group(function () {
     Route::livewire('services/{service}/avis/donner', 'pages::service-reviews.form')->name('services.reviews.edit');
     Route::livewire('mes-avis/services', 'pages::service-reviews.index')->name('services.reviews.mine');
 
+    // F92 : « Je ne sais pas à qui m'adresser » — orientation vers le bon service à partir d'une description libre (moteur D10).
+    Route::livewire('orientation', 'pages::orientation.index')->name('orientation.index');
+
     // make:feature:routes
 });
 
